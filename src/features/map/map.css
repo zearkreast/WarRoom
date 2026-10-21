@@ -1,0 +1,186 @@
+.map-wrap {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, #0c1424 0%, var(--bg) 70%);
+}
+.galaxy {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  --k: 1;
+}
+.galaxy:active {
+  cursor: grabbing;
+}
+
+.grid-ring {
+  fill: none;
+  stroke: rgba(120, 160, 220, 0.07);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.sector-outline {
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-width: 3;
+  stroke-opacity: 0.85;
+}
+.sector-label {
+  fill: var(--text);
+  opacity: 0;
+  font-size: calc(11px / var(--k));
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-anchor: middle;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.z-sectors .sector-label {
+  opacity: 0.35;
+}
+.z-planets .sector-label {
+  opacity: 0.18;
+}
+
+.lanes line {
+  stroke: rgba(200, 220, 255, 0.16);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.attacks line {
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  stroke-opacity: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+
+.planet {
+  cursor: pointer;
+}
+.planet .hit {
+  fill: transparent;
+}
+.planet .core {
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 0.5;
+}
+.planet .pulse {
+  fill: none;
+  stroke-width: 1.2;
+  animation: pulse 2.2s ease-in-out infinite;
+}
+.planet .mo-ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 1.5;
+}
+.planet.selected .core {
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+.planet-label {
+  fill: var(--text);
+  font-size: calc(10px / var(--k));
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-anchor: middle;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: calc(3px / var(--k));
+  opacity: 0;
+}
+.z-labels .planet.active .planet-label,
+.planet.selected .planet-label,
+.z-planets .planet-label {
+  opacity: 1;
+}
+.planet.active .planet-label {
+  font-size: calc(11px / var(--k));
+}
+.planet:hover .planet-label {
+  opacity: 1;
+  fill: var(--accent);
+}
+
+.map-controls {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.map-hint {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  font-size: 10px;
+}
+
+/* Map page: sidebar + map + drawer. */
+.map-page {
+  position: absolute;
+  inset: 0;
+}
+.map-sidebar {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  bottom: 12px;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 2;
+  pointer-events: none;
+}
+.map-sidebar > * {
+  pointer-events: auto;
+}
+.map-sidebar .fronts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  flex: 1;
+}
+.legend {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  padding: 8px 14px;
+  font-size: 11px;
+  z-index: 2;
+}
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 900px) {
+  .map-sidebar {
+    display: none;
+  }
+  .legend {
+    bottom: 8px;
+    width: calc(100% - 16px);
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 12px;
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+  .map-hint {
+    display: none;
+  }
+}

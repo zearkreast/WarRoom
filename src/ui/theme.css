@@ -1,0 +1,103 @@
+:root {
+  --bg: #05080e;
+  --bg-2: #0a0f18;
+  --panel: rgba(10, 15, 24, 0.88);
+  --panel-solid: #0c121c;
+  --line: #1d2838;
+  --line-2: #2c3a50;
+  --text: #d6dce5;
+  --muted: #7d8899;
+  --dim: #4a5566;
+  --accent: #d4c24a;
+  --accent-ink: #0b0f17;
+  --good: #5fd38a;
+  --bad: #ff5c5c;
+
+  --f-humans: #3fa9f5;
+  --f-terminids: #f5a623;
+  --f-automaton: #ff4d4d;
+  --f-illuminate: #a970ff;
+
+  --font: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --radius: 2px;
+  --nav-h: 52px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.caps {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+}
+
+/* Starfield background shared by the non-map pages. */
+.starfield {
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(40, 70, 120, 0.18), transparent 60%),
+    radial-gradient(1px 1px at 12% 22%, #fff8 50%, transparent 51%),
+    radial-gradient(1px 1px at 78% 14%, #fff6 50%, transparent 51%),
+    radial-gradient(1px 1px at 33% 71%, #fff5 50%, transparent 51%),
+    radial-gradient(1px 1px at 61% 48%, #fff7 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 83%, #fff5 50%, transparent 51%),
+    radial-gradient(1px 1px at 5% 90%, #fff6 50%, transparent 51%),
+    var(--bg);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

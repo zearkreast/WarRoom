@@ -1,0 +1,36 @@
+.planet-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.history-chart {
+  margin-bottom: 6px;
+}
+.history-empty {
+  font-size: 12px;
+  padding: 4px 0 8px;
+}
+.change-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.change-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.change-row .dot {
+  margin-top: 4px;
+}
+.change-title {
+  font-size: 12px;
+  font-weight: 600;
+}
+.change-sub {
+  font-size: 11px;
+}
