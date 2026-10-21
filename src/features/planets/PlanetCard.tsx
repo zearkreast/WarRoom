@@ -6,6 +6,9 @@ import type { Front } from "./useFronts";
 import "./planets.css";
 
 function Outlook({ f }: { f: Front }) {
+  // Untouched planets are never sampled, so they never get a rate.
+  if (f.rate == null && f.kind === "liberation" && f.percent === 0)
+    return <span className="muted">Holding for reinforcement</span>;
   if (f.rate == null) return <span className="muted">Measuring rate…</span>;
   if (f.kind === "defense") {
     if (f.victoryAt && f.failAt && f.victoryAt < f.failAt)
