@@ -1,0 +1,23 @@
+# systemd unit for running the collector without Docker (needs Node 22.18+ or 24).
+# Install:  sudo cp collector/warroom-collector.service /etc/systemd/system/
+#           sudo systemctl enable --now warroom-collector
+# Logs:     journalctl -u warroom-collector -f
+[Unit]
+Description=WarRoom collector (Helldivers 2 API -> Supabase)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Change these to where you cloned the repo and the user that should run it.
+WorkingDirectory=/opt/WarRoom
+User=warroom
+ExecStart=/usr/bin/node --max-old-space-size=64 collector/collect.ts
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

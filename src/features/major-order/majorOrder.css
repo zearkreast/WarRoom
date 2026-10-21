@@ -1,0 +1,78 @@
+.mo .panel-head .title {
+  color: var(--accent);
+}
+.mo-ends {
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+.mo-ends b {
+  color: var(--accent-ink);
+  background: var(--accent);
+  padding: 1px 6px;
+  margin-left: 4px;
+}
+.mo-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mo-briefing {
+  margin: 0;
+  font-size: 13px;
+}
+.mo-tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mo-task {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.mo-task-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.mo-check {
+  color: var(--muted);
+}
+.mo-task.done .mo-check {
+  color: var(--good);
+}
+.mo-pct {
+  margin-left: auto;
+}
+.mo-task-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.mo-reward {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px dashed var(--line-2);
+}
+.mo-reward b {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 18px;
+}
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-weight: 700;
+}
+.link:hover {
+  text-decoration: underline;
+}

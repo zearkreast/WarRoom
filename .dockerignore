@@ -1,0 +1,6 @@
+# Only the collector and the shared domain code go into the image.
+*
+!src/api/types.ts
+!src/domain/*.ts
+!collector/*.ts
+collector/*.test.ts

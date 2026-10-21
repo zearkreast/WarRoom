@@ -1,0 +1,70 @@
+.planet-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  cursor: pointer;
+  border-top: 2px solid var(--line);
+}
+.planet-card:hover {
+  border-color: var(--line-2);
+  background: rgba(20, 30, 46, 0.92);
+}
+.planet-card.compact {
+  gap: 6px;
+  padding: 9px 11px;
+}
+.pc-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pc-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.15;
+}
+.compact .pc-name {
+  font-size: 13px;
+}
+.pc-sector {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.pc-tags {
+  display: flex;
+  gap: 4px;
+}
+.pc-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+.pc-pct {
+  font-weight: 700;
+}
+.pc-outlook {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.fronts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+.fronts-filter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.fronts-filter .hud-btn.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}

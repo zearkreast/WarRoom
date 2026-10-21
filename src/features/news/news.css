@@ -1,0 +1,47 @@
+.dispatch-text {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 13px;
+  user-select: text;
+}
+.hl {
+  font-weight: 700;
+}
+.hl-1 {
+  color: var(--accent);
+}
+.hl-2 {
+  color: var(--f-humans);
+}
+.hl-3 {
+  display: block;
+  color: var(--accent);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+
+.ticker {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--line);
+  padding: 0 0 0 12px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: left;
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.ticker:hover {
+  color: var(--text);
+}
+.ticker-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: ticker 90s linear infinite;
+}
+.ticker:hover .ticker-track {
+  animation-play-state: paused;
+}

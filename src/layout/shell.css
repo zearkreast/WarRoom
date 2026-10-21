@@ -1,0 +1,156 @@
+.shell {
+  display: grid;
+  grid-template-rows: var(--nav-h) auto 1fr;
+  height: 100%;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 16px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.logo-name {
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
+.logo-sub {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.topbar-right {
+  margin-left: auto;
+  font-size: 10px;
+}
+
+.topnav {
+  display: flex;
+  height: 100%;
+}
+.topnav button,
+.bottomnav button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.topnav button {
+  padding: 0 14px;
+  border-bottom: 2px solid transparent;
+}
+.topnav button:hover {
+  color: var(--text);
+}
+.topnav button.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.topnav .nav-icon {
+  display: none;
+}
+
+.frontbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 30px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(90deg, rgba(95, 211, 138, 0.06), transparent 40%);
+  font-size: 11px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.frontbar-text b {
+  color: var(--good);
+}
+.frontbar-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 10px;
+}
+
+.main {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bottomnav {
+  display: none;
+}
+
+.page {
+  height: 100%;
+  padding: 16px;
+}
+.page-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    grid-template-rows: 48px auto 1fr calc(56px + env(safe-area-inset-bottom));
+  }
+  .topnav,
+  .topbar-right,
+  .frontbar-meta {
+    display: none;
+  }
+  .bottomnav {
+    display: flex;
+    justify-content: space-around;
+    background: var(--bg-2);
+    border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .bottomnav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    flex: 1;
+    font-size: 9px;
+  }
+  .bottomnav .nav-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+  .bottomnav button.active {
+    color: var(--accent);
+  }
+  .page {
+    padding: 12px;
+  }
+  .toasts {
+    top: 90px;
+  }
+}
