@@ -150,8 +150,14 @@
   font-size: var(--fs-body-s);
   font-weight: 700;
 }
-.gc-peek span {
+.gc-peek > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
   text-shadow: 0 0 8px currentColor;
+}
+.gc-peek svg {
+  filter: drop-shadow(0 0 4px currentColor);
 }
 .gc-chevron {
   margin-left: auto;
