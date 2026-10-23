@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useWar } from "../../api/queries";
 import type { Faction } from "../../api/types";
+import { isStalled, MIN_PLAYERS, MIN_RATE } from "../../domain/campaignFilter";
 import { FACTIONS } from "../../domain/factions";
 import { fmtInt } from "../../domain/format";
 import { useSettings } from "../../state";
@@ -12,12 +13,6 @@ import { CampaignCard } from "./CampaignCard";
 
 type Filter = "all" | "mo" | "defense" | "pinned" | Faction;
 
-/** Below this many divers a campaign counts as inactive (hidden unless enabled in Settings). */
-const ACTIVE_PLAYERS = 100;
-
-export const isInactive = (f: Front) =>
-  f.players < ACTIVE_PLAYERS && !f.inMajorOrder && !f.pinned && f.kind !== "defense";
-
 export function CampaignsPage() {
   const { fronts, loading } = useFronts();
   const war = useWar().data;
@@ -25,7 +20,7 @@ export function CampaignsPage() {
   const setSetting = useSettings((s) => s.set);
   const [filter, setFilter] = useState<Filter>("all");
 
-  const visible = useMemo(() => (showInactive ? fronts : fronts.filter((f) => !isInactive(f))), [fronts, showInactive]);
+  const visible = useMemo(() => (showInactive ? fronts : fronts.filter((f) => !isStalled(f))), [fronts, showInactive]);
   const hidden = fronts.length - visible.length;
   const shown = visible.filter((f) =>
     filter === "all"
@@ -94,7 +89,8 @@ export function CampaignsPage() {
         )}
         {hidden > 0 && (
           <p className="cc-hidden caps">
-            {hidden} low-activity campaign{hidden > 1 ? "s" : ""} hidden ·{" "}
+            {hidden} stalled campaign{hidden > 1 ? "s" : ""} hidden (under {fmtInt(MIN_PLAYERS)} divers, under +
+            {MIN_RATE}%/h) ·{" "}
             <button className="link" onClick={() => setSetting("showInactive", true)}>
               Show all
             </button>
