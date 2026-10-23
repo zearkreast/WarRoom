@@ -3,6 +3,8 @@ import { useState, type ReactNode } from "react";
 import { useLastUpdate } from "../../api/queries";
 import { notify } from "../../alerts/notify";
 import { APP_VERSION } from "../../config";
+import { MIN_PLAYERS, MIN_RATE } from "../../domain/campaignFilter";
+import { fmtInt } from "../../domain/format";
 import { useSettings, type AlertSettings, type MapOverlay, type MapQuality, type Popups } from "../../state";
 import { Panel, Stepper } from "../../ui/primitives";
 import "./settings.css";
@@ -72,9 +74,12 @@ export function SettingsPage() {
       <div className="page-inner settings-page">
         <h1 className="page-title">Settings</h1>
         <Panel title="Interface" icon={Settings}>
-          <Row title="Inactive campaigns" text="Show campaigns with fewer than 100 Helldivers.">
+          <Row
+            title="Stalled campaigns"
+            text={`Fronts under ${fmtInt(MIN_PLAYERS)} Helldivers that gain less than +${MIN_RATE}%/h. Major Order targets and pinned planets always show.`}
+          >
             <Stepper
-              label="Inactive campaigns"
+              label="Stalled campaigns"
               options={[
                 { value: "hidden", label: "Hidden" },
                 { value: "shown", label: "Shown" },
