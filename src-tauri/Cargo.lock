@@ -5342,7 +5342,7 @@ dependencies = [
 
 [[package]]
 name = "warcommand-tracker"
-version = "0.2.1"
+version = "0.2.5"
 dependencies = [
  "serde",
  "serde_json",

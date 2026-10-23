@@ -23,11 +23,11 @@ colors:
   bad: "#ff5a5a"
   info: "#9fd4ff"
   faction-humans: "#46a4ff"
-  faction-terminids: "#ffb900"
+  faction-terminids: "#ff9433"
   faction-automaton: "#ff7171"
   faction-illuminate: "#cd8ae9"
   chart-humans: "#3897f1"
-  chart-terminids: "#c88500"
+  chart-terminids: "#d07c1a"
   chart-automaton: "#eb5f61"
   chart-illuminate: "#b674d2"
   chart-grid: "#1d232c"
@@ -166,7 +166,7 @@ Two faces. **Archivo Variable at width 125, weight 800** (a free, wide display f
 ## Layout
 
 - App shell grid: top bar 52px, status strip 26px, content, dock 60px (64px on phones).
-- Pages: `page-inner`, max 1180px, 24px top padding, 16px gaps between panels.
+- Pages: `page-inner`, max 1180px, 24px top padding, 16px gaps between panels. The Overview is the exception: from 1280px it is a full-viewport board of three columns that scroll on their own; below that it flows like a page.
 - Card grids use `auto-fill` with a min track (340px campaigns, 380px planet rows, 320px tiles) so they collapse to one column on phones without breakpoints.
 - Breakpoints: 860px (two-column layouts stack, heroes stack sphere-first), 760px (dock compacts, keyboard hints hidden, map HUD rearranges).
 - Spacing comes from the 2px-based scale `s1..s8`; panel bodies pad 12px 16px.
@@ -181,7 +181,7 @@ Square everywhere (`rounded.none`). Circles appear only for things that are roun
 
 ## Components
 
-- **Panel**: surface-1, hairline border, header strip with an icon box and a hatch band tinted by `--tone`. Title in Archivo; right slot for counts and timers.
+- **Panel**: surface-1, hairline border, header strip with an icon box and a hatch band tinted by `--tone` (Super Earth blue by default; CTA yellow only on Major Order panels). Title in Archivo; right slot for counts and timers.
 - **Meter**: 7px (14px large, 3px inline) bar, fill masked into 4px segments with 1px gaps and a soft glow; remainder hatched in the enemy colour; optional white marker for the projected end result; chevron variant for the big liberation bars.
 - **Campaign card**: type and ETA above; faction-tinted header with emblem, name and sector; biome-tinted art band with MO/DSS badges and hazard discs; large meter; outlook row; four-cell footer (player share, players, Helldiver impact, enemy regen).
 - **Planet row** (Hellpad planet index): 64px, emblem, name, status line, icons and a player pill on a biome-tinted ground; active fronts carry a 2px progress line along the bottom.

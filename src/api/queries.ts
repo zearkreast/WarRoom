@@ -3,6 +3,7 @@ import { POLL_MS } from "../config";
 import {
   toPlanet,
   type CampaignLive,
+  type EpisodeLive,
   type PlanetLive,
   type PlanetStatic,
   type SnapshotKind,
@@ -95,6 +96,7 @@ const selectFreshPlanets = memo((s): Planet[] | undefined => {
 });
 
 const selectStations = (s: Snapshots) => s.data.space_stations as StationLive[] | undefined;
+const selectEpisodes = (s: Snapshots) => s.data.episodes as EpisodeLive[] | undefined;
 
 const selectWar = (s: Snapshots) => s.data.war as War | undefined;
 const selectAssignments = (s: Snapshots) => s.data.assignments as Assignment[] | undefined;
@@ -110,6 +112,8 @@ const selectLastUpdate = (s: Snapshots) => (s.since ? Date.parse(s.since) : unde
 export const useLastUpdate = () => useSnapshot(selectLastUpdate);
 export const useFreshPlanets = () => useSnapshot(selectFreshPlanets);
 export const useSpaceStations = () => useSnapshot(selectStations);
+/** Story campaigns, oldest first; undefined until the collector has written them once. */
+export const useEpisodes = () => useSnapshot(selectEpisodes);
 
 /** One planet by index, fresh copy preferred; undefined while loading or unknown. */
 export function usePlanet(index: number | null | undefined): Planet | undefined {

@@ -15,13 +15,13 @@ export const KIND_LABEL: Record<DispatchKind, string> = {
   news: "Dispatch",
 };
 
-/** Dispatch text with planet names turned into links to their options. */
-function Body({ message }: { message: string }) {
+/** Game text with its markup styled and planet names turned into links to their options. */
+export function MarkupText({ message, className = "nc-body" }: { message: string; className?: string }) {
   const planets = useFreshPlanets().data;
   const openOptions = useUi((s) => s.openOptions);
   const byName = useMemo(() => new Map((planets ?? []).map((p) => [p.name.toUpperCase(), p.index])), [planets]);
   return (
-    <p className="nc-body">
+    <p className={className}>
       {dispatchBody(message).map((s, i) => {
         if (s.style == null) return <span key={i}>{s.text}</span>;
         const planet = byName.get(s.text.trim().toUpperCase());
@@ -57,7 +57,7 @@ export function NewsCard({ d, now }: { d: Dispatch; now: number }) {
         <span className="nc-age caps">{fmtAgo(at, now)}</span>
       </div>
       <h3 className="nc-title">{dispatchTitle(d.message)}</h3>
-      <Body message={d.message} />
+      <MarkupText message={d.message} />
       <footer className="nc-foot num caps">
         <span>ID {d.id}</span>
         <span>

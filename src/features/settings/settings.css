@@ -22,7 +22,7 @@
   min-width: 0;
 }
 .set-text b {
-  color: var(--cta);
+  color: var(--text-hi);
   font-size: var(--fs-body);
   font-weight: 700;
 }

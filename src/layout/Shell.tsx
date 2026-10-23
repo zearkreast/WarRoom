@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useCampaigns, useLastUpdate, usePlanets, useWar } from "../api/queries";
+import { useCampaigns, usePlanets, useWar } from "../api/queries";
 import { useToasts, type ToastKind } from "../alerts/notify";
 import { APP_VERSION } from "../config";
 import { humanControl } from "../domain/galaxy";
@@ -28,7 +28,8 @@ import { DispatchPanel } from "./DispatchPanel";
 import { useSettings, useUi, type View } from "../state";
 import { AppMark } from "../ui/emblems";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
-import { Keycap, StatusChip, useNow } from "../ui/primitives";
+import { useFeedStatus } from "../ui/feed";
+import { Keycap, StatusChip } from "../ui/primitives";
 import "./shell.css";
 
 export function Logo() {
@@ -101,18 +102,12 @@ function useStatusLines(): ReactNode[] {
   }, [planets, campaigns, war]);
 }
 
-/** The collector writes campaigns every minute; quiet for this long means it has stopped. */
-const STALE_MS = 10 * 60_000;
-
 function StatusStrip() {
-  const planets = usePlanets();
   const war = useWar();
-  const campaigns = useCampaigns();
-  const offline = [planets, war, campaigns].some((q) => q.isError);
-  const lastUpdate = useLastUpdate().data;
+  const { state, lastUpdate, now } = useFeedStatus();
+  const offline = state === "offline";
+  const stale = state === "stale";
   const lines = useStatusLines();
-  const now = useNow(1000);
-  const stale = !offline && lastUpdate != null && now - lastUpdate > STALE_MS;
   const [i, setI] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setI((n) => n + 1), 8000);

@@ -8,7 +8,8 @@ import { fmtInt, sestClock, sestDate } from "../../domain/format";
 import { trackedPercent } from "../../domain/progress";
 import { useSettings, useUi } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
-import { CtaButton, LiveDot, Loading, Overlay, useNow } from "../../ui/primitives";
+import { FeedTag } from "../../ui/feed";
+import { CtaButton, Loading, Overlay, useNow } from "../../ui/primitives";
 import { buildFront, useMajorOrderPlanets, usePlanetRate, useStationPlanets, type Front } from "../planets/useFronts";
 import {
   DispatchSection,
@@ -152,7 +153,7 @@ function Hero({ p, front }: { p: Planet; front: Front | null }) {
           Satcom / {p.sector} / {p.name}
         </span>
         <span className="pd-live">
-          <LiveDot /> Live feed{" "}
+          <FeedTag />
           <span className="num">
             SEST {sestDate(now)} {sestClock(now)}
           </span>

@@ -100,3 +100,9 @@
   font-size: var(--fs-value);
   color: var(--text-hi);
 }
+
+/* Major Order panels keep the hot colour; every other panel head is neutral. */
+.panel.mo,
+.panel.mo-strip {
+  --tone: var(--cta);
+}

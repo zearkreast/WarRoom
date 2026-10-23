@@ -89,6 +89,23 @@ export function useMajorOrderPlanets(): Set<number> {
   }, [data]);
 }
 
+/** Each Major Order target planet's order deadline, epoch ms (the earliest, if two orders share one). */
+export function useMajorOrderDeadlines(): Map<number, number> {
+  const { data } = useAssignments();
+  return useMemo(() => {
+    const m = new Map<number, number>();
+    for (const a of data ?? []) {
+      const ends = Date.parse(a.expiration);
+      for (const t of a.tasks) {
+        const i = t.valueTypes.indexOf(12);
+        const planet = i >= 0 ? t.values[i] : 0;
+        if (planet > 0 && !(ends >= (m.get(planet) ?? Infinity))) m.set(planet, ends);
+      }
+    }
+    return m;
+  }, [data]);
+}
+
 /** Planet indices with a Democracy Space Station in orbit. */
 export function useStationPlanets(): Set<number> {
   const { data } = useSpaceStations();

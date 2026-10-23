@@ -4,7 +4,7 @@ import { anomalyOf, buildPolarSectors, humanControl, sectorAt, sectorTerritory, 
 import { recentDispatches } from "../domain/dispatch";
 import { isPlaceholder } from "../domain/planets";
 import { chaikin } from "../domain/regions";
-import { describeAssignment } from "../domain/majorOrder";
+import { deadlineOutlook, describeAssignment } from "../domain/majorOrder";
 import { parseMarkup, dispatchTitle, fmtDuration } from "../domain/format";
 import {
   liberationPercent,
@@ -172,5 +172,16 @@ describe("galaxy geometry", () => {
       published: new Date(now - h * H).toISOString(),
     });
     expect(recentDispatches([at(80, 1), at(70, 2), at(1, 3)], now).map((d) => d.id)).toEqual([3, 2]);
+  });
+});
+
+describe("major order outlook", () => {
+  const now = Date.parse("2026-10-23T12:00:00Z");
+  it("calls a target on track, behind, done or still measuring", () => {
+    expect(deadlineOutlook(40, 5, now, now + 20 * H)).toEqual({ outlook: "on-track", end: 100 });
+    expect(deadlineOutlook(40, 1, now, now + 20 * H)).toEqual({ outlook: "behind", end: 60 });
+    expect(deadlineOutlook(100, null, now, now + H).outlook).toBe("done");
+    expect(deadlineOutlook(10, null, now, now + H)).toEqual({ outlook: "measuring", end: null });
+    expect(deadlineOutlook(10, -2, now, now + 20 * H).end).toBe(0);
   });
 });
