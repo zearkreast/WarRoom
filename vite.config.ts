@@ -8,6 +8,9 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(() => ({
   plugins: [react()],
 
+  // GitHub Pages serves the site under /<repo>/; the Pages workflow sets this. Tauri keeps "/".
+  base: process.env.PAGES_BASE || "/",
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors
