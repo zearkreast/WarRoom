@@ -1,22 +1,26 @@
-import { Map as MapIcon, PieChart as PieIcon, Users } from "lucide-react";
+import { PieChart as PieIcon, Users } from "lucide-react";
 import { useMemo, useState, type CSSProperties } from "react";
 import { useCampaigns, useDispatches, useFreshPlanets, useWar } from "../../api/queries";
 import type { Faction } from "../../api/types";
+import { LIST_SIZE } from "../../domain/factionPlanets";
 import { factionLabel } from "../../domain/factions";
 import { fmtCompact, fmtInt, fmtPct, sestClock, sestDate, warDay } from "../../domain/format";
-import { buildSectors } from "../../domain/galaxy";
 import { playersByEnemy } from "../../domain/snapshot";
 import { fmtLongDuration } from "../../domain/warHistory";
-import { useUi } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
 import { NeonRing } from "../../ui/NeonRing";
+import { PointerCard, pointerAt, type CardRow, type PointerAt } from "../../ui/PointerCard";
 import { Panel, Tile, useNow } from "../../ui/primitives";
 import { MajorOrderList } from "../major-order/MajorOrder";
 import { NewsCard } from "../news/NewsCard";
+import { TheaterOfWar } from "./TheaterOfWar";
 import { CHART, ENEMIES, WarActivity } from "./WarActivity";
 import "./overview.css";
 
 const TOP_PLANETS = 5;
+const OTHERS = "Others";
+const ELSEWHERE = "Elsewhere";
+type RingKey = Faction | typeof ELSEWHERE;
 
 function Distribution() {
   const war = useWar().data;
@@ -25,7 +29,7 @@ function Distribution() {
   const now = useNow(1000);
   const total = war?.statistics.playerCount ?? 0;
 
-  const { slices, onFronts } = useMemo(() => {
+  const { list, others, slices } = useMemo(() => {
     const list = (campaigns ?? [])
       .map((c) => ({
         name: c.planet.name,
@@ -33,16 +37,46 @@ function Distribution() {
         enemy: (c.planet.event?.faction ?? c.planet.currentOwner) as Faction,
       }))
       .sort((a, b) => b.players - a.players);
-    const onFronts = list.reduce((n, p) => n + p.players, 0);
     const top = list.slice(0, TOP_PLANETS).map((p) => ({ ...p, color: CHART[p.enemy] }));
-    const rest = onFronts - top.reduce((n, p) => n + p.players, 0);
-    const slices = rest > 0 ? [...top, { name: "Others", players: rest, enemy: null, color: "var(--faint)" }] : top;
-    return { slices, onFronts };
+    const others = list.slice(TOP_PLANETS);
+    const rest = others.reduce((n, p) => n + p.players, 0);
+    const slices = rest > 0 ? [...top, { name: OTHERS, players: rest, enemy: null, color: "var(--faint)" }] : top;
+    return { list, others, slices };
   }, [campaigns]);
-  const [hovered, setHovered] = useState<string | null>(null);
-  const hoveredSlice = slices.find((p) => p.name === hovered);
   const fronts = playersByEnemy(campaigns ?? []);
   const elsewhere = Math.max(0, total - fronts.Terminids - fronts.Automaton - fronts.Illuminate);
+  const arcs: { key: RingKey; label: string; value: number; color: string }[] = [
+    ...ENEMIES.map((f) => ({
+      key: f,
+      label: factionLabel(f),
+      value: fronts[f as keyof typeof fronts],
+      color: CHART[f],
+    })),
+    { key: ELSEWHERE, label: "Elsewhere", value: elsewhere, color: "var(--faint)" },
+  ];
+
+  const [activeArc, setActiveArc] = useState<RingKey | null>(null);
+  const [hoverRow, setHoverRow] = useState<string | null>(null);
+  const [card, setCard] = useState<{ kind: RingKey | typeof OTHERS; at: PointerAt } | null>(null);
+  const rowSlice = slices.find((p) => p.name === hoverRow);
+  const arc = arcs.find((a) => a.key === (activeArc ?? rowSlice?.enemy));
+  const pctOfOnline = (n: number) => fmtPct((n / (total || 1)) * 100, 1);
+
+  const cardFor = (kind: RingKey | typeof OTHERS): CardRow[] => {
+    if (kind === OTHERS)
+      return ENEMIES.map((f) => ({
+        key: f,
+        name: factionLabel(f),
+        value: others.filter((p) => p.enemy === f).reduce((n, p) => n + p.players, 0),
+        color: CHART[f],
+      })).filter((r) => r.value > 0);
+    return list
+      .filter((p) => p.enemy === kind)
+      .slice(0, LIST_SIZE)
+      .map((p) => ({ key: p.name, name: p.name, value: p.players }));
+  };
+  const cardTitle = card && (card.kind === OTHERS ? "Others" : arcs.find((a) => a.key === card.kind)?.label);
+  const cardFronts = card && card.kind !== OTHERS && list.filter((p) => p.enemy === card.kind).length;
 
   const s = war?.statistics;
   const missions = s ? s.missionsWon + s.missionsLost : 0;
@@ -88,53 +122,101 @@ function Distribution() {
           rule="var(--info)"
         />
       </div>
-      {slices.length > 0 && (
+      {total > 0 && (
         <div className="ov-donut">
           <NeonRing
             size={150}
-            label={`Helldivers by planet: ${slices.map((p) => `${p.name} ${fmtCompact(p.players)}`).join(", ")}`}
-            segments={slices.map((p) => ({ key: p.name, label: p.name, value: p.players, color: p.color }))}
-            active={hovered}
-            onActive={setHovered}
+            label={`Helldivers by front: ${arcs.map((a) => `${a.label} ${fmtCompact(a.value)}`).join(", ")}`}
+            segments={arcs}
+            active={arc?.key ?? null}
+            onActive={(key) => {
+              setActiveArc(key as RingKey | null);
+              if (!key) setCard(null);
+            }}
+            onPointerMove={(key, e) =>
+              setCard(
+                key === ELSEWHERE ? null : { kind: key as RingKey, at: pointerAt(e, e.currentTarget.ownerSVGElement!) },
+              )
+            }
             center={
-              hoveredSlice ? (
-                <div key={hoveredSlice.name} className="nr-readout ov-readout" style={{ color: hoveredSlice.color }}>
-                  <span className="caps">{hoveredSlice.name}</span>
-                  <b className="num">{fmtPct((hoveredSlice.players / (onFronts || 1)) * 100, 0)}</b>
+              rowSlice ? (
+                <div key={rowSlice.name} className="nr-readout ov-readout" style={{ color: rowSlice.color }}>
+                  <span className="caps">{rowSlice.name}</span>
+                  <b className="num">{pctOfOnline(rowSlice.players)}</b>
                   <span className="pl num">
-                    <Users size={11} /> {fmtInt(hoveredSlice.players)}
+                    <Users size={11} /> {fmtInt(rowSlice.players)}
+                  </span>
+                </div>
+              ) : arc ? (
+                <div
+                  key={arc.key}
+                  className="nr-readout ov-readout"
+                  style={{ color: arc.key === ELSEWHERE ? "var(--text-dim)" : arc.color }}
+                >
+                  {arc.key !== ELSEWHERE && <FactionEmblem faction={arc.key} size={22} />}
+                  <span className="caps">{arc.label}</span>
+                  <b className="num">{pctOfOnline(arc.value)}</b>
+                  <span className="pl num">
+                    <Users size={11} /> {fmtInt(arc.value)}
                   </span>
                 </div>
               ) : (
                 <div key="total" className="ov-donut-center">
-                  <b className="num">{fmtCompact(onFronts)}</b>
-                  <span className="caps">on fronts</span>
+                  <b className="num">{fmtCompact(total)}</b>
+                  <span className="caps">online</span>
                 </div>
               )
             }
           />
-          <ul className="ov-legend" onPointerLeave={() => setHovered(null)}>
+          <ul
+            className="ov-legend"
+            onPointerLeave={() => {
+              setHoverRow(null);
+              setCard(null);
+            }}
+          >
             {slices.map((p) => (
               <li
                 key={p.name}
-                className={hovered === p.name ? "on" : ""}
+                className={hoverRow === p.name ? "on" : ""}
                 style={{ "--k": p.color } as CSSProperties}
-                onPointerEnter={() => setHovered(p.name)}
+                onPointerEnter={() => {
+                  setHoverRow(p.name);
+                  if (p.name !== OTHERS) setCard(null);
+                }}
+                onPointerMove={(e) => {
+                  if (p.name !== OTHERS) return;
+                  const ring = e.currentTarget.closest(".ov-donut")!.querySelector(".nr")!;
+                  setCard({ kind: OTHERS, at: pointerAt(e, ring) });
+                }}
               >
                 <span className="ov-legend-name caps">{p.name}</span>
                 <span className="num">{fmtCompact(p.players)}</span>
-                <span className="num muted">{fmtPct((p.players / (onFronts || 1)) * 100, 0)}</span>
+                <span className="num muted">{fmtPct((p.players / (total || 1)) * 100, 0)}</span>
               </li>
             ))}
           </ul>
         </div>
       )}
+      {card && cardTitle && (
+        <PointerCard
+          at={card.at}
+          tone={card.kind === OTHERS ? "var(--text-dim)" : CHART[card.kind as Faction]}
+          icon={card.kind === OTHERS ? undefined : <FactionEmblem faction={card.kind} size={18} />}
+          title={cardTitle}
+          badge={card.kind === OTHERS ? `${others.length} fronts` : `${cardFronts} fronts`}
+          rows={cardFor(card.kind)}
+          footer={cardFronts && cardFronts > LIST_SIZE ? `+${cardFronts - LIST_SIZE} more · busiest first` : undefined}
+        />
+      )}
       <div className="ov-fronts">
         {ENEMIES.map((f) => (
           <div
             key={f}
-            className="ov-front"
+            className={`ov-front ${arc?.key === f ? "on" : ""}`}
             style={{ "--k": CHART[f], "--t": `var(--f-${f.toLowerCase()})` } as CSSProperties}
+            onPointerEnter={() => setActiveArc(f)}
+            onPointerLeave={() => setActiveArc(null)}
           >
             <FactionEmblem faction={f} size={18} />
             <span className="caps">{factionLabel(f)}</span>
@@ -145,7 +227,12 @@ function Distribution() {
             </div>
           </div>
         ))}
-        <div className="ov-front" style={{ "--k": "var(--faint)" } as CSSProperties}>
+        <div
+          className={`ov-front ${arc?.key === ELSEWHERE ? "on" : ""}`}
+          style={{ "--k": "var(--faint)" } as CSSProperties}
+          onPointerEnter={() => setActiveArc(ELSEWHERE)}
+          onPointerLeave={() => setActiveArc(null)}
+        >
           <FactionEmblem faction="Humans" size={18} color="var(--text-dim)" />
           <span className="caps">Elsewhere</span>
           <b className="num">{fmtInt(elsewhere)}</b>
@@ -165,34 +252,6 @@ function Distribution() {
           ))}
         </dl>
       )}
-    </Panel>
-  );
-}
-
-/** The sector map seen at an angle, like the companion's theater of war. */
-function TheaterOfWar() {
-  const planets = useFreshPlanets().data;
-  const setView = useUi((s) => s.setView);
-  const sectors = useMemo(() => (planets ? buildSectors(planets) : []), [planets]);
-  if (!planets) return null;
-  return (
-    <Panel title="Theater of war" icon={MapIcon}>
-      <button className="ov-theater" onClick={() => setView("map")} aria-label="Open the galaxy map">
-        <svg viewBox="-560 -560 1120 1120" aria-hidden>
-          {sectors.map((s) => (
-            <path
-              key={s.name}
-              d={s.path}
-              fill={CHART[s.owner]}
-              fillOpacity={s.owner === "Humans" ? 0.16 : 0.55}
-              stroke="var(--surface-1)"
-              strokeWidth={4}
-            />
-          ))}
-          <circle r={36} fill="var(--c-humans)" opacity={0.5} />
-          <circle r={12} fill="#eaf4fa" />
-        </svg>
-      </button>
     </Panel>
   );
 }
