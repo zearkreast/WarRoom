@@ -6,6 +6,7 @@ import campaignsJson from "../src/test/fixtures/campaigns.json";
 import warJson from "../src/test/fixtures/war.json";
 import assignmentsJson from "../src/test/fixtures/assignments.json";
 import dispatchesJson from "../src/test/fixtures/dispatches.json";
+import stationsJson from "../src/test/fixtures/space-stations.json";
 import { createTasks, runTask } from "./collector.ts";
 import { RateLimitError, type Hd2Client } from "./hd2.ts";
 import { Recorder } from "./recorder.ts";
@@ -31,10 +32,15 @@ function fakeSupabase(rows: Record<string, unknown[]> = {}) {
       const path = url.replace("https://x.supabase.co/rest/v1/", "");
       const headers = new Headers(init.headers);
       expect(headers.get("apikey")).toBe("sb_secret_test");
-      calls.push({ method: init.method!, path, prefer: headers.get("Prefer"), body: init.body ? JSON.parse(String(init.body)) : undefined });
+      calls.push({
+        method: init.method!,
+        path,
+        prefer: headers.get("Prefer"),
+        body: init.body ? JSON.parse(String(init.body)) : undefined,
+      });
       const table = path.split("?")[0];
       if (init.method === "GET") return new Response(JSON.stringify(rows[table] ?? []), { status: 200 });
-      if (table === "rpc/compact_samples") return new Response("3", { status: 200 });
+      if (table.startsWith("rpc/")) return new Response("3", { status: 200 });
       return new Response(null, { status: 201 });
     },
   });
@@ -59,6 +65,7 @@ const api = {
   war: warJson,
   assignments: assignmentsJson,
   dispatches: dispatchesJson,
+  "space-stations": stationsJson,
 };
 
 describe("snapshot shapes", () => {
@@ -80,7 +87,11 @@ describe("snapshot shapes", () => {
   });
 
   it("carries the server-side rate on each campaign", () => {
-    expect(toCampaignLive(campaigns[0], 1.5)).toMatchObject({ id: campaigns[0].id, rate: 1.5, planet: { index: campaigns[0].planet.index } });
+    expect(toCampaignLive(campaigns[0], 1.5)).toMatchObject({
+      id: campaigns[0].id,
+      rate: 1.5,
+      planet: { index: campaigns[0].planet.index },
+    });
   });
 });
 
@@ -93,7 +104,20 @@ describe("collector cycle", () => {
     for (const t of tasks) expect((await runTask(t)).ok).toBe(true);
 
     const snaps = calls.filter((c) => c.path === "snapshots").map((c) => (c.body as { kind: string }[])[0].kind);
-    expect(snaps).toEqual(["planets", "planets_static", "campaigns", "war", "assignments", "dispatches"]);
+    expect(snaps).toEqual([
+      "planets",
+      "planets_static",
+      "campaigns",
+      "war",
+      "assignments",
+      "dispatches",
+      "space_stations",
+    ]);
+
+    const war = calls.find((c) => c.path === "war_samples")!.body as Record<string, number>[];
+    expect(war).toHaveLength(1);
+    expect(war[0].players).toBe(warJson.statistics.playerCount);
+    expect(war[0].terminids + war[0].automatons + war[0].illuminate).toBeGreaterThan(0);
     for (const c of calls.filter((c) => c.path === "snapshots")) expect(c.prefer).toContain("merge-duplicates");
 
     const samples = calls.filter((c) => c.path === "samples");
@@ -105,6 +129,7 @@ describe("collector cycle", () => {
     expect(owners).toHaveLength(planets.length);
     expect(calls.some((c) => c.path === "owner_changes")).toBe(false);
     expect(calls.some((c) => c.path === "rpc/compact_samples")).toBe(true);
+    expect(calls.some((c) => c.path === "rpc/compact_war_samples")).toBe(true);
   });
 
   it("records a capture and skips unchanged static data and dispatches", async () => {
@@ -117,7 +142,9 @@ describe("collector cycle", () => {
     await runTask(dispatchTask);
     calls.length = 0;
 
-    const captured = planets.map((p) => (p.index === 261 ? { ...p, currentOwner: "Humans" as const, health: p.maxHealth } : p));
+    const captured = planets.map((p) =>
+      p.index === 261 ? { ...p, currentOwner: "Humans" as const, health: p.maxHealth } : p,
+    );
     const next = createTasks(fakeHd2({ ...api, planets: captured }), db, recorder, () => 2_000_000);
     const r = await runTask(next[0]);
     expect(r.message).toContain("1 owner change");
@@ -133,7 +160,10 @@ describe("collector cycle", () => {
   });
 
   it("restores owners after a restart so it doesn't invent captures", async () => {
-    const owners = planets.map((p) => ({ planet: p.index, owner: { Humans: 1, Terminids: 2, Automaton: 3, Illuminate: 4 }[p.currentOwner] }));
+    const owners = planets.map((p) => ({
+      planet: p.index,
+      owner: { Humans: 1, Terminids: 2, Automaton: 3, Illuminate: 4 }[p.currentOwner],
+    }));
     const { db, calls } = fakeSupabase({ planet_owners: owners });
     const recorder = new Recorder(db);
     await recorder.load(0);

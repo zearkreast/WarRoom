@@ -1,6 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { POLL_MS } from "../config";
-import { toPlanet, type CampaignLive, type PlanetLive, type PlanetStatic, type SnapshotKind } from "../domain/snapshot";
+import {
+  toPlanet,
+  type CampaignLive,
+  type PlanetLive,
+  type PlanetStatic,
+  type SnapshotKind,
+  type StationLive,
+} from "../domain/snapshot";
 import { getSource } from "./source";
 import type { Assignment, Campaign, Dispatch, Planet, War } from "./types";
 
@@ -42,7 +49,7 @@ function useSnapshot<T>(select: (s: Snapshots) => T | undefined) {
 }
 
 // Memoized per snapshot object, so every component sees the same arrays between polls.
-const memo = <T,>(fn: (s: Snapshots) => T | undefined) => {
+const memo = <T>(fn: (s: Snapshots) => T | undefined) => {
   const cache = new WeakMap<Snapshots, T | undefined>();
   return (s: Snapshots) => {
     if (!cache.has(s)) cache.set(s, fn(s));
@@ -71,9 +78,22 @@ const selectCampaigns = memo((s): LiveCampaign[] | undefined => {
   if (!statics || !list) return undefined;
   return list.flatMap((c) => {
     const st = statics.get(c.planet.index);
-    return st ? [{ id: c.id, type: c.type, count: c.count, faction: c.faction, rate: c.rate, planet: toPlanet(st, c.planet) }] : [];
+    return st
+      ? [{ id: c.id, type: c.type, count: c.count, faction: c.faction, rate: c.rate, planet: toPlanet(st, c.planet) }]
+      : [];
   });
 });
+
+/** All planets, with campaign planets swapped for their fresher copy (campaigns poll every minute). */
+const selectFreshPlanets = memo((s): Planet[] | undefined => {
+  const planets = selectPlanets(s);
+  const campaigns = selectCampaigns(s);
+  if (!planets) return campaigns?.map((c) => c.planet);
+  const fresh = new Map((campaigns ?? []).map((c) => [c.planet.index, c.planet]));
+  return planets.map((p) => fresh.get(p.index) ?? p);
+});
+
+const selectStations = (s: Snapshots) => s.data.space_stations as StationLive[] | undefined;
 
 const selectWar = (s: Snapshots) => s.data.war as War | undefined;
 const selectAssignments = (s: Snapshots) => s.data.assignments as Assignment[] | undefined;
@@ -84,3 +104,14 @@ export const useCampaigns = () => useSnapshot(selectCampaigns);
 export const useWar = () => useSnapshot(selectWar);
 export const useAssignments = () => useSnapshot(selectAssignments);
 export const useDispatches = () => useSnapshot(selectDispatches);
+/** Newest collector write seen, epoch ms; used to warn when the collector has stopped. */
+const selectLastUpdate = (s: Snapshots) => (s.since ? Date.parse(s.since) : undefined);
+export const useLastUpdate = () => useSnapshot(selectLastUpdate);
+export const useFreshPlanets = () => useSnapshot(selectFreshPlanets);
+export const useSpaceStations = () => useSnapshot(selectStations);
+
+/** One planet by index, fresh copy preferred; undefined while loading or unknown. */
+export function usePlanet(index: number | null | undefined): Planet | undefined {
+  const { data } = useFreshPlanets();
+  return index == null ? undefined : data?.find((p) => p.index === index);
+}

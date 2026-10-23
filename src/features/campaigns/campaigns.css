@@ -1,0 +1,248 @@
+.cc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: var(--s-6) var(--s-5);
+}
+
+.cc {
+  --enemy: var(--f-automaton);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.cc-above {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: 18px;
+  font-size: var(--fs-label);
+}
+.cc-type {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--text-hi);
+}
+.cc-type svg {
+  color: var(--enemy);
+}
+.cc-eta {
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.cc-eta b {
+  font-variant-numeric: tabular-nums;
+}
+.cc-eta.good b {
+  color: var(--good);
+}
+.cc-eta.bad b {
+  color: var(--bad);
+}
+
+.cc-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  text-align: left;
+  background: var(--surface-1);
+  border: 1px solid color-mix(in srgb, var(--enemy) var(--edge), var(--line-strong));
+  box-shadow: var(--lip), var(--shadow-1);
+  cursor: pointer;
+  color: var(--text);
+  transition:
+    border-color var(--t-state),
+    transform var(--t-state) var(--ease),
+    box-shadow var(--t-state);
+}
+.cc-card:hover {
+  border-color: color-mix(in srgb, var(--enemy) var(--strong), var(--line-strong));
+  box-shadow:
+    var(--lip),
+    var(--shadow-2),
+    0 0 0 1px color-mix(in srgb, var(--enemy) var(--fill), transparent);
+  transform: translateY(-1px);
+}
+.cc-card.mo {
+  border-color: color-mix(in srgb, var(--cta) var(--strong), var(--line-strong));
+}
+
+.cc-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  padding: var(--s-4) var(--s-5);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--enemy) var(--fill), var(--surface-2)),
+    var(--surface-1) 70%
+  );
+  border-bottom: 1px solid var(--line);
+}
+.cc-title {
+  min-width: 0;
+  flex: 1;
+}
+.cc-name {
+  font-size: var(--fs-value);
+  color: var(--text-hi);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cc-sector {
+  margin-top: 2px;
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--enemy);
+}
+.cc-pin {
+  color: var(--cta);
+  flex: none;
+}
+
+/* Biome stand-in for planet art: sky over a lit horizon, with a scanline veil. */
+.cc-art {
+  position: relative;
+  height: 92px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px),
+    radial-gradient(130% 80% at 70% 130%, color-mix(in srgb, var(--ground) 70%, transparent), transparent 62%),
+    radial-gradient(60% 50% at 20% 110%, color-mix(in srgb, var(--ground) 35%, transparent), transparent 70%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--enemy) 10%, var(--sky)),
+      var(--sky) 55%,
+      color-mix(in srgb, var(--ground) 25%, var(--sky))
+    );
+  border-bottom: 1px solid var(--line);
+}
+.cc-badges {
+  display: flex;
+  gap: var(--s-2);
+  align-self: flex-start;
+}
+.cc-badge {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(4, 7, 11, 0.7);
+  border: 1px solid var(--line-strong);
+}
+.cc-badge.mo {
+  color: var(--cta);
+  border-color: color-mix(in srgb, var(--cta) var(--strong), transparent);
+}
+.cc-badge.dss {
+  color: var(--f-humans);
+  border-color: color-mix(in srgb, var(--f-humans) var(--strong), transparent);
+}
+.cc-biome {
+  position: absolute;
+  left: var(--s-5);
+  bottom: var(--s-3);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.2em;
+  color: rgba(234, 244, 250, 0.7);
+  text-shadow: 0 1px 2px #000;
+}
+.cc-hazards {
+  margin-left: auto;
+  display: flex;
+  gap: var(--s-2);
+}
+.cc-hazard {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(234, 244, 250, 0.88);
+  color: var(--void);
+}
+
+.cc-meter {
+  padding: var(--s-4) var(--s-5) 0;
+}
+.cc-outlook {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: 32px;
+  padding: 0 var(--s-5);
+  font-size: var(--fs-body);
+}
+.cc-outlook.holding {
+  justify-content: center;
+  gap: var(--s-3);
+  color: var(--text-dim);
+  font-size: var(--fs-body-s);
+  letter-spacing: 0.14em;
+}
+.cc-pct {
+  color: var(--text-hi);
+  font-weight: 600;
+}
+.cc-pct .caps {
+  font-size: var(--fs-body-s);
+  color: var(--text-dim);
+}
+.cc-rate {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-weight: 600;
+}
+.cc-rate.good {
+  color: var(--good);
+}
+.cc-rate.bad {
+  color: var(--bad);
+}
+
+.cc-foot {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr;
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-body-s);
+  font-weight: 600;
+}
+.cc-foot > span {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  min-width: 0;
+  white-space: nowrap;
+}
+.cc-foot > span + span {
+  border-left: 1px solid var(--line);
+}
+.cc-share {
+  color: var(--cta);
+}
+.cc-share .meter {
+  flex: 1;
+  min-width: 24px;
+}
+
+.cc-hidden {
+  margin: 0;
+  text-align: center;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--label);
+}

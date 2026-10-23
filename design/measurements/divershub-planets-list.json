@@ -1,0 +1,58 @@
+{
+  "source": {
+    "file": "mcp-Claude_Browser-blob-1792713406876-msyul3.jpg",
+    "width": 800,
+    "height": 717
+  },
+  "measurement": {
+    "k": 8,
+    "sampling": {
+      "method": "deterministic_stratified",
+      "max_pixels": 160000,
+      "sampled_pixels": 160000
+    }
+  },
+  "palette": [
+    {
+      "hex": "#1a191a",
+      "coverage": 0.4597,
+      "role": "background"
+    },
+    {
+      "hex": "#060607",
+      "coverage": 0.3297,
+      "role": "unassigned"
+    },
+    {
+      "hex": "#42362a",
+      "coverage": 0.1427,
+      "role": "unassigned"
+    },
+    {
+      "hex": "#5b5b5d",
+      "coverage": 0.0314,
+      "role": "unassigned"
+    },
+    {
+      "hex": "#849ba9",
+      "coverage": 0.0144,
+      "role": "unassigned"
+    },
+    {
+      "hex": "#dadada",
+      "coverage": 0.0124,
+      "role": "text"
+    },
+    {
+      "hex": "#a16351",
+      "coverage": 0.0078,
+      "role": "accent"
+    },
+    {
+      "hex": "#cfb935",
+      "coverage": 0.0019,
+      "role": "unassigned"
+    }
+  ],
+  "measured": true
+}
