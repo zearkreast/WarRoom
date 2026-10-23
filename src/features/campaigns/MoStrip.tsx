@@ -1,11 +1,11 @@
-import { Target } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useAssignments, useFreshPlanets } from "../../api/queries";
 import type { Assignment, Planet } from "../../api/types";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtCompact, fmtPct } from "../../domain/format";
 import { deadlineOutlook, describeAssignment, type DeadlineOutlook } from "../../domain/majorOrder";
-import { useUi } from "../../state";
+import { useSettings, useUi } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
 import { Countdown, Meter, Panel, useNow } from "../../ui/primitives";
 import type { Front } from "../planets/useFronts";
@@ -43,9 +43,14 @@ function targets(a: Assignment, planets: Planet[] | undefined, fronts: Front[], 
   });
 }
 
-/** The Major Order answered in one glance: the deadline, and whether each target makes it at the current pace. */
+/**
+ * The Major Order answered in one glance: the deadline, and whether each target makes it at the current pace.
+ * Folded by default down to its header; the choice is remembered.
+ */
 export function MoStrip({ fronts }: { fronts: Front[] }) {
   const orders = useAssignments().data;
+  const open = useSettings((s) => s.moStripOpen);
+  const setSetting = useSettings((s) => s.set);
   const planets = useFreshPlanets().data;
   const openOptions = useUi((s) => s.openOptions);
   const now = useNow(60_000);
@@ -69,9 +74,13 @@ export function MoStrip({ fronts }: { fronts: Front[] }) {
         return (
           <Panel
             key={a.id}
-            className="mo-strip"
-            icon={Target}
-            title={a.title ?? "Major Order"}
+            className={`mo-strip ${open ? "" : "folded"}`}
+            title={
+              <button className="ms-toggle" aria-expanded={open} onClick={() => setSetting("moStripOpen", !open)}>
+                <ChevronRight size={14} className="ms-chevron" aria-hidden />
+                {a.title ?? "Major Order"}
+              </button>
+            }
             right={
               <span className="mo-ends">
                 Ends in{" "}
@@ -81,12 +90,12 @@ export function MoStrip({ fronts }: { fronts: Front[] }) {
               </span>
             }
           >
-            {verdict && (
+            {open && verdict && (
               <p className="ms-verdict" style={{ color: verdict.tone }}>
                 {verdict.text}
               </p>
             )}
-            {rows.length > 0 && (
+            {open && rows.length > 0 && (
               <ul className="ms-rows">
                 {rows.map((r) => {
                   const v = VERDICT[r.verdict];
@@ -118,7 +127,7 @@ export function MoStrip({ fronts }: { fronts: Front[] }) {
                 })}
               </ul>
             )}
-            {counts.length > 0 && (
+            {open && counts.length > 0 && (
               <ul className="ms-counts caps">
                 {counts.map((t, i) => (
                   <li key={i}>

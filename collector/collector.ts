@@ -1,5 +1,6 @@
 import type { Assignment, Campaign, Dispatch, EpisodeRaw, Planet, SpaceStation, War } from "../src/api/types.ts";
 import {
+  mergeEpisodes,
   newestDispatches,
   toCampaignLive,
   toLive,
@@ -7,6 +8,7 @@ import {
   toEpisodes,
   toStationLive,
   toWarSample,
+  type EpisodeLive,
   type SnapshotKind,
 } from "../src/domain/snapshot.ts";
 import { RateLimitError, type Hd2Client } from "./hd2.ts";
@@ -126,17 +128,26 @@ export function createTasks(
       },
     },
   ];
+  /** Campaigns as last written; read back once after a restart so the archive and issue dates survive it. */
+  let episodes: EpisodeLive[] | null = null;
   if (game)
     tasks.push({
       name: "episodes",
       everyMs: 900_000,
       async run() {
         const { id } = await game.get<{ id: number }>("/api/WarSeason/current/WarID");
-        const { episodes } = await game.get<{ episodes: EpisodeRaw[] }>(`/api/Episode/${id}`);
+        const raw = await game.get<{ episodes: EpisodeRaw[] }>(`/api/Episode/${id}`);
         const { time } = await game.get<{ time: number }>(`/api/WarSeason/${id}/Status`);
-        const list = toEpisodes(episodes, time, now());
+        if (!episodes) {
+          const rows = await db.select<{ data: EpisodeLive[] }>("snapshots", "select=data&kind=eq.episodes");
+          episodes = rows[0]?.data ?? [];
+        }
+        const list = mergeEpisodes(episodes, toEpisodes(raw.episodes, time, now()), now());
+        const active = list.filter((e) => e.status === "active").length;
+        if (JSON.stringify(list) === JSON.stringify(episodes)) return `unchanged, ${active} active`;
         await snapshot("episodes", list);
-        return `${list.length} campaigns, ${list.filter((e) => e.status === "active").length} active`;
+        episodes = list;
+        return `${list.length} campaigns, ${active} active`;
       },
     });
   return tasks;

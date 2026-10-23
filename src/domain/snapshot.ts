@@ -234,36 +234,94 @@ export function toWarSample(
 
 export type EpisodeStatus = "active" | "won" | "lost";
 
-/** A story campaign with its phases; times are epoch ms. */
+/** One Major Order of a campaign. */
+export interface EpisodePhase {
+  title: string;
+  briefing: string;
+  /** What the game says once the order has ended; empty while it runs. */
+  outro: string;
+  status: EpisodeStatus;
+  medals: number | null;
+  /**
+   * When the order was issued, epoch ms. The game doesn't publish it: the first order starts with its
+   * campaign, later ones are stamped by the collector when they appear, and older ones stay null.
+   */
+  issued: number | null;
+}
+
+/** A Galactic Campaign: Major Orders under one name, won when most of them are won; times are epoch ms. */
 export interface EpisodeLive {
   id: number;
   title: string;
   description: string;
+  /** The enemy it is fought against; Humans when it spans several fronts. */
+  faction: Faction;
   status: EpisodeStatus;
   start: number;
   end: number | null;
-  phases: { title: string; briefing: string; status: EpisodeStatus; medals: number | null }[];
+  /** Item id of the campaign reward, if one is offered. */
+  reward: number | null;
+  phases: EpisodePhase[];
 }
 
 // The game's episode and phase status codes: 2 won, 3 failed; anything else is still running.
 const EPISODE_STATUS: Record<number, EpisodeStatus> = { 2: "won", 3: "lost" };
+// Same codes as FACTION_BY_ID; repeated because this file may only import types.
+const RACE: Record<number, Faction> = { 1: "Humans", 2: "Terminids", 3: "Automaton", 4: "Illuminate" };
 const MEDALS_MIX_ID = 897894480;
 
 /** Converts the game's war-second timestamps using the war clock read at `fetchedAt`. */
 export function toEpisodes(list: EpisodeRaw[], warTime: number, fetchedAt: number): EpisodeLive[] {
   const at = (t: number) => fetchedAt - (warTime - t) * 1000;
-  return list.map((e) => ({
-    id: e.id32,
-    title: e.title,
-    description: e.description,
-    status: EPISODE_STATUS[e.status] ?? "active",
-    start: at(e.startWarTime),
-    end: e.endWarTime ? at(e.endWarTime) : null,
-    phases: e.phases.map((p) => ({
-      title: p.introTitle,
-      briefing: p.introMessage,
-      status: EPISODE_STATUS[p.status] ?? "active",
-      medals: p.rewards.find((r) => r.mixId === MEDALS_MIX_ID)?.amount ?? null,
-    })),
-  }));
+  return list.map((e) => {
+    const start = at(e.startWarTime);
+    return {
+      id: e.id32,
+      title: e.title,
+      description: e.description,
+      faction: RACE[e.race] ?? "Humans",
+      status: EPISODE_STATUS[e.status] ?? "active",
+      start,
+      end: e.endWarTime ? at(e.endWarTime) : null,
+      reward: e.rewards[0]?.mixId ?? null,
+      phases: e.phases.map((p, i) => ({
+        title: p.introTitle,
+        briefing: p.introMessage,
+        outro: p.outroMessage ?? "",
+        status: EPISODE_STATUS[p.status] ?? "active",
+        medals: p.rewards.find((r) => r.mixId === MEDALS_MIX_ID)?.amount ?? null,
+        issued: i === 0 ? start : null,
+      })),
+    };
+  });
+}
+
+/**
+ * Folds a fresh read into the stored list. Campaigns the game stops listing are kept, stored dates
+ * win over re-derived ones (the war clock drifts a little between reads), and a Major Order that
+ * wasn't stored before is stamped as issued at `now`.
+ */
+export function mergeEpisodes(stored: EpisodeLive[], fresh: EpisodeLive[], now: number): EpisodeLive[] {
+  const before = new Map(stored.map((e) => [e.id, e]));
+  const seen = new Set(fresh.map((e) => e.id));
+  const merged = fresh.map((e) => {
+    const was = before.get(e.id);
+    return {
+      ...e,
+      start: was?.start ?? e.start,
+      end: was?.end ?? e.end,
+      phases: e.phases.map((p, i) => ({
+        ...p,
+        issued: i === 0 ? (was?.start ?? e.start) : (was?.phases[i]?.issued ?? (stored.length ? now : null)),
+      })),
+    };
+  });
+  return [...stored.filter((e) => !seen.has(e.id)), ...merged].sort((a, b) => a.start - b.start);
+}
+
+/** Major Orders won, lost and still running. The game doesn't say how many a campaign will have. */
+export function campaignTally(e: EpisodeLive): { won: number; lost: number; running: number } {
+  const won = e.phases.filter((p) => p.status === "won").length;
+  const lost = e.phases.filter((p) => p.status === "lost").length;
+  return { won, lost, running: e.phases.length - won - lost };
 }

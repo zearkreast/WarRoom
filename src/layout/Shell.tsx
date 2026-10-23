@@ -24,6 +24,7 @@ import { liberationPercent } from "../domain/progress";
 import { NewsTicker } from "../features/news/NewsTicker";
 import { PlanetDetail } from "../features/planet/PlanetDetail";
 import { PlanetOptions } from "../features/planet/PlanetOptions";
+import { AboutDialog } from "./AboutDialog";
 import { DispatchPanel } from "./DispatchPanel";
 import { useSettings, useUi, type View } from "../state";
 import { AppMark } from "../ui/emblems";
@@ -80,7 +81,7 @@ function useStatusLines(): ReactNode[] {
     if (campaigns) {
       lines.push(
         <>
-          <b className="hi">{campaigns.length}</b> active campaigns on the front
+          <b className="hi">{campaigns.length}</b> active planets on the front
         </>,
       );
       const top = [...campaigns].sort((a, b) => b.planet.statistics.playerCount - a.planet.statistics.playerCount)[0];
@@ -142,12 +143,12 @@ function StatusStrip() {
 
 const TABS: { view: View; label: string; icon: LucideIcon; key: string }[] = [
   { view: "map", label: "Galaxy map", icon: Orbit, key: "1" },
-  { view: "campaigns", label: "Campaigns", icon: LayoutGrid, key: "2" },
+  { view: "campaigns", label: "Active planets", icon: LayoutGrid, key: "2" },
   { view: "hellpad", label: "Hellpad", icon: TabletSmartphone, key: "3" },
 ];
 
 function Dock() {
-  const { view, setView, openModule, toggleDispatch, dispatchOpen } = useUi();
+  const { view, setView, showAbout, toggleDispatch, dispatchOpen } = useUi();
   const seen = useSettings((s) => s.seenChangelog);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -161,7 +162,7 @@ function Dock() {
   return (
     <nav className="dock" aria-label="Main">
       <div className="dock-side">
-        <button className="hud-btn icon" aria-label="About" title="About" onClick={() => openModule("about")}>
+        <button className="hud-btn icon" aria-label="About" title="About" onClick={() => showAbout(true)}>
           <Info size={18} strokeWidth={1.75} />
         </button>
         <button
@@ -260,6 +261,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </main>
       <Dock />
       <DispatchPanel />
+      <AboutDialog />
       <PlanetOptions />
       <ErrorBoundary key={detail ?? -1} label="Planet details">
         <PlanetDetail />
