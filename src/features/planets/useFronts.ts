@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { useAssignments, useCampaigns } from "../../api/queries";
+import { useAssignments, useCampaigns, useSpaceStations } from "../../api/queries";
+import { useSettings } from "../../state";
 import type { Campaign, Faction, Planet } from "../../api/types";
 import {
   defensePercent,
@@ -24,9 +25,17 @@ export interface Front {
   projected: number | null;
   players: number;
   inMajorOrder: boolean;
+  pinned: boolean;
+  station: boolean;
 }
 
-export function buildFront(c: Campaign, rate: number | null, moPlanets: Set<number>, now: number): Front {
+export function buildFront(
+  c: Campaign,
+  rate: number | null,
+  moPlanets: Set<number>,
+  now: number,
+  marks: { pinned?: Set<number>; stations?: Set<number> } = {},
+): Front {
   const p = c.planet;
   const def = defensePercent(p);
   if (def != null && p.event) {
@@ -43,6 +52,8 @@ export function buildFront(c: Campaign, rate: number | null, moPlanets: Set<numb
       projected: projectedAt(def, rate, now, deadline),
       players: p.statistics.playerCount,
       inMajorOrder: moPlanets.has(p.index),
+      pinned: marks.pinned?.has(p.index) ?? false,
+      station: marks.stations?.has(p.index) ?? false,
     };
   }
   const lib = liberationPercent(p);
@@ -58,6 +69,8 @@ export function buildFront(c: Campaign, rate: number | null, moPlanets: Set<numb
     projected: null,
     players: p.statistics.playerCount,
     inMajorOrder: moPlanets.has(p.index),
+    pinned: marks.pinned?.has(p.index) ?? false,
+    station: marks.stations?.has(p.index) ?? false,
   };
 }
 
@@ -76,6 +89,12 @@ export function useMajorOrderPlanets(): Set<number> {
   }, [data]);
 }
 
+/** Planet indices with a Democracy Space Station in orbit. */
+export function useStationPlanets(): Set<number> {
+  const { data } = useSpaceStations();
+  return useMemo(() => new Set((data ?? []).map((s) => s.planetIndex)), [data]);
+}
+
 /** The collector's progress rate (%/h) for a planet with an active campaign, else null. */
 export function usePlanetRate(planet: number | null | undefined): number | null {
   const { data } = useCampaigns();
@@ -85,16 +104,20 @@ export function usePlanetRate(planet: number | null | undefined): number | null 
 export function useFronts(): { fronts: Front[]; loading: boolean } {
   const { data, isLoading, dataUpdatedAt } = useCampaigns();
   const mo = useMajorOrderPlanets();
+  const stations = useStationPlanets();
+  const pinnedList = useSettings((s) => s.pinned);
   const fronts = useMemo(() => {
     const now = dataUpdatedAt || Date.now();
+    const pinned = new Set(pinnedList);
     return (data ?? [])
-      .map((c) => buildFront(c, c.rate, mo, now))
+      .map((c) => buildFront(c, c.rate, mo, now, { pinned, stations }))
       .sort(
         (a, b) =>
+          Number(b.pinned) - Number(a.pinned) ||
           Number(b.inMajorOrder) - Number(a.inMajorOrder) ||
           Number(b.kind === "defense") - Number(a.kind === "defense") ||
           b.players - a.players,
       );
-  }, [data, mo, dataUpdatedAt]);
+  }, [data, mo, stations, pinnedList, dataUpdatedAt]);
   return { fronts, loading: isLoading };
 }

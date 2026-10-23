@@ -1,24 +1,40 @@
-.mo .panel-head .title {
-  color: var(--accent);
-}
-.mo-ends {
-  text-transform: none;
-  letter-spacing: 0.04em;
-}
-.mo-ends b {
-  color: var(--accent-ink);
-  background: var(--accent);
-  padding: 1px 6px;
-  margin-left: 4px;
-}
-.mo-body {
+.mo .panel-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--s-5);
+}
+.mo-ends {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.mo-ends b {
+  padding: 2px var(--s-3);
+  background: var(--cta);
+  color: var(--ink-on-cta);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
 }
 .mo-briefing {
   margin: 0;
-  font-size: 13px;
+  color: var(--text-hi);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  max-width: 70ch;
+}
+.mo-desc {
+  margin: 0;
+  color: var(--text-dim);
+  line-height: 1.5;
+  max-width: 70ch;
+}
+.mo-sub {
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--label);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--line);
 }
 .mo-tasks {
   list-style: none;
@@ -26,53 +42,61 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--s-5);
 }
 .mo-task {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--s-3);
 }
 .mo-task-head {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 13px;
+  align-items: center;
+  gap: var(--s-4);
+  font-size: var(--fs-body);
+  color: var(--text-hi);
   font-weight: 600;
 }
+.mo-task-head > span:first-of-type {
+  flex: 1;
+}
 .mo-check {
-  color: var(--muted);
+  color: var(--text-dim);
+  flex: none;
 }
 .mo-task.done .mo-check {
   color: var(--good);
 }
 .mo-pct {
-  margin-left: auto;
+  color: var(--text);
 }
 .mo-task-foot {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  gap: var(--s-4);
+  font-size: var(--fs-body-s);
+  color: var(--text-dim);
 }
 .mo-reward {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border: 1px dashed var(--line-2);
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--cta);
 }
-.mo-reward b {
-  margin-left: auto;
-  color: var(--accent);
-  font-size: 18px;
+.mo-reward .caps {
+  flex: 1;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
 }
-.link {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-weight: 700;
+.mo-reward .caps b {
+  margin-left: var(--s-3);
+  color: var(--text-hi);
 }
-.link:hover {
-  text-decoration: underline;
+.mo-amount {
+  font-size: var(--fs-value);
+  color: var(--text-hi);
 }

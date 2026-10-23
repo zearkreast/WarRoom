@@ -1,26 +1,89 @@
+/* Design tokens. */
 :root {
-  --bg: #05080e;
-  --bg-2: #0a0f18;
-  --panel: rgba(10, 15, 24, 0.88);
-  --panel-solid: #0c121c;
-  --line: #1d2838;
-  --line-2: #2c3a50;
-  --text: #d6dce5;
-  --muted: #7d8899;
-  --dim: #4a5566;
-  --accent: #d4c24a;
-  --accent-ink: #0b0f17;
-  --good: #5fd38a;
-  --bad: #ff5c5c;
+  /* Ground and surfaces, darkest first. */
+  --void: #04070b;
+  --ground: #0b0d18;
+  --surface-0: #0b0f16;
+  --surface-1: #11151b;
+  --surface-2: #171c24;
+  --surface-3: #1b2027;
+  --line: #283039;
+  --line-strong: #33373f;
+  --hair: rgba(255, 255, 255, 0.06);
 
-  --f-humans: #3fa9f5;
-  --f-terminids: #f5a623;
-  --f-automaton: #ff4d4d;
-  --f-illuminate: #a970ff;
+  /* Text, brightest first. */
+  --text-hi: #eaf4fa;
+  --text: #cfd8de;
+  --text-dim: #9fb4be;
+  --label: #7f93a0;
+  --faint: #56707f;
 
-  --font: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
-  --radius: 2px;
-  --nav-h: 52px;
+  /* The one hot colour: primary actions, focus, selection. */
+  --cta: #ffff5a;
+  --cta-deep: #ad9a63;
+  --ink-on-cta: #06090d;
+
+  --good: #5ce372;
+  --warn: #ffb23f;
+  --bad: #ff5a5a;
+  --info: #9fd4ff;
+
+  --f-humans: #46a4ff;
+  --f-terminids: #ffb900;
+  --f-automaton: #ff7171;
+  --f-illuminate: #cd8ae9;
+  --f-none: #4b6b78;
+
+  /* Chart fills: the faction hues stepped into the dark-mode lightness band (OKLCH L ≤ 0.67),
+     validated with the dataviz palette checker. Stack order Terminids, Illuminate, Automatons
+     keeps orange and red apart. UI identity keeps the brighter --f-* tokens above. */
+  --c-humans: #3897f1;
+  --c-terminids: #c88500;
+  --c-automaton: #eb5f61;
+  --c-illuminate: #b674d2;
+  --c-grid: #1d232c;
+
+  /* Tint strengths for color-mix(); every tint in the app uses one of these. */
+  --wash: 8%;
+  --fill: 14%;
+  --edge: 30%;
+  --strong: 55%;
+
+  --font: "Chakra Petch", "Segoe UI", sans-serif;
+  --font-head: "Archivo Variable", "Chakra Petch", sans-serif;
+
+  --fs-micro: 0.5rem;
+  --fs-kicker: 0.5625rem;
+  --fs-label: 0.625rem;
+  --fs-body-s: 0.6875rem;
+  --fs-body: 0.8125rem;
+  --fs-value: 1.0625rem;
+  --fs-title: 1.3125rem;
+  --fs-hero: 2.125rem;
+
+  --s-1: 2px;
+  --s-2: 4px;
+  --s-3: 6px;
+  --s-4: 8px;
+  --s-5: 12px;
+  --s-6: 16px;
+  --s-7: 24px;
+  --s-8: 32px;
+
+  --t-state: 120ms;
+  --t-reveal: 200ms;
+  --t-value: 320ms;
+  --ease: cubic-bezier(0.2, 0.85, 0.25, 1);
+
+  --shadow-1: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 10px 26px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 14px 38px rgba(0, 0, 0, 0.6);
+  --lip: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  --top-h: 52px;
+  --strip-h: 26px;
+  --dock-h: 60px;
+
   color-scheme: dark;
 }
 
@@ -36,19 +99,45 @@ body,
 }
 
 body {
-  background: var(--bg);
+  background: var(--void);
   color: var(--text);
   font-family: var(--font);
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  letter-spacing: 0.02em;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
-  user-select: none;
 }
 
 button {
   font: inherit;
   color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-head);
+  font-stretch: 125%;
+  font-weight: 800;
+  color: var(--text-hi);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--cta) 35%, transparent);
+  color: var(--text-hi);
+}
+
+:focus-visible {
+  outline: 1px solid var(--cta);
+  outline-offset: 2px;
 }
 
 .num {
@@ -61,26 +150,24 @@ button {
 }
 
 .muted {
-  color: var(--muted);
+  color: var(--text-dim);
 }
 
 .scroll {
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--line-2) transparent;
+  scrollbar-color: var(--line-strong) transparent;
 }
 
-/* Starfield background shared by the non-map pages. */
+/* Deep-space ground shared by the non-map pages. */
 .starfield {
-  background:
-    radial-gradient(ellipse at 50% 40%, rgba(40, 70, 120, 0.18), transparent 60%),
-    radial-gradient(1px 1px at 12% 22%, #fff8 50%, transparent 51%),
-    radial-gradient(1px 1px at 78% 14%, #fff6 50%, transparent 51%),
-    radial-gradient(1px 1px at 33% 71%, #fff5 50%, transparent 51%),
-    radial-gradient(1px 1px at 61% 48%, #fff7 50%, transparent 51%),
-    radial-gradient(1px 1px at 88% 83%, #fff5 50%, transparent 51%),
-    radial-gradient(1px 1px at 5% 90%, #fff6 50%, transparent 51%),
-    var(--bg);
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(70, 164, 255, 0.07), transparent 70%),
+    radial-gradient(1px 1px at 12% 22%, #fff7 50%, transparent 51%),
+    radial-gradient(1px 1px at 78% 14%, #fff5 50%, transparent 51%),
+    radial-gradient(1px 1px at 33% 71%, #fff4 50%, transparent 51%),
+    radial-gradient(1px 1px at 61% 48%, #fff6 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 83%, #fff4 50%, transparent 51%),
+    radial-gradient(1px 1px at 5% 90%, #fff5 50%, transparent 51%), var(--ground);
 }
 
 @keyframes pulse {
@@ -99,5 +186,15 @@ button {
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

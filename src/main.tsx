@@ -6,6 +6,7 @@ import "@fontsource/chakra-petch/400.css";
 import "@fontsource/chakra-petch/500.css";
 import "@fontsource/chakra-petch/600.css";
 import "@fontsource/chakra-petch/700.css";
+import "@fontsource-variable/archivo/wdth.css";
 import "./ui/theme.css";
 import "./ui/ui.css";
 import App from "./App";

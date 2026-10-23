@@ -1,8 +1,26 @@
 // Snapshot shapes stored in Supabase: written by the collector, read by the app.
 // Only type imports here, so the collector can run this file directly under Node.
-import type { Campaign, Dispatch, Faction, Planet, PlanetEvent, Region, Statistics } from "../api/types";
+import type {
+  Campaign,
+  Dispatch,
+  Faction,
+  Planet,
+  PlanetEvent,
+  Region,
+  SpaceStation,
+  Statistics,
+  TacticalAction,
+  War,
+} from "../api/types";
 
-export type SnapshotKind = "war" | "assignments" | "campaigns" | "planets" | "planets_static" | "dispatches";
+export type SnapshotKind =
+  | "war"
+  | "assignments"
+  | "campaigns"
+  | "planets"
+  | "planets_static"
+  | "dispatches"
+  | "space_stations";
 
 /** Planet fields that rarely change: sent once per app launch. */
 export interface PlanetStatic {
@@ -19,8 +37,30 @@ export interface PlanetStatic {
   regions: Pick<Region, "id" | "name" | "description" | "size" | "maxHealth">[];
 }
 
-/** The planet stats the app shows. The other counters stay out of the snapshot. */
-export type LiveStats = Pick<Statistics, "playerCount" | "missionsWon" | "missionsLost" | "deaths" | "missionSuccessRate">;
+/** Counters the planet detail shows. timePlayed duplicates missionTime; accuracy is derivable. */
+const LIVE_STATS = [
+  "playerCount",
+  "missionsWon",
+  "missionsLost",
+  "missionSuccessRate",
+  "missionTime",
+  "terminidKills",
+  "automatonKills",
+  "illuminateKills",
+  "bulletsFired",
+  "bulletsHit",
+  "deaths",
+  "friendlies",
+] as const;
+
+/** Planet statistics with zero counters left out (most planets have never been fought on). */
+export type LiveStats = Partial<Pick<Statistics, (typeof LIVE_STATS)[number]>>;
+
+function liveStats(s: Statistics): LiveStats {
+  const out: LiveStats = {};
+  for (const k of LIVE_STATS) if (s[k]) out[k] = s[k];
+  return out;
+}
 
 /** Planet fields that change every poll. */
 export interface PlanetLive {
@@ -60,12 +100,17 @@ export function toStatic(p: Planet): PlanetStatic {
     waypoints: p.waypoints,
     maxHealth: p.maxHealth,
     initialOwner: p.initialOwner,
-    regions: p.regions.map((r) => ({ id: r.id, name: r.name, description: r.description, size: r.size, maxHealth: r.maxHealth })),
+    regions: p.regions.map((r) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      size: r.size,
+      maxHealth: r.maxHealth,
+    })),
   };
 }
 
 export function toLive(p: Planet): PlanetLive {
-  const s = p.statistics;
   return {
     index: p.index,
     health: p.health,
@@ -74,13 +119,7 @@ export function toLive(p: Planet): PlanetLive {
     disabled: p.disabled,
     event: p.event,
     attacking: p.attacking,
-    statistics: {
-      playerCount: s.playerCount,
-      missionsWon: s.missionsWon,
-      missionsLost: s.missionsLost,
-      deaths: s.deaths,
-      missionSuccessRate: s.missionSuccessRate,
-    },
+    statistics: liveStats(p.statistics),
     regions: p.regions.map((r) => ({ id: r.id, health: r.health, isAvailable: r.isAvailable, players: r.players })),
   };
 }
@@ -116,6 +155,8 @@ export function toPlanet(s: PlanetStatic, l: PlanetLive): Planet {
   const live = new Map(l.regions.map((r) => [r.id, r]));
   return {
     ...s,
+    // The API lists "None" as a hazard on planets without any.
+    hazards: s.hazards.filter((h) => h.name.toLowerCase() !== "none"),
     health: l.health,
     currentOwner: l.currentOwner,
     regenPerSecond: l.regenPerSecond,
@@ -129,5 +170,62 @@ export function toPlanet(s: PlanetStatic, l: PlanetLive): Planet {
       isAvailable: live.get(r.id)?.isAvailable ?? false,
       players: live.get(r.id)?.players ?? 0,
     })),
+  };
+}
+
+/** Space station as stored: the planet is reduced to its index (the app has the planet list). */
+export interface StationLive {
+  id32: number;
+  planetIndex: number;
+  electionEnd: string;
+  flags: number;
+  tacticalActions: TacticalAction[];
+}
+
+export function toStationLive(s: SpaceStation): StationLive {
+  return {
+    id32: s.id32,
+    planetIndex: s.planet.index,
+    electionEnd: s.electionEnd,
+    flags: s.flags,
+    tacticalActions: s.tacticalActions,
+  };
+}
+
+/** One row per war poll: galaxy-wide trends for the Overview and Planets charts. */
+export interface WarSampleRow {
+  at: string;
+  impact: number;
+  players: number;
+  terminids: number;
+  automatons: number;
+  illuminate: number;
+}
+
+/** Helldivers on each enemy front, from the active campaigns (defenses count for the attacker). */
+export function playersByEnemy(
+  campaigns: Pick<Campaign, "planet">[],
+): Record<"Terminids" | "Automaton" | "Illuminate", number> {
+  const out = { Terminids: 0, Automaton: 0, Illuminate: 0 };
+  for (const c of campaigns) {
+    const enemy = c.planet.event?.faction ?? c.planet.currentOwner;
+    if (enemy in out) out[enemy as keyof typeof out] += c.planet.statistics.playerCount;
+  }
+  return out;
+}
+
+export function toWarSample(
+  war: Pick<War, "impactMultiplier" | "statistics">,
+  campaigns: Pick<Campaign, "planet">[],
+  at: number,
+): WarSampleRow {
+  const fronts = playersByEnemy(campaigns);
+  return {
+    at: new Date(at).toISOString(),
+    impact: war.impactMultiplier,
+    players: war.statistics.playerCount,
+    terminids: fronts.Terminids,
+    automatons: fronts.Automaton,
+    illuminate: fronts.Illuminate,
   };
 }

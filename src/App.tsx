@@ -1,9 +1,9 @@
-import { FrontsPage } from "./features/planets/FrontsPage";
-import { HistoryPage } from "./features/history/HistoryPage";
+import { CampaignsPage } from "./features/campaigns/CampaignsPage";
+import { HellpadPage } from "./features/hellpad/HellpadPage";
 import { MapPage } from "./features/map/MapPage";
 import { NewsPage } from "./features/news/NewsPage";
-import { OrdersPage } from "./features/major-order/MajorOrder";
-import { StatsPage } from "./features/stats/StatsPage";
+import { OverviewPage } from "./features/overview/OverviewPage";
+import { SettingsPage } from "./features/settings/SettingsPage";
 import { Shell } from "./layout/Shell";
 import { useUi } from "./state";
 import { useDataSync } from "./sync";
@@ -13,12 +13,12 @@ export default function App() {
   const view = useUi((s) => s.view);
   return (
     <Shell>
+      {view === "campaigns" && <CampaignsPage />}
       {view === "map" && <MapPage />}
-      {view === "fronts" && <FrontsPage />}
-      {view === "orders" && <OrdersPage />}
+      {view === "hellpad" && <HellpadPage />}
+      {view === "overview" && <OverviewPage />}
       {view === "news" && <NewsPage />}
-      {view === "stats" && <StatsPage />}
-      {view === "history" && <HistoryPage />}
+      {view === "settings" && <SettingsPage />}
     </Shell>
   );
 }
