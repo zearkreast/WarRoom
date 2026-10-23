@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { Assignment, Planet } from "../api/types";
-import { buildSectors, chaikin, humanControl, supplyLines } from "../domain/galaxy";
+import { anomalyOf, buildPolarSectors, humanControl, sectorAt, sectorTerritory, supplyLines } from "../domain/galaxy";
+import { recentDispatches } from "../domain/dispatch";
+import { isPlaceholder } from "../domain/planets";
 import { describeAssignment } from "../domain/majorOrder";
 import { parseMarkup, dispatchTitle, fmtDuration } from "../domain/format";
 import {
@@ -105,16 +107,27 @@ describe("dispatch markup", () => {
 });
 
 describe("galaxy geometry", () => {
-  it("builds one closed outline per sector", () => {
-    const sectors = buildSectors(planets);
-    // Sectors whose only planets sit on another planet's position have no area of their own.
-    expect(sectors.length).toBeGreaterThanOrEqual(new Set(planets.map((p) => p.sector)).size - 2);
-    expect(sectors.find((s) => s.name === "Sol")).toBeDefined();
-    for (const s of sectors) {
-      expect(s.path.startsWith("M")).toBe(true);
-      expect(s.path.endsWith("Z")).toBe(true);
-      expect(s.path).not.toContain("NaN");
+  it("rebuilds the game's ring sectors with every planet inside its own sector", () => {
+    const geo = buildPolarSectors(planets.filter((p) => !isPlaceholder(p)));
+    expect(geo.rings[0].runs.map((r) => r.sector)).toEqual(["Sol"]);
+    for (const ring of geo.rings) expect(ring.runs.every((r) => geo.fills.has(r.sector))).toBe(true);
+    for (const p of planets.filter((q) => !isPlaceholder(q)))
+      expect(sectorAt(geo, p.position.x, p.position.y)).toBe(p.sector);
+    for (const d of geo.fills.values()) {
+      expect(d.startsWith("M")).toBe(true);
+      expect(d.endsWith("Z")).toBe(true);
+      expect(d).not.toContain("NaN");
     }
+    // Edges only separate different sectors; the rim counts as one side.
+    expect(geo.edges.every((e) => e.a !== e.b)).toBe(true);
+    expect(geo.edges.some((e) => e.b === null)).toBe(true);
+  });
+
+  it("gives a sector to the enemy holding or attacking most of its planets", () => {
+    const territory = sectorTerritory(planets);
+    const held = planets.find((p) => p.currentOwner !== "Humans")!;
+    expect(territory.get(held.sector)?.faction).toBeDefined();
+    expect(territory.get("Sol")).toBeNull();
   });
 
   it("dedupes supply lines and computes control share", () => {
@@ -124,7 +137,26 @@ describe("galaxy geometry", () => {
     expect(humanControl(planets)).toBeGreaterThan(0);
   });
 
-  it("chaikin doubles the points each pass", () => {
-    expect(chaikin([[0, 0], [1, 0], [1, 1]], 2)).toHaveLength(12);
+  it("marks Meridia and Penta as anomalies", () => {
+    expect(anomalyOf({ name: "MERIDIA" })).toBe("wormhole");
+    expect(anomalyOf({ name: "Penta" })).toBe("blackhole");
+    expect(anomalyOf({ name: "FURY" })).toBeUndefined();
+  });
+
+  it("drops placeholder worlds stacked on Super Earth", () => {
+    expect(isPlaceholder({ index: 0, position: { x: 0, y: 0 } })).toBe(false);
+    expect(isPlaceholder({ index: 265, position: { x: 0, y: 0 } })).toBe(true);
+    expect(isPlaceholder({ index: 3, position: { x: 0.1, y: 0 } })).toBe(false);
+  });
+
+  it("keeps dispatches from the last 72 hours, newest first", () => {
+    const now = Date.parse("2026-10-23T12:00:00Z");
+    const at = (h: number, id: number) => ({
+      id,
+      type: 0,
+      message: "",
+      published: new Date(now - h * H).toISOString(),
+    });
+    expect(recentDispatches([at(80, 1), at(70, 2), at(1, 3)], now).map((d) => d.id)).toEqual([3, 2]);
   });
 });

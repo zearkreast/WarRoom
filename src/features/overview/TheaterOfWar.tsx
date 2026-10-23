@@ -2,7 +2,7 @@ import { ArrowUpRight, Map as MapIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import { useFreshPlanets } from "../../api/queries";
 import type { Faction } from "../../api/types";
-import { buildSectors, type SectorShape } from "../../domain/galaxy";
+import { buildPolarSectors, sectorTerritory } from "../../domain/galaxy";
 import { useUi } from "../../state";
 import { Panel } from "../../ui/primitives";
 import { CHART } from "./WarActivity";
@@ -16,12 +16,21 @@ const ORDER: Faction[] = ["Humans", "Terminids", "Illuminate", "Automaton"];
 export function TheaterOfWar() {
   const planets = useFreshPlanets().data;
   const setView = useUi((s) => s.setView);
-  const sectors = useMemo(() => (planets ? buildSectors(planets) : []), [planets]);
+  // Same ring sectors as the map; enemy sectors are solid where held outright, dimmer where contested.
   const byOwner = useMemo(() => {
-    const groups = new Map<Faction, SectorShape[]>();
-    for (const s of sectors) groups.set(s.owner, [...(groups.get(s.owner) ?? []), s]);
-    return ORDER.flatMap((f) => (groups.has(f) ? [[f, groups.get(f)!] as const] : []));
-  }, [sectors]);
+    if (!planets) return [];
+    const territory = sectorTerritory(planets);
+    const groups = new Map<string, { owner: Faction; held: boolean; paths: string[] }>();
+    for (const [name, path] of buildPolarSectors(planets).fills) {
+      const t = territory.get(name);
+      const owner = t?.faction ?? "Humans";
+      const key = `${owner}-${t?.held ?? true}`;
+      const g = groups.get(key) ?? { owner, held: t?.held ?? true, paths: [] };
+      g.paths.push(path);
+      groups.set(key, g);
+    }
+    return [...groups.values()].sort((a, b) => ORDER.indexOf(a.owner) - ORDER.indexOf(b.owner));
+  }, [planets]);
 
   const stage = useRef<HTMLDivElement>(null);
   const disc = useRef<SVGGElement>(null);
@@ -51,7 +60,7 @@ export function TheaterOfWar() {
       cancelAnimationFrame(raf);
       io.disconnect();
     };
-  }, [sectors.length > 0]);
+  }, [byOwner.length > 0]);
 
   if (!planets) return null;
 
@@ -98,15 +107,13 @@ export function TheaterOfWar() {
         <svg viewBox="-560 -560 1120 1120" aria-hidden>
           <circle r={545} className="tw-rim" />
           <g ref={disc}>
-            {byOwner.map(([owner, list]) => (
+            {byOwner.map((g) => (
               <g
-                key={owner}
-                className={`tw-owner ${owner === "Humans" ? "se" : "enemy"}`}
-                style={{ "--c": CHART[owner] } as CSSProperties}
+                key={`${g.owner}-${g.held}`}
+                className={`tw-owner ${g.owner === "Humans" ? "se" : "enemy"} ${g.held ? "" : "contested"}`}
+                style={{ "--c": CHART[g.owner] } as CSSProperties}
               >
-                {list.map((s) => (
-                  <path key={s.name} d={s.path} />
-                ))}
+                <path d={g.paths.join("")} />
               </g>
             ))}
             <line x1={0} y1={-545} x2={0} y2={-470} className="tw-tick" />

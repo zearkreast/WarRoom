@@ -1,4 +1,4 @@
-import { FileText, MapPin, Pin, PinOff, Satellite, X } from "lucide-react";
+import { Crosshair, FileText, MapPin, Pin, PinOff, Satellite, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { usePlanet } from "../../api/queries";
 import { useSettings, useUi } from "../../state";
@@ -9,7 +9,7 @@ const SIZE = 236;
 
 /** Radial options for a planet: pin, show on map, station, details. */
 export function PlanetOptions() {
-  const { options, openOptions, openDetail, showOnMap, openModule } = useUi();
+  const { view, options, openOptions, openDetail, showOnMap, focus, openModule } = useUi();
   const planet = usePlanet(options?.planet);
   const pinned = useSettings((s) => (options ? s.pinned.includes(options.planet) : false));
   const togglePin = useSettings((s) => s.togglePin);
@@ -41,7 +41,10 @@ export function PlanetOptions() {
       },
     },
     { pos: "e", label: "Details", icon: FileText, run: () => openDetail(planet.index) },
-    { pos: "s", label: "Show on map", icon: MapPin, run: () => showOnMap(planet.index) },
+    // The map is already open there, so its slot centres the planet instead.
+    view === "map"
+      ? { pos: "s", label: "Focus", icon: Crosshair, run: () => focus(planet.index) }
+      : { pos: "s", label: "Show on map", icon: MapPin, run: () => showOnMap(planet.index) },
     { pos: "w", label: "Space station", icon: Satellite, run: () => openModule("stations"), disabled: !hasStation },
   ];
 
