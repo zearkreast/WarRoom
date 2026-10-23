@@ -202,7 +202,7 @@ function Dock() {
           onClick={() => toggleDispatch()}
           aria-expanded={dispatchOpen}
         >
-          <span>Companion</span>
+          <span>Tracker</span>
           <b>Dispatch</b>
           {seen !== APP_VERSION && <span className="unread" aria-label="Unread" />}
         </button>

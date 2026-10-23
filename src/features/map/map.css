@@ -33,6 +33,14 @@
   --unrot: 0deg;
   --unsquash: 1;
 }
+/* While the camera moves, drop-shadow filters (the costliest paint here) are skipped; they return once it settles. */
+.galaxy.moving * {
+  filter: none !important;
+}
+.galaxy.moving .pulse,
+.galaxy.moving .swirl {
+  animation-play-state: paused;
+}
 /* Planet markers and labels stay upright and round however the map is turned or tilted. */
 .upright {
   transform: rotate(var(--unrot)) scale(1, var(--unsquash));

@@ -281,6 +281,17 @@
   fill: color-mix(in srgb, var(--c) 30%, transparent);
   stroke-width: 4;
 }
+.tw-owner.se circle {
+  fill: color-mix(in srgb, var(--c) 8%, transparent);
+  stroke: var(--c);
+  stroke-width: 1.5;
+  stroke-opacity: 0.35;
+}
+.tw-lanes {
+  fill: none;
+  stroke: rgba(210, 228, 255, 0.45);
+  stroke-width: 2;
+}
 .tw-owner.contested path {
   fill: color-mix(in srgb, var(--c) 10%, transparent);
   stroke-width: 2.5;
