@@ -635,3 +635,47 @@
 .hint-text {
   flex: 1;
 }
+
+/* ---------- Neon ----------
+   Only data and active state glow; resting chrome stays flat. Active controls glow in --glow (CTA yellow). */
+.panel-icon svg,
+.pd-name-row .emblem {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--tone) 65%, transparent));
+}
+.cc-head .emblem {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--enemy) 70%, transparent));
+}
+.status-chip {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--tone) var(--edge), transparent);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--tone) var(--strong), transparent);
+}
+.hud-btn.on,
+.filter-chip.on,
+.key-btn.on {
+  --glow: var(--cta);
+}
+.hud-btn.on,
+.filter-chip.on,
+.key-btn.on,
+.top-btn.on,
+.dock-tab.on {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--glow, var(--cta)) var(--edge), transparent),
+    0 0 16px color-mix(in srgb, var(--glow, var(--cta)) var(--edge), transparent);
+}
+.hud-btn:hover,
+.map-rail .hud-btn:hover {
+  box-shadow: 0 0 12px color-mix(in srgb, var(--text-hi) var(--fill), transparent);
+}
+.dock-tab.on svg,
+.top-btn.on .top-btn-icon {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--cta) 70%, transparent));
+}
+.strip-day {
+  box-shadow: 0 0 12px color-mix(in srgb, var(--cta) var(--edge), transparent);
+}
+.live-dot {
+  box-shadow:
+    0 0 6px var(--good),
+    0 0 14px color-mix(in srgb, var(--good) var(--strong), transparent);
+}

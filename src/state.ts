@@ -63,6 +63,8 @@ interface SettingsState {
   mapOverlay: MapOverlay;
   mapQuality: MapQuality;
   showInactive: boolean;
+  /** Whether the Galactic control ring is unfolded on the planet index. */
+  planetsControlOpen: boolean;
   pinned: number[];
   /** Views whose first-run hint has been dismissed. */
   hintsSeen: string[];
@@ -72,7 +74,10 @@ interface SettingsState {
   /** App version whose changelog the user has opened. */
   seenChangelog: string;
   setAlert(k: keyof AlertSettings, v: boolean): void;
-  set<K extends "popups" | "mapOverlay" | "mapQuality" | "showInactive">(k: K, v: SettingsState[K]): void;
+  set<K extends "popups" | "mapOverlay" | "mapQuality" | "showInactive" | "planetsControlOpen">(
+    k: K,
+    v: SettingsState[K],
+  ): void;
   togglePin(planet: number): void;
   clearPins(): void;
   dismissHint(id: string): void;
@@ -89,6 +94,7 @@ export const useSettings = create<SettingsState>()(
       mapOverlay: "regions",
       mapQuality: "normal",
       showInactive: false,
+      planetsControlOpen: true,
       pinned: [],
       hintsSeen: [],
       seenAssignments: [],

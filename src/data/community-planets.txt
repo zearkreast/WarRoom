@@ -1,0 +1,23 @@
+# Planets the community remembers, for the Super Earth list in Hellpad › Planets › Galactic control.
+# Super Earth and Mars always lead. Then the [fixed] planets, then two drawn at random from [pool]
+# each time the list opens. Names must match the game's planet names (case does not matter);
+# planets Super Earth does not hold right now are skipped.
+
+[fixed]
+Malevelon Creek
+Calypso
+
+[pool]
+Draupnir
+Tien Kwan
+Ubanea
+Fort Justice
+Vernen Wells
+Hellmire
+Estanu
+Crimsica
+Meridia
+Angel's Venture
+Moradesh
+Turing
+Cyberstan
