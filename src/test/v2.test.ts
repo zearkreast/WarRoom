@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { Campaign, Planet, War } from "../api/types";
 import { isStalled, type FrontActivity } from "../domain/campaignFilter";
 import { dispatchBody, dispatchKind } from "../domain/dispatch";
+import { busiestPlanets, parseCommunityPlanets, superEarthPlanets } from "../domain/factionPlanets";
 import { sestDate, warDay } from "../domain/format";
 import { buildRegions } from "../domain/galaxy";
 import { controlShares, groupBySector, matchesFilter, matchesSearch } from "../domain/planetIndex";
 import { playersByEnemy, toLive, toPlanet, toStatic, toWarSample } from "../domain/snapshot";
 import { buildWarHistory, defenseEvents, fmtLongDuration } from "../domain/warHistory";
+import communityText from "../data/community-planets.txt?raw";
 import campaignsJson from "./fixtures/campaigns.json";
 import planetsJson from "./fixtures/planets.json";
 import warJson from "./fixtures/war.json";
@@ -169,6 +171,44 @@ describe("Super Earth time", () => {
   it("counts war days from the start day", () => {
     expect(warDay("2024-02-08T00:00:00Z", Date.UTC(2024, 1, 8, 12))).toBe(1);
     expect(warDay("2024-02-08T00:00:00Z", Date.UTC(2024, 1, 10, 12))).toBe(3);
+  });
+});
+
+describe("faction planet lists", () => {
+  const community = parseCommunityPlanets(communityText);
+  const seq = (...values: number[]) => {
+    let i = 0;
+    return () => values[i++ % values.length];
+  };
+
+  it("parses the community file", () => {
+    expect(community.fixed).toEqual(["MALEVELON CREEK", "CALYPSO"]);
+    expect(community.pool.length).toBeGreaterThanOrEqual(4);
+    expect(parseCommunityPlanets("# c\n[fixed]\nA # note\n\n[pool]\nb\nc")).toEqual({ fixed: ["A"], pool: ["B", "C"] });
+  });
+
+  it("lists a faction's busiest planets, at most six", () => {
+    const list = busiestPlanets(planets, "Automaton");
+    expect(list.length).toBeLessThanOrEqual(6);
+    const players = list.map((l) => l.planet!.statistics.playerCount);
+    expect(players).toEqual([...players].sort((a, b) => b - a));
+    expect(list.every((l) => l.planet!.currentOwner === "Automaton")).toBe(true);
+  });
+
+  it("leads Super Earth's list with Super Earth and Mars, then the fixed planets", () => {
+    const held = planets.map((p) => ({ ...p, currentOwner: "Humans" as const }));
+    const list = superEarthPlanets(held, { fixed: ["FURY"], pool: ["ESKER", "MORT", "USTOTU"] }, seq(0));
+    expect(list.map((l) => l.name)).toEqual(["SUPER EARTH", "MARS", "FURY", "ESKER", "MORT", "USTOTU"]);
+    expect(list[1]).toMatchObject({ lore: "Sol system" });
+  });
+
+  it("draws the last picks at random and tops up a lost fixed planet from the pool", () => {
+    const held = planets.map((p) => ({
+      ...p,
+      currentOwner: p.name === "FURY" ? ("Automaton" as const) : ("Humans" as const),
+    }));
+    const list = superEarthPlanets(held, { fixed: ["FURY", "MORT"], pool: ["ESKER", "USTOTU", "K"] }, seq(0.99));
+    expect(list.map((l) => l.name)).toEqual(["SUPER EARTH", "MARS", "MORT", "K", "USTOTU", "ESKER"]);
   });
 });
 
