@@ -280,48 +280,6 @@ export function sectorTerritory(planets: Planet[]): Map<string, Territory | null
   );
 }
 
-/** Planets of one enemy more than this far apart by angle belong to separate holdings. */
-const CLUSTER_GAP = (35 * Math.PI) / 180;
-const ANCHOR_OUTSET = 0.08;
-const ANCHOR_MAX_R = 1.05;
-
-/**
- * Where each enemy's emblem goes: just outside its largest holding, at the middle of its planets'
- * angles. The same spot works for every overlay, as all of them grow out from the same planets.
- */
-export function factionAnchors(
-  planets: Pick<Planet, "currentOwner" | "position">[],
-): { faction: Faction; x: number; y: number }[] {
-  const enemies: Faction[] = ["Terminids", "Automaton", "Illuminate"];
-  return enemies.flatMap((faction) => {
-    const held = planets
-      .filter((p) => p.currentOwner === faction)
-      .map((p) => ({ a: norm(Math.atan2(p.position.y, p.position.x)), r: Math.hypot(p.position.x, p.position.y) }))
-      .sort((x, y) => x.a - y.a);
-    if (!held.length) return [];
-    // Start after the widest gap so no holding straddles the array's ends, then split at the other wide gaps.
-    let [widest, widestGap] = [0, -1];
-    held.forEach((p, k) => {
-      const gap = norm(p.a - held[(k - 1 + held.length) % held.length].a) || TAU;
-      if (gap > widestGap) [widest, widestGap] = [k, gap];
-    });
-    const ordered = [...held.slice(widest), ...held.slice(0, widest)];
-    const clusters: (typeof held)[] = [[ordered[0]]];
-    for (let k = 1; k < ordered.length; k++) {
-      if (norm(ordered[k].a - ordered[k - 1].a) > CLUSTER_GAP) clusters.push([]);
-      clusters[clusters.length - 1].push(ordered[k]);
-    }
-    const main = clusters.reduce((m, c) => (c.length > m.length ? c : m));
-    const mid = Math.atan2(
-      main.reduce((n, p) => n + Math.sin(p.a), 0),
-      main.reduce((n, p) => n + Math.cos(p.a), 0),
-    );
-    const r = Math.min(Math.max(...main.map((p) => p.r)) + ANCHOR_OUTSET, ANCHOR_MAX_R);
-    const [x, y] = polar(r, mid);
-    return [{ faction, x, y }];
-  });
-}
-
 /** Unique undirected supply-line pairs from planet waypoints. */
 export function supplyLines(planets: Planet[]): [number, number][] {
   const seen = new Set<string>();

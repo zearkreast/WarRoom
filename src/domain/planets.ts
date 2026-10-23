@@ -1,4 +1,36 @@
 import type { Planet } from "../api/types";
+import type { PlanetStatic } from "./snapshot";
+
+/**
+ * Where the game has moved things the API still files under the old planet id. Meridia was dragged
+ * into the Celeste sector. On 12 Aug 2026 Sangis and Alderidge Cove traded names, places, biomes and
+ * links: the API has the new places and links but the old names, sectors and biomes. Values are
+ * absolute, so they stay right if the API catches up.
+ */
+const STATIC_FIXES: Record<number, Partial<Pick<PlanetStatic, "name" | "sector" | "biome">>> = {
+  64: { sector: "Celeste" },
+  99: {
+    name: "ALDERIDGE COVE",
+    sector: "Omega",
+    biome: {
+      name: "Deadlands",
+      description:
+        "The lifeless grey of this planet is interrupted only by the violet flowers that grow from strange, parasitic outcroppings.",
+    },
+  },
+  273: {
+    name: "SANGIS",
+    sector: "Guang",
+    biome: {
+      name: "Deciduous Autumn Forest",
+      description:
+        "Broadleaf woodlands spread across rolling hills, broken by shallow waters that wind through mossy logs, flowers, and stone. (UNOFFICIAL)",
+    },
+  },
+};
+
+export const fixStatic = <T extends PlanetStatic>(p: T): T =>
+  STATIC_FIXES[p.index] ? { ...p, ...STATIC_FIXES[p.index] } : p;
 
 const cache = new WeakMap<Planet[], Map<number, Planet>>();
 

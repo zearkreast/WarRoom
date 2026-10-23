@@ -110,13 +110,9 @@
 }
 /* Enemy emblems: read at galaxy scale, then step aside for the planets once zoomed in. */
 .faction-marks {
+  opacity: 0.6;
   pointer-events: none;
   transition: opacity var(--t-reveal) var(--ease);
-}
-.fm-plate {
-  fill: color-mix(in srgb, var(--void) 78%, transparent);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
 }
 .z-sectors .faction-marks {
   opacity: 0;

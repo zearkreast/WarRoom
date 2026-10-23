@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type Keyboard
 import { useFreshPlanets, useSectorGeometry } from "../../api/queries";
 import type { Faction } from "../../api/types";
 import { factionColor } from "../../domain/factions";
-import { factionAnchors, project, sectorTerritory, supplyLines } from "../../domain/galaxy";
+import { factionMarks } from "../../domain/factionMarks";
+import { project, sectorTerritory, supplyLines } from "../../domain/galaxy";
 import { byIndex, ownershipKey } from "../../domain/planets";
 import { buildRegions } from "../../domain/regions";
 import { useSettings, useUi } from "../../state";
@@ -15,7 +16,7 @@ const SPIN_DEG_PER_S = 4;
 const DRAG_DEG_PER_PX = 0.35;
 const KEY_STEP_DEG = 10;
 const ORDER: Faction[] = ["Humans", "Terminids", "Illuminate", "Automaton"];
-/** The stage tilts the disc by 56°; emblems are stretched back by 1/cos(56°) to read as squares. */
+/** The stage tilts the disc by 56°; emblems are stretched back by 1/cos(56°) to keep their shape. */
 const UNSQUASH = 1 / Math.cos((56 * Math.PI) / 180);
 
 interface OwnerGroup {
@@ -53,7 +54,7 @@ export function TheaterOfWar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [owners, geo, overlay]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const anchors = useMemo(() => (planets ? factionAnchors(planets) : []), [owners]);
+  const marks = useMemo(() => (planets ? factionMarks(planets, overlay, geo) : []), [owners, overlay, geo]);
   const lanes = useMemo(() => {
     if (!planets || overlay !== "galaxy") return "";
     const lookup = byIndex(planets);
@@ -170,13 +171,12 @@ export function TheaterOfWar() {
                 <path key={name} d={d} onPointerEnter={() => setSector(name)} />
               ))}
             </g>
-            {anchors.map((m) => (
+            {marks.map((m) => (
               <g key={m.faction} transform={`translate(${m.x.toFixed(1)},${m.y.toFixed(1)})`}>
                 <g className="tw-mark" style={{ "--unsquash": UNSQUASH } as CSSProperties}>
-                  <rect x={-27} y={-27} width={54} height={54} stroke={factionColor(m.faction)} />
                   <path
                     d={EMBLEM_PATHS[m.faction]}
-                    transform="translate(-20.4,-20.4) scale(1.7)"
+                    transform="translate(-42,-42) scale(3.5)"
                     fill={factionColor(m.faction)}
                     fillRule="evenodd"
                   />
