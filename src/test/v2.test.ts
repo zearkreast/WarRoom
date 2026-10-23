@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Campaign, Planet, War } from "../api/types";
+import { isStalled, type FrontActivity } from "../domain/campaignFilter";
 import { dispatchBody, dispatchKind } from "../domain/dispatch";
 import { sestDate, warDay } from "../domain/format";
 import { buildRegions } from "../domain/galaxy";
@@ -168,5 +169,33 @@ describe("Super Earth time", () => {
   it("counts war days from the start day", () => {
     expect(warDay("2024-02-08T00:00:00Z", Date.UTC(2024, 1, 8, 12))).toBe(1);
     expect(warDay("2024-02-08T00:00:00Z", Date.UTC(2024, 1, 10, 12))).toBe(3);
+  });
+});
+
+describe("stalled campaigns", () => {
+  const front = (players: number, rate: number | null, extra: Partial<FrontActivity> = {}): FrontActivity => ({
+    players,
+    rate,
+    inMajorOrder: false,
+    pinned: false,
+    ...extra,
+  });
+
+  it("hides fronts under 5k divers that gain less than +0.4%/h", () => {
+    expect(isStalled(front(2_800, null))).toBe(true); // holding for reinforcement
+    expect(isStalled(front(41, 0.002))).toBe(true); // progress on paper only
+    expect(isStalled(front(4_999, 0.39))).toBe(true);
+    expect(isStalled(front(3_000, -1.2))).toBe(true);
+  });
+
+  it("shows fronts that are moving, or busy enough to matter", () => {
+    expect(isStalled(front(1_200, 0.4))).toBe(false); // e.g. +6%/h against -5.6%/h regen
+    expect(isStalled(front(5_000, 0))).toBe(false);
+    expect(isStalled(front(40_000, null))).toBe(false);
+  });
+
+  it("always shows Major Order targets and pinned planets", () => {
+    expect(isStalled(front(100, null, { inMajorOrder: true }))).toBe(false);
+    expect(isStalled(front(100, -2, { pinned: true }))).toBe(false);
   });
 });
