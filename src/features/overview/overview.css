@@ -23,9 +23,6 @@
 .ov-col > * {
   flex: none;
 }
-.ov-col .nc {
-  margin-bottom: 0;
-}
 /* The theater takes whatever height the activity chart leaves; the disc is sized to fit both ways. */
 .ov-col-mid > .tw {
   flex: 1 1 0;
@@ -248,6 +245,12 @@
   font-size: var(--fs-label);
   color: var(--label);
 }
+.ov-note {
+  margin: 0;
+  padding: var(--s-4) 0;
+  font-size: var(--fs-body-s);
+  color: var(--text-dim);
+}
 .ov-charts {
   display: flex;
   flex-direction: column;
@@ -329,6 +332,23 @@
 }
 .tw-owner.enemy {
   filter: drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 18px color-mix(in srgb, var(--c) 55%, transparent));
+}
+.tw-hits path {
+  fill: transparent;
+}
+.tw-hover {
+  fill: color-mix(in srgb, var(--text-hi) 10%, transparent);
+  stroke: color-mix(in srgb, var(--text-hi) 75%, transparent);
+  stroke-width: 2.5;
+  pointer-events: none;
+}
+.tw-mark {
+  transform: rotate(var(--unrot, 0deg)) scale(1, var(--unsquash));
+  pointer-events: none;
+}
+.tw-mark rect {
+  fill: color-mix(in srgb, var(--void) 78%, transparent);
+  stroke-width: 2;
 }
 .tw-tick {
   stroke: var(--cta);
@@ -424,164 +444,20 @@
   .ov-col {
     display: contents;
   }
-  /* Phones lead with the Major Order, then the story campaign, the distribution, the latest dispatch,
-     24h activity and the theater. */
+  /* Phones lead with the Major Order, then the Galactic Campaign, the distribution, 24h activity and the theater. */
   .ov-board .mo {
     order: 1;
   }
-  .ov-board .ac {
+  .ov-board .cmp-panel {
     order: 2;
   }
   .ov-board .ov-dist {
     order: 3;
   }
-  .ov-board .nc {
+  .ov-board .ov-activity {
     order: 4;
   }
-  .ov-board .ov-activity {
+  .ov-board .tw {
     order: 5;
   }
-  .ov-board .tw {
-    order: 6;
-  }
-}
-
-/* ---------- Active campaign ---------- */
-.ac .panel-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-5);
-}
-.ac-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--s-4);
-}
-.ac-title {
-  font-family: var(--font-head);
-  font-stretch: 125%;
-  font-weight: 800;
-  font-size: var(--fs-value);
-  letter-spacing: 0.04em;
-  color: var(--text-hi);
-  text-transform: uppercase;
-}
-.ac-since {
-  flex: none;
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--label);
-}
-.ac-desc {
-  margin: 0;
-  max-width: 70ch;
-  font-size: var(--fs-body);
-  line-height: 1.5;
-  color: var(--text);
-}
-.ac-phases,
-.ac-past ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-}
-.ac-phases li {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--s-4);
-  padding: var(--s-3) var(--s-4);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-}
-.ac-phases li.active {
-  border-color: color-mix(in srgb, var(--info) var(--edge), var(--line));
-}
-.ac-phases .caps {
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--label);
-}
-.ac-phases b {
-  font-size: var(--fs-body-s);
-  letter-spacing: 0.08em;
-  color: var(--text-hi);
-  text-transform: uppercase;
-}
-.ac-chip {
-  padding: 1px var(--s-3);
-  border: 1px solid color-mix(in srgb, var(--tone) var(--edge), transparent);
-  background: color-mix(in srgb, var(--tone) var(--wash), transparent);
-  color: var(--tone);
-  font-size: var(--fs-label);
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  white-space: nowrap;
-}
-.ac-briefing summary {
-  cursor: pointer;
-  font-size: var(--fs-label);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--text-dim);
-}
-.ac-briefing summary:hover {
-  color: var(--text-hi);
-}
-.ac-briefing-text {
-  margin: var(--s-4) 0 0;
-  max-width: 70ch;
-  font-size: var(--fs-body);
-  line-height: 1.5;
-  color: var(--text);
-  white-space: pre-line;
-}
-.ac-reward {
-  margin: 0;
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--text-dim);
-}
-.ac-reward b {
-  margin: 0 var(--s-2);
-  font-size: var(--fs-body);
-  color: var(--text-hi);
-}
-.ac-past {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  padding-top: var(--s-4);
-  border-top: 1px solid var(--line);
-}
-.ac-sub {
-  font-size: var(--fs-label);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--label);
-}
-.ac-past li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: var(--s-4);
-  font-size: var(--fs-body-s);
-}
-.ac-past-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-hi);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.ac-past .num {
-  font-size: var(--fs-label);
-  letter-spacing: 0.08em;
-  color: var(--label);
 }

@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { POLL_MS } from "../config";
+import { frontBuckets, latestRun, type FrontBucket, type FrontRow } from "../domain/frontActivity";
+import { sectorTerritory } from "../domain/galaxy";
+import { byIndex } from "../domain/planets";
 import type { WarSampleRow } from "../domain/snapshot";
-import { useLastUpdate } from "./queries";
+import { useFreshPlanets, useLastUpdate } from "./queries";
 import { getSource, SourceError } from "./source";
 
 export interface WarSample {
@@ -39,4 +43,39 @@ export function useWarSamples() {
       }
     },
   });
+}
+
+/**
+ * Helldivers per front over the last 24 hours, or since the latest gap in the data. Summed in the
+ * database from planet samples the collector has always kept, so there is no warm-up. A defense counts
+ * for its attacker, or the enemy holding most of its sector.
+ */
+export function useFrontActivity() {
+  const lastUpdate = useLastUpdate().data;
+  const planets = useFreshPlanets().data;
+  const query = useQuery({
+    queryKey: ["front_activity", Math.floor((lastUpdate ?? 0) / POLL_MS)],
+    enabled: lastUpdate != null,
+    staleTime: POLL_MS,
+    queryFn: async (): Promise<FrontRow[]> => {
+      try {
+        return await (await getSource()).rpc<FrontRow>("front_activity", { hours: 24 });
+      } catch (e) {
+        if (e instanceof SourceError && e.status === 404) return [];
+        throw e;
+      }
+    },
+  });
+  const data = useMemo((): FrontBucket[] | undefined => {
+    if (!query.data || !planets) return undefined;
+    const lookup = byIndex(planets);
+    const territory = sectorTerritory(planets);
+    return latestRun(
+      frontBuckets(query.data, (i) => {
+        const p = lookup.get(i);
+        return p?.event?.faction ?? (p && territory.get(p.sector)?.faction);
+      }),
+    );
+  }, [query.data, planets]);
+  return { data, isLoading: query.isLoading };
 }

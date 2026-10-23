@@ -14,6 +14,7 @@ export function GwwModule() {
   const { changes, ready } = useHistory();
   const openOptions = useUi((s) => s.openOptions);
   const openModule = useUi((s) => s.openModule);
+  const showAbout = useUi((s) => s.showAbout);
   const liberated = changes.filter((c) => c.to === "Humans").length;
   return (
     <div className="gww">
@@ -72,7 +73,7 @@ export function GwwModule() {
             Every mark used on the map and cards
           </span>
         </button>
-        <button className="dp-link" onClick={() => openModule("about")}>
+        <button className="dp-link" onClick={() => showAbout(true)}>
           <Info size={16} />
           <span>
             <b>About</b>
@@ -123,7 +124,7 @@ const MARKS: { icon: React.ReactNode; name: string; text: string }[] = [
         <circle r="3" fill="var(--f-automaton)" stroke="#fff" strokeWidth="0.8" />
       </svg>
     ),
-    name: "Active campaign",
+    name: "Active planet",
     text: "A pulsing ring on the map: Helldivers are fighting for this planet right now.",
   },
   {

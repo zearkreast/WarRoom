@@ -49,7 +49,7 @@ const ALERTS: { key: keyof AlertSettings; title: string; text: string }[] = [
   { key: "orders", title: "New Major Orders", text: "When High Command issues a new order." },
   { key: "dispatches", title: "New dispatches", text: "Messages from Super Earth." },
   { key: "captures", title: "Planets liberated or lost", text: "Whenever a planet changes hands." },
-  { key: "defenses", title: "New defense campaigns", text: "When an enemy attacks a Super Earth planet." },
+  { key: "defenses", title: "New defenses", text: "When an enemy attacks a Super Earth planet." },
   { key: "system", title: "System notifications", text: "Also show alerts outside the app, as OS notifications." },
 ];
 
@@ -84,11 +84,11 @@ export function SettingsPage() {
         <h1 className="page-title">Settings</h1>
         <Panel title="Interface" icon={Settings}>
           <Row
-            title="Stalled campaigns"
+            title="Stalled planets"
             text={`Fronts under ${fmtInt(MIN_PLAYERS)} Helldivers that gain less than +${MIN_RATE}%/h. Major Order targets and pinned planets always show.`}
           >
             <Stepper
-              label="Stalled campaigns"
+              label="Stalled planets"
               options={[
                 { value: "hidden", label: "Hidden" },
                 { value: "shown", label: "Shown" },

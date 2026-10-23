@@ -69,25 +69,11 @@
 .tf-front {
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke-width: 1.5;
+  stroke-opacity: 0.85;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
   vector-effect: non-scaling-stroke;
-}
-.tf-glow {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 9;
-  stroke-opacity: 0.18;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-}
-.q-max .tf-glow {
-  stroke-width: 13;
-  stroke-opacity: 0.22;
-}
-.territory.glow .tf-front {
-  filter: drop-shadow(0 0 4px currentColor);
 }
 /* Where an enemy's outright holdings meet its contested sectors. */
 .tf-split {
@@ -103,35 +89,37 @@
 }
 .sg-grid {
   fill: none;
-  stroke: color-mix(in srgb, var(--f-humans) 30%, transparent);
+  stroke: color-mix(in srgb, var(--f-humans) 18%, transparent);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
-.territory.glow .sg-grid {
-  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--f-humans) 60%, transparent));
-}
 .sg-rim {
   fill: none;
-  stroke: color-mix(in srgb, var(--f-humans) 55%, transparent);
-  stroke-width: 1.5;
+  stroke: color-mix(in srgb, var(--f-humans) 40%, transparent);
+  stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
-.territory.glow .sg-rim {
-  filter: drop-shadow(0 0 6px var(--f-humans));
-}
-.sg-label {
-  font-family: var(--font-head);
-  font-stretch: 125%;
-  font-weight: 800;
-  font-size: 22px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-anchor: middle;
+/* The sector under the pointer, in every overlay. */
+.sector-hover {
+  fill: color-mix(in srgb, var(--text-hi) 6%, transparent);
+  stroke: color-mix(in srgb, var(--text-hi) 70%, transparent);
+  stroke-width: 1.25;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
   pointer-events: none;
-  filter: drop-shadow(0 0 6px currentColor);
 }
-.sg-hits path {
-  fill: transparent;
+/* Enemy emblems: read at galaxy scale, then step aside for the planets once zoomed in. */
+.faction-marks {
+  pointer-events: none;
+  transition: opacity var(--t-reveal) var(--ease);
+}
+.fm-plate {
+  fill: color-mix(in srgb, var(--void) 78%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.z-sectors .faction-marks {
+  opacity: 0;
 }
 
 .lanes line {
@@ -143,8 +131,8 @@
   stroke: rgba(210, 228, 255, 0.36);
 }
 .lanes.front line {
-  stroke: rgba(228, 240, 255, 0.72);
-  stroke-width: 1.4;
+  stroke: rgba(228, 240, 255, 0.5);
+  stroke-width: 1.2;
 }
 .attacks line {
   stroke-width: 1.5;
@@ -198,19 +186,22 @@
   stroke: var(--cta);
   stroke-width: 1;
 }
-.camp-badge polygon {
-  fill: #f2f6fa;
-  stroke: rgba(0, 0, 0, 0.55);
-  stroke-width: 0.4;
+.act-tag rect {
+  fill: var(--surface-1);
+  stroke: currentColor;
+  stroke-width: 0.6;
 }
-.camp-badge.mo polygon {
-  fill: var(--cta);
+.act-tag.mo rect {
+  stroke: var(--cta);
 }
-.camp-badge circle,
-.camp-badge path {
+.act-tag circle,
+.act-tag path {
   fill: none;
-  stroke: #0b0f16;
-  stroke-width: 0.7;
+  stroke: currentColor;
+  stroke-width: 0.6;
+}
+.act-tag .act-stem {
+  stroke-opacity: 0.7;
 }
 .planet.landmark {
   cursor: default;
@@ -277,7 +268,7 @@
   font-size: calc(8px / var(--k));
   letter-spacing: 0.2em;
 }
-/* Spheres carry the campaign badge on top, so their names go underneath, as on the in-game map. */
+/* Spheres carry the active-planet tag on top, so their names go underneath, as on the in-game map. */
 .pl-spheres .planet-label {
   transform: translateY(calc(8px * 1.4 / pow(var(--k), 0.55) + 9px / var(--k)));
 }
@@ -427,40 +418,6 @@
   height: 36px;
   background: color-mix(in srgb, var(--surface-1) 82%, transparent);
   backdrop-filter: blur(6px);
-}
-
-.control-bar {
-  position: absolute;
-  left: var(--s-5);
-  bottom: var(--s-5);
-  width: min(420px, calc(100% - 300px));
-  padding: var(--s-4) var(--s-5);
-  z-index: 2;
-}
-.control-split {
-  display: flex;
-  height: 4px;
-  gap: 2px;
-}
-.control-split span {
-  height: 100%;
-}
-.control-legend {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--s-4);
-  margin-top: var(--s-4);
-  font-size: var(--fs-micro);
-  letter-spacing: 0.14em;
-}
-.control-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
-  color: var(--text-dim);
-}
-.control-legend b {
-  font-size: var(--fs-body-s);
 }
 
 .map-toggles {
@@ -655,15 +612,7 @@
 }
 
 @media (max-width: 760px) {
-  .control-bar {
-    left: var(--s-3);
-    right: var(--s-3);
-    width: auto;
-    transform: none;
-    bottom: 56px;
-  }
   /* Keyboard hints mean nothing on a touch screen. */
-  .cl-name,
   .map-controls-hint {
     display: none;
   }

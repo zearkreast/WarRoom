@@ -1,0 +1,207 @@
+/* ---------- Galactic Campaign ---------- */
+.cmp,
+.cmp-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+.cmp-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-4);
+}
+.cmp-name {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+}
+.cmp-title {
+  font-family: var(--font-head);
+  font-stretch: 125%;
+  font-weight: 800;
+  font-size: var(--fs-value);
+  letter-spacing: 0.04em;
+  color: var(--tone);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.cmp-dates,
+.cmp-issued {
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--label);
+}
+.cmp-desc,
+.cmp-text {
+  margin: 0;
+  max-width: 70ch;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--text);
+  white-space: pre-line;
+}
+.cmp-outro {
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--line);
+  color: var(--text-dim);
+}
+
+.cmp-reward {
+  --state: var(--info);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-2) var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.cmp-reward.won {
+  --state: var(--good);
+}
+.cmp-reward.lost {
+  --state: var(--bad);
+}
+.cmp-label {
+  grid-column: 1 / -1;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--label);
+}
+.cmp-reward-name {
+  font-size: var(--fs-value);
+  color: var(--text-hi);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cmp-reward.lost .cmp-reward-name {
+  color: var(--text-dim);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--bad) var(--strong), transparent);
+}
+.cmp-reward-kind {
+  align-self: center;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+}
+.cmp-rule {
+  grid-column: 1 / -1;
+  font-size: var(--fs-body-s);
+  color: var(--state);
+}
+
+.cmp-tally {
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--label);
+}
+.cmp-tally b {
+  font-size: var(--fs-body);
+  color: var(--text-hi);
+}
+
+.cmp-orders {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.cmp-orders details {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.cmp-orders details[open] {
+  border-color: var(--line-strong);
+}
+.cmp-orders summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  cursor: pointer;
+  list-style: none;
+}
+.cmp-orders summary::-webkit-details-marker {
+  display: none;
+}
+.cmp-orders summary:hover .cmp-mo-title {
+  color: var(--cta);
+}
+.cmp-orders details > :not(summary) {
+  margin: 0 var(--s-4) var(--s-4);
+}
+.cmp-orders details > .cmp-issued {
+  display: block;
+  margin-top: var(--s-2);
+}
+.cmp-mo {
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--label);
+}
+.cmp-mo-title {
+  min-width: 0;
+  font-size: var(--fs-body-s);
+  letter-spacing: 0.08em;
+  color: var(--text-hi);
+  text-transform: uppercase;
+}
+.cmp-medals {
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
+
+@media (max-width: 760px) {
+  .cmp-orders summary {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .cmp-medals {
+    display: none;
+  }
+}
+
+/* ---------- Archive ---------- */
+.pc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.pc {
+  border: 1px solid var(--line);
+  background: var(--surface-0);
+}
+.pc > summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  cursor: pointer;
+  list-style: none;
+}
+.pc > summary::-webkit-details-marker {
+  display: none;
+}
+.pc > summary:hover .cmp-title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pc[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+.pc > .cmp-body {
+  padding: var(--s-5);
+}
+.pc-meta {
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--label);
+}

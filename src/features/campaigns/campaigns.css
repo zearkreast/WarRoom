@@ -257,6 +257,32 @@
   flex-direction: column;
   gap: var(--s-4);
 }
+.mo-strip.folded .panel-body {
+  display: none;
+}
+.ms-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.ms-toggle:hover {
+  color: var(--cta);
+}
+.ms-chevron {
+  flex: none;
+  transition: transform var(--t-state) var(--ease);
+}
+.ms-toggle[aria-expanded="true"] .ms-chevron {
+  transform: rotate(90deg);
+}
 .ms-verdict {
   margin: 0;
   font-size: var(--fs-body);

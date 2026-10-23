@@ -6,7 +6,7 @@ import { useSettings, useUi } from "../state";
 
 /** Tracker Dispatch: what's new in the app, plus links to the help pages. */
 export function DispatchPanel() {
-  const { dispatchOpen, toggleDispatch, openModule } = useUi();
+  const { dispatchOpen, toggleDispatch, openModule, showAbout } = useUi();
   const markChangelog = useSettings((s) => s.markChangelog);
   useEffect(() => {
     if (dispatchOpen) markChangelog(APP_VERSION);
@@ -18,21 +18,25 @@ export function DispatchPanel() {
     return () => window.removeEventListener("keydown", onKey);
   }, [dispatchOpen, toggleDispatch]);
   if (!dispatchOpen) return null;
-  const go = (m: "about" | "legend") => {
+  const legend = () => {
     toggleDispatch(false);
-    openModule(m);
+    openModule("legend");
+  };
+  const about = () => {
+    toggleDispatch(false);
+    showAbout(true);
   };
   return (
     <aside className="dispatch-panel panel glass" aria-label="Tracker dispatch">
       <div className="dp-links">
-        <button className="dp-link" onClick={() => go("legend")}>
+        <button className="dp-link" onClick={legend}>
           <BookOpen size={16} />
           <span>
             <b>Icons legend</b>
             What every mark on the map and cards means
           </span>
         </button>
-        <button className="dp-link" onClick={() => go("about")}>
+        <button className="dp-link" onClick={about}>
           <Info size={16} />
           <span>
             <b>About</b>

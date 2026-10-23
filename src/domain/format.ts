@@ -100,3 +100,12 @@ export function fmtAgo(at: number, now: number): string {
   const d = Math.floor(h / 24);
   return `${d} day${d === 1 ? "" : "s"} ago`;
 }
+
+/** Compact age for tight spaces: "now", "12m", "3h", "2d". */
+export function fmtAgeShort(at: number, now: number): string {
+  const m = Math.floor((now - at) / 60_000);
+  if (m < 1) return "now";
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d`;
+}

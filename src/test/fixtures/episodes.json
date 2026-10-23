@@ -1,0 +1,511 @@
+{
+ "warTime": 84847220,
+ "fetchedAt": 1792787437411,
+ "episodes": [
+  {
+   "id32": 1277775876,
+   "title": "CENSUS THUNDER",
+   "description": "Voteless hordes are pouring out of the Void, threatening innocent civilians and protected natural refuges. The latest FRV models have been deployed to the front lines to aid in the repulsion of these abominations.",
+   "race": 4,
+   "status": 2,
+   "startWarTime": 73666950,
+   "endWarTime": 74811220,
+   "phases": [
+    {
+     "introTitle": "CONTAINMENT",
+     "introMessage": "Hordes of Voteless abominations have been detected on planets close to the <i=1>Void</i>. They have swarmed across <i=1>SANGIS and BASQUINE VIII</i>, formerly untouched preserves. The Helldivers are ordered to liberate those planets from the Voteless hordes.\n\nHigh Command has authorized the use of new FRV models: <i=1>INCINERATOR FRV on SANGIS and SUPPLY FRV on BASQUINE VIII</i>. The FRV model associated with the first liberated planet will go into full-scale production.",
+     "outroMessage": "The Helldivers were unable to secure <i=1>SANGIS</i>. Its vast, untouched forests have been severely impacted by the Voteless incursion, and may never recover. <i=1>BASQUINE VIII</i> is secure. Its natural mineral reserves can now be extracted by deserving mining corporations, while all citizens enjoy their beauty through digital VR tours.\n\nMore Voteless continue to appear on planets near the Void. Intel assesses they are coming from within the Void itself. ",
+     "status": 3,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 30
+      }
+     ]
+    },
+    {
+     "introTitle": "MATERIAL ACQUISITION",
+     "introMessage": "Ministry of Science xenobiologists have made a discovery: captured Voteless from <i=1>BASQUINE VIII</i> are altered at a cellular level. Ministry of Science experts believe this could present a key opportunity to learn more about the Void. To this end, a large-scale tissue processing facility will be constructed.\n\nDeploy to Automaton-held <i=1>BLISTICA</i> to secure the enemy's bio-processors. Additionally, secure <i=1>15,000,000 samples</i> from <i=1>ALARAPH</i>, currently overrun by Voteless.\n\n",
+     "outroMessage": "The Helldivers have liberated <i=1>BLISTICA</i> from the Automatons. Bio-processing facilities on the planet, used by the enemy to draw organic materials from murdered patriots, have been transported off-planet.\n\nSimultaneously, the Helldivers secured over <i=1>15,000,000</i> Voteless tissue samples. Their Void-altered cells will allow for laboratory study of the Void for the first time.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 45
+      }
+     ]
+    },
+    {
+     "introTitle": "REPATRIATION",
+     "introMessage": "The Ministry of Science has commenced construction of a <i=1>Voteless Processing Plant</i> on <i=1>ALARAPH</i>. This highly advanced facility will humanely process inert Voteless tissue, preparing it for scientific study in order to advance our understanding of the <i=1>Void</i>.\n\nHold <i=1>ALARAPH</i> until the facility is complete. Additionally, prepare <i=1>25,000,000</i> Voteless specimens for study, by rendering them inert.\n",
+     "outroMessage": "The <i=1>Voteless Processing Plant</i> is operational. Its bio-centrifuges have already processed several tons of Voteless tissue, aiding research into the Void. Voteless incursions from the Void have subsided.\n\nThe heroic actions of the Helldivers throughout this Campaign made this possible. Their bravery and excellence in FRV operation is the subject of widespread public acclaim.\n\nThe <i=1>SUPPLY FRV</i> has completed experimental testing. It is now available.\n",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 45
+      }
+     ]
+    }
+   ],
+   "rewards": [
+    {
+     "mixId": 2768520552,
+     "amount": 1
+    }
+   ]
+  },
+  {
+   "id32": 1914091347,
+   "title": "CELESTIAL FENCE",
+   "description": "Super Earth is constructing a flawless, updated, and entirely safe Terminid Control System wall to permanently quarantine the bug menace called \"TCS+\". The Helldivers must defend its construction, secure resources to maintain our record-breaking pace, and hold the line to guarantee eternal planetary security.",
+   "race": 2,
+   "status": 2,
+   "startWarTime": 74875950,
+   "endWarTime": 76017130,
+   "phases": [
+    {
+     "introTitle": "DEPLOYMENT",
+     "introMessage": "Super Earth is constructing a new wall of TCS+ arrays. High Command assures citizens that the new and improved \"Termicide 2.0\" dispersed by TCS+ Towers is 110% safe, righteously liquefying Terminids, while promoting pine-scented health benefits to colonists within the efficacy radius.\n\nIn an imprudent bid to escape their fate, the Terminids have launched a massive wave of attacks to halt construction.\n\nHelldivers must defend against 5 Terminid attacks to secure the sites. Wherever Helldivers successfully hold the line is where the unshakeable borders of Liberty will be drawn.",
+     "outroMessage": "The Helldivers successfully defended the initial <i=1>TCS+</i> construction sites, proving the viability of Termicide 2.0. Consequently, public demand for the new wall has surged beyond all projected models.\n\nCitizens across the Federation are demanding immediate, heavily-subsidized TCS+ arrays in their own backyards. To maintain this record-setting pace, the Ministry of Expansion completely depleted resource reserves allocated to TCS+, requiring rapid procurement operations to complete the first construction phase.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 45
+      }
+     ]
+    },
+    {
+     "introTitle": "PROCUREMENT",
+     "introMessage": "Construction of the new <i=1>TCS+</i> wall is exceeding all projections. To maintain this breathless, record-setting pace, the Ministry of Expansion requires an immediate influx of gas and mineral resources.\n\nThe Helldivers are ordered to secure these resources by liberating <i=1>MOX</i> from the Automatons and <i=1>GENESIS PRIME</i> from the Illuminate. Simultaneously, Helldivers must hold <i=1>BRILLIANCE</i>, where active construction of planetary TCS+ arrays is taking place.\n\nProcure the necessary resources by any means necessary, so the new unbreakable borders of Liberty can be finalized.",
+     "outroMessage": "Despite the Helldivers' valiant efforts, the required resources on <i=1>MOX</i> and <i=1>GENESIS PRIME</i> were not fully procured. However, the Helldivers' stalwart defense of <i=1>BRILLIANCE</i> has enabled construction of the <i=1>TCS+</i> wall to proceed, albeit with budget-optimized, localized materials.\n\nIrrespective of the components used, up to 50% of the planned <i=1>Termicide 2.0</i>-dispersing wall will be completed in this first construction phase. Once fully built, the Terminids will be permanently shielded off, cornered within the galaxy, and systematically eliminated, to the relief of all citizens.",
+     "status": 3,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 40
+      }
+     ]
+    },
+    {
+     "introTitle": "CONTAINMENT",
+     "introMessage": "The multi-sector span of the <i=1>Termicide 2.0</i>-dispersing TCS+ wall is nearing completion, representing approximately half of the full, planned structure. In response, the Terminids are making a concerted to break through and circumvent the new barrier before it seals them in forever.\n\nThe bugs are applying extreme pressure to our border planets and, if not stopped, may cut off Federal supply lines. The Helldivers are ordered to <i=1>kill 600,000,000 Terminids</i>, while successfully holding <i=1>TERREK</i> and <i=1>ERATA PRIME</i>. Helldivers should anticipate the bugs' unlawful resistance to increase as they grow more desperate to evade their eradication.",
+     "outroMessage": "By holding the line against progressively stronger waves of Terminids, the Helldivers have ensured the successful completion of the first half of the <i=1>Termicide 2.0</i>-dispersing TCS+ wall.\n\nFrom the initial deployment, through rapid resource procurement, to this final futile attempt to overwhelm the heroes of Super Earth—the Helldivers defended the first phase of this historic construction at every turn. Countless bugs are now definitively shielded off within a controlled set of sectors. The new Termicide is performing flawlessly, with 100% safety guaranteed for our citizens. \n\nWith the expected increase in E-710 harvesting, the Ministry of Expansion has confirmed that funding for the wall will soon by entirely generated by the creatures held within it, making its planned expansion and upkeep exceptionally sustainable.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 40
+      }
+     ]
+    }
+   ],
+   "rewards": [
+    {
+     "mixId": 2232169940,
+     "amount": 1
+    }
+   ]
+  },
+  {
+   "id32": 895752282,
+   "title": "LIGHTNING INTERCEPT",
+   "description": "The Cyborgs have deployed a prototype orbital platform capable of inflicting massive destruction across entire planets. This weapon of mass tyranny cannot be allowed to terrorize our citizens; it must be intercepted and destroyed.",
+   "race": 3,
+   "status": 2,
+   "startWarTime": 76083410,
+   "endWarTime": 77205100,
+   "phases": [
+    {
+     "introTitle": "RAPID RESPONSE",
+     "introMessage": "The Automatons have launched an attack on <i=1>VARYLIA 5</i> with a sudden and unprovoked kinetic bombardment, inflicting massive devastation across the planet. The strike originated from an <i=1>orbital weapon platform</i>, briefly seen in the planet’s orbit before disappearing.\n\nAutomaton forces are now conducting a planetside invasion. The Helldivers must immediately respond. <i=1>Hold VARYLIA 5 against the Automaton invasion</i>. \n\nAdditional attacks are anticipated. The Helldivers are ordered <i=1>to conduct operations on MARFARK</i>, where a Cyborg Megafactory has recently been built, to gather intelligence on which planet will be targeted next.",
+     "outroMessage": "Automaton assault forces were neutralized on <i=1>VARYLIA 5</i> after a heroic rally by Helldiver forces. On <i=1>MARFARK</i>, the Helldivers secured intel vital to the superweapon tracking effort. Analysis confirms that the enemy intends to test the orbital superweapon on a Super Earth planet in the <i=1>TANIS sector</i>. \n\nThe gathered intel has narrowed the enemy's next potential targets to just a few planets. The Helldivers are ordered to vote to move the DSS to intercept the enemy superweapon. Voting will begin now on the Galactic Map, and end after 24 hours.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 40
+      }
+     ]
+    },
+    {
+     "introTitle": "TRIANGULATION",
+     "introMessage": "The Automaton orbital platform has struck <i=1>YED PRIOR</i>. Enemy ground forces have descended to the planet. Helldivers are ordered to deploy to the defense of <i=1>YED PRIOR</i>.\n\nFollowing the strike, SEAF field decrypters were cut off on WEZEN. Without access to their field expertise, decryption of Automaton transmissions has been stalled. Liberate WEZEN to enable efforts to decrypt enemy communications to continue.",
+     "outroMessage": "<i=3>MAJOR ORDER WON</i>\n\nThe Helldivers repelled the Automatons from YED PRIOR, and liberated the decryption team on WEZEN. The data recovered from the teams indicate that additional intel regarding the Automatons’ next target may be found on X-45.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 35
+      }
+     ]
+    },
+    {
+     "introTitle": "FORCEFUL DECOMMISSION",
+     "introMessage": "Intelligence secured from the SEAF decryption forces on WEZEN confirms that Automatons are using X-45 as a hub planet for facilities dedicated to the orbital superweapon. \n\nX-45 must be liberated in order to seize the data needed to decisively destroy the superweapon. Enemy positions are well-fortified; expect heavy resistance. \n\nLiberate the planet and secure the intel, to prevent further mass casualties of the Automaton superweapon.",
+     "outroMessage": "The orbital superweapon was successfully intercepted by the Helldivers and the DSS before it could strike <i=1>MORT</i>, and fully destroyed.\n\nThe local bureau of Logistics, Child Labor, and Ballistic Fabric Production on MORT took great pride in creating helmets for the Helldivers who intercepted the orbital superweapon. Commemorative headgear will be distributed shortly.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 40
+      }
+     ]
+    }
+   ],
+   "rewards": [
+    {
+     "mixId": 1407130184,
+     "amount": 1
+    }
+   ]
+  },
+  {
+   "id32": 780106966,
+   "title": "PERMANENT ENCLOSURE",
+   "description": "At long last, we now possess the means, technology, and firepower to completely encircle and contain the Terminid threat once and for all. The Helldivers will lead an effort to build the rest of the completely effective and safe TCS+, thereby securing our citizens and their children, forever.",
+   "race": 2,
+   "status": 2,
+   "startWarTime": 77295030,
+   "endWarTime": 78499000,
+   "phases": [
+    {
+     "introTitle": "WALL EXTENSION",
+     "introMessage": "The TCS+, an interplanetary network of towers that disperse Termicide 2.0, was half-completed thanks to the aid of the Helldivers. The active towers on that planet have worked perfectly, despite a small number of dissident-planted outbreaks.\n\nThe time has now come to extend the barrier to fully pen in the Terminid Swarm. TCS+ Towers have been constructed on the following planets: FRONTERIA, TURING, and ACHIRD III. The construction has triggered instinctive assaults from the Terminids. The Helldivers are ordered to defend these planets and activate the TCS+ towers in the process.",
+     "outroMessage": "The Helldivers valiantly defended FRONTERIA, TURING, and ACHIRD III from the Terminids. TCS+ Towers are now fully active on those planets, dispersing Termicide 2.0, which is proven beyond doubt to make Terminid infestation impossible.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 45
+      }
+     ]
+    },
+    {
+     "introTitle": "TRUTH ENFORCEMENT",
+     "introMessage": "A recent Cyborg disinformation campaign attempted to spread lies amongst our citizens regarding the efficacy of Termicide 2.0. The Cyborgs have evidently continued investing resources into spreading falsehoods and disunity, likely recognizing they are hopelessly outmatched in conventional warfare.\n\nCitizen confidence in government messaging is of paramount importance. The Helldivers are ordered to pause construction of the TCS+ in order to <i=1>liberate MEISSA</i>, where these duplicitous files were believed to have been fabricated.\n",
+     "outroMessage": "<i=1>MEISSA</i> has been liberated from the Cyborgs. Ministry of Truth strike teams, trained to view and handle enemy disinformation, secured and destroyed all enemy disinformation production and dissemination sites, which existed. \n\nThanks to citizen reports, all existing disinformation has been found and destroyed, with affected citizens re-educated. Polls show restored citizen confidence in the absolute efficacy of the TCS+.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 40
+      }
+     ]
+    },
+    {
+     "introTitle": "FINAL CORDON",
+     "introMessage": "TCS+ construction has begun on the final Barrier planets. Permanent and total enclosure of the Terminids is within reach.\n\nFierce Terminid assaults are anticipated. The Helldivers must protect the establishment of this intergalactic border. Hold <i=1>DARIUS II, ACHERNAR SECUNDUS, GRAND ERRANT, and PHERKAD SECUNDUS</i> until the TCS+ is operational.\n",
+     "outroMessage": "The TCS+ is complete. On an unbroken line of planets, Termicide 2.0 fills the atmosphere, completely preventing the possibility of Terminid infestation.\n\nOver two years since the start of Operation Valiant Enclosure, the aim of that operation is at last achieved: total, permanent security from the threat of Terminid invasion. At last, the heroes who perished in pursuit of this dream have been avenged, and citizens of Super Earth can raise their children without fear of dismemberment by alien invaders.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 35
+      }
+     ]
+    }
+   ],
+   "rewards": [
+    {
+     "mixId": 3421347422,
+     "amount": 1
+    }
+   ]
+  },
+  {
+   "id32": 1575806997,
+   "title": "VOID PIERCER",
+   "description": "Super Earth has launched a historic assault into the Void. Using the Void Warp Relay, a vanguard of Helldivers and SEAF infantry have been sent into the dark, multi-layered anomaly to locate and shatter the hidden Illuminate stronghold, and permanently purge the existential threat of the Void from our galaxy.",
+   "race": 4,
+   "status": 2,
+   "startWarTime": 78600600,
+   "endWarTime": 79569310,
+   "phases": [
+    {
+     "introTitle": "VOID PIERCER",
+     "introMessage": "Through their abhorrent manipulation of spacetime, the Illuminate have conjured <i=1>the Void</i>. To breach this dark anomaly, engineering corps are finalizing a Void Warp Relay on <i=1>Rirga Bay</i>, designed to insulate fleet hulls against molecular destabilization during FTL transit.\n\nHowever, initial calibration tests have allowed an onslaught of <i=1>horrific Illuminate creations</i> to spill out from the gateway, threatening to halt the Relay's construction.\n\nHelldivers must hold <i=1>Rirga Bay</i>, stop the spread of these grotesque mutations, and collect critical <i=1>E-711</i> to fuel the relay. Securing these reserves is vital to facilitate upcoming SEAF deployments into the unknown.",
+     "outroMessage": "The Helldivers successfully protected <i=1>Rirga Bay</i>, defying hordes of previously undocumented <i=1>Illuminate</i> horrors and proving that no amount of alien genetic tampering can withstand Liberty's might.\n\nConsequently, the Void Warp Relay has achieved full operational status. In addition to securing primary fuel metrics, the enthusiastic harvesting of <i=1>E-711</i> enabled High Command to reward auxiliary SEAF regiments with immediate, mandatory deployment into <i=1>the Void</i> alongside Super Earth's most elite forces.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 30
+      }
+     ]
+    },
+    {
+     "introTitle": "ADVANCEMENT",
+     "introMessage": "The Void Warp Relay is online; Helldivers are ordered to enter <i=1>the Void</i> immediately. Within this anomaly, conventional astronomy and navigational arrays are practically non-functional, owing to the completely alien environment, incomprehensible to standard-issue perception.\n\nTo enable onward navigation, science teams are deploying alongside ground forces, to analyze target world exposure-duration. Calculating this molecular degradation trail—using an advanced form of cosmic carbon-dating—will lead back to its epicentral origin: the hidden <i=1>source planet</i> within the Void.\n\nTo make this process possible, Helldivers must extract <i=1>35,000,000 samples from UVP ALPHA</i>, complete <i=1>1,000,000 operations on UVP GAMMA</i>, and eliminate <i=1>1,250,000,000 hostiles on SENGE 23</i>.",
+     "outroMessage": "The Helldivers’ investigative charting of <i=1>the Void</i>'s initial layer was a masterclass in conquering the unknown. Data extracted from the three initial worlds allowed SEAF navigation arrays to successfully calibrate despite the unlawful spacetime anomalies, narrowing search parameters for the hidden <i=1>Illuminate source planet</i>.\n\nThe exceptional speed of this effort secured vital operational margins, heavily expedited by auxiliary SEAF infantry who enthusiastically volunteered to face the horrors of the unfamiliar planets.\n\nWith the tracking data securely archived, the downward offensive toward the enemy's central base of operations remains on schedule, and with immediate SEAF support available.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 40
+      }
+     ]
+    },
+    {
+     "introTitle": "DISSOLUTION",
+     "introMessage": "The Helldivers have reached the heart of the Void: <i=1>Seasse</i>. While other worlds suffered only localized ecological damage, this planet has been fundamentally and comprehensively altered into a completely alien ecosystem, extensively occupied by the <i=1>Illuminate</i>. The planet is a breeding ground for Tyranny that cannot be allowed to spread any further.\n\nThe Helldivers are ordered to liberate <i=1>Seasse</i> by any means necessary.\n\nWhile forces clear the surface, an elite 20-person Ministry of Science team will descend into its depths to collapse <i=1>the Void</i> from within. High Command guarantees this process is entirely safe and completely understood.",
+     "outroMessage": "The Helldivers have secured <i=1>Seasse</i>, enabling the surviving Ministry of Science team members to trigger the total, completely understood dissolution of the Void, reverting all affected worlds to their designated, legally-approved layout.\n\nThe three science personnel successfully submitted their subterranean findings. These thoroughly-quarantined heroes then underwent routine psychological restructuring to ensure compliance with standard data-safety protocols.\n\nThis triumph concluded a historic campaign. From the gateway at <i=1>Rirga Bay</i> to the anomaly's depraved depths, Helldivers proved no mystery can withstand Liberty's light. Though mutated enemies persist in minimized numbers, <i=1>the Void</i> has been safely obliterated, securing the Federation against obfuscated Tyranny.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 40
+      }
+     ]
+    }
+   ],
+   "rewards": [
+    {
+     "mixId": 2547900634,
+     "amount": 1
+    }
+   ]
+  },
+  {
+   "id32": 2305014953,
+   "title": "COUNTERDISSIDENT HAMMER",
+   "description": "Extremist dissidents have sabotaged the Terminid Control System+ (TCS+), terrorizing citizens with the threat of a new Terminid outbreak in pursuit of their radical anti-Democratic ideology. The Helldivers will lead a galaxy-wide operation to find and neutralize this terrorist network, so that the TCS+ may continue to provide total protection to our citizens.",
+   "race": 2,
+   "status": 2,
+   "startWarTime": 79723080,
+   "endWarTime": 80832250,
+   "phases": [
+    {
+     "introTitle": "DISSIDENT MANHUNT",
+     "introMessage": "A Terminid outbreak has occurred on <i=1>BRILLIANCE</i>. The Terminid Control System+ (TCS+) array is under significant distress, with multiple nodes failing. Terminids now threaten to spread across the planet, and break through the TCS+ line.\n\nThe TCS+ has been empirically proved to make any Terminid infestation impossible. This outbreak, therefore, can only be the result of dissident sabotage. The evidence is clear and undeniable. Despite the dismantling of Automaton disinformation networks, disloyal extremists continue operations to destroy Managed Democracy from within.\n\nHigh Command has ordered an immediate and forceful Counter-Dissidence Crackdown. The Ministry of Truth has identified, with high confidence, three enemy planets as harbors of extremists: <i=1>GACRUX, GAR HAREN, and LUXURIANT</i>. The Helldivers are ordered to liberate these planets, so the dissidents may be brought to justice.\n",
+     "outroMessage": "The Heldlivers rapidly secured each planet suspected to harbor the dissidents responsible for sabotaging the TCS+. However, no dissidents were found or apprehended. \n\nThis evasion demonstrates the capability to orchestrate the rapid evacuation of dissident agents from these planets. It is clear that the dissident network is even more extensive and well-resourced than initially estimated. \n",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 50
+      }
+     ]
+    },
+    {
+     "introTitle": "CITIZEN ARREST",
+     "introMessage": "The dissident network responsible for the sabotage of the TCS+ has eluded justice. Predictive analytics indicate the network has dispersed domestically, hiding as regular citizens. \n\nThese dissidents, who exist, must face punishment. High Command has therefore ordered a Full Deputization of Super Earth citizens Class B and above. They have been rapidly trained on traitor identification heuristics, issued printable badges, and granted authority to use necessary force.\n\nThe Helldivers are ordered to secure material for the production of hunting trophies to reward the capture of suspected dissidents. <i=1>Neutralize the high-value Illuminate and Cyborg/Automaton belligerents</i> indicated on the Galactic Map in short order.",
+     "outroMessage": "Deputized citizens have apprehended thousands of suspected dissidents across the Federation. They were motivated and rewarded by premium trophies of Freedom's enemies valiantly secured by the Helldivers.\n\nHundreds of apprehended suspects have already confessed to conspiracy to sabotage the TCS+ and destroy Managed Democracy. The dissident network, which existed, is rapidly being mapped and dismantled.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 35
+      }
+     ]
+    },
+    {
+     "introTitle": "BARRIER ENHANCEMENT",
+     "introMessage": "Recent sabotages of the TCS+ by dissidents have threatened the populace and inflamed public outrage. Those responsible sought to spread disunity and doubt, particularly in the security that so many Helldivers sacrificed their lives for.\n\nSuper Earth will meet these acts of terror with resolve and strength. The TCS+ will not be weakened, but strengthened, as a result of these attacks. The Helldivers are ordered to liberate <i=1>BORE ROCK and NIVEL 43,</i> Terminid-held planets adjacent to those sabotaged by dissidents, so that the TCS+ can be built on those planets as well. In so doing, the impregnable barrier of the TCS+ will be made twice as impregnable as before.",
+     "outroMessage": "TCS+ nodes are under construction on <i=1>BORE ROCK and NIVEL 43</i> following their liberation by the Helldivers. The dissident network aimed to destroy the TCS+, but instead, an even stronger barrier now stands. The containment of the Terminids has never been more guaranteed.\n\nThe dissident network responsible for these sabotages, which existed, has been dismantled. Thousands have been apprehended, and the Center for Citizen Surveillance and Safety is identifying more targets every day. \n\nExtensive SEAF detachments have been deployed to all TCS+ planets. They are tasked with the security of the TCS+, to ensure no future sabotages are possible.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 35
+      }
+     ]
+    }
+   ],
+   "rewards": [
+    {
+     "mixId": 2961949068,
+     "amount": 1
+    }
+   ]
+  },
+  {
+   "id32": 2704421460,
+   "title": "BLAZING ELECTORATE",
+   "description": "Disturbing intelligence reports indicate a coordinated Cyborg plan to disrupt the upcoming Quarter-Term elections. The Helldivers are called upon to ensure the effective and fair Management of this election.",
+   "race": 3,
+   "status": 3,
+   "startWarTime": 80932050,
+   "endWarTime": 82069250,
+   "phases": [
+    {
+     "introTitle": "PREEMPTIVE CYBERDEFENCE",
+     "introMessage": "The Quarter-Term elections, scheduled to begin in two weeks, may be imperiled. Intercepted Cyborg communications indicate a coordinated, covert plan to impede election Management. Fair and liberated election Management is the bedrock of the Federation, and a citizen-cherished tradition.\n\nMinistry of Truth reports indicate the Cyborgs intend to launch a cyberattack with the intent of altering the algorithm that allows citizens to best express their electoral intent. It is believed these assaults will originate from Megafactories on <i=1>CHARBAL-VII and ZZANIAH PRIME</i>. The Helldivers are ordered to liberate these planets immediately.",
+     "outroMessage": "The Helldivers recaptured <i=3>CHARBAL-VII</i>, but the Cyborgs retained hold of <i=3>ZZANIAH PRIME</i>. \n\nMassive server banks were discovered in the captured Megafactories. Cybersecurity specialists have confirmed that these server banks could be used in the conduct of cyberattacks—confirming the enemy's intent beyond doubt.\n\nIt is now It is now indisputable that the Cyborgs are attempting to manipulate the upcoming Quarter-Term elections, and the failure to liberate <i=1>ZZANIAH PRIME</i> means a cyberattack is imminent. To fortify election security, the Super Earth Government has passed an emergency measure permanently requiring armed officers to supervise votes and poll responses. ",
+     "status": 3,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 45
+      }
+     ]
+    },
+    {
+     "introTitle": "IMPOSTER MITIGATION",
+     "introMessage": "Evidence of an even more abhorrent Cyborg plot to manipulate the upcoming Quarter-term elections has been discovered. Evidence has been obtained indicating enemy efforts to create Automatons with human-like apperances and speech patterns. These androids, disguised as Super Earth citizens, would then attempt to infiltrate voting centers and cast votes.\n\nThe shocking and vile nature of this plan evidences the extent to which the Cyborg mind has been twisted from their human origins. They cannot be allowed to succeed. The Helldivers are ordered to immediately deploy to <i=1>destroy 200,000,000 Automaton Troopers</i>, depleting their stock of potential infiltrators.",
+     "outroMessage": "The Helldivers rapidly and violently decomissioned over <i=1>200,000,000</i> Automaton Troopers. Any ongoing production of imposter robot voters must now be redirected to refilling their frontline ranks. The upcoming Quarter-term elections have been protected from yet another external threat.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 35
+      }
+     ]
+    },
+    {
+     "introTitle": "ELECTION RE-FORTIFICATION",
+     "introMessage": "The myriad Cyborg plots to disrupt the Quarter-Term elections have severely damaged citizen confidence in the effective management of their votes. It is imperative that citizens have absolute trust that the results of the election accurately represent their will, as determined by algorithmic inference. \n\nThe Super Earth Government, informed by the results of an expert election security panel, has passed a comprehensive Super Secure Elections Act. By reducing unnecessary oversight and the number of personnel involved in Democratic Management, the process will be far less susceptible to enemy interference. Additionally, the bill allocates new military spending for upholding election security.\n\nHelldiver arsenals have been augmented with a number of stratagems. They are directed to uphold election security—by any means necessary.",
+     "outroMessage": "Cyborg interference has raised significant doubts in the veracity of the Quarter-Term Elections. Enemy manipulation efforts may have impacted the outcome, taking the Management of Democracy out of the hands of the trusted algorithm. The efforts of the Helldivers, though valiant, have mitigated, but not prevented, significant damage to citizen confidence in the electoral process.\n\nAs a result, a re-vote has been ordered, with enhanced election security measures to make interference impossible. Loyalty Examinations will be proctored as a pre-condition for eligibility, and SEAF Battalions have been recalled from the frontlines to secure voting sites.",
+     "status": 3,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 40
+      }
+     ]
+    }
+   ],
+   "rewards": [
+    {
+     "mixId": 3890208935,
+     "amount": 1
+    }
+   ]
+  },
+  {
+   "id32": 3894275519,
+   "title": "ARMORED EAGLE",
+   "description": "A patriotic defense contractor has agreed to fabricate personal-defense tanks for citizen use. The Helldivers are called upon to secure the resources and territory necessary to protect our citizens' right to self-defense.",
+   "race": 1,
+   "status": 2,
+   "startWarTime": 82140800,
+   "endWarTime": 83150620,
+   "phases": [
+    {
+     "introTitle": "Secure Territory",
+     "introMessage": "The Ministry of Defense has signed a new agreement with AM Defense, the patriotic contractor responsible for the high-quality line of FRVs, to construct a new tank model: the <i=1>Maelstrom</i> Tank. In an exciting new frontier for civilian freedom, the Tank will be made available for purchase to qualifying citizens. \n\nEnemy aggression, however, threatens this Freedom, by denying AM Defense the territory recently allocated for Maelstrom Tank construction. The Helldivers are ordered to liberate <i=1>MARFARK</i> and <i=1>PHACT BAY</i> immediately.\n\nAM Defense has graciously provided, free of charge, prototype Maelstrom Tank models to augment Helldiver arsenals for the liberation of this territory.",
+     "outroMessage": "The Helldivers liberated <i=1>PHACT BAY and MARFARK</i>. AM Defense has already broken ground on massive factories for large-scale <i=1>Maelstrom</i> Tank fabrication. Pre-orders from qualifying citizens for home defense Tanks have already sold out, evidencing the eagerness of Super Earth citizens to exercise their natural-born freedoms.\n\nThe territorial liberation has also triggered a gratitude clause in the AM Defense contract. The cooldown period for the <i=1>Maelstrom</i> Tank will be reduced by 120 seconds for the next 3 days.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 50
+      }
+     ]
+    },
+    {
+     "introTitle": "Resource Acquisition",
+     "introMessage": "Production of <i=1>Maelstrom</i> Tanks for civilian and military use is proceeding on schedule. Now, deluxe features offered as incentives for early investors must be fabricated. The Helldivers are ordered to dismantle <i=1>5,000,000 Automaton Tanks</i> to repurpose their engine cooling systems as climate-controlled cupholders, and harvest <i=1>25,000,000 Chargers</i> to convert their carapaces to vibration-insulation panels.\n\nAM Defense has invested heavily in tank production, taking on significant debt in the process—a patriotic risk to improve the security of all citizens. Disruption to investor confidence at this critical juncture could jeopardize the project, and AM Defense itself. It is imperative the Helldivers secure these resources.",
+     "outroMessage": "Insufficient materials have been harvested by the Helldivers to fulfill production quotas for deluxe <i=1>Maelstrom</i> Tank features. This has caused significant distress amongst the early investors who were promised these features as incentives, resulting in a precipitous drop in pre-sales and a decrease in share value. \n\nAs a result, the <i=1>Maelstrom</i> Tank project is now at risk of termination.",
+     "status": 3,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 40
+      }
+     ]
+    },
+    {
+     "introTitle": "Patriotic Invigoration",
+     "introMessage": "Unrelenting enemy aggression threatens to deprive our citizens of their natural-born right to wield heavy armor. AM Defense, aided by the Helldivers, has valiantly fought to provide the <i=1>Maelstrom</i> Tank to both Helldivers and Federation citizens, but the enemy has inflicted significant costs onto AM Defense, which leveraged extensive debt to finance the project.\n\nTo recoup these costs, the Helldivers are ordered to aid the creation of a public awareness sales campaign. Footage of the Helldivers obliterating Freedom's enemies will visibly demonstrate the efficacy of the product to consumers. A significant enough increase to pre-sales would provide the funding needed to save the project.\n\n<i=1>GATRIA</i> and <i=1>WASAT</i> have just come under attack. Deploy to defend these planets, utilizing the <i=1>Maelstrom</i> Tank. ",
+     "outroMessage": "Buoyed by inspiring footage of the Federation's greatest heroes decimating its greatest enemies, Maelstrom Tank sales to the public have skyrocketed. Citizens are clamoring for the opportunity to defend their homes and families with their very own Tank. Early investors have already received theirs, and are proudly patrolling suburbs and cities, protecting their entire community from behind 97 metric tons of heavy-duty steel.\n\nThe Maelstrom Tank is available for Helldiver use in perpetuity. The AM Defense CEO has been awarded the Distinguished Civilian Patriot Award for her selfless contribution to public and private defense. This is a watershed moment for personal Freedom.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 30
+      }
+     ]
+    }
+   ],
+   "rewards": [
+    {
+     "mixId": 1618361436,
+     "amount": 1
+    }
+   ]
+  },
+  {
+   "id32": 2797853381,
+   "title": "EPIC PURGE",
+   "description": "With the restored Democracy Space Station back in active duty and newly equipped with the Eagle Gas Storm Tactical Action, the Helldivers must demonstrate their full control over the Illuminate to reassure citizens, and confirm the absolute safety of chemical peacekeeping operations.",
+   "race": 1,
+   "status": 2,
+   "startWarTime": 83351990,
+   "endWarTime": 84484970,
+   "phases": [
+    {
+     "introTitle": "CHEMICAL PEACEKEEPING",
+     "introMessage": "Following the Helldivers' victory in collapsing the Void, SEAF Intelligence indicates shattered <i=1>Illuminate</i> divisions are consolidating ground assets on <i=1>SENGE 23</i>. High Command has authorized a live broadcast of their imminent eradication to every loyal home to reassure domestic investors and inspire children.\n\nTo bolster this initative, the recently restored <i=1>DSS (Democracy Space Station)</i> has deployed, newly equipped with the <i=1>Eagle Gas Storm</i> to enable widespread chemical peacekeeping.\n\nHelldivers are ordered to liberate <i=1>SENGE 23</i> and eliminate <i=1>400,000,000 Illuminate</i> hostiles to secure the sector.",
+     "outroMessage": "The liberation of <i=1>SENGE 23</i> has concluded with a decisive victory for the Helldivers. High-definition footage of the engagement was successfully broadcast to cheering homes across the Federation, prompting an immediate 4.2% increase in regional real estate futures. Shareholders and domestic investors have expressed absolute satisfaction with the high-definition footage, and inspired children consumed 14% more media featuring violence against aliens.\n\nAs a routine operational byproduct, harmless gaseous residues are now dispersing into adjacent residential flight corridors. Air quality experts have decisively concluded there is no cause for concern.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 35
+      }
+     ]
+    },
+    {
+     "introTitle": "BIO-SAMPLE CULLING",
+     "introMessage": "In a show of their depravity, the Illuminate have knowingly altered the harmless gaseous residues dissipating from <i=1>SENGE 23</i> into somehow affecting exclusive Class A retirement facilities orbiting the planet.\n\nThis reckless manipulation of defensive gas strikes—normally entirely benevolent to human lungs—has caused visual obfuscation in residents' private docking bays, minor respiratory irritation, and a sharp rise in unauthorized leave for facility staff.\n\nTo prove the safety of <i=1>Eagle Gas Storms</i>, Helldivers must hold <i=1>SENGE 23</i>, and deploy to the Terminid front to eliminate <i=1>30,000,000 Bile Spewers</i> and <i=1>40,000,000 Bile Spitters</i>, to aid vital and fully planned research into airborne toxicity.",
+     "outroMessage": "Thanks to the Helldivers' steadfast obedience, the chemical safety demonstration on <i=1>SENGE 23</i> has concluded with the successful defense of the planet from further <i=1>Illuminate</i> interference. Additionally, a complete recalibration of SEAF aerosol payloads has resulted in Class A retirees happily reporting an immediate improvement to their well-deserved scenic views, and an abundance of pristine, pine-scented air.\n\nFurthermore, each orbital retirement facility has been allocated an unprompted complimentary respiratory fortification package. To cover administration costs, a generous zero percent interest payment plan has been automatically added to each retiree's monthly bill.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 45
+      }
+     ]
+    },
+    {
+     "introTitle": "RESTITUTION HARVEST",
+     "introMessage": "Following rigorous field validation and formula recalibration, the Ministry of Defense and Ministry of Truth proudly confirm that—for all who hold Liberty dear to their heart—the <i=1>Eagle Gas Storm</i> is now even safer than it already was, the patented formula demonstrably only targeting alien flesh and treasonous lungs.\n\nHowever, the impact of recent <i=1>Illuminate</i> interference on Class A elder statespersons cannot go unanswered. High Command has therefore authorised the AIR (Anti-Illuminate Restitution) initiative. For every Illuminate terminated during this order, 0.004 Super Credits will be donated to this vital tax-deductible charitable fund.\n\nHelldivers: hold <i=1>SENGE 23</i>, complete <i=1>1,250,000 operations</i> and kill <i=1>1,000,000,000 Illuminate forces</i> to restore peace of mind and full respiratory capacity to our most honored retirees.",
+     "outroMessage": "Thanks to the Helldivers’ bravery and philanthropic spirit, the latest Illuminate threat has been crushed, rewarding a lucky few Class A retirees with a front row view of unadulterated Justice.\n\nThrough altruistic lethality, Helldivers funded the AIR (Anti-Illuminate Restitution) initiative to its maximum level. Every revered Class A retiree has now received a heavily subsidised upgrade to their respiratory fortification package, restoring pristine vistas and an abundance of pine-scented air across all orbital retirement facilities affected by recent Illuminate interference.\n\nWith regional real estate futures fully stabilized and all corporate liabilities mitigated, the Helldivers stand triumphant.",
+     "status": 2,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 45
+      }
+     ]
+    }
+   ],
+   "rewards": [
+    {
+     "mixId": 2237630340,
+     "amount": 1
+    }
+   ]
+  },
+  {
+   "id32": 883922421,
+   "title": "MEMORIAM ETERNAL",
+   "description": "With the approach of Liberty Day, the Super Earth Government has authorized the construction of the Malevelon Creek Memorial & Interrogation Center for Human Rights. The Helldivers are needed to bravely acquire the material resources needed to honor the fallen heroes of the Second Galactic War.",
+   "race": 1,
+   "status": 0,
+   "startWarTime": 84546940,
+   "phases": [
+    {
+     "introTitle": "HONOR THE FALLEN",
+     "introMessage": "Liberty Day approaches, and with it, the responsibility to honor the memories of fallen heroes. The Super Earth Government has passed a bill authorizing the construction of a memorial worthy of their sacrifices: the <i=1>Malevelon Creek Memorial & Interrogation Center for Human Rights</i>.\n\nAs the name implies, the Memorial would honor the fallen not just in thought, but in action: through enhanced interrogation of dissidents and enemies of Freedom.\n\nHowever, wanton aggression from all 3 enemy factions threatens this project. Their occupation of Super Earth territories rich in rare metals, crude oil, and radioactive isotopes, among others, steals from the prosperity of all. This is an insult to the memory of our heroes. The Helldivers are ordered to liberate <i=1>FURY, ESKER, and ZEA RUGOSIA</i>.",
+     "outroMessage": "",
+     "status": 0,
+     "rewards": [
+      {
+       "mixId": 897894480,
+       "amount": 40
+      }
+     ]
+    }
+   ],
+   "rewards": [
+    {
+     "mixId": 2659326411,
+     "amount": 1
+    }
+   ]
+  }
+ ]
+}
