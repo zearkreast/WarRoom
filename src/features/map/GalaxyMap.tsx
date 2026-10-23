@@ -609,11 +609,114 @@ function MapSettings({ onClose }: { onClose(): void }) {
   );
 }
 
+const PlanetLayer = memo(function PlanetLayer(props: {
+  planets: Planet[];
+  active: Set<number>;
+  mo: Set<number>;
+  pinned: Set<number>;
+  selected: number | null;
+  style: MapPlanets;
+  glow: boolean;
+  onOpen(planet: number, x: number, y: number): void;
+  onHover(h: Hover | null): void;
+  onHoverSector?: (p: Planet | null) => void;
+}) {
+  const { style, glow, onHover } = props;
+  const leave = () => onHover(null);
+  return (
+    <g className="planets">
+      {props.planets.map((p) => {
+        const [x, y] = project(p.position);
+        const isActive = props.active.has(p.index);
+        const isMo = props.mo.has(p.index);
+        const isPinned = props.pinned.has(p.index);
+        const faction = p.event?.faction ?? p.currentOwner;
+        const color = factionColor(faction);
+        const cls = [
+          "planet",
+          isActive && "active",
+          isMo && "mo",
+          isPinned && "pinned",
+          props.selected === p.index && "selected",
+          p.currentOwner === "Humans" && "se",
+          p.index === 0 && "home",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        return (
+          <g
+            key={p.index}
+            className={cls}
+            transform={`translate(${x},${y})`}
+            onClick={(e) => props.onOpen(p.index, e.clientX, e.clientY)}
+            onPointerEnter={(e) => {
+              onHover({ planet: p, x: e.clientX, y: e.clientY });
+              props.onHoverSector?.(p);
+            }}
+            onPointerLeave={leave}
+          >
+            <g className="upright">
+              <PlanetBody
+                style={style}
+                glow={glow}
+                faction={faction}
+                color={color}
+                fill={p.index === 0 ? "#3f8cc2" : sphereColor(biomeTint(p.biome?.name).ground)}
+                size={p.index === 0 ? 1.6 : 1}
+                anomaly={anomalyOf(p)}
+                active={isActive}
+                mo={isMo}
+                enemy={p.currentOwner !== "Humans" || Boolean(p.event)}
+                pinned={isPinned}
+              />
+              <text className="planet-label">{p.name}</text>
+              {isActive && (
+                <text className="planet-tag" fill={color}>
+                  {p.event ? "Defend" : "Liberate"}
+                </text>
+              )}
+            </g>
+          </g>
+        );
+      })}
+      {LANDMARKS.map((l) => {
+        const [x, y] = project(l.position);
+        return (
+          <g
+            key={l.name}
+            className="planet landmark"
+            transform={`translate(${x},${y})`}
+            onPointerEnter={(e) => onHover({ landmark: l, x: e.clientX, y: e.clientY })}
+            onPointerLeave={leave}
+          >
+            <g className="upright">
+              <PlanetBody
+                style={style}
+                glow={glow}
+                faction="Humans"
+                color="#c98a6a"
+                fill="#b5532f"
+                size={style === "spheres" ? 0.85 : 0.9}
+              />
+              <text className="planet-label">{l.name}</text>
+            </g>
+          </g>
+        );
+      })}
+    </g>
+  );
+});
+
+/** How long the camera must be still before the costly glow filters come back. */
+const SETTLE_MS = 180;
+
 export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null) => void }) {
   const fresh = useFreshPlanets().data;
   const campaigns = useCampaigns();
   const mo = useMajorOrderPlanets();
-  const { selectedPlanet, focusSeq, openOptions } = useUi();
+  const selectedPlanet = useUi((s) => s.selectedPlanet);
+  const focusSeq = useUi((s) => s.focusSeq);
+  const openOptions = useUi((s) => s.openOptions);
   const overlay = useSettings((s) => s.mapOverlay);
   const planetStyle = useSettings((s) => s.mapPlanets);
   const quality = useSettings((s) => s.mapQuality);
@@ -622,48 +725,71 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
   const svgRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const layerRef = useRef<SVGGElement>(null);
+  const compassRef = useRef<HTMLButtonElement>(null);
+  const tiltRef = useRef<HTMLButtonElement>(null);
   const zoomRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const transformRef = useRef<ZoomTransform>(zoomIdentity);
   const camRef = useRef<Camera>({ rot: 0, tilt: 0 });
   const freshRef = useRef(fresh);
   freshRef.current = fresh;
-  const [cam, setCam] = useState<Camera>(camRef.current);
   const [hover, setHover] = useState<Hover | null>(null);
+  const hoverRef = useRef(hover);
+  hoverRef.current = hover;
   const [settingsOpen, setSettingsOpen] = useState(false);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
   const stars = useMemo(() => backgroundStars(STAR_COUNT[quality]), [quality]);
   const active = useMemo(() => new Set((campaigns.data ?? []).map((c) => c.planet.index)), [campaigns.data]);
   const pinnedSet = useMemo(() => new Set(pinned), [pinned]);
+  const onOpen = useCallback((planet: number, x: number, y: number) => openOptions({ planet, x, y }), [openOptions]);
   const loaded = Boolean(fresh);
 
-  const redraw = useCallback(() => {
-    if (canvasRef.current) drawStars(canvasRef.current, stars, transformRef.current, camRef.current);
-  }, [stars]);
+  const starsRef = useRef(stars);
+  starsRef.current = stars;
+  const frame = useRef(0);
+  const settle = useRef(0);
+  const written = useRef({ transform: "", k: "", rot: "", squash: "" });
 
-  const apply = useCallback(
-    (t: ZoomTransform) => {
-      const svg = svgRef.current;
-      const layer = layerRef.current;
-      if (!svg || !layer) return;
-      transformRef.current = t;
-      const { rot, tilt } = camRef.current;
-      layer.setAttribute(
-        "transform",
-        `translate(${t.x},${t.y}) scale(${t.k}) scale(1,${Math.cos(tilt)}) rotate(${(rot * 180) / Math.PI})`,
-      );
-      // Markers counter-scale, un-rotate and un-squash through CSS variables, so camera moves never re-render React.
-      layer.style.setProperty("--k", String(t.k));
-      layer.style.setProperty("--unrot", `${(-rot * 180) / Math.PI}deg`);
-      layer.style.setProperty("--unsquash", String(1 / Math.cos(tilt)));
-      svg.classList.toggle("z-labels", t.k > 0.9);
-      svg.classList.toggle("z-sectors", t.k > 1.6);
-      svg.classList.toggle("z-planets", t.k > 3);
-      scaleHatches(svg, t.k);
-      redraw();
-    },
-    [redraw],
-  );
+  /** Writes the camera to the DOM once per frame; nothing here touches React state. */
+  const paint = useCallback(() => {
+    frame.current = 0;
+    const svg = svgRef.current;
+    const layer = layerRef.current;
+    if (!svg || !layer) return;
+    const t = transformRef.current;
+    const { rot, tilt } = camRef.current;
+    const deg = (rot * 180) / Math.PI;
+    const w = written.current;
+    const transform = `translate(${t.x},${t.y}) scale(${t.k}) scale(1,${Math.cos(tilt)}) rotate(${deg})`;
+    if (transform !== w.transform) layer.setAttribute("transform", (w.transform = transform));
+    // Each variable write restyles every planet, so write only on change (a plain pan writes none).
+    const k = String(t.k);
+    if (k !== w.k) layer.style.setProperty("--k", (w.k = k));
+    const unrot = `${-deg}deg`;
+    if (unrot !== w.rot) layer.style.setProperty("--unrot", (w.rot = unrot));
+    const squash = String(1 / Math.cos(tilt));
+    if (squash !== w.squash) layer.style.setProperty("--unsquash", (w.squash = squash));
+    svg.classList.toggle("z-labels", t.k > 0.9);
+    svg.classList.toggle("z-sectors", t.k > 1.6);
+    svg.classList.toggle("z-planets", t.k > 3);
+    compassRef.current?.classList.toggle("on", rot !== 0 || tilt !== 0);
+    compassRef.current?.querySelector("svg")?.style.setProperty("transform", `rotate(${rot - Math.PI / 4}rad)`);
+    tiltRef.current?.classList.toggle("on", tilt > 0);
+    if (canvasRef.current) drawStars(canvasRef.current, starsRef.current, t, camRef.current);
+  }, []);
+
+  /** Queues a paint and marks the map as moving, which drops the glow filters until it settles. */
+  const schedule = useCallback(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    if (!frame.current) frame.current = requestAnimationFrame(paint);
+    svg.classList.add("moving");
+    clearTimeout(settle.current);
+    settle.current = window.setTimeout(() => {
+      svg.classList.remove("moving");
+      scaleHatches(svg, transformRef.current.k);
+    }, SETTLE_MS);
+  }, [paint]);
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -671,19 +797,27 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
     const z = zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.5, 14])
       .on("zoom", (e) => {
-        apply(e.transform as ZoomTransform);
-        setHover(null);
+        transformRef.current = e.transform as ZoomTransform;
+        schedule();
+        if (hoverRef.current) setHover(null);
       });
     zoomRef.current = z;
     select(svg).call(z).on("dblclick.zoom", null);
     fit();
     const ro = new ResizeObserver(() => fit());
     ro.observe(svg);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      cancelAnimationFrame(frame.current);
+      frame.current = 0;
+      clearTimeout(settle.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
 
-  useEffect(redraw, [redraw]);
+  useEffect(() => {
+    if (canvasRef.current) drawStars(canvasRef.current, stars, transformRef.current, camRef.current);
+  }, [stars]);
   useEffect(() => {
     if (svgRef.current) scaleHatches(svgRef.current, transformRef.current.k);
   }, [overlay, fresh]);
@@ -717,11 +851,8 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
       rot: next.rot ?? camRef.current.rot,
       tilt: Math.min(MAX_TILT, Math.max(0, next.tilt ?? camRef.current.tilt)),
     };
-    setCam(camRef.current);
     const [x, y] = toLayer(world, camRef.current);
-    const nt = zoomIdentity.translate(c[0] - t.k * x, c[1] - t.k * y).scale(t.k);
-    select(svg).call(zoomRef.current.transform, nt);
-    apply(nt);
+    select(svg).call(zoomRef.current.transform, zoomIdentity.translate(c[0] - t.k * x, c[1] - t.k * y).scale(t.k));
   }
 
   // Fly to a planet chosen elsewhere ("Show on map") or from the map's own options ("Focus").
@@ -774,8 +905,6 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
 
   const nextOverlay = OVERLAYS[(OVERLAYS.indexOf(overlay) + 1) % OVERLAYS.length];
   const glow = quality !== "min";
-  const spheres = planetStyle === "spheres";
-  const leave = () => setHover(null);
 
   return (
     <div className={`map-wrap q-${quality}`}>
@@ -801,86 +930,18 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
           {overlay === "sectors" && <SectorGrid planets={fresh} glow={glow} onHover={onHoverSector} />}
           <Lanes planets={fresh} mode={overlay === "sectors" ? "front" : overlay === "galaxy" ? "bright" : "dim"} />
           <AttackLines planets={fresh} active={active} />
-          <g className="planets">
-            {fresh.map((p) => {
-              const [x, y] = project(p.position);
-              const isActive = active.has(p.index);
-              const isMo = mo.has(p.index);
-              const isPinned = pinnedSet.has(p.index);
-              const faction = p.event?.faction ?? p.currentOwner;
-              const color = factionColor(faction);
-              const cls = [
-                "planet",
-                isActive && "active",
-                isMo && "mo",
-                isPinned && "pinned",
-                selectedPlanet === p.index && "selected",
-                p.currentOwner === "Humans" && "se",
-                p.index === 0 && "home",
-              ]
-                .filter(Boolean)
-                .join(" ");
-              return (
-                <g
-                  key={p.index}
-                  className={cls}
-                  transform={`translate(${x},${y})`}
-                  onClick={(e) => openOptions({ planet: p.index, x: e.clientX, y: e.clientY })}
-                  onPointerEnter={(e) => {
-                    setHover({ planet: p, x: e.clientX, y: e.clientY });
-                    onHoverSector?.(p);
-                  }}
-                  onPointerLeave={leave}
-                >
-                  <g className="upright">
-                    <PlanetBody
-                      style={planetStyle}
-                      glow={glow}
-                      faction={faction}
-                      color={color}
-                      fill={p.index === 0 ? "#3f8cc2" : sphereColor(biomeTint(p.biome?.name).ground)}
-                      size={p.index === 0 ? 1.6 : 1}
-                      anomaly={anomalyOf(p)}
-                      active={isActive}
-                      mo={isMo}
-                      enemy={p.currentOwner !== "Humans" || Boolean(p.event)}
-                      pinned={isPinned}
-                    />
-                    <text className="planet-label">{p.name}</text>
-                    {isActive && (
-                      <text className="planet-tag" fill={color}>
-                        {p.event ? "Defend" : "Liberate"}
-                      </text>
-                    )}
-                  </g>
-                </g>
-              );
-            })}
-            {LANDMARKS.map((l) => {
-              const [x, y] = project(l.position);
-              return (
-                <g
-                  key={l.name}
-                  className="planet landmark"
-                  transform={`translate(${x},${y})`}
-                  onPointerEnter={(e) => setHover({ landmark: l, x: e.clientX, y: e.clientY })}
-                  onPointerLeave={leave}
-                >
-                  <g className="upright">
-                    <PlanetBody
-                      style={planetStyle}
-                      glow={glow}
-                      faction="Humans"
-                      color="#c98a6a"
-                      fill="#b5532f"
-                      size={spheres ? 0.85 : 0.9}
-                    />
-                    <text className="planet-label">{l.name}</text>
-                  </g>
-                </g>
-              );
-            })}
-          </g>
+          <PlanetLayer
+            planets={fresh}
+            active={active}
+            mo={mo}
+            pinned={pinnedSet}
+            selected={selectedPlanet}
+            style={planetStyle}
+            glow={glow}
+            onOpen={onOpen}
+            onHover={setHover}
+            onHoverSector={onHoverSector}
+          />
         </g>
       </svg>
       <div className="map-rail">
@@ -888,20 +949,23 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
         <HudButton icon={ZoomOut} label="Zoom out" keyHint="-" onClick={() => zoomBy(1 / 1.5)} />
         <HudButton icon={Maximize} label="Fit galaxy" keyHint="0" onClick={fit} />
         <button
-          className={`hud-btn icon map-compass ${cam.rot || cam.tilt ? "on" : ""}`}
+          ref={compassRef}
+          className="hud-btn icon map-compass"
           onClick={() => setCamera({ rot: 0, tilt: 0 })}
           aria-label="Reset rotation and tilt"
           title="Reset rotation and tilt"
         >
-          <Compass size={18} strokeWidth={1.75} style={{ transform: `rotate(${cam.rot - Math.PI / 4}rad)` }} />
+          <Compass size={18} strokeWidth={1.75} style={{ transform: `rotate(${-Math.PI / 4}rad)` }} />
         </button>
-        <HudButton
-          icon={Rotate3d}
-          label={cam.tilt ? "Flatten the map" : "Tilt the map"}
-          keyHint="R / F"
-          active={cam.tilt > 0}
-          onClick={() => setCamera({ tilt: cam.tilt > 0 ? 0 : TILT_PRESET })}
-        />
+        <button
+          ref={tiltRef}
+          className="hud-btn icon"
+          onClick={() => setCamera({ tilt: camRef.current.tilt > 0 ? 0 : TILT_PRESET })}
+          aria-label="Tilt or flatten the map"
+          title="Tilt or flatten the map (R / F)"
+        >
+          <Rotate3d size={18} strokeWidth={1.75} />
+        </button>
         <HudButton
           icon={Layers}
           label={`Map overlay: ${overlay} (next: ${nextOverlay})`}

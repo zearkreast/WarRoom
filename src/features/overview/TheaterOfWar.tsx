@@ -2,8 +2,17 @@ import { ArrowUpRight, Map as MapIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import { useFreshPlanets } from "../../api/queries";
 import type { Faction } from "../../api/types";
-import { buildPolarSectors, sectorTerritory } from "../../domain/galaxy";
-import { useUi } from "../../state";
+import {
+  buildPolarSectors,
+  GALAXY_SCALE,
+  project,
+  RING_RADII,
+  sectorTerritory,
+  supplyLines,
+} from "../../domain/galaxy";
+import { byIndex } from "../../domain/planets";
+import { buildRegions } from "../../domain/regions";
+import { useSettings, useUi } from "../../state";
 import { Panel } from "../../ui/primitives";
 import { CHART } from "./WarActivity";
 
@@ -12,13 +21,26 @@ const DRAG_DEG_PER_PX = 0.35;
 const KEY_STEP_DEG = 10;
 const ORDER: Faction[] = ["Humans", "Terminids", "Illuminate", "Automaton"];
 
-/** The sector disc seen at an angle; it turns slowly and can be dragged round. */
+const RIM = RING_RADII[RING_RADII.length - 1] * GALAXY_SCALE;
+
+interface OwnerGroup {
+  owner: Faction;
+  held: boolean;
+  paths: string[];
+}
+
+/** The galaxy disc seen at an angle, drawn like the map's chosen overlay; it turns slowly and can be dragged round. */
 export function TheaterOfWar() {
   const planets = useFreshPlanets().data;
+  const overlay = useSettings((s) => s.mapOverlay);
   const setView = useUi((s) => s.setView);
-  // Same ring sectors as the map; enemy sectors are solid where held outright, dimmer where contested.
-  const byOwner = useMemo(() => {
-    if (!planets) return [];
+  const byOwner = useMemo((): OwnerGroup[] => {
+    if (!planets || overlay === "galaxy") return [];
+    if (overlay === "regions")
+      return buildRegions(planets)
+        .map((r) => ({ owner: r.owner, held: true, paths: [r.path] }))
+        .sort((a, b) => ORDER.indexOf(a.owner) - ORDER.indexOf(b.owner));
+    // Ring sectors: enemy sectors are solid where held outright, dimmer where contested.
     const territory = sectorTerritory(planets);
     const groups = new Map<string, { owner: Faction; held: boolean; paths: string[] }>();
     for (const [name, path] of buildPolarSectors(planets).fills) {
@@ -30,7 +52,21 @@ export function TheaterOfWar() {
       groups.set(key, g);
     }
     return [...groups.values()].sort((a, b) => ORDER.indexOf(a.owner) - ORDER.indexOf(b.owner));
-  }, [planets]);
+  }, [planets, overlay]);
+  const lanes = useMemo(() => {
+    if (!planets || overlay !== "galaxy") return "";
+    const lookup = byIndex(planets);
+    return supplyLines(planets)
+      .flatMap(([a, b]) => {
+        const pa = lookup.get(a);
+        const pb = lookup.get(b);
+        if (!pa || !pb) return [];
+        const [x1, y1] = project(pa.position);
+        const [x2, y2] = project(pb.position);
+        return [`M${x1.toFixed(1)},${y1.toFixed(1)}L${x2.toFixed(1)},${y2.toFixed(1)}`];
+      })
+      .join("");
+  }, [planets, overlay]);
 
   const stage = useRef<HTMLDivElement>(null);
   const disc = useRef<SVGGElement>(null);
@@ -60,7 +96,7 @@ export function TheaterOfWar() {
       cancelAnimationFrame(raf);
       io.disconnect();
     };
-  }, [byOwner.length > 0]);
+  }, [planets != null]);
 
   if (!planets) return null;
 
@@ -97,7 +133,7 @@ export function TheaterOfWar() {
         className="tw-stage"
         tabIndex={0}
         role="img"
-        aria-label="Sector map by owner. Drag or use the arrow keys to rotate."
+        aria-label={`Galaxy ${overlay} view. Drag or use the arrow keys to rotate.`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
@@ -107,6 +143,12 @@ export function TheaterOfWar() {
         <svg viewBox="-560 -560 1120 1120" aria-hidden>
           <circle r={545} className="tw-rim" />
           <g ref={disc}>
+            {overlay !== "sectors" && (
+              <g className="tw-owner se" style={{ "--c": CHART.Humans } as CSSProperties}>
+                <circle r={RIM} />
+              </g>
+            )}
+            {lanes && <path d={lanes} className="tw-lanes" />}
             {byOwner.map((g) => (
               <g
                 key={`${g.owner}-${g.held}`}
