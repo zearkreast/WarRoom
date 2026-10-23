@@ -49,6 +49,15 @@ export const isPlaceholder = (p: Pick<Planet, "index" | "position">) =>
   p.index !== 0 && p.position.x === 0 && p.position.y === 0;
 
 /**
+ * Planets the game has taken off the map while the API still lists them. Calypso vanished after the
+ * DSS jumped to it on 19 Aug 2026; the API only dropped its supply lines.
+ */
+const OFF_MAP = new Set([97]);
+
+/** Placeholders and planets the game no longer shows: neither is drawn or listed. */
+export const isOffMap = (p: Pick<Planet, "index" | "position">) => isPlaceholder(p) || OFF_MAP.has(p.index);
+
+/**
  * Who holds and who attacks each planet, as one string. Territory and region shapes depend on nothing
  * else that changes, so they are recomputed only when this does, not on every poll.
  */
