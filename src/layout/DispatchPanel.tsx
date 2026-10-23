@@ -4,7 +4,7 @@ import { APP_VERSION } from "../config";
 import { CHANGELOG } from "../changelog";
 import { useSettings, useUi } from "../state";
 
-/** Companion Dispatch: what's new in the app, plus links to the help pages. */
+/** Tracker Dispatch: what's new in the app, plus links to the help pages. */
 export function DispatchPanel() {
   const { dispatchOpen, toggleDispatch, openModule } = useUi();
   const markChangelog = useSettings((s) => s.markChangelog);
@@ -23,7 +23,7 @@ export function DispatchPanel() {
     openModule(m);
   };
   return (
-    <aside className="dispatch-panel panel glass" aria-label="Companion dispatch">
+    <aside className="dispatch-panel panel glass" aria-label="Tracker dispatch">
       <div className="dp-links">
         <button className="dp-link" onClick={() => go("legend")}>
           <BookOpen size={16} />
@@ -42,7 +42,7 @@ export function DispatchPanel() {
       </div>
       <div className="dp-head">
         <ScrollText size={14} />
-        <span className="caps">Companion dispatch</span>
+        <span className="caps">Tracker dispatch</span>
         <span className="dp-ver num">v{APP_VERSION}</span>
       </div>
       <div className="dp-log scroll">
