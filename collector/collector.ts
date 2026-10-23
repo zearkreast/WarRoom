@@ -1,9 +1,11 @@
-import type { Assignment, Campaign, Dispatch, Planet, War } from "../src/api/types.ts";
+import type { Assignment, Campaign, Dispatch, Planet, SpaceStation, War } from "../src/api/types.ts";
 import {
   newestDispatches,
   toCampaignLive,
   toLive,
   toStatic,
+  toStationLive,
+  toWarSample,
   type SnapshotKind,
 } from "../src/domain/snapshot.ts";
 import { RateLimitError, type Hd2Client } from "./hd2.ts";
@@ -20,6 +22,8 @@ export interface Task {
 export function createTasks(hd2: Hd2Client, db: Supabase, recorder: Recorder, now = Date.now): Task[] {
   let lastStatic = "";
   let lastDispatch = 0;
+  /** Latest campaigns, so each war sample can split players by front. */
+  let lastCampaigns: Campaign[] = [];
 
   const snapshot = (kind: SnapshotKind, data: unknown) =>
     db.upsert("snapshots", [{ kind, data, fetched_at: new Date(now()).toISOString() }]);
@@ -50,8 +54,15 @@ export function createTasks(hd2: Hd2Client, db: Supabase, recorder: Recorder, no
       everyMs: 60_000,
       async run() {
         const campaigns = await hd2.get<Campaign[]>("/api/v1/campaigns");
-        const { samples, changes } = await recorder.ingest(campaigns.map((c) => c.planet), now());
-        await snapshot("campaigns", campaigns.map((c) => toCampaignLive(c, recorder.rate(c.planet.index))));
+        lastCampaigns = campaigns;
+        const { samples, changes } = await recorder.ingest(
+          campaigns.map((c) => c.planet),
+          now(),
+        );
+        await snapshot(
+          "campaigns",
+          campaigns.map((c) => toCampaignLive(c, recorder.rate(c.planet.index))),
+        );
         return `${campaigns.length} fronts, ${samples} samples${changeNote(changes.length)}`;
       },
     },
@@ -61,6 +72,7 @@ export function createTasks(hd2: Hd2Client, db: Supabase, recorder: Recorder, no
       async run() {
         const war = await hd2.get<War>("/api/v1/war");
         await snapshot("war", war);
+        await db.upsert("war_samples", [toWarSample(war, lastCampaigns, now())], { ignoreDuplicates: true });
         return `${war.statistics.playerCount} divers`;
       },
     },
@@ -86,11 +98,21 @@ export function createTasks(hd2: Hd2Client, db: Supabase, recorder: Recorder, no
       },
     },
     {
+      name: "stations",
+      everyMs: 120_000,
+      async run() {
+        const stations = await hd2.get<SpaceStation[]>("/api/v2/space-stations");
+        await snapshot("space_stations", stations.map(toStationLive));
+        return `${stations.length} station${stations.length === 1 ? "" : "s"}`;
+      },
+    },
+    {
       name: "compact",
       everyMs: 3_600_000,
       async run() {
         const removed = await db.rpc<number>("compact_samples");
-        return `${removed} old samples thinned`;
+        const removedWar = await db.rpc<number>("compact_war_samples");
+        return `${removed} old samples and ${removedWar} war samples thinned`;
       },
     },
   ];

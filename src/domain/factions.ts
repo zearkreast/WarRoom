@@ -24,5 +24,5 @@ export const FACTION_BY_ID: Record<number, Faction> = {
 /** Faction → id, for the smallint owner columns in Supabase. */
 export const FACTION_ID: Record<Faction, number> = { Humans: 1, Terminids: 2, Automaton: 3, Illuminate: 4 };
 
-export const factionColor = (f: string | undefined) => FACTIONS[f as Faction]?.color ?? "var(--muted)";
+export const factionColor = (f: string | undefined) => FACTIONS[f as Faction]?.color ?? "var(--text-dim)";
 export const factionLabel = (f: string | undefined) => FACTIONS[f as Faction]?.label ?? "Unknown";

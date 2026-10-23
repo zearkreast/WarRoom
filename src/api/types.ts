@@ -110,3 +110,36 @@ export interface Dispatch {
   type: number;
   message: string;
 }
+
+export interface TacticalActionCost {
+  id: string;
+  itemMixId: number;
+  targetValue: number;
+  currentValue: number;
+  deltaPerSecond: number;
+  maxDonationAmmount: number;
+  maxDonationPeriodSeconds: number;
+}
+
+export interface TacticalAction {
+  id32: number;
+  mediaId32: number;
+  name: string;
+  description: string;
+  strategicDescription: string;
+  /** 1 preparing, 2 active, 3 on cooldown (0 or other: unavailable). */
+  status: number;
+  statusExpire: string;
+  costs: TacticalActionCost[];
+  effectIds: number[];
+}
+
+/** A Democracy Space Station, from /api/v1/space-stations. */
+export interface SpaceStation {
+  id32: number;
+  planet: Planet;
+  /** When the vote on the next destination closes, i.e. the next FTL jump. */
+  electionEnd: string;
+  flags: number;
+  tacticalActions: TacticalAction[];
+}

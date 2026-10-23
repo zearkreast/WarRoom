@@ -1,52 +1,53 @@
-import { useMemo } from "react";
-import { useAssignments, useCampaigns, usePlanets } from "../../api/queries";
+import { Award, CheckSquare, Square, Target } from "lucide-react";
+import { useAssignments, useFreshPlanets } from "../../api/queries";
 import type { Assignment, Planet } from "../../api/types";
 import { factionColor, factionLabel } from "../../domain/factions";
-import { fmtCompact, fmtPct, fmtRate } from "../../domain/format";
+import { fmtCompact, fmtPct } from "../../domain/format";
 import { describeAssignment, rewardLabel, type TaskView } from "../../domain/majorOrder";
-import { liberationPercent, projectedAt, trackedPercent } from "../../domain/progress";
-import { usePlanetRate } from "../planets/useFronts";
+import { liberationPercent, projectedAt, projectedCompletion, trackedPercent } from "../../domain/progress";
 import { useUi } from "../../state";
-import { Countdown, Loading, Panel, ProgressBar } from "../../ui/primitives";
+import { Countdown, Empty, Loading, Meter, Panel } from "../../ui/primitives";
+import { usePlanetRate } from "../planets/useFronts";
 import "./majorOrder.css";
-
-/** Campaign planets refresh every minute, the full list every three, so prefer the fresher copy. */
-function useFreshPlanets(): Planet[] | undefined {
-  const planets = usePlanets().data;
-  const campaigns = useCampaigns().data;
-  return useMemo(() => {
-    if (!planets) return campaigns?.map((c) => c.planet);
-    const fresh = new Map((campaigns ?? []).map((c) => [c.planet.index, c.planet]));
-    return planets.map((p) => fresh.get(p.index) ?? p);
-  }, [planets, campaigns]);
-}
 
 function PlanetTask({ t, expires }: { t: TaskView; expires: number }) {
   const p = t.planet!;
   const rate = usePlanetRate(p.index);
-  const select = useUi((s) => s.select);
-  const setView = useUi((s) => s.setView);
+  const openOptions = useUi((s) => s.openOptions);
   const owned = p.currentOwner === "Humans" && !p.event;
+  const done = t.done || owned;
   const pct = owned ? 100 : trackedPercent(p);
   const end = owned ? null : projectedAt(liberationPercent(p), rate, Date.now(), expires);
+  const completeAt = owned ? null : projectedCompletion(pct, rate, Date.now());
+  const Check = done ? CheckSquare : Square;
   return (
-    <li className={`mo-task ${t.done || owned ? "done" : ""}`}>
+    <li className={`mo-task ${done ? "done" : ""}`}>
       <div className="mo-task-head">
-        <span className="mo-check">{t.done || owned ? "■" : "□"}</span>
+        <Check size={16} className="mo-check" />
         <span>
           {t.label}{" "}
-          <button className="link caps" style={{ color: factionColor(p.currentOwner) }} onClick={() => { select(p.index); setView("map"); }}>
+          <button
+            className="link"
+            style={{ color: factionColor(p.currentOwner) }}
+            onClick={(e) => openOptions({ planet: p.index, x: e.clientX, y: e.clientY })}
+          >
             {p.name}
           </button>
         </span>
         <span className="num mo-pct">{fmtPct(pct, 1)}</span>
       </div>
-      <ProgressBar value={pct} color="var(--f-humans)" rest={factionColor(p.currentOwner)} marker={end} />
+      <Meter value={pct} color="var(--f-humans)" rest={factionColor(p.currentOwner)} marker={end} size="l" chevron />
       {!owned && (
-        <div className="mo-task-foot num muted">
-          <span>{fmtRate(rate)}</span>
-          {end != null && (
-            <span style={{ color: end >= 100 ? "var(--good)" : "var(--bad)" }}>End result: {fmtPct(end, 1)}</span>
+        <div className="mo-task-foot num">
+          {end != null ? (
+            <span style={{ color: end >= 100 ? "var(--good)" : "var(--bad)" }}>End result: {fmtPct(end, 2)}</span>
+          ) : (
+            <span className="muted">End result: measuring…</span>
+          )}
+          {completeAt && completeAt < expires && (
+            <span>
+              Complete in <Countdown to={completeAt} />
+            </span>
           )}
         </div>
       )}
@@ -56,10 +57,11 @@ function PlanetTask({ t, expires }: { t: TaskView; expires: number }) {
 
 function CountTask({ t }: { t: TaskView }) {
   const pct = t.goal ? (t.current / t.goal) * 100 : 0;
+  const Check = t.done ? CheckSquare : Square;
   return (
     <li className={`mo-task ${t.done ? "done" : ""}`}>
       <div className="mo-task-head">
-        <span className="mo-check">{t.done ? "■" : "□"}</span>
+        <Check size={16} className="mo-check" />
         <span>
           {t.label}
           {t.faction && <span style={{ color: factionColor(t.faction) }}> {factionLabel(t.faction)}</span>}
@@ -68,64 +70,68 @@ function CountTask({ t }: { t: TaskView }) {
           {fmtCompact(t.current)} / {fmtCompact(t.goal)}
         </span>
       </div>
-      <ProgressBar value={pct} color="var(--accent)" />
+      <Meter value={pct} color="var(--cta)" size="l" />
     </li>
   );
 }
 
-function OrderCard({ a, planets, full }: { a: Assignment; planets: Planet[] | undefined; full?: boolean }) {
+export function OrderCard({
+  a,
+  planets,
+  compact,
+}: {
+  a: Assignment;
+  planets: Planet[] | undefined;
+  compact?: boolean;
+}) {
   const tasks = describeAssignment(a, planets);
   const expires = Date.parse(a.expiration);
   const reward = a.rewards[0] ?? a.reward;
   return (
     <Panel
       className="mo"
+      icon={Target}
       title={a.title ?? "Major Order"}
       right={
         <span className="mo-ends">
-          Ends in <b><Countdown to={expires} /></b>
+          Ends in{" "}
+          <b>
+            <Countdown to={expires} />
+          </b>
         </span>
       }
     >
-      <div className="panel-body mo-body">
-        {a.briefing && <p className="mo-briefing">{a.briefing}</p>}
-        {full && a.description && <p className="muted">{a.description}</p>}
-        <ul className="mo-tasks">
-          {tasks.map((t, i) => (t.kind === "planet" ? <PlanetTask key={i} t={t} expires={expires} /> : <CountTask key={i} t={t} />))}
-        </ul>
-        {reward && (
-          <div className="mo-reward">
-            <span className="stat-label">Reward</span>
-            <span className="caps">{rewardLabel(reward.type)}</span>
-            <b className="num">{reward.amount}</b>
-          </div>
+      {a.briefing && <p className="mo-briefing">{a.briefing}</p>}
+      {!compact && a.description && <p className="mo-desc">{a.description}</p>}
+      <div className="mo-sub caps">Order overview</div>
+      <ul className="mo-tasks">
+        {tasks.map((t, i) =>
+          t.kind === "planet" ? <PlanetTask key={i} t={t} expires={expires} /> : <CountTask key={i} t={t} />,
         )}
-      </div>
+      </ul>
+      {reward && (
+        <div className="mo-reward">
+          <Award size={20} />
+          <span className="caps">
+            Reward <b>{rewardLabel(reward.type)}</b>
+          </span>
+          <b className="num mo-amount">{reward.amount}</b>
+        </div>
+      )}
     </Panel>
   );
 }
 
-export function MajorOrderList({ full }: { full?: boolean }) {
+export function MajorOrderList({ compact }: { compact?: boolean }) {
   const { data, isLoading } = useAssignments();
-  const planets = useFreshPlanets();
-  if (isLoading) return <Loading what="orders" />;
-  if (!data?.length) return <div className="empty caps">No active Major Order. Await further instructions.</div>;
+  const planets = useFreshPlanets().data;
+  if (isLoading) return <Loading what="orders" rows={2} />;
+  if (!data?.length) return <Empty>No active Major Order. Await further instructions.</Empty>;
   return (
     <>
       {data.map((a) => (
-        <OrderCard key={a.id} a={a} planets={planets} full={full} />
+        <OrderCard key={a.id} a={a} planets={planets} compact={compact} />
       ))}
     </>
-  );
-}
-
-export function OrdersPage() {
-  return (
-    <div className="page scroll starfield">
-      <div className="page-inner" style={{ maxWidth: 760 }}>
-        <h1 className="page-title">High Command Orders</h1>
-        <MajorOrderList full />
-      </div>
-    </div>
   );
 }

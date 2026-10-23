@@ -1,0 +1,243 @@
+{
+  "meta": {
+    "name": "WarCommand — holotable skin on companion structure",
+    "description": "Visual DNA taken from holotable.net (style source, exact CSS tokens + measured screenshots) applied to helldiverscompanion.com's information architecture (layout source). Fonts are free substitutes for licensed faces.",
+    "source_references": [
+      "https://holotable.net/#war (style: tokens read from :root --tb-* custom properties, 2026-10-23)",
+      "https://helldiverscompanion.com (layout: #, #map, #hellpad, #overview, #news, #settings, 2026-10-23)",
+      "design/measurements/holo-map.json, holo-dossier.json (measure-colors.mjs, k=8)",
+      "design/measurements/comp-campaigns.json, comp-overview.json (measure-colors.mjs, k=8)",
+      "https://divershub.app/planets and /planets/fury (layout source for Hellpad › Planets and the planet detail only; its zinc palette and 12px radius are NOT adopted — rendered in this file's holotable tokens). Measurements: design/measurements/divershub-*.json"
+    ],
+    "created_at": "2026-10-23"
+  },
+  "design_system": {
+    "color": {
+      "palette_type": "near-black monochrome + four semantic faction hues + one hot CTA yellow",
+      "primary": { "hex": "#eaf4fa", "role": "text-hi: titles, values, active labels (holotable --tb-text-hi)" },
+      "secondary": { "hex": "#9fb4be", "role": "text-dim: secondary copy, inactive tabs (--tb-text-dim)" },
+      "accent": { "hex": "#FFFF5A", "role": "CTA fill, focused/selected outline, 'IN PROGRESS' state, keycap highlight (--tb-cta)" },
+      "neutral": {
+        "scale": ["#eaf4fa", "#cfd8de", "#9fb4be", "#7f93a0", "#56707f", "#33373f", "#283039", "#1b2027", "#171c24", "#11151b", "#0b0f16", "#04070b"],
+        "usage": "text-hi → text → text-dim → label → faint for type; line-strong/line for hairlines; surface-3..0 for panels; void #04070b behind everything. Light end is the foreground on the dark ground."
+      },
+      "factions": {
+        "super_earth": "#46a4ff",
+        "terminids": "#FFB900",
+        "automaton": "#FF7171",
+        "illuminate": "#CD8AE9",
+        "none": "#4b6b78",
+        "map_region_stroke_note": "Region contours render hotter than tokens: pink/magenta #ff5fa0-ish for automaton fronts and orange #ff8a3d for terminid fronts in the Regions overlay (screenshot-observed, glow-blended)"
+      },
+      "semantic": { "success": "#5CE372", "warning": "#FFB23F", "error": "#FF5A5A", "info": "#9fd4ff" },
+      "surface": { "background": "#0b0d18", "card": "#11151b", "elevated": "#171c24" },
+      "contrast_strategy": "high contrast: near-white uppercase text on near-black; colour reserved for faction identity and state; color-mix() at fixed strengths (wash 8%, fill 14%, line 30%, edge 55%, solid 80%) derives every tint from one state colour",
+      "mix_strengths": { "wash": "8%", "fill": "14%", "line": "30%", "edge": "55%", "solid": "80%", "hot": "100%" },
+      "measurement": { "k": 8, "sampling": { "method": "deterministic_stratified", "max_pixels": 160000 } },
+      "measured_palette": [
+        { "hex": "#0b0d18", "coverage": 0.6533, "role": "background (map)" },
+        { "hex": "#212433", "coverage": 0.1769, "role": "panel / lane haze" },
+        { "hex": "#42404d", "coverage": 0.0719, "role": "line" },
+        { "hex": "#65626f", "coverage": 0.0419, "role": "faint label" },
+        { "hex": "#a67b82", "coverage": 0.0210, "role": "accent (region glow, blended)" },
+        { "hex": "#a4a2b0", "coverage": 0.0190, "role": "dim text" },
+        { "hex": "#e7ebef", "coverage": 0.0140, "role": "text" },
+        { "hex": "#66c879", "coverage": 0.0010, "role": "good (FRONT chip)" }
+      ]
+    },
+    "typography": {
+      "type_scale": {
+        "display":   { "size": "34px", "weight": 700, "line_height": 1.15, "tracking": "0.06em" },
+        "heading_1": { "size": "21px", "weight": 700, "line_height": 1.15, "tracking": "0.06em" },
+        "heading_2": { "size": "17px", "weight": 700, "line_height": 1.15, "tracking": "0.05em" },
+        "heading_3": { "size": "13px", "weight": 700, "line_height": 1.35, "tracking": "0.05em" },
+        "body":      { "size": "13px", "weight": 400, "line_height": 1.35, "tracking": "0.04em" },
+        "body_small":{ "size": "11px", "weight": 400, "line_height": 1.35, "tracking": "0.08em" },
+        "caption":   { "size": "10px", "weight": 400, "line_height": 1.35, "tracking": "0.12em" },
+        "overline":  { "size": "9px",  "weight": 400, "line_height": 1.15, "tracking": "0.16em" }
+      },
+      "font_families": {
+        "heading": "Swiss 721 Extended (holotable) → substitute: Archivo variable at wdth 125, wght 700–800",
+        "body": "FS Sinclair (holotable, licensed game font) → substitute: Chakra Petch 400/500/700 (already bundled via @fontsource)",
+        "mono": "tabular-nums of the body face; no separate mono"
+      },
+      "font_style_notes": "Everything UPPERCASE with positive tracking that grows as size shrinks (8px gets 0.2em). Headings are wide-extended grotesk; body is a squared techno sans. Mixed-case only for long prose (briefings, dispatch bodies).",
+      "license_note": "FS Sinclair / Swiss 721 / HC Sinclair are commercial; do not copy font files from either site."
+    },
+    "spacing": {
+      "base_unit": "2px",
+      "scale": ["2px", "4px", "6px", "8px", "12px", "16px", "24px", "32px"],
+      "content_density": "compact",
+      "section_rhythm": "panels pad 12px 14px; rows 6px 8px; chips 3px 8px; controls 7px 12px; 16–24px between panel groups"
+    },
+    "layout": {
+      "grid_system": "app shell: fixed top bar (52px) + ticker strip (~22px) + content + fixed bottom dock (~56px); content uses 2-column card grid (campaigns, news masonry) or 2-column split (overview)",
+      "max_content_width": "~600px per card column, centered pair ≈ 560–620px; overview split 290px | 1fr",
+      "columns": "2 on desktop, 1 below 720px",
+      "gutter": "16px",
+      "breakpoints": ["375px", "720px", "1024px", "1440px"],
+      "alignment_tendency": "centered content column inside full-bleed backdrop; HUD controls pinned to viewport edges on the map"
+    },
+    "shape": {
+      "border_radius": { "small": "0", "medium": "0", "large": "0", "pill": "2px" },
+      "border_usage": "subtle 1px hairlines (#33373f or rgba(255,255,255,.06)); 2px faction-coloured edge on selected/active; 3px rail for side accents",
+      "divider_style": "1px hairline; section headers sit on a diagonal hazard-stripe band (repeating-linear-gradient 45deg, state colour 45% / transparent, 3px pitch)",
+      "corner_brackets": "11px L-brackets, 2px weight, on focused panels",
+      "notch": "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%) on feature panels"
+    },
+    "elevation": {
+      "shadow_style": "layered: dark drop shadows + coloured glows from the state colour",
+      "levels": {
+        "low": "0 4px 12px rgba(0,0,0,.45)",
+        "medium": "0 10px 26px rgba(0,0,0,.5)",
+        "high": "0 14px 38px rgba(0,0,0,.6)"
+      },
+      "glow": "0 0 8px <state>@55%, 0 0 16px <state>@22% (faction glow on markers & bars)",
+      "depth_cues": "blur/glass panels (backdrop blur 6–14px over the map) + colour-intensity glow + inset 1px top lip"
+    },
+    "iconography": {
+      "style": "solid filled pictograms in HUD boxes (skull emblem, gear, zoom, bars); faction emblems as filled glyphs",
+      "stroke_weight": "2px where outlined",
+      "size_scale": ["12px", "16px", "20px", "28px (rail buttons 32px box)"],
+      "preferred_set": "custom SVG faction emblems + Lucide for generic UI (never emoji glyphs)"
+    },
+    "motion": {
+      "easing": "out: cubic-bezier(.2,.85,.25,1); pop: cubic-bezier(.2,.9,.3,1.25); glitch: steps(2,end)",
+      "duration_scale": { "micro": "120ms", "normal": "200ms (reveal) / 320ms (value)", "macro": "500ms (enter)" },
+      "entrance_pattern": "60ms stagger reveal of panels; values count/tween over 320ms",
+      "exit_pattern": "fade 120ms",
+      "philosophy": "functional with a heartbeat: 1.4s beat and 2.4s pulse on live markers, 9s ticker crawl, otherwise snappy; motion scaled by --tb-motion (0 for reduced motion)"
+    },
+    "components": {
+      "button_style": "square, 1px hairline, uppercase label; primary = solid #FFFF5A with near-black ink; HUD icon buttons 32–40px square boxes; keycap prefix chips ([ESC] CLOSE, [H] CONTROLS, [Q]/[E] tab cycling)",
+      "input_style": "dark field, 1px line, uppercase placeholder; selectors as ◀ VALUE ▶ steppers with segmented underline showing position",
+      "card_style": "surface-1 panel, hairline border, hatch-stripe header strip with icon box + title, faction 2px edge when tied to a planet; hover card = image header + kicker + yellow title + progress bar + footer hint",
+      "navigation_pattern": "(holotable) top bar + hamburger; tab rows with Q/E keycaps; full-screen dossier overlays with ESC close",
+      "modal_style": "full-viewport takeover on grid-paper backdrop, tabs top-left, ESC CLOSE bottom-left, primary action bottom-right",
+      "list_style": "dense rows 6px 8px, planet dot + name + faction tag right-aligned in faction colour",
+      "component_notes": "Meters: 7px block bars (3px inline) with tick gaps, faction-coloured, hatched remainder. Status chip: green 'FRONT' outlined tag + caps status line. Bottom-right stacked toggles (DISPATCHES n, EFFECTS n) with keycaps."
+    }
+  },
+  "design_style": {
+    "aesthetic": {
+      "mood": ["tactical", "cold", "authoritative", "live", "precise"],
+      "visual_metaphor": "a Super Destroyer war-table hologram read off a military HUD",
+      "era_influence": "near-future military FUI, game-UI lineage (Helldivers 2 in-game menus)",
+      "genre": "game companion / tactical HUD dashboard",
+      "personality_traits": ["disciplined", "terse", "dryly propagandistic"],
+      "adjectives": ["hairline", "uppercase", "glowing", "dense", "square"]
+    },
+    "visual_language": {
+      "complexity": "rich",
+      "ornamentation": "subtle accents (hatch bands, corner brackets, keycaps, scanlines)",
+      "whitespace_usage": "tight; dark negative space does the separating",
+      "visual_weight_distribution": "light chrome at the edges, colour and glow concentrated on data (planets, bars, fronts)",
+      "focal_strategy": "distributed interest anchored by one yellow element per view",
+      "contrast_level": "high",
+      "texture_usage": "scanline overlay, faint grid paper behind overlays, dot-field territory fill"
+    },
+    "composition": {
+      "hierarchy_method": "typographic hierarchy (wide-extended caps) + colour weight",
+      "balance_type": "asymmetric (left title stack, right HUD rail)",
+      "flow_direction": "top-left title → centre data → bottom-right actions",
+      "grouping_strategy": "hatch-header panels with hairline borders",
+      "negative_space_role": "the void is the galaxy; panels float on it"
+    },
+    "imagery": {
+      "photo_treatment": "game screenshots/biome art darkened with scrim gradient tinted by state colour",
+      "illustration_style": "holographic planet spheres, faction emblems",
+      "graphic_elements": ["diagonal hazard stripes", "corner brackets", "keycaps", "tick-gap meters", "constellation lanes"],
+      "pattern_usage": "hazard stripe on headers and remaining-progress; grid paper behind dossiers",
+      "image_shape": "rectangles, square corners; planets as circles"
+    },
+    "interaction_feel": {
+      "feedback_style": "glow intensifies on hover/selection; yellow outline on focus",
+      "hover_behavior": "rich hover cards on map planets; hairline → faction edge on cards",
+      "transition_personality": "snappy",
+      "loading_style": "'LOADING HOLOGRAM…' caps text + skeleton shimmer 1.2s",
+      "microinteraction_density": "medium"
+    },
+    "brand_voice_in_ui": {
+      "tone": "Super Earth military bureaucracy, deadpan satire",
+      "formality": "formal-imperative",
+      "cta_style": "direct imperative (JOIN THE FIGHT, SELECT CAMPAIGN, VIEW MAP)",
+      "empty_state_approach": "in-world status lines (NO ACTIVE DISPATCHES, LINK LOST · RETRYING)",
+      "error_tone": "in-world but clear (COMMS LINK DOWN — SHOWING LAST KNOWN DATA)"
+    }
+  },
+  "visual_effects": {
+    "overview": {
+      "effect_intensity": "moderate",
+      "performance_tier": "medium",
+      "fallback_strategy": "quality presets: drop glow filters, dot field and ambient motion at Low; respect prefers-reduced-motion",
+      "primary_technology": "Canvas 2D (holotable uses stacked 2D canvases + WebGL2 for planet bodies); we keep SVG + d3-zoom and add a Canvas 2D starfield layer"
+    },
+    "background_effects": {
+      "type": "generative-art",
+      "description": "deep-space void with dense starfield, soft central core glow at Super Earth, faint polar grid rings",
+      "technology": "Canvas 2D",
+      "params": { "color_palette": ["#04070b", "#0b0d18", "#46a4ff", "#fff"], "speed": "static with slow twinkle", "density": "dense (thousands of points)", "opacity": "0.15–0.7 per star", "blend_mode": "screen for glows" }
+    },
+    "particle_systems": {
+      "enabled": true,
+      "type": "custom",
+      "description": "territory dot field: small dots tinted by controlling faction filling each region",
+      "technology": "Canvas 2D",
+      "params": { "count": "several thousand", "shape": "square 1–2px dots", "size_range": "1–2px", "movement_pattern": "static, subtle shimmer on contested borders", "color_behavior": "faction colour at wash/fill strength", "interaction": "none", "spawn_area": "inside faction regions" }
+    },
+    "3d_elements": {
+      "enabled": false,
+      "type": "abstract-geometry",
+      "description": "holotable renders planet spheres in WebGL2 in the dossier; out of scope for v2 — use a radial-gradient sphere with biome tint",
+      "technology": "n/a",
+      "params": { "renderer": "n/a", "lighting": "n/a", "camera": "n/a", "materials": "n/a", "geometry": "n/a", "post_processing": [], "interaction_model": "n/a" }
+    },
+    "shader_effects": {
+      "enabled": false,
+      "type": "custom-GLSL",
+      "description": "void plasma / environment sim on holotable; not reproduced",
+      "technology": "n/a",
+      "params": { "uniforms": "n/a", "vertex_manipulation": "n/a", "fragment_output": "n/a", "noise_type": "n/a", "distortion": "n/a" }
+    },
+    "scroll_effects": {
+      "parallax": { "enabled": false, "layers": "0", "depth_range": "n/a", "speed_curve": "n/a" },
+      "scroll_triggered_animations": { "enabled": false, "trigger_points": "n/a", "animation_type": "n/a", "scrub_behavior": "n/a" },
+      "scroll_morphing": { "enabled": false, "description": "n/a" }
+    },
+    "text_effects": {
+      "type": "none",
+      "description": "glow text-shadow on state values (0 0 12px state@55%); ticker crawl",
+      "technology": "CSS",
+      "params": { "split_strategy": "n/a", "animation_per_unit": "n/a", "stagger": "n/a", "effect_style": "glow" }
+    },
+    "cursor_effects": {
+      "enabled": false, "type": "none", "description": "n/a",
+      "params": { "shape": "n/a", "size": "n/a", "blend_mode": "n/a", "trail": "n/a", "interaction_zone": "n/a" }
+    },
+    "image_effects": {
+      "type": "none",
+      "description": "scrim gradient (state colour 12% top → transparent → rgba(6,8,12,.9) bottom) + optional scanline over planet art",
+      "technology": "CSS",
+      "params": { "filter_pipeline": "scrim + scanline", "hover_transform": "none", "reveal_animation": "fade 200ms", "distortion_type": "n/a" }
+    },
+    "glassmorphism_neumorphism": {
+      "enabled": true,
+      "style": "frosted-layers",
+      "params": { "blur_radius": "6px veil / 11px island / 14px frost", "transparency": "surface at 62–84%", "border_treatment": "1px white@12% edge + inset 1px white@6% lip", "shadow_type": "dark drop", "light_source_angle": "top" }
+    },
+    "canvas_drawings": {
+      "enabled": true,
+      "type": "data-visualization",
+      "description": "galaxy map: smoothed faction region contours, constellation supply lanes, glowing star planets, campaign flags with LIBERATE/DEFEND tags",
+      "technology": "SVG (existing d3-zoom) + Canvas 2D backdrop",
+      "params": { "draw_method": "smoothed contour of merged same-owner cells, thick neon stroke + blur glow, ~5% fill", "animation_loop": "requestAnimationFrame only for twinkle/pulse, paused when hidden", "color_scheme": "faction tokens", "responsiveness": "fit-to-viewport with HUD insets", "interaction": "pan, zoom, hover card, click → dossier" }
+    },
+    "svg_animations": {
+      "enabled": true,
+      "type": "decorative-loop",
+      "description": "pulse rings on active campaigns, beat on MO targets",
+      "params": { "animation_method": "CSS keyframes on SVG", "path_morphing": "none", "stroke_animation": "dash offset on attack lines", "filter_effects": "gaussian glow" }
+    },
+    "composite_notes": "Holotable stacks: static canvas (stars, regions) + dynamic canvas (pulses) + UI canvas (labels) + WebGL bodies. We reproduce the read of it in SVG+Canvas2D: backdrop canvas, SVG regions/lanes/planets, HTML HUD. Companion structure (cards, overview charts, news masonry) gets holotable's panels, hatch headers, meters and glows; the companion's own yellow-black HD2 chrome and CRT-blue Hellpad are NOT carried over."
+  }
+}

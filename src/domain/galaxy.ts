@@ -3,10 +3,7 @@ import type { Faction, Planet } from "../api/types";
 
 /** Map units: the API's [-1, 1] galaxy coordinates scaled up, y flipped so north is up. */
 export const GALAXY_SCALE = 500;
-export const project = (p: { x: number; y: number }): [number, number] => [
-  p.x * GALAXY_SCALE,
-  -p.y * GALAXY_SCALE,
-];
+export const project = (p: { x: number; y: number }): [number, number] => [p.x * GALAXY_SCALE, -p.y * GALAXY_SCALE];
 
 export interface SectorShape {
   name: string;
@@ -25,13 +22,28 @@ const VOID_RING_POINTS = 72;
 const VOID_RING_RADIUS = 1.07 * GALAXY_SCALE;
 const BOUNDS = 1.25 * GALAXY_SCALE;
 
-/**
- * Builds one outline per sector by merging the Voronoi cells of its planets: an edge
- * shared by two cells of the same sector is interior and dropped; the remaining edges
- * are chained into loops and smoothed. A ring of "void" sites around the galaxy keeps
- * the outer cells from stretching to the bounds.
- */
+/** Sector outlines: one shape per sector, labelled with its majority owner. */
 export function buildSectors(planets: Planet[]): SectorShape[] {
+  return buildOutlines(planets, (p) => p.sector, 2);
+}
+
+/** Region of one enemy faction's contiguous territory; Super Earth space is left open. */
+export interface RegionShape extends SectorShape {
+  owner: Faction;
+}
+
+/** Enemy territory outlines: same-owner cells merged into smooth fronts, as on the holotable. */
+export function buildRegions(planets: Planet[]): RegionShape[] {
+  return buildOutlines(planets, (p) => (p.currentOwner === "Humans" ? null : p.currentOwner), 4);
+}
+
+/**
+ * Builds one outline per group (`keyOf`) by merging the Voronoi cells of its planets: an
+ * edge shared by two cells of the same group is interior and dropped; the remaining edges
+ * are chained into loops and smoothed. Planets keyed null belong to no outline. A ring of
+ * "void" sites around the galaxy keeps the outer cells from stretching to the bounds.
+ */
+function buildOutlines(planets: Planet[], keyOf: (p: Planet) => string | null, smoothing: number): SectorShape[] {
   // Several planets can share a position (e.g. at the origin). Delaunay gives duplicates
   // no cell, so only the first planet at a position becomes a site.
   const sites: Pt[] = [];
@@ -45,7 +57,7 @@ export function buildSectors(planets: Planet[]): SectorShape[] {
       s = sites.length;
       siteOf.set(k, s);
       sites.push(project(p.position));
-      siteSector.push(p.sector);
+      siteSector.push(keyOf(p));
     }
     planetSite.push(s);
   }
@@ -77,13 +89,15 @@ export function buildSectors(planets: Planet[]): SectorShape[] {
     }
   }
 
-  // Sector → its planets (by array position) and the sites it owns.
+  // Group → its planets (by array position) and the sites it owns.
   const bySector = new Map<string, { members: number[]; sites: Set<number> }>();
   planets.forEach((p, i) => {
-    const entry = bySector.get(p.sector) ?? { members: [], sites: new Set<number>() };
+    const key = keyOf(p);
+    if (key == null) return;
+    const entry = bySector.get(key) ?? { members: [], sites: new Set<number>() };
     entry.members.push(i);
-    if (siteSector[planetSite[i]] === p.sector) entry.sites.add(planetSite[i]);
-    bySector.set(p.sector, entry);
+    if (siteSector[planetSite[i]] === key) entry.sites.add(planetSite[i]);
+    bySector.set(key, entry);
   });
 
   const shapes: SectorShape[] = [];
@@ -100,7 +114,7 @@ export function buildSectors(planets: Planet[]): SectorShape[] {
       }
     }
     const loops = chainLoops(segments, key);
-    const path = loops.map((l) => toPath(chaikin(l, 2))).join(" ");
+    const path = loops.map((l) => toPath(chaikin(l, smoothing))).join(" ");
     shapes.push({
       name,
       owner: majorityOwner(members.map((i) => planets[i].currentOwner)),
@@ -152,8 +166,7 @@ export function chaikin(ring: Pt[], passes: number): Pt[] {
   return pts;
 }
 
-const toPath = (ring: Pt[]) =>
-  `M${ring.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join("L")}Z`;
+const toPath = (ring: Pt[]) => `M${ring.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join("L")}Z`;
 
 function majorityOwner(owners: Faction[]): Faction {
   const counts = new Map<Faction, number>();

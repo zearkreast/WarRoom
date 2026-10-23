@@ -1,123 +1,294 @@
-/* Panel: thin border with accent corner brackets. */
+/* ---------- Panel ---------- */
 .panel {
+  --tone: var(--cta);
   position: relative;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  backdrop-filter: blur(6px);
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--lip), var(--shadow-1);
 }
-.panel::before,
-.panel::after {
-  content: "";
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-color: var(--accent);
-  border-style: solid;
-  pointer-events: none;
-  opacity: 0.8;
-}
-.panel::before {
-  top: -1px;
-  left: -1px;
-  border-width: 2px 0 0 2px;
-}
-.panel::after {
-  bottom: -1px;
-  right: -1px;
-  border-width: 0 2px 2px 0;
+.panel.glass {
+  background: color-mix(in srgb, var(--surface-1) 82%, transparent);
+  backdrop-filter: blur(11px) saturate(1.15);
 }
 .panel-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 14px;
+  gap: var(--s-5);
+  min-height: 40px;
+  padding: 0 var(--s-6) 0 0;
   border-bottom: 1px solid var(--line);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+  background: linear-gradient(90deg, var(--surface-2) 30%, transparent),
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--tone) 22%, transparent) 0 3px, transparent 3px 7px);
 }
-.panel-head .title {
-  color: var(--text);
+.panel-icon {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  width: 40px;
+  flex: none;
+  color: var(--tone);
+  border-right: 1px solid var(--line);
+  background: var(--surface-0);
+}
+.panel-head:not(:has(.panel-icon)) {
+  padding-left: var(--s-6);
+  box-shadow: inset 3px 0 0 -2px var(--tone);
+}
+.panel-title {
+  font-size: var(--fs-body);
+  letter-spacing: 0.06em;
+}
+.panel-right {
+  margin-left: auto;
+  font-size: var(--fs-label);
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
 }
 .panel-body {
-  padding: 12px 14px;
+  padding: var(--s-5) var(--s-6);
 }
 
-/* Progress bar with optional striped "holding" state. */
-.bar {
+/* Corner brackets for feature panels. */
+.brackets {
   position: relative;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--line-2);
+}
+.brackets::before,
+.brackets::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 0 solid var(--cta);
+  pointer-events: none;
+}
+.brackets::before {
+  top: 10px;
+  left: 10px;
+  border-width: 2px 0 0 2px;
+}
+.brackets::after {
+  right: 10px;
+  bottom: 10px;
+  border-width: 0 2px 2px 0;
+}
+
+/* ---------- Meter ---------- */
+.meter {
+  position: relative;
+  height: 7px;
+  background: var(--void);
+  border: 1px solid var(--line);
   overflow: hidden;
 }
-.bar > .fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  transition: width 0.6s ease;
+.meter-s {
+  height: 3px;
+  border: 0;
 }
-.bar.tall {
+.meter-l {
   height: 14px;
 }
-.bar .marker {
+.meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--fill);
+  /* Tick gaps every 5px so the fill reads as segments. */
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 4px, transparent 4px 5px);
+  mask: repeating-linear-gradient(90deg, #000 0 4px, transparent 4px 5px);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--fill) var(--strong), transparent);
+  transition: width var(--t-value) var(--ease);
+}
+.meter-s .meter-fill {
+  -webkit-mask: none;
+  mask: none;
+}
+.meter.chevron .meter-fill {
+  -webkit-mask: none;
+  mask: none;
+  background: repeating-linear-gradient(
+      115deg,
+      transparent 0 6px,
+      rgba(255, 255, 255, 0.28) 6px 9px,
+      transparent 9px 12px
+    ),
+    var(--fill);
+}
+.meter-rest {
+  position: absolute;
+  inset: 0 0 0 auto;
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--rest) var(--strong), transparent) 0 3px,
+    transparent 3px 6px
+  );
+}
+.meter.chevron .meter-rest {
+  background: var(--rest);
+}
+.meter-marker {
   position: absolute;
   top: -2px;
   bottom: -2px;
   width: 2px;
-  background: var(--text);
-  opacity: 0.6;
-}
-.bar.striped > .fill {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    rgba(0, 0, 0, 0.35) 0 4px,
-    transparent 4px 8px
-  ) !important;
+  background: var(--text-hi);
 }
 
-/* HUD button. */
+/* ---------- Buttons ---------- */
 .hud-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--s-3);
   min-width: 36px;
   height: 36px;
-  padding: 0 10px;
-  background: var(--panel-solid);
-  border: 1px solid var(--line-2);
-  border-radius: var(--radius);
+  padding: 0 var(--s-5);
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
   color: var(--text);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--fs-body-s);
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  transition:
+    border-color var(--t-state),
+    color var(--t-state),
+    background var(--t-state);
+}
+.hud-btn.icon {
+  padding: 0;
+  width: 36px;
 }
 .hud-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--text-dim);
+  color: var(--text-hi);
 }
-.hud-btn.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-ink);
+.hud-btn.on {
+  border-color: var(--cta);
+  color: var(--cta);
+  background: color-mix(in srgb, var(--cta) var(--wash), var(--surface-1));
+}
+.hud-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-4);
+  height: 36px;
+  padding: 0 var(--s-6);
+  background: var(--cta);
+  color: var(--ink-on-cta);
+  border: 0;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: var(--fs-body-s);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: filter var(--t-state);
+}
+.cta-btn:hover {
+  filter: brightness(1.08);
+}
+
+.keycap {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--text-hi);
+  color: var(--ink-on-cta);
+  font: 700 var(--fs-kicker) / 1 var(--font);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.key-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-4);
+  height: 32px;
+  padding: 0 var(--s-5) 0 var(--s-3);
+  background: color-mix(in srgb, var(--surface-1) 86%, transparent);
+  border: 1px solid var(--line-strong);
+  color: var(--text-hi);
+  cursor: pointer;
+  font-size: var(--fs-body-s);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: border-color var(--t-state);
+}
+.key-btn:hover,
+.key-btn.on {
+  border-color: var(--cta);
+}
+.key-badge {
+  margin-left: var(--s-2);
+  color: var(--text-dim);
+}
+
+.status-chip {
+  --tone: var(--good);
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 var(--s-3);
+  border: 1px solid var(--tone);
+  background: color-mix(in srgb, var(--tone) var(--fill), transparent);
+  color: var(--tone);
+  font-size: var(--fs-kicker);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--good);
+  box-shadow: 0 0 6px var(--good);
+  animation: pulse 2.4s var(--ease) infinite;
+}
+.live-dot.off {
+  background: var(--bad);
+  box-shadow: 0 0 6px var(--bad);
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 1px 6px;
-  border: 1px solid currentColor;
-  font-size: 10px;
+  gap: var(--s-2);
+  height: 20px;
+  padding: 0 var(--s-3);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.faction-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+.emblem {
+  flex: none;
+  display: block;
 }
 
 .dot {
@@ -128,65 +299,339 @@
   flex: none;
 }
 
-.stat-label {
-  font-size: 10px;
-  color: var(--muted);
+/* ---------- Stepper ---------- */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-width: 220px;
+}
+.stepper-arrow {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: 0;
+  color: var(--text-hi);
+  cursor: pointer;
+}
+.stepper-arrow:hover {
+  color: var(--cta);
+}
+.stepper-value {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  font-weight: 700;
+  font-size: var(--fs-body-s);
+  color: var(--text-hi);
+}
+.stepper-segs {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+}
+.stepper-segs span {
+  flex: 1;
+  height: 2px;
+  background: var(--line-strong);
+}
+.stepper-segs span.on {
+  background: var(--text-hi);
+}
+
+/* ---------- Tiles ---------- */
+.tile {
+  --rule: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-5) var(--s-5);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  box-shadow: inset 2px 0 0 -1px var(--rule);
+  min-width: 0;
+}
+.tile-label {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-label);
+  color: var(--label);
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
-.stat-value {
-  font-size: 18px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+.tile-value {
+  font-size: var(--fs-value);
+  font-weight: 700;
+  color: var(--text-hi);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tile-sub {
+  font-size: var(--fs-label);
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.stat-label {
+  font-size: var(--fs-label);
+  color: var(--label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
-.empty {
-  padding: 24px;
-  text-align: center;
-  color: var(--muted);
-}
-
-/* Toasts */
-.toasts {
+/* ---------- Overlay ---------- */
+.overlay {
   position: fixed;
-  top: calc(var(--nav-h) + 40px);
-  right: 12px;
-  z-index: 50;
+  inset: 0;
+  z-index: 40;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px) 0 0 / 32px 32px,
+    radial-gradient(ellipse at 70% 30%, rgba(70, 164, 255, 0.08), transparent 60%),
+    color-mix(in srgb, var(--void) 97%, transparent);
+  animation: overlay-in var(--t-reveal) var(--ease);
+}
+.overlay-scroll {
+  position: absolute;
+  inset: 0 0 56px;
+  padding: var(--s-7) var(--s-6) var(--s-8);
+}
+.overlay-foot {
+  position: absolute;
+  inset: auto 0 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  padding: 0 var(--s-6);
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--void) 92%, transparent);
+}
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+/* ---------- States ---------- */
+.loading {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--s-4);
+  padding: var(--s-6);
+}
+.skeleton {
+  height: 56px;
+  background: linear-gradient(90deg, var(--surface-1) 30%, var(--surface-2) 50%, var(--surface-1) 70%) 0 0 / 300% 100%;
+  border: 1px solid var(--line);
+  animation: skel 1.2s linear infinite;
+}
+@keyframes skel {
+  to {
+    background-position: -100% 0;
+  }
+}
+.loading-text {
+  font-size: var(--fs-label);
+  color: var(--label);
+  letter-spacing: 0.16em;
+}
+.empty {
+  padding: var(--s-7);
+  text-align: center;
+  color: var(--text-dim);
+  font-size: var(--fs-body-s);
+  letter-spacing: 0.12em;
+}
+
+/* ---------- Links ---------- */
+.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 3px;
+}
+.link:hover {
+  text-decoration-color: currentColor;
+}
+
+/* ---------- Toasts ---------- */
+.toasts {
+  position: fixed;
+  top: calc(var(--top-h) + var(--strip-h) + var(--s-5));
+  right: var(--s-5);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
   width: min(320px, calc(100vw - 24px));
 }
 .toast {
+  --tone: var(--cta);
   display: flex;
-  gap: 10px;
-  padding: 10px 12px;
-  border-left: 3px solid var(--accent);
-  animation: toast-in 0.25s ease;
+  align-items: center;
+  gap: var(--s-5);
+  padding: var(--s-4) var(--s-4) var(--s-4) var(--s-5);
+  background: color-mix(in srgb, var(--surface-1) 92%, transparent);
+  backdrop-filter: blur(11px);
+  border: 1px solid color-mix(in srgb, var(--tone) var(--edge), var(--line-strong));
+  box-shadow: var(--shadow-2);
+  animation: toast-in var(--t-reveal) var(--ease);
 }
-.toast .t-title {
+.toast-body {
+  flex: 1;
+  font-size: var(--fs-body-s);
+  color: var(--text);
+}
+.toast-body b {
+  color: var(--tone);
   font-weight: 700;
-  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
-.toast .t-body {
-  font-size: 12px;
-  color: var(--muted);
+.toast-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  color: var(--tone);
+  border: 1px solid color-mix(in srgb, var(--tone) var(--edge), transparent);
 }
-.toast button {
-  margin-left: auto;
-  align-self: flex-start;
+.toast-x {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
   background: none;
-  border: none;
-  color: var(--muted);
+  border: 0;
+  color: var(--text-dim);
   cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
+}
+.toast-x:hover {
+  color: var(--text-hi);
 }
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateX(20px);
+    transform: translateX(16px);
   }
+}
+
+/* ---------- Page scaffold ---------- */
+.page {
+  height: 100%;
+}
+.page-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--s-7) var(--s-6) var(--s-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-6);
+  flex-wrap: wrap;
+}
+.page-title {
+  font-size: var(--fs-title);
+}
+.page-sub {
+  margin: var(--s-3) 0 0;
+  color: var(--text-dim);
+  font-size: var(--fs-body);
+  max-width: 62ch;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: 30px;
+  padding: 0 var(--s-5);
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  cursor: pointer;
+  font-size: var(--fs-body-s);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: border-color var(--t-state);
+}
+.filter-chip:hover {
+  border-color: var(--text-dim);
+}
+.filter-chip.on {
+  border-color: var(--cta);
+  background: color-mix(in srgb, var(--cta) var(--wash), var(--surface-1));
+  color: var(--text-hi);
+}
+.filter-chip .count {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Crash fallback ---------- */
+.crash {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  max-width: 640px;
+  margin: var(--s-8) auto;
+  padding: var(--s-6);
+  background: var(--surface-1);
+  border: 1px solid color-mix(in srgb, var(--bad) var(--edge), var(--line));
+  color: var(--bad);
+}
+.crash > div {
+  flex: 1;
+}
+.crash b {
+  color: var(--text-hi);
+  letter-spacing: 0.08em;
+}
+.crash p {
+  margin: var(--s-2) 0 0;
+  font-size: var(--fs-body-s);
+}
+
+/* ---------- One-time hints ---------- */
+.hint {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  padding: var(--s-4) var(--s-4) var(--s-4) var(--s-5);
+  background: color-mix(in srgb, var(--info) var(--wash), var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--info) var(--edge), var(--line));
+  color: var(--text);
+  font-size: var(--fs-body-s);
+}
+.hint > svg {
+  color: var(--info);
+  flex: none;
+}
+.hint-text {
+  flex: 1;
 }
