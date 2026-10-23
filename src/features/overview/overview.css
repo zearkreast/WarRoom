@@ -234,31 +234,115 @@
   background: color-mix(in srgb, var(--k) var(--wash), var(--surface-1));
 }
 
-.ov-theater {
-  display: block;
-  width: 100%;
-  padding: 0;
-  background: radial-gradient(ellipse at 50% 55%, rgba(70, 164, 255, 0.12), transparent 60%);
-  border: 0;
-  cursor: pointer;
-  perspective: 900px;
+/* ---------- Theater of war ---------- */
+.tw-body {
+  /* The disc's near edge widens past its stage under perspective; clip at the panel instead. */
+  overflow: hidden;
 }
-.ov-theater svg {
-  display: block;
+.tw-stage {
+  position: relative;
   width: min(100%, 560px);
-  margin: -14% auto -16%;
-  transform: rotateX(56deg);
-  transition: transform var(--t-value) var(--ease);
+  margin: 0 auto;
+  aspect-ratio: 14 / 9;
+  perspective: 900px;
+  cursor: grab;
+  /* Vertical swipes still scroll the page; horizontal ones turn the disc. */
+  touch-action: pan-y;
+  user-select: none;
+  background: radial-gradient(ellipse at 50% 55%, rgba(70, 164, 255, 0.14), transparent 60%);
 }
-.ov-theater:hover svg {
-  transform: rotateX(50deg) scale(1.02);
+.tw-stage.dragging {
+  cursor: grabbing;
+}
+.tw-stage svg {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  width: 92%;
+  transform: translate(-50%, -50%) rotateX(56deg);
+  overflow: visible;
+}
+.tw-rim {
+  fill: none;
+  stroke: color-mix(in srgb, var(--c-humans) 40%, transparent);
+  stroke-width: 2;
+  stroke-dasharray: 2 10;
+}
+.tw-owner path {
+  stroke: var(--c);
+  stroke-linejoin: round;
+}
+.tw-owner.se path {
+  fill: color-mix(in srgb, var(--c) 10%, transparent);
+  stroke-width: 1.5;
+  stroke-opacity: 0.35;
+}
+.tw-owner.enemy path {
+  fill: color-mix(in srgb, var(--c) 30%, transparent);
+  stroke-width: 4;
+}
+.tw-owner.enemy {
+  filter: drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 18px color-mix(in srgb, var(--c) 55%, transparent));
+}
+.tw-tick {
+  stroke: var(--cta);
+  stroke-width: 4;
+  filter: drop-shadow(0 0 6px var(--cta));
+}
+.tw-core-glow {
+  fill: color-mix(in srgb, var(--c-humans) 25%, transparent);
+  filter: blur(18px);
+}
+.tw-core-ring {
+  fill: none;
+  stroke: var(--f-humans);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px var(--f-humans));
+}
+.tw-core {
+  fill: #eaf4fa;
+  filter: drop-shadow(0 0 10px #9fd4ff);
+}
+.tw-hint {
+  position: absolute;
+  right: var(--s-4);
+  bottom: var(--s-3);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.16em;
+  color: var(--label);
+}
+.tw-open {
+  height: 28px;
+  font-size: var(--fs-label);
+}
+
+.ov-front {
+  cursor: default;
+  transition:
+    border-color var(--t-state),
+    box-shadow var(--t-state);
+}
+.ov-front.on {
+  border-color: var(--k);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--k) var(--edge), transparent);
 }
 
 @media (max-width: 860px) {
-  .ov-grid {
-    grid-template-columns: 1fr;
-  }
   .ov-heads {
     grid-template-columns: 1fr 1fr;
+  }
+  /* Phones lead with the Major Order, then the distribution, then the latest dispatch. */
+  .ov-grid {
+    display: flex;
+    flex-direction: column;
+  }
+  .ov-right {
+    display: contents;
+  }
+  .ov-dist {
+    order: 2;
+  }
+  .ov-right > .nc {
+    order: 3;
   }
 }

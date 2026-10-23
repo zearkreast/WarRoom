@@ -16,69 +16,13 @@ import { useSettings } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
 import { HoloGlobe } from "../../ui/HoloGlobe";
 import { NeonRing } from "../../ui/NeonRing";
+import { PointerCard, pointerAt, type PointerAt } from "../../ui/PointerCard";
 
 const COMMUNITY = parseCommunityPlanets(communityText);
-const MAP_WIDTH = 260;
-
-interface PointerMap {
+interface FactionHover {
   faction: Faction;
-  x: number;
-  y: number;
-  /** Ring centre, so the map opens on the side away from the readout. */
-  cx: number;
-  cy: number;
+  at: PointerAt;
   list: ListedPlanet[];
-}
-
-const MAP_HEIGHT = 300;
-const OFFSET = 18;
-
-function placeMap(m: PointerMap): { left: number; top: number } {
-  const clampX = (v: number) => Math.max(8, Math.min(v, window.innerWidth - MAP_WIDTH - 8));
-  const clampY = (v: number) => Math.max(8, Math.min(v, window.innerHeight - MAP_HEIGHT - 8));
-  const toLeft = m.x < m.cx;
-  const sideX = toLeft ? m.x - MAP_WIDTH - OFFSET : m.x + OFFSET;
-  if (sideX >= 8 && sideX + MAP_WIDTH <= window.innerWidth - 8)
-    return { left: sideX, top: clampY(m.y - MAP_HEIGHT / 2) };
-  // No room beside the ring: open above or below the pointer instead.
-  const above = m.y < m.cy;
-  return { left: clampX(m.x - MAP_WIDTH / 2), top: clampY(above ? m.y - MAP_HEIGHT - OFFSET : m.y + OFFSET) };
-}
-
-function FactionMap({ map, share }: { map: PointerMap; share: { pct: number; planets: number } }) {
-  const max = Math.max(1, ...map.list.map((l) => l.planet?.statistics.playerCount ?? 0));
-  const { left, top } = placeMap(map);
-  return (
-    <div className="fmap" style={{ left, top, "--k": factionColor(map.faction) } as CSSProperties} aria-hidden>
-      <div className="fmap-head">
-        <FactionEmblem faction={map.faction} size={18} />
-        <b>{factionLabel(map.faction)}</b>
-        <span className="num">
-          {Math.round(share.pct)}% · {share.planets}
-        </span>
-      </div>
-      <ol>
-        {map.list.map((l) => (
-          <li key={l.name}>
-            <span className="fmap-name">{l.name}</span>
-            <span className="fmap-val">
-              {l.lore ?? (
-                <>
-                  <Users size={10} /> {fmtInt(l.planet!.statistics.playerCount)}
-                </>
-              )}
-            </span>
-            <span className="fmap-bar">
-              <span style={{ width: `${l.planet ? (l.planet.statistics.playerCount / max) * 100 : 0}%` }} />
-            </span>
-          </li>
-        ))}
-      </ol>
-      {map.faction !== "Humans" && share.planets > LIST_SIZE && (
-        <div className="fmap-foot">+{share.planets - LIST_SIZE} more · busiest first</div>
-      )}
-    </div>
-  );
 }
 
 /** Collapsible faction-control ring for the planet index; hovering an arc maps that faction's planets. */
@@ -87,7 +31,7 @@ export function GalacticControl({ planets, onFilter }: { planets: Planet[]; onFi
   const setSetting = useSettings((s) => s.set);
   const shares = useMemo(() => controlShares(planets), [planets]);
   const [active, setActive] = useState<Faction | null>(null);
-  const [map, setMap] = useState<PointerMap | null>(null);
+  const [map, setMap] = useState<FactionHover | null>(null);
 
   const listFor = (f: Faction) =>
     f === "Humans" ? superEarthPlanets(planets, COMMUNITY) : busiestPlanets(planets, f, LIST_SIZE);
@@ -124,17 +68,9 @@ export function GalacticControl({ planets, onFilter }: { planets: Planet[]; onFi
               if (!key) setMap(null);
             }}
             onPointerMove={(key, e) => {
-              const ring = e.currentTarget.ownerSVGElement!.getBoundingClientRect();
-              const at = {
-                x: e.clientX,
-                y: e.clientY,
-                cx: ring.left + ring.width / 2,
-                cy: ring.top + ring.height / 2,
-              };
+              const at = pointerAt(e, e.currentTarget.ownerSVGElement!);
               setMap((m) =>
-                m && m.faction === key
-                  ? { ...m, ...at }
-                  : { faction: key as Faction, ...at, list: listFor(key as Faction) },
+                m && m.faction === key ? { ...m, at } : { faction: key as Faction, at, list: listFor(key as Faction) },
               );
             }}
             onSelect={(key) => onFilter(key as Faction)}
@@ -178,7 +114,26 @@ export function GalacticControl({ planets, onFilter }: { planets: Planet[]; onFi
           </div>
         </div>
       )}
-      {open && map && focus && <FactionMap map={map} share={focus} />}
+      {open && map && focus && (
+        <PointerCard
+          at={map.at}
+          tone={factionColor(map.faction)}
+          icon={<FactionEmblem faction={map.faction} size={18} />}
+          title={factionLabel(map.faction)}
+          badge={`${Math.round(focus.pct)}% · ${focus.planets}`}
+          rows={map.list.map((l) => ({
+            key: l.name,
+            name: l.name,
+            value: l.planet ? l.planet.statistics.playerCount : null,
+            note: l.lore,
+          }))}
+          footer={
+            map.faction !== "Humans" && focus.planets > LIST_SIZE
+              ? `+${focus.planets - LIST_SIZE} more · busiest first`
+              : undefined
+          }
+        />
+      )}
     </section>
   );
 }
