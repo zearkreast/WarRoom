@@ -41,7 +41,7 @@ export const useUi = create<UiState>((set) => ({
   options: null,
   dispatchOpen: false,
   setView: (view) => set({ view, options: null, module: null }),
-  openModule: (module) => set({ view: "hellpad", module, options: null }),
+  openModule: (module) => set({ view: "hellpad", module, options: null, detail: null }),
   select: (selectedPlanet) => set({ selectedPlanet }),
   showOnMap: (planet) =>
     set((s) => ({ view: "map", selectedPlanet: planet, focusSeq: s.focusSeq + 1, detail: null, options: null })),
