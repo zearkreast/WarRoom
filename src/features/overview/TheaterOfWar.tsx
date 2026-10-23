@@ -165,7 +165,6 @@ export function TheaterOfWar() {
                 <path d={g.paths.join("")} />
               </g>
             ))}
-            {sector && <path d={geo.fills.get(sector)} className="tw-hover" />}
             <g className="tw-hits">
               {[...geo.fills].map(([name, d]) => (
                 <path key={name} d={d} onPointerEnter={() => setSector(name)} />
@@ -178,6 +177,7 @@ export function TheaterOfWar() {
                     d={EMBLEM_PATHS[m.faction]}
                     transform="translate(-42,-42) scale(3.5)"
                     fill={factionColor(m.faction)}
+                    color={factionColor(m.faction)}
                     fillRule="evenodd"
                   />
                 </g>
