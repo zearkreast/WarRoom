@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { ArrowUpRight, Mouse, MousePointer2, MousePointerClick, Move } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useDispatches, useFreshPlanets } from "../../api/queries";
 import type { Faction, Planet } from "../../api/types";
+import { dispatchBody, recentDispatches } from "../../domain/dispatch";
 import { FACTIONS, factionColor, factionLabel } from "../../domain/factions";
-import { dispatchTitle, fmtDateTime } from "../../domain/format";
+import { dispatchTitle, fmtAgo } from "../../domain/format";
 import { useUi } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
-import { KeyButton } from "../../ui/primitives";
+import { Keycap, KeyButton, useNow } from "../../ui/primitives";
 import { MajorOrderList } from "../major-order/MajorOrder";
 import { GalaxyMap } from "./GalaxyMap";
 
@@ -61,27 +63,79 @@ function ControlBar() {
   );
 }
 
-function DispatchDrawer() {
+const CONTROLS: [ReactNode, string][] = [
+  [<Move size={15} />, "Drag to pan"],
+  [<Mouse size={15} />, "Scroll to zoom"],
+  [<MousePointerClick size={15} />, "Planet options"],
+  [
+    <>
+      <Keycap k="+" />
+      <Keycap k="−" />
+    </>,
+    "Zoom",
+  ],
+  [<Keycap k="0" />, "Fit galaxy"],
+  [<MousePointer2 size={15} />, "Right-drag: turn & tilt"],
+  [
+    <>
+      <Keycap k="Q" />
+      <Keycap k="E" />
+    </>,
+    "Rotate",
+  ],
+  [
+    <>
+      <Keycap k="R" />
+      <Keycap k="F" />
+    </>,
+    "Tilt",
+  ],
+  [<Keycap k="Z" />, "Dispatches"],
+  [<Keycap k="C" />, "Orders"],
+  [<Keycap k="H" />, "Hide controls"],
+];
+
+function ControlsPanel() {
+  return (
+    <dl className="map-keys panel glass" aria-label="Map controls">
+      {CONTROLS.map(([glyph, label]) => (
+        <div key={label}>
+          <dt>{glyph}</dt>
+          <dd>{label}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function DispatchDrawer({ now }: { now: number }) {
   const { data } = useDispatches();
   const setView = useUi((s) => s.setView);
-  const latest = [...(data ?? [])].sort((a, b) => b.id - a.id).slice(0, 4);
+  const recent = recentDispatches(data ?? [], now);
   return (
     <div className="map-drawer panel glass">
-      <div className="md-head caps">Dispatches</div>
-      {latest.length === 0 ? (
-        <p className="md-empty caps">No dispatches received.</p>
+      <div className="md-head caps">
+        Dispatches <span>last 72 hours</span>
+      </div>
+      {recent.length === 0 ? (
+        <p className="md-empty caps">No dispatches in the last 72 hours.</p>
       ) : (
         <ul className="md-list">
-          {latest.map((d) => (
+          {recent.map((d) => (
             <li key={d.id}>
               <b>{dispatchTitle(d.message)}</b>
-              <span className="num">{fmtDateTime(Date.parse(d.published))}</span>
+              <p>
+                {dispatchBody(d.message)
+                  .map((s) => s.text)
+                  .join("")}
+              </p>
+              <span className="num">{fmtAgo(Date.parse(d.published), now)}</span>
             </li>
           ))}
         </ul>
       )}
-      <button className="link md-more caps" onClick={() => setView("news")}>
-        Open Strohmann News
+      <button className="md-more caps" onClick={() => setView("news")}>
+        See all dispatches <ArrowUpRight size={14} />
       </button>
     </div>
   );
@@ -91,7 +145,8 @@ export function MapPage() {
   const [drawer, setDrawer] = useState<Drawer>(null);
   const [controls, setControls] = useState(true);
   const [hovered, setHovered] = useState<Planet | null>(null);
-  const dispatches = useDispatches().data?.length ?? 0;
+  const now = useNow(60_000);
+  const dispatches = recentDispatches(useDispatches().data ?? [], now).length;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -113,15 +168,11 @@ export function MapPage() {
         <KeyButton k="H" active={controls} onClick={() => setControls((c) => !c)}>
           Controls
         </KeyButton>
-        {controls && (
-          <p className="caps">
-            Drag to pan · scroll to zoom · click a planet · <span className="num">+ − 0</span> zoom
-          </p>
-        )}
+        {controls && <ControlsPanel />}
       </div>
       <ControlBar />
       <div className="map-toggles">
-        {drawer === "dispatches" && <DispatchDrawer />}
+        {drawer === "dispatches" && <DispatchDrawer now={now} />}
         {drawer === "orders" && (
           <div className="map-drawer orders">
             <MajorOrderList compact />

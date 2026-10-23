@@ -1,4 +1,4 @@
-import { ArrowDownWideNarrow, Flame, Satellite, Search, Swords, Target, Users } from "lucide-react";
+import { ArrowDownWideNarrow, Flame, Pin, Satellite, Search, Swords, Target, Users } from "lucide-react";
 import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { useCampaigns, useFreshPlanets } from "../../api/queries";
 import type { Faction, Planet } from "../../api/types";
@@ -13,7 +13,7 @@ import {
   type SectorSort,
 } from "../../domain/planetIndex";
 import { liberationPercent, trackedPercent } from "../../domain/progress";
-import { useUi } from "../../state";
+import { useSettings, useUi } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
 import { hazardIcon } from "../../ui/hazardIcons";
 import { Empty, Loading } from "../../ui/primitives";
@@ -22,7 +22,8 @@ import { GalacticControl } from "./GalacticControl";
 
 const ORDER: Faction[] = ["Humans", "Terminids", "Automaton", "Illuminate"];
 
-function PlanetRow({ p, active, mo, station }: { p: Planet; active: boolean; mo: boolean; station: boolean }) {
+function PlanetRow(props: { p: Planet; active: boolean; mo: boolean; station: boolean; pinned: boolean }) {
+  const { p, active, mo, station, pinned } = props;
   const openOptions = useUi((s) => s.openOptions);
   const enemy = p.event?.faction ?? (p.currentOwner === "Humans" ? undefined : p.currentOwner);
   const face = (enemy ?? p.currentOwner) as Faction;
@@ -35,7 +36,7 @@ function PlanetRow({ p, active, mo, station }: { p: Planet; active: boolean; mo:
   return (
     <li>
       <button
-        className={`pi-row ${active ? "active" : ""}`}
+        className={`pi-row ${active ? "active" : ""} ${pinned ? "pinned" : ""}`}
         style={style}
         onClick={(e) => openOptions({ planet: p.index, x: e.clientX, y: e.clientY })}
       >
@@ -48,6 +49,11 @@ function PlanetRow({ p, active, mo, station }: { p: Planet; active: boolean; mo:
           </span>
         </span>
         <span className="pi-row-icons">
+          {pinned && (
+            <span className="pi-icon pin" title="Pinned">
+              <Pin size={13} />
+            </span>
+          )}
           {mo && (
             <span className="pi-icon mo" title="Major Order target">
               <Target size={13} />
@@ -89,6 +95,8 @@ export function PlanetsModule() {
   const campaigns = useCampaigns().data;
   const mo = useMajorOrderPlanets();
   const stations = useStationPlanets();
+  const pinnedList = useSettings((s) => s.pinned);
+  const pinned = useMemo(() => new Set(pinnedList), [pinnedList]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PlanetFilter>("all");
   const [sort, setSort] = useState<SectorSort>("players");
@@ -97,13 +105,32 @@ export function PlanetsModule() {
 
   const groups = useMemo(() => {
     if (!planets) return [];
-    const shown = planets.filter((p) => matchesSearch(p, query) && matchesFilter(p, filter, active));
+    const shown = planets.filter((p) => matchesSearch(p, query) && matchesFilter(p, filter, active, pinned));
     return groupBySector(shown, active, sort);
-  }, [planets, query, filter, sort, active]);
+  }, [planets, query, filter, sort, active, pinned]);
+  // Pinned planets also get a shelf above the sectors, in the order they were pinned.
+  const shelf = useMemo(() => {
+    if (!planets || filter === "pinned") return [];
+    const byIdx = new Map(planets.map((p) => [p.index, p]));
+    return pinnedList.flatMap((i) => {
+      const p = byIdx.get(i);
+      return p && matchesSearch(p, query) && matchesFilter(p, filter, active, pinned) ? [p] : [];
+    });
+  }, [planets, pinnedList, pinned, query, filter, active]);
 
   if (!planets) return <Loading what="the star chart" rows={4} />;
   const searched = planets.filter((p) => matchesSearch(p, query));
-  const count = (f: PlanetFilter) => searched.filter((p) => matchesFilter(p, f, active)).length;
+  const count = (f: PlanetFilter) => searched.filter((p) => matchesFilter(p, f, active, pinned)).length;
+  const row = (p: Planet) => (
+    <PlanetRow
+      key={p.index}
+      p={p}
+      active={active.has(p.index)}
+      mo={mo.has(p.index)}
+      station={stations.has(p.index)}
+      pinned={pinned.has(p.index)}
+    />
+  );
 
   return (
     <div className="pi">
@@ -147,14 +174,38 @@ export function PlanetsModule() {
         <button className={`filter-chip ${filter === "active" ? "on" : ""}`} onClick={() => setFilter("active")}>
           <Swords size={14} /> Active fronts <span className="count">{count("active")}</span>
         </button>
+        <button className={`filter-chip ${filter === "pinned" ? "on" : ""}`} onClick={() => setFilter("pinned")}>
+          <Pin size={14} /> Pinned <span className="count">{count("pinned")}</span>
+        </button>
         {ORDER.map((f) => (
           <button key={f} className={`filter-chip ${filter === f ? "on" : ""}`} onClick={() => setFilter(f)}>
             <FactionEmblem faction={f} size={14} /> {FACTIONS[f].label} <span className="count">{count(f)}</span>
           </button>
         ))}
       </div>
+      {shelf.length > 0 && (
+        <section className="pi-sector pi-pinned" aria-label="Pinned planets">
+          <header className="pi-sector-head" style={{ "--k": "var(--cta)" } as CSSProperties}>
+            <span className="pi-sector-glyph">
+              <Pin size={15} />
+            </span>
+            <h2>Pinned</h2>
+            <span className="pi-sector-rule" />
+            <span className="pi-sector-meta caps num">
+              <span>
+                {shelf.length} planet{shelf.length === 1 ? "" : "s"}
+              </span>
+            </span>
+          </header>
+          <ul className="pi-grid">{shelf.map(row)}</ul>
+        </section>
+      )}
       {groups.length === 0 ? (
-        <Empty>No planets match “{query}”.</Empty>
+        <Empty>
+          {filter === "pinned" && !query
+            ? "No pinned planets yet. Pick a planet and choose Pin to top."
+            : `No planets match “${query}”.`}
+        </Empty>
       ) : (
         groups.map((g) => (
           <section key={g.name} className="pi-sector" aria-label={`${g.name} sector`}>
@@ -181,17 +232,7 @@ export function PlanetsModule() {
                 )}
               </span>
             </header>
-            <ul className="pi-grid">
-              {g.planets.map((p) => (
-                <PlanetRow
-                  key={p.index}
-                  p={p}
-                  active={active.has(p.index)}
-                  mo={mo.has(p.index)}
-                  station={stations.has(p.index)}
-                />
-              ))}
-            </ul>
+            <ul className="pi-grid">{g.planets.map(row)}</ul>
           </section>
         ))
       )}

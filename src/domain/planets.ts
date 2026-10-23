@@ -11,3 +11,7 @@ export function byIndex(planets: Planet[]): Map<number, Planet> {
   }
   return m;
 }
+
+/** The API stacks unnamed placeholder worlds on Super Earth at the origin; nothing in the war uses them. */
+export const isPlaceholder = (p: Pick<Planet, "index" | "position">) =>
+  p.index !== 0 && p.position.x === 0 && p.position.y === 0;

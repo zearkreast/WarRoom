@@ -16,6 +16,8 @@ interface UiState {
   module: HellpadModule | null;
   /** Planet highlighted on the map. */
   selectedPlanet: number | null;
+  /** Bumped on every request to centre the map on the selected planet, so repeating one still flies. */
+  focusSeq: number;
   /** Planet whose detail overlay is open. */
   detail: number | null;
   options: OptionsAnchor | null;
@@ -24,6 +26,7 @@ interface UiState {
   openModule(m: HellpadModule | null): void;
   select(planet: number | null): void;
   showOnMap(planet: number): void;
+  focus(planet: number): void;
   openDetail(planet: number | null): void;
   openOptions(o: OptionsAnchor | null): void;
   toggleDispatch(open?: boolean): void;
@@ -33,13 +36,16 @@ export const useUi = create<UiState>((set) => ({
   view: "campaigns",
   module: null,
   selectedPlanet: null,
+  focusSeq: 0,
   detail: null,
   options: null,
   dispatchOpen: false,
   setView: (view) => set({ view, options: null, module: null }),
   openModule: (module) => set({ view: "hellpad", module, options: null }),
   select: (selectedPlanet) => set({ selectedPlanet }),
-  showOnMap: (planet) => set({ view: "map", selectedPlanet: planet, detail: null, options: null }),
+  showOnMap: (planet) =>
+    set((s) => ({ view: "map", selectedPlanet: planet, focusSeq: s.focusSeq + 1, detail: null, options: null })),
+  focus: (planet) => set((s) => ({ selectedPlanet: planet, focusSeq: s.focusSeq + 1, options: null })),
   openDetail: (detail) => set({ detail, options: null }),
   openOptions: (options) => set({ options }),
   toggleDispatch: (open) => set((s) => ({ dispatchOpen: open ?? !s.dispatchOpen })),
@@ -55,6 +61,7 @@ export interface AlertSettings {
 
 export type MapOverlay = "regions" | "sectors" | "galaxy";
 export type MapQuality = "max" | "normal" | "min";
+export type MapPlanets = "markers" | "spheres";
 export type Popups = "all" | "priority" | "none";
 
 interface SettingsState {
@@ -62,6 +69,7 @@ interface SettingsState {
   popups: Popups;
   mapOverlay: MapOverlay;
   mapQuality: MapQuality;
+  mapPlanets: MapPlanets;
   showInactive: boolean;
   /** Whether the Galactic control ring is unfolded on the planet index. */
   planetsControlOpen: boolean;
@@ -74,7 +82,7 @@ interface SettingsState {
   /** App version whose changelog the user has opened. */
   seenChangelog: string;
   setAlert(k: keyof AlertSettings, v: boolean): void;
-  set<K extends "popups" | "mapOverlay" | "mapQuality" | "showInactive" | "planetsControlOpen">(
+  set<K extends "popups" | "mapOverlay" | "mapQuality" | "mapPlanets" | "showInactive" | "planetsControlOpen">(
     k: K,
     v: SettingsState[K],
   ): void;
@@ -93,6 +101,7 @@ export const useSettings = create<SettingsState>()(
       popups: "all",
       mapOverlay: "regions",
       mapQuality: "normal",
+      mapPlanets: "markers",
       showInactive: false,
       planetsControlOpen: true,
       pinned: [],

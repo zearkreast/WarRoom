@@ -1,3 +1,4 @@
+import type { Dispatch } from "../api/types";
 import { dispatchTitle, parseMarkup, type MarkupSpan } from "./format";
 
 export type DispatchKind = "order" | "victory" | "defeat" | "alert" | "advisory" | "news";
@@ -22,4 +23,11 @@ export function dispatchBody(message: string): MarkupSpan[] {
   const rest = spans[0]?.style != null ? spans.slice(1) : spans;
   if (rest[0]) rest[0] = { ...rest[0], text: rest[0].text.replace(/^\s+/, "") };
   return rest;
+}
+
+export const RECENT_DISPATCH_MS = 72 * 3_600_000;
+
+/** Dispatches published in the last 72 hours, newest first. */
+export function recentDispatches(list: Dispatch[], now: number): Dispatch[] {
+  return list.filter((d) => now - Date.parse(d.published) <= RECENT_DISPATCH_MS).sort((a, b) => b.id - a.id);
 }

@@ -4,7 +4,8 @@ import { isStalled, type FrontActivity } from "../domain/campaignFilter";
 import { dispatchBody, dispatchKind } from "../domain/dispatch";
 import { busiestPlanets, parseCommunityPlanets, superEarthPlanets } from "../domain/factionPlanets";
 import { sestDate, warDay } from "../domain/format";
-import { buildRegions } from "../domain/galaxy";
+import { sectorTerritory } from "../domain/galaxy";
+import { buildRegions } from "../domain/regions";
 import { controlShares, groupBySector, matchesFilter, matchesSearch } from "../domain/planetIndex";
 import { playersByEnemy, toLive, toPlanet, toStatic, toWarSample } from "../domain/snapshot";
 import { buildWarHistory, defenseEvents, fmtLongDuration } from "../domain/warHistory";
@@ -88,6 +89,18 @@ describe("map regions", () => {
   });
 });
 
+describe("map territory", () => {
+  it("names a sector held only when the enemy holds every planet in it", () => {
+    const territory = sectorTerritory(planets);
+    for (const [sector, t] of territory) {
+      if (!t) continue;
+      const list = planets.filter((p) => p.sector === sector);
+      expect(t.held).toBe(list.every((p) => p.currentOwner === t.faction));
+    }
+    expect([...territory.values()].some((t) => t && !t.held)).toBe(true);
+  });
+});
+
 describe("planet index", () => {
   const active = new Set(campaigns.map((c) => c.planet.index));
 
@@ -102,6 +115,10 @@ describe("planet index", () => {
   it("filters by front and owner", () => {
     expect(planets.filter((p) => matchesFilter(p, "active", active))).toHaveLength(active.size);
     expect(planets.every((p) => !matchesFilter(p, "Terminids", active) || p.currentOwner === "Terminids")).toBe(true);
+    const pinned = new Set([planets[3].index]);
+    expect(planets.filter((p) => matchesFilter(p, "pinned", active, pinned)).map((p) => p.index)).toEqual([
+      planets[3].index,
+    ]);
   });
 
   it("groups by sector with exactly one hottest front and fronts first", () => {

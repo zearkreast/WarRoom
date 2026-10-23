@@ -442,6 +442,14 @@
   border: 1px solid color-mix(in srgb, var(--cta) var(--strong), transparent);
   color: var(--cta);
 }
+.pi-icon.pin {
+  background: var(--cta);
+  color: var(--ink-on-cta);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cta) 55%, transparent);
+}
+.pi-row.pinned {
+  border-color: color-mix(in srgb, var(--cta) var(--edge), var(--line));
+}
 .pi-icon.dss {
   border: 1px solid color-mix(in srgb, var(--f-humans) var(--strong), transparent);
   color: var(--f-humans);
