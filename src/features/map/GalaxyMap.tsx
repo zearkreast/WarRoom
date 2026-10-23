@@ -40,6 +40,7 @@ import {
   type Landmark,
 } from "../../domain/galaxy";
 import { byIndex } from "../../domain/planets";
+import { buildRegions } from "../../domain/regions";
 import { liberationPercent, trackedPercent } from "../../domain/progress";
 import { useSettings, useUi, type MapOverlay, type MapPlanets, type MapQuality } from "../../state";
 import { HudButton, Loading, Meter, Stepper } from "../../ui/primitives";
@@ -153,19 +154,34 @@ function scaleHatches(svg: SVGSVGElement, k: number) {
 
 const ENEMIES: Faction[] = ["Terminids", "Automaton", "Illuminate"];
 
+const Regions = memo(function Regions({ planets, glow }: { planets: Planet[]; glow: boolean }) {
+  const regions = useMemo(() => buildRegions(planets), [planets]);
+  return (
+    <g className="regions">
+      {regions.map((r) => {
+        const c = factionColor(r.owner);
+        return (
+          <g key={r.name}>
+            <path d={r.path} fill={c} fillOpacity={0.05} stroke="none" />
+            {glow && <path d={r.path} className="region-glow" stroke={c} />}
+            <path d={r.path} className="region-line" stroke={c} />
+          </g>
+        );
+      })}
+    </g>
+  );
+});
+
 /**
- * Enemy territory on the game's ring sectors. Regions draws it as glowing fronts over a faint
- * wash; Sectors adds the sector grid and hatching, solid where the enemy holds every planet
- * of a sector and faint where Super Earth still holds some (contested).
+ * Enemy territory on the game's ring sectors: the sector grid, with hatching that is solid where
+ * the enemy holds every planet of a sector and faint where Super Earth still holds some (contested).
  */
-const Territory = memo(function Territory({
+const SectorGrid = memo(function SectorGrid({
   planets,
-  mode,
   glow,
   onHover,
 }: {
   planets: Planet[];
-  mode: "regions" | "sectors";
   glow: boolean;
   onHover?: (p: Planet | null) => void;
 }) {
@@ -199,56 +215,43 @@ const Territory = memo(function Territory({
     for (const p of planets) if (!m.has(p.sector)) m.set(p.sector, p);
     return m;
   }, [planets]);
-  const sectors = mode === "sectors";
 
   return (
-    <g className={`territory ${mode} ${glow ? "glow" : ""}`}>
-      {sectors && (
-        <defs>
-          {ENEMIES.flatMap((f) =>
-            (["held", "contested"] as const).map((kind) => (
-              <pattern
-                key={`${f}-${kind}`}
-                id={`hatch-${f}-${kind}`}
-                className="hatch"
-                width={HATCH}
-                height={HATCH}
-                patternUnits="userSpaceOnUse"
-                patternTransform="rotate(45)"
-              >
-                <rect
-                  width={HATCH}
-                  height={HATCH}
-                  fill={FACTIONS[f].color}
-                  fillOpacity={kind === "held" ? 0.2 : 0.04}
-                />
-                <line
-                  x1={1}
-                  y1={0}
-                  x2={1}
-                  y2={HATCH}
-                  stroke={FACTIONS[f].color}
-                  strokeOpacity={kind === "held" ? 0.5 : 0.28}
-                  strokeWidth={kind === "held" ? 2 : 1.2}
-                />
-              </pattern>
-            )),
-          )}
-        </defs>
-      )}
-      {sectors && <circle r={geo.rim} className="sg-disc" />}
+    <g className={`territory ${glow ? "glow" : ""}`}>
+      <defs>
+        {ENEMIES.flatMap((f) =>
+          (["held", "contested"] as const).map((kind) => (
+            <pattern
+              key={`${f}-${kind}`}
+              id={`hatch-${f}-${kind}`}
+              className="hatch"
+              width={HATCH}
+              height={HATCH}
+              patternUnits="userSpaceOnUse"
+              patternTransform="rotate(45)"
+            >
+              <rect width={HATCH} height={HATCH} fill={FACTIONS[f].color} fillOpacity={kind === "held" ? 0.2 : 0.04} />
+              <line
+                x1={1}
+                y1={0}
+                x2={1}
+                y2={HATCH}
+                stroke={FACTIONS[f].color}
+                strokeOpacity={kind === "held" ? 0.5 : 0.28}
+                strokeWidth={kind === "held" ? 2 : 1.2}
+              />
+            </pattern>
+          )),
+        )}
+      </defs>
+      <circle r={geo.rim} className="sg-disc" />
       {[...shapes.held].map(([f, d]) => (
-        <path key={`h-${f}`} d={d} className="tf-held" fill={sectors ? `url(#hatch-${f}-held)` : FACTIONS[f].color} />
+        <path key={`h-${f}`} d={d} className="tf-held" fill={`url(#hatch-${f}-held)`} />
       ))}
       {[...shapes.contested].map(([f, d]) => (
-        <path
-          key={`c-${f}`}
-          d={d}
-          className="tf-contested"
-          fill={sectors ? `url(#hatch-${f}-contested)` : FACTIONS[f].color}
-        />
+        <path key={`c-${f}`} d={d} className="tf-contested" fill={`url(#hatch-${f}-contested)`} />
       ))}
-      {sectors && <path d={shapes.grid} className="sg-grid" />}
+      <path d={shapes.grid} className="sg-grid" />
       {[...shapes.splits].map(([f, d]) => (
         <path key={`s-${f}`} d={d} className="tf-split" style={{ color: FACTIONS[f].color }} />
       ))}
@@ -258,18 +261,17 @@ const Territory = memo(function Territory({
           <path d={d} className="tf-front" />
         </g>
       ))}
-      {sectors && <circle r={geo.rim} className="sg-rim" />}
-      {sectors &&
-        shapes.labels.map((l) => (
-          <g key={l.faction}>
-            <path id={`tl-${l.faction}`} d={l.d} fill="none" />
-            <text className="sg-label" fill={FACTIONS[l.faction].color}>
-              <textPath href={`#tl-${l.faction}`} startOffset="50%">
-                {FACTIONS[l.faction].label}
-              </textPath>
-            </text>
-          </g>
-        ))}
+      <circle r={geo.rim} className="sg-rim" />
+      {shapes.labels.map((l) => (
+        <g key={l.faction}>
+          <path id={`tl-${l.faction}`} d={l.d} fill="none" />
+          <text className="sg-label" fill={FACTIONS[l.faction].color}>
+            <textPath href={`#tl-${l.faction}`} startOffset="50%">
+              {FACTIONS[l.faction].label}
+            </textPath>
+          </text>
+        </g>
+      ))}
       {onHover && (
         <g className="sg-hits" onPointerLeave={() => onHover(null)}>
           {[...geo.fills].map(([s, d]) => (
@@ -795,7 +797,8 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
       >
         <HaloDefs />
         <g ref={layerRef}>
-          {overlay !== "galaxy" && <Territory planets={fresh} mode={overlay} glow={glow} onHover={onHoverSector} />}
+          {overlay === "regions" && <Regions planets={fresh} glow={glow} />}
+          {overlay === "sectors" && <SectorGrid planets={fresh} glow={glow} onHover={onHoverSector} />}
           <Lanes planets={fresh} mode={overlay === "sectors" ? "front" : overlay === "galaxy" ? "bright" : "dim"} />
           <AttackLines planets={fresh} active={active} />
           <g className="planets">
