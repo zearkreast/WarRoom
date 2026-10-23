@@ -1,0 +1,25 @@
+import { dispatchTitle, parseMarkup, type MarkupSpan } from "./format";
+
+export type DispatchKind = "order" | "victory" | "defeat" | "alert" | "advisory" | "news";
+
+const RULES: [RegExp, DispatchKind][] = [
+  [/major order (won|complete)|victory|liberated|success/i, "victory"],
+  [/major order (failed|lost)|defeat|has fallen|failed/i, "defeat"],
+  [/major order|new orders?|high command/i, "order"],
+  [/alert|attack|invasion|warning|emergency/i, "alert"],
+  [/advisory|notice|update|briefing/i, "advisory"],
+];
+
+/** Category of a dispatch, from its headline (or first line). */
+export function dispatchKind(message: string): DispatchKind {
+  const title = dispatchTitle(message);
+  return RULES.find(([re]) => re.test(title))?.[1] ?? "news";
+}
+
+/** The dispatch body's spans without the leading headline, so cards don't repeat the title. */
+export function dispatchBody(message: string): MarkupSpan[] {
+  const spans = parseMarkup(message.trim());
+  const rest = spans[0]?.style != null ? spans.slice(1) : spans;
+  if (rest[0]) rest[0] = { ...rest[0], text: rest[0].text.replace(/^\s+/, "") };
+  return rest;
+}
