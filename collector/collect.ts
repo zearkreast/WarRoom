@@ -31,11 +31,16 @@ async function main(): Promise<number> {
   const once = process.argv.includes("--once");
   const db = createSupabase({ url: env("SUPABASE_URL"), key: env("SUPABASE_SECRET_KEY") });
   const hd2 = createHd2Client({ client: env("SUPER_CLIENT") || "warcommand-tracker", contact: env("SUPER_CONTACT") });
+  const game = createHd2Client({
+    client: env("SUPER_CLIENT") || "warcommand-tracker",
+    contact: env("SUPER_CONTACT"),
+    baseUrl: "https://api.live.prod.thehelldiversgame.com",
+  });
   const recorder = new Recorder(db);
 
   await recorder.load();
   log(`started (${recorder.knownPlanets} planets known)${once ? ", single run" : ""}`);
-  const tasks = createTasks(hd2, db, recorder);
+  const tasks = createTasks(hd2, db, recorder, Date.now, game);
 
   if (once) {
     let failed = false;

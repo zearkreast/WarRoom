@@ -1,17 +1,47 @@
-.ov-grid {
-  display: grid;
-  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
-  gap: var(--s-6);
-  align-items: start;
+/* ---------- Board ----------
+   Wide screens: three columns fill the viewport and scroll on their own; the page itself never scrolls. */
+.ov-page {
+  overflow: hidden;
 }
-.ov-right {
+.ov-board {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr) minmax(340px, 420px);
+  gap: var(--s-6);
+  height: 100%;
+  padding: var(--s-6);
+}
+.ov-col {
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--s-6);
-  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
-.ov-right .nc {
+.ov-col > * {
+  flex: none;
+}
+.ov-col .nc {
   margin-bottom: 0;
+}
+/* The theater takes whatever height the activity chart leaves; the disc is sized to fit both ways. */
+.ov-col-mid > .tw {
+  flex: 1 1 0;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+.ov-col-mid .tw-body {
+  flex: 1;
+  min-height: 0;
+  container-type: size;
+  display: grid;
+  place-items: center;
+}
+.ov-col-mid .tw-stage {
+  width: min(100cqw, 155cqh);
 }
 
 .ov-dist .panel-body {
@@ -343,22 +373,215 @@
   box-shadow: 0 0 14px color-mix(in srgb, var(--k) var(--edge), transparent);
 }
 
+/* Medium screens: two columns over the theater, and the page scrolls. */
+@media (max-width: 1279px) {
+  .ov-page {
+    overflow-y: auto;
+  }
+  .ov-board {
+    height: auto;
+    grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+    grid-template-areas:
+      "left right"
+      "mid mid";
+  }
+  .ov-col {
+    overflow: visible;
+  }
+  .ov-col-left {
+    grid-area: left;
+  }
+  .ov-col-mid {
+    grid-area: mid;
+  }
+  .ov-col-right {
+    grid-area: right;
+  }
+  .ov-col-mid > .tw {
+    flex: none;
+    min-height: 0;
+    display: block;
+  }
+  .ov-col-mid .tw-body {
+    container-type: normal;
+    display: block;
+  }
+  .ov-col-mid .tw-stage {
+    width: min(100%, 560px);
+  }
+}
+
 @media (max-width: 860px) {
   .ov-heads {
     grid-template-columns: 1fr 1fr;
   }
-  /* Phones lead with the Major Order, then the distribution, then the latest dispatch. */
-  .ov-grid {
+  .ov-board {
     display: flex;
     flex-direction: column;
+    gap: var(--s-5);
+    padding: var(--s-5) var(--s-4);
   }
-  .ov-right {
+  .ov-col {
     display: contents;
   }
-  .ov-dist {
+  /* Phones lead with the Major Order, then the story campaign, the distribution, the latest dispatch,
+     24h activity and the theater. */
+  .ov-board .mo {
+    order: 1;
+  }
+  .ov-board .ac {
     order: 2;
   }
-  .ov-right > .nc {
+  .ov-board .ov-dist {
     order: 3;
   }
+  .ov-board .nc {
+    order: 4;
+  }
+  .ov-board .ov-activity {
+    order: 5;
+  }
+  .ov-board .tw {
+    order: 6;
+  }
+}
+
+/* ---------- Active campaign ---------- */
+.ac .panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+.ac-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-4);
+}
+.ac-title {
+  font-family: var(--font-head);
+  font-stretch: 125%;
+  font-weight: 800;
+  font-size: var(--fs-value);
+  letter-spacing: 0.04em;
+  color: var(--text-hi);
+  text-transform: uppercase;
+}
+.ac-since {
+  flex: none;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--label);
+}
+.ac-desc {
+  margin: 0;
+  max-width: 70ch;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--text);
+}
+.ac-phases,
+.ac-past ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.ac-phases li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.ac-phases li.active {
+  border-color: color-mix(in srgb, var(--info) var(--edge), var(--line));
+}
+.ac-phases .caps {
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--label);
+}
+.ac-phases b {
+  font-size: var(--fs-body-s);
+  letter-spacing: 0.08em;
+  color: var(--text-hi);
+  text-transform: uppercase;
+}
+.ac-chip {
+  padding: 1px var(--s-3);
+  border: 1px solid color-mix(in srgb, var(--tone) var(--edge), transparent);
+  background: color-mix(in srgb, var(--tone) var(--wash), transparent);
+  color: var(--tone);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+.ac-briefing summary {
+  cursor: pointer;
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+}
+.ac-briefing summary:hover {
+  color: var(--text-hi);
+}
+.ac-briefing-text {
+  margin: var(--s-4) 0 0;
+  max-width: 70ch;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--text);
+  white-space: pre-line;
+}
+.ac-reward {
+  margin: 0;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+}
+.ac-reward b {
+  margin: 0 var(--s-2);
+  font-size: var(--fs-body);
+  color: var(--text-hi);
+}
+.ac-past {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--line);
+}
+.ac-sub {
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--label);
+}
+.ac-past li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--s-4);
+  font-size: var(--fs-body-s);
+}
+.ac-past-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-hi);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ac-past .num {
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  color: var(--label);
 }

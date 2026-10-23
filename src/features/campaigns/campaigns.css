@@ -247,3 +247,101 @@
   letter-spacing: 0.14em;
   color: var(--label);
 }
+
+/* ---------- Major Order strip ---------- */
+.mo-strip {
+  margin-bottom: var(--s-6);
+}
+.mo-strip .panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.ms-verdict {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ms-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.ms-rows li {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) minmax(80px, 1fr) auto 92px;
+  align-items: center;
+  gap: var(--s-5);
+}
+.ms-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-hi);
+  font: 700 var(--fs-body-s) / 1.2 var(--font);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+}
+.ms-name:hover {
+  color: var(--k);
+}
+.ms-path {
+  font-size: var(--fs-body-s);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.ms-chip {
+  justify-self: end;
+  padding: 2px var(--s-3);
+  border: 1px solid color-mix(in srgb, var(--tone) var(--edge), transparent);
+  background: color-mix(in srgb, var(--tone) var(--wash), transparent);
+  color: var(--tone);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+.ms-counts {
+  list-style: none;
+  margin: 0;
+  padding: var(--s-3) 0 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-7);
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
+.ms-counts .num {
+  margin-left: var(--s-3);
+  color: var(--text-hi);
+}
+.cc-late {
+  padding: 1px var(--s-2);
+  border: 1px solid color-mix(in srgb, var(--warn) var(--edge), transparent);
+  color: var(--warn);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+@media (max-width: 640px) {
+  .ms-rows li {
+    grid-template-columns: 1fr auto;
+    row-gap: var(--s-2);
+  }
+  .ms-rows .meter {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}

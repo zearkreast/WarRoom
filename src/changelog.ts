@@ -7,6 +7,17 @@ export interface ChangelogEntry {
 /** Newest first. Shown in the Tracker Dispatch panel. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.5",
+    date: "2026-10-23",
+    items: [
+      "Overview fills wide screens: the distribution, the Theater of War with 24h activity, and the orders side by side, each scrolling on its own.",
+      "Overview: the running story campaign with its phase, briefing and reward, plus how earlier campaigns ended.",
+      "Campaigns: a Major Order strip with the deadline and whether each target makes it at the current pace; cards warn when victory lands after the deadline.",
+      "Planet detail shows how fresh its data is instead of always saying live; Campaigns notes when data is stale.",
+      "Calmer colour: Terminids are orange, yellow is kept for the selection, actions and the Major Order, and only data glows.",
+    ],
+  },
+  {
     version: "0.2.1",
     date: "2026-10-23",
     items: [

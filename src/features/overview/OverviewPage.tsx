@@ -13,6 +13,7 @@ import { PointerCard, pointerAt, type CardRow, type PointerAt } from "../../ui/P
 import { Panel, Tile, useNow } from "../../ui/primitives";
 import { MajorOrderList } from "../major-order/MajorOrder";
 import { NewsCard } from "../news/NewsCard";
+import { ActiveCampaign } from "./ActiveCampaign";
 import { TheaterOfWar } from "./TheaterOfWar";
 import { CHART, ENEMIES, WarActivity } from "./WarActivity";
 import "./overview.css";
@@ -261,20 +262,21 @@ export function OverviewPage() {
   const now = useNow(60_000);
   const latest = useMemo(() => [...(dispatches ?? [])].sort((a, b) => b.id - a.id)[0], [dispatches]);
   return (
-    <div className="page scroll starfield">
-      <div className="page-inner">
-        <div className="page-head">
-          <h1 className="page-title">High Command overview</h1>
-        </div>
-        <div className="ov-grid">
+    <div className="page ov-page starfield">
+      <h1 className="sr-only">High Command overview</h1>
+      <div className="ov-board">
+        <div className="ov-col ov-col-left">
           <Distribution />
-          <div className="ov-right">
-            <MajorOrderList />
-            {latest && <NewsCard d={latest} now={now} />}
-          </div>
         </div>
-        <WarActivity />
-        <TheaterOfWar />
+        <div className="ov-col ov-col-mid">
+          <TheaterOfWar />
+          <WarActivity />
+        </div>
+        <div className="ov-col ov-col-right">
+          <MajorOrderList />
+          <ActiveCampaign />
+          {latest && <NewsCard d={latest} now={now} />}
+        </div>
       </div>
     </div>
   );
