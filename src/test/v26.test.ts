@@ -4,16 +4,48 @@ import { rewardLabel } from "../data/campaignRewards";
 import { campaignEvents, campaignHeadline } from "../domain/campaignNews";
 import { fmtAgeShort } from "../domain/format";
 import { BUCKET_MS, frontBuckets, latestRun, type FrontRow } from "../domain/frontActivity";
-import { buildPolarSectors, factionAnchors } from "../domain/galaxy";
-import { isPlaceholder, ownershipKey } from "../domain/planets";
+import { factionMarks } from "../domain/factionMarks";
+import { buildPolarSectors, GALAXY_SCALE, sectorAt, sectorTerritory, type PolarSectors } from "../domain/galaxy";
+import { fixStatic, isPlaceholder, ownershipKey } from "../domain/planets";
 import { mergeEpisodes, toEpisodes } from "../domain/snapshot";
 import { tickerItems } from "../domain/ticker";
 import episodesJson from "./fixtures/episodes.json";
 import planetsJson from "./fixtures/planets.json";
 
-const planets = (planetsJson as unknown as Planet[]).filter((p) => !isPlaceholder(p));
+const planets = (planetsJson as unknown as Planet[]).filter((p) => !isPlaceholder(p)).map(fixStatic);
 const fixture = episodesJson as { episodes: EpisodeRaw[]; warTime: number; fetchedAt: number };
 const campaigns = mergeEpisodes([], toEpisodes(fixture.episodes, fixture.warTime, fixture.fetchedAt), 0);
+
+/** Sectors whose cells fall apart into more than one piece. */
+function splitSectors(geo: PolarSectors): string[] {
+  const TAU = Math.PI * 2;
+  const cells = geo.rings.flatMap((ring, i) => ring.runs.map((r, k) => ({ i, k, ...r })));
+  const overlap = (a: (typeof cells)[number], b: (typeof cells)[number]) =>
+    [-TAU, 0, TAU].some((s) => Math.min(a.a1, b.a1 + s) - Math.max(a.a0, b.a0 + s) > 1e-6);
+  return [...new Set(cells.map((c) => c.sector))].filter((sector) => {
+    const own = cells.filter((c) => c.sector === sector);
+    const seen = new Set([own[0]]);
+    for (const c of seen)
+      for (const d of own)
+        if ((Math.abs(d.i - c.i) === 1 && overlap(c, d)) || (d.i === c.i && Math.abs(d.k - c.k) === 1)) seen.add(d);
+    return seen.size < own.length;
+  });
+}
+
+describe("planet corrections", () => {
+  it("files Meridia under Celeste and puts Sangis and Alderidge Cove back where the game shows them", () => {
+    const byName = new Map(planets.map((p) => [p.name, p]));
+    expect(byName.get("MERIDIA")?.sector).toBe("Celeste");
+    expect(byName.get("SANGIS")).toMatchObject({ index: 273, sector: "Guang" });
+    expect(byName.get("ALDERIDGE COVE")).toMatchObject({ index: 99, sector: "Omega" });
+  });
+
+  it("leaves no sector in pieces once corrected", () => {
+    const raw = (planetsJson as unknown as Planet[]).filter((p) => !isPlaceholder(p));
+    expect(splitSectors(buildPolarSectors(raw))).toEqual(expect.arrayContaining(["Umlaut", "Guang", "Omega"]));
+    expect(splitSectors(buildPolarSectors(planets))).toEqual([]);
+  });
+});
 
 describe("sector boundaries", () => {
   it("gives two sectors one boundary angle in every ring where their planets allow it", () => {
@@ -33,11 +65,32 @@ describe("sector boundaries", () => {
 });
 
 describe("faction emblems", () => {
-  it("places one emblem per enemy just outside its planets, near the rim", () => {
-    const anchors = factionAnchors(planets);
-    const held = new Set(planets.filter((p) => p.currentOwner !== "Humans").map((p) => p.currentOwner));
-    expect(anchors.map((a) => a.faction).sort()).toEqual([...held].sort());
-    for (const a of anchors) expect(Math.hypot(a.x, a.y) / 500).toBeLessThanOrEqual(1.05 + 1e-9);
+  it("puts each enemy's emblem inside its own territory in the Sectors overlay", () => {
+    const geo = buildPolarSectors(planets);
+    const territory = sectorTerritory(planets);
+    const marks = factionMarks(planets, "sectors", geo);
+    expect(marks.length).toBeGreaterThan(0);
+    for (const m of marks) {
+      const sector = sectorAt(geo, m.x / GALAXY_SCALE, -m.y / GALAXY_SCALE);
+      expect(territory.get(sector ?? "")?.faction).toBe(m.faction);
+    }
+  });
+
+  it("puts each enemy's emblem on its largest group of planets in the other overlays", () => {
+    for (const overlay of ["regions", "galaxy"] as const) {
+      const marks = factionMarks(planets, overlay, undefined);
+      const held = new Set(planets.filter((p) => p.currentOwner !== "Humans").map((p) => p.currentOwner));
+      expect(marks.map((m) => m.faction).sort()).toEqual([...held].sort());
+      for (const m of marks) {
+        const nearest = planets.reduce((a, b) =>
+          Math.hypot(b.position.x * 500 - m.x, -b.position.y * 500 - m.y) <
+          Math.hypot(a.position.x * 500 - m.x, -a.position.y * 500 - m.y)
+            ? b
+            : a,
+        );
+        expect(nearest.currentOwner).toBe(m.faction);
+      }
+    }
   });
 
   it("only changes the ownership key when an owner or an attack changes", () => {

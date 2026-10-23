@@ -344,11 +344,8 @@
 }
 .tw-mark {
   transform: rotate(var(--unrot, 0deg)) scale(1, var(--unsquash));
+  opacity: 0.55;
   pointer-events: none;
-}
-.tw-mark rect {
-  fill: color-mix(in srgb, var(--void) 78%, transparent);
-  stroke-width: 2;
 }
 .tw-tick {
   stroke: var(--cta);

@@ -18,7 +18,6 @@ import { FACTIONS, factionColor } from "../../domain/factions";
 import { fmtPct } from "../../domain/format";
 import {
   anomalyOf,
-  factionAnchors,
   GALAXY_SCALE,
   LANDMARKS,
   project,
@@ -30,6 +29,7 @@ import {
   type Landmark,
   type PolarSectors,
 } from "../../domain/galaxy";
+import { factionMarks } from "../../domain/factionMarks";
 import { byIndex, ownershipKey } from "../../domain/planets";
 import { buildRegions } from "../../domain/regions";
 import { liberationPercent, trackedPercent } from "../../domain/progress";
@@ -245,20 +245,26 @@ const SectorGrid = memo(function SectorGrid({ geo, planets }: { geo: PolarSector
   );
 });
 
-/** Each enemy's emblem just outside its main holding, in every overlay; it fades out once zoomed in. */
-const FactionMarks = memo(function FactionMarks({ planets }: { planets: Planet[] }) {
-  const owners = ownershipKey(planets);
+/** Each enemy's see-through emblem on its largest connected holding, as the overlay draws it; it fades out once zoomed in. */
+const FactionMarks = memo(function FactionMarks(props: {
+  planets: Planet[];
+  overlay: MapOverlay;
+  geo: PolarSectors | undefined;
+}) {
+  const owners = ownershipKey(props.planets);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const anchors = useMemo(() => factionAnchors(planets), [owners]);
+  const marks = useMemo(
+    () => factionMarks(props.planets, props.overlay, props.geo),
+    [owners, props.overlay, props.geo],
+  );
   return (
     <g className="faction-marks" aria-hidden>
-      {anchors.map((m) => (
+      {marks.map((m) => (
         <g key={m.faction} transform={`translate(${m.x.toFixed(1)},${m.y.toFixed(1)})`}>
           <g className="upright">
-            <rect x={-19} y={-19} width={38} height={38} className="fm-plate" stroke={factionColor(m.faction)} />
             <path
               d={EMBLEM_PATHS[m.faction]}
-              transform="translate(-14.4,-14.4) scale(1.2)"
+              transform="translate(-36,-36) scale(3)"
               fill={factionColor(m.faction)}
               fillRule="evenodd"
             />
@@ -935,7 +941,7 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
           {overlay === "sectors" && geo && <SectorGrid geo={geo} planets={fresh} />}
           {sector && geo && <path className="sector-hover" d={geo.fills.get(sector)} />}
           <Lanes planets={fresh} mode={overlay === "sectors" ? "front" : overlay === "galaxy" ? "bright" : "dim"} />
-          <FactionMarks planets={fresh} />
+          <FactionMarks planets={fresh} overlay={overlay} geo={geo} />
           <AttackLines planets={fresh} active={active} />
           <PlanetLayer
             planets={fresh}

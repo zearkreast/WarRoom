@@ -10,7 +10,7 @@ import {
   type StationLive,
 } from "../domain/snapshot";
 import { buildPolarSectors, type PolarSectors } from "../domain/galaxy";
-import { isPlaceholder } from "../domain/planets";
+import { fixStatic, isPlaceholder } from "../domain/planets";
 import { getSource } from "./source";
 import type { Assignment, Campaign, Dispatch, Planet, War } from "./types";
 
@@ -72,7 +72,11 @@ function memo<A extends object, T>(fn: (a: A) => T) {
   };
 }
 
-const staticOf = (s: Snapshots) => s.data.planets_static as PlanetStatic[] | undefined;
+const fixStatics = memo((list: PlanetStatic[]) => list.map(fixStatic));
+const staticOf = (s: Snapshots) => {
+  const list = s.data.planets_static as PlanetStatic[] | undefined;
+  return list && fixStatics(list);
+};
 const staticByIndex = memo((list: PlanetStatic[]) => new Map(list.map((p) => [p.index, p])));
 
 const buildPlanets = memoOn((statics: PlanetStatic[], live: PlanetLive[]): Planet[] => {
