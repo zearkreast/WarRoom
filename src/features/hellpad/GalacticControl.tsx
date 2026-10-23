@@ -45,6 +45,7 @@ export function GalacticControl({ planets, onFilter }: { planets: Planet[]; onFi
           <span className="gc-peek num">
             {shares.map((s) => (
               <span key={s.faction} style={{ color: factionColor(s.faction) }}>
+                <FactionEmblem faction={s.faction} size={13} />
                 {Math.round(s.pct)}%
               </span>
             ))}
