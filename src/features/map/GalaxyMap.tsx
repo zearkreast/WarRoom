@@ -88,7 +88,7 @@ function backgroundStars(n: number) {
 
 type Star = ReturnType<typeof backgroundStars>[number];
 
-function drawStars(canvas: HTMLCanvasElement, stars: Star[], t: ZoomTransform, cam: Camera) {
+function drawStars(canvas: HTMLCanvasElement, stars: Star[], t: ZoomTransform, cam: Camera, rings: boolean) {
   const dpr = window.devicePixelRatio || 1;
   const { width, height } = canvas.getBoundingClientRect();
   if (canvas.width !== Math.round(width * dpr)) canvas.width = Math.round(width * dpr);
@@ -125,7 +125,8 @@ function drawStars(canvas: HTMLCanvasElement, stars: Star[], t: ZoomTransform, c
   }
   ctx.globalAlpha = 1;
 
-  // The game's sector rings, so planets read against the same bands in every overlay.
+  // The game's sector rings, so planets read against the same bands; the Sectors overlay draws its own borders.
+  if (!rings) return;
   ctx.strokeStyle = "rgba(120, 170, 230, 0.09)";
   ctx.lineWidth = 1;
   for (const r of RING_RADII) {
@@ -266,6 +267,7 @@ const FactionMarks = memo(function FactionMarks(props: {
               d={EMBLEM_PATHS[m.faction]}
               transform="translate(-36,-36) scale(3)"
               fill={factionColor(m.faction)}
+              color={factionColor(m.faction)}
               fillRule="evenodd"
             />
           </g>
@@ -750,6 +752,8 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
 
   const starsRef = useRef(stars);
   starsRef.current = stars;
+  const overlayRef = useRef(overlay);
+  overlayRef.current = overlay;
   const frame = useRef(0);
   const settle = useRef(0);
   const written = useRef({ transform: "", k: "", rot: "", squash: "" });
@@ -779,7 +783,8 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
     compassRef.current?.classList.toggle("on", rot !== 0 || tilt !== 0);
     compassRef.current?.querySelector("svg")?.style.setProperty("transform", `rotate(${rot - Math.PI / 4}rad)`);
     tiltRef.current?.classList.toggle("on", tilt > 0);
-    if (canvasRef.current) drawStars(canvasRef.current, starsRef.current, t, camRef.current);
+    if (canvasRef.current)
+      drawStars(canvasRef.current, starsRef.current, t, camRef.current, overlayRef.current !== "sectors");
   }, []);
 
   /** Queues a paint and marks the map as moving, which drops the glow filters until it settles. */
@@ -820,8 +825,9 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   }, [loaded]);
 
   useEffect(() => {
-    if (canvasRef.current) drawStars(canvasRef.current, stars, transformRef.current, camRef.current);
-  }, [stars]);
+    if (canvasRef.current)
+      drawStars(canvasRef.current, stars, transformRef.current, camRef.current, overlay !== "sectors");
+  }, [stars, overlay]);
   useEffect(() => {
     if (svgRef.current) scaleHatches(svgRef.current, transformRef.current.k);
   }, [overlay, fresh]);
@@ -939,7 +945,6 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
         <g ref={layerRef}>
           {overlay === "regions" && <Regions planets={fresh} glow={glow} />}
           {overlay === "sectors" && geo && <SectorGrid geo={geo} planets={fresh} />}
-          {sector && geo && <path className="sector-hover" d={geo.fills.get(sector)} />}
           <Lanes planets={fresh} mode={overlay === "sectors" ? "front" : overlay === "galaxy" ? "bright" : "dim"} />
           <FactionMarks planets={fresh} overlay={overlay} geo={geo} />
           <AttackLines planets={fresh} active={active} />

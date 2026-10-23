@@ -336,16 +336,13 @@
 .tw-hits path {
   fill: transparent;
 }
-.tw-hover {
-  fill: color-mix(in srgb, var(--text-hi) 10%, transparent);
-  stroke: color-mix(in srgb, var(--text-hi) 75%, transparent);
-  stroke-width: 2.5;
-  pointer-events: none;
-}
 .tw-mark {
   transform: rotate(var(--unrot, 0deg)) scale(1, var(--unsquash));
   opacity: 0.55;
   pointer-events: none;
+}
+.tw-mark path {
+  filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 14px currentColor);
 }
 .tw-tick {
   stroke: var(--cta);

@@ -99,20 +99,14 @@
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
-/* The sector under the pointer, in every overlay. */
-.sector-hover {
-  fill: color-mix(in srgb, var(--text-hi) 6%, transparent);
-  stroke: color-mix(in srgb, var(--text-hi) 70%, transparent);
-  stroke-width: 1.25;
-  stroke-linejoin: miter;
-  vector-effect: non-scaling-stroke;
-  pointer-events: none;
-}
 /* Enemy emblems: read at galaxy scale, then step aside for the planets once zoomed in. */
 .faction-marks {
   opacity: 0.6;
   pointer-events: none;
   transition: opacity var(--t-reveal) var(--ease);
+}
+.faction-marks path {
+  filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 10px currentColor);
 }
 .z-sectors .faction-marks {
   opacity: 0;
