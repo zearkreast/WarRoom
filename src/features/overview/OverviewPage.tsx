@@ -1,6 +1,5 @@
 import { Map as MapIcon, PieChart as PieIcon, Users } from "lucide-react";
-import { useMemo, type CSSProperties } from "react";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { useMemo, useState, type CSSProperties } from "react";
 import { useCampaigns, useDispatches, useFreshPlanets, useWar } from "../../api/queries";
 import type { Faction } from "../../api/types";
 import { factionLabel } from "../../domain/factions";
@@ -9,9 +8,9 @@ import { buildSectors } from "../../domain/galaxy";
 import { playersByEnemy } from "../../domain/snapshot";
 import { fmtLongDuration } from "../../domain/warHistory";
 import { useUi } from "../../state";
-import { tooltipProps } from "../../ui/chart";
 import { FactionEmblem } from "../../ui/emblems";
-import { Panel, useNow } from "../../ui/primitives";
+import { NeonRing } from "../../ui/NeonRing";
+import { Panel, Tile, useNow } from "../../ui/primitives";
 import { MajorOrderList } from "../major-order/MajorOrder";
 import { NewsCard } from "../news/NewsCard";
 import { CHART, ENEMIES, WarActivity } from "./WarActivity";
@@ -22,6 +21,7 @@ const TOP_PLANETS = 5;
 function Distribution() {
   const war = useWar().data;
   const campaigns = useCampaigns().data;
+  const planets = useFreshPlanets().data;
   const now = useNow(1000);
   const total = war?.statistics.playerCount ?? 0;
 
@@ -39,6 +39,8 @@ function Distribution() {
     const slices = rest > 0 ? [...top, { name: "Others", players: rest, enemy: null, color: "var(--faint)" }] : top;
     return { slices, onFronts };
   }, [campaigns]);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const hoveredSlice = slices.find((p) => p.name === hovered);
   const fronts = playersByEnemy(campaigns ?? []);
   const elsewhere = Math.max(0, total - fronts.Terminids - fronts.Automaton - fronts.Illuminate);
 
@@ -75,42 +77,50 @@ function Distribution() {
         <b className="num">{fmtInt(total)}</b>
         <span className="caps">Helldivers online</span>
       </div>
+      <div className="ov-summary">
+        <Tile label="Planets charted" value={planets?.length ?? "—"} rule="var(--cta)" />
+        <Tile label="Sectors" value={planets ? new Set(planets.map((p) => p.sector)).size : "—"} rule="var(--cta)" />
+        <Tile label="Active fronts" value={campaigns?.length ?? "—"} rule="var(--cta)" />
+        <Tile
+          label="Impact mod"
+          value={war ? war.impactMultiplier.toFixed(6) : "—"}
+          color="var(--info)"
+          rule="var(--info)"
+        />
+      </div>
       {slices.length > 0 && (
         <div className="ov-donut">
-          <div className="ov-donut-chart">
-            <ResponsiveContainer width="100%" height={168}>
-              <PieChart>
-                <Pie
-                  data={slices}
-                  dataKey="players"
-                  nameKey="name"
-                  innerRadius={50}
-                  outerRadius={78}
-                  stroke="var(--surface-1)"
-                  strokeWidth={2}
-                  isAnimationActive={false}
-                  startAngle={90}
-                  endAngle={-270}
-                >
-                  {slices.map((p) => (
-                    <Cell key={p.name} fill={p.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  {...tooltipProps}
-                  labelFormatter={() => ""}
-                  formatter={(v, n) => [`${fmtInt(Number(v))} (${fmtPct((Number(v) / (onFronts || 1)) * 100, 1)})`, n]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="ov-donut-center">
-              <b className="num">{fmtCompact(onFronts)}</b>
-              <span className="caps">on fronts</span>
-            </div>
-          </div>
-          <ul className="ov-legend">
+          <NeonRing
+            size={150}
+            label={`Helldivers by planet: ${slices.map((p) => `${p.name} ${fmtCompact(p.players)}`).join(", ")}`}
+            segments={slices.map((p) => ({ key: p.name, label: p.name, value: p.players, color: p.color }))}
+            active={hovered}
+            onActive={setHovered}
+            center={
+              hoveredSlice ? (
+                <div key={hoveredSlice.name} className="nr-readout ov-readout" style={{ color: hoveredSlice.color }}>
+                  <span className="caps">{hoveredSlice.name}</span>
+                  <b className="num">{fmtPct((hoveredSlice.players / (onFronts || 1)) * 100, 0)}</b>
+                  <span className="pl num">
+                    <Users size={11} /> {fmtInt(hoveredSlice.players)}
+                  </span>
+                </div>
+              ) : (
+                <div key="total" className="ov-donut-center">
+                  <b className="num">{fmtCompact(onFronts)}</b>
+                  <span className="caps">on fronts</span>
+                </div>
+              )
+            }
+          />
+          <ul className="ov-legend" onPointerLeave={() => setHovered(null)}>
             {slices.map((p) => (
-              <li key={p.name} style={{ "--k": p.color } as CSSProperties}>
+              <li
+                key={p.name}
+                className={hovered === p.name ? "on" : ""}
+                style={{ "--k": p.color } as CSSProperties}
+                onPointerEnter={() => setHovered(p.name)}
+              >
                 <span className="ov-legend-name caps">{p.name}</span>
                 <span className="num">{fmtCompact(p.players)}</span>
                 <span className="num muted">{fmtPct((p.players / (onFronts || 1)) * 100, 0)}</span>

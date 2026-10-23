@@ -66,7 +66,8 @@
   box-shadow:
     var(--lip),
     var(--shadow-2),
-    0 0 0 1px color-mix(in srgb, var(--enemy) var(--fill), transparent);
+    0 0 0 1px color-mix(in srgb, var(--enemy) var(--edge), transparent),
+    0 0 22px color-mix(in srgb, var(--enemy) var(--edge), transparent);
   transform: translateY(-1px);
 }
 .cc-card.mo {
