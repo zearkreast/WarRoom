@@ -29,45 +29,90 @@
 }
 
 /* ---------- Overlays ---------- */
-.region-line {
+.galaxy {
+  --unrot: 0deg;
+  --unsquash: 1;
+}
+/* Planet markers and labels stay upright and round however the map is turned or tilted. */
+.upright {
+  transform: rotate(var(--unrot)) scale(1, var(--unsquash));
+}
+.tf-held,
+.tf-contested {
+  stroke: none;
+}
+.territory.regions .tf-held {
+  fill-opacity: 0.08;
+}
+.territory.regions .tf-contested {
+  fill-opacity: 0.03;
+}
+.tf-front {
   fill: none;
-  stroke-width: 2.4;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
-.region-glow {
+.tf-glow {
   fill: none;
+  stroke: currentColor;
   stroke-width: 9;
-  stroke-opacity: 0.16;
-  stroke-linejoin: round;
+  stroke-opacity: 0.18;
+  stroke-linecap: round;
   vector-effect: non-scaling-stroke;
 }
-.q-max .region-glow {
-  stroke-width: 12;
-  stroke-opacity: 0.2;
+.q-max .tf-glow {
+  stroke-width: 13;
+  stroke-opacity: 0.22;
 }
-.sector-outline {
-  stroke-linejoin: round;
+.territory.glow .tf-front {
+  filter: drop-shadow(0 0 4px currentColor);
+}
+/* Where an enemy's outright holdings meet its contested sectors. */
+.tf-split {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-opacity: 0.55;
+  stroke-dasharray: 3 4;
   vector-effect: non-scaling-stroke;
-  stroke-width: 3;
-  stroke-opacity: 0.8;
 }
-.sector-label {
-  fill: var(--text);
-  opacity: 0;
-  font-size: calc(11px / var(--k));
-  font-weight: 700;
-  letter-spacing: 0.18em;
+.sg-disc {
+  fill: color-mix(in srgb, var(--f-humans) 4%, transparent);
+}
+.sg-grid {
+  fill: none;
+  stroke: color-mix(in srgb, var(--f-humans) 30%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.territory.glow .sg-grid {
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--f-humans) 60%, transparent));
+}
+.sg-rim {
+  fill: none;
+  stroke: color-mix(in srgb, var(--f-humans) 55%, transparent);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.territory.glow .sg-rim {
+  filter: drop-shadow(0 0 6px var(--f-humans));
+}
+.sg-label {
+  font-family: var(--font-head);
+  font-stretch: 125%;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   text-anchor: middle;
   pointer-events: none;
-  transition: opacity var(--t-reveal);
+  filter: drop-shadow(0 0 6px currentColor);
 }
-.z-labels .sector-label {
-  opacity: 0.3;
-}
-.z-planets .sector-label {
-  opacity: 0.16;
+.sg-hits path {
+  fill: transparent;
 }
 
 .lanes line {
@@ -77,6 +122,10 @@
 }
 .lanes.bright line {
   stroke: rgba(210, 228, 255, 0.36);
+}
+.lanes.front line {
+  stroke: rgba(228, 240, 255, 0.72);
+  stroke-width: 1.4;
 }
 .attacks line {
   stroke-width: 1.5;
@@ -114,6 +163,70 @@
   stroke-width: 1;
   stroke-dasharray: 2 1.4;
 }
+.planet .sphere {
+  stroke: rgba(0, 0, 0, 0.5);
+  stroke-width: 0.4;
+}
+.planet .shade {
+  pointer-events: none;
+}
+.planet .owner-ring {
+  fill: none;
+  stroke-width: 1;
+}
+.planet.selected .sphere,
+.planet:hover .sphere {
+  stroke: var(--cta);
+  stroke-width: 1;
+}
+.camp-badge polygon {
+  fill: #f2f6fa;
+  stroke: rgba(0, 0, 0, 0.55);
+  stroke-width: 0.4;
+}
+.camp-badge.mo polygon {
+  fill: var(--cta);
+}
+.camp-badge circle,
+.camp-badge path {
+  fill: none;
+  stroke: #0b0f16;
+  stroke-width: 0.7;
+}
+.planet.landmark {
+  cursor: default;
+}
+.pin-mark path {
+  fill: var(--cta);
+  stroke: #0b0f16;
+  stroke-width: 0.5;
+}
+.pin-mark circle {
+  fill: #0b0f16;
+}
+.anomaly .swirl {
+  fill: none;
+  stroke: #d9a8f0;
+  stroke-width: 0.9;
+  stroke-dasharray: 5 3 1.5 3;
+  animation: spin 9s linear infinite;
+}
+.galaxy:not(.pl-spheres) .anomaly.wormhole {
+  filter: drop-shadow(0 0 3px var(--f-illuminate));
+}
+.anomaly .horizon {
+  fill: #000;
+  stroke: rgba(234, 244, 250, 0.7);
+  stroke-width: 0.5;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.q-min .anomaly .swirl {
+  animation: none;
+}
 .planet.selected .core {
   stroke: var(--cta);
   stroke-width: 1.4;
@@ -137,14 +250,26 @@
 }
 .planet-label {
   fill: var(--text-hi);
+  /* Sits just above the marker, which grows slower than the map. */
+  transform: translateY(calc(-8px * 1.4 / pow(var(--k), 0.55) - 3px / var(--k)));
 }
 .planet-tag {
+  transform: translateY(calc(8px * 1.4 / pow(var(--k), 0.55) + 9px / var(--k)));
   font-size: calc(8px / var(--k));
   letter-spacing: 0.2em;
+}
+/* Spheres carry the campaign badge on top, so their names go underneath, as on the in-game map. */
+.pl-spheres .planet-label {
+  transform: translateY(calc(8px * 1.4 / pow(var(--k), 0.55) + 9px / var(--k)));
+}
+.pl-spheres .planet-tag {
+  transform: translateY(calc(8px * 1.4 / pow(var(--k), 0.55) + 19px / var(--k)));
 }
 .planet.selected .planet-label,
 .planet:hover .planet-label,
 .z-labels .planet.active .planet-label,
+.z-labels .planet.home .planet-label,
+.z-labels .planet.pinned .planet-label,
 .z-sectors .planet-label,
 .z-sectors .planet-tag {
   opacity: 1;
@@ -194,12 +319,78 @@
   gap: var(--s-3);
   z-index: 2;
 }
-.map-controls-hint p {
+.map-keys {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: var(--s-3) var(--s-6);
   margin: 0;
-  font-size: var(--fs-micro);
+  padding: var(--s-4) var(--s-5);
+  animation: toast-in var(--t-reveal) var(--ease);
+}
+.map-keys div {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.map-keys dt {
+  display: flex;
+  gap: 2px;
+  min-width: 38px;
+  justify-content: center;
+  color: var(--cta);
+}
+.map-keys dd {
+  margin: 0;
+  font-size: var(--fs-body-s);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-hi);
+}
+
+.map-settings {
+  position: absolute;
+  right: calc(var(--s-5) + 52px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+  width: 300px;
+  padding: 0 0 var(--s-4);
+  animation: toast-in var(--t-reveal) var(--ease);
+}
+.ms-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--line);
+  font-weight: 700;
+  font-size: var(--fs-body-s);
+  letter-spacing: 0.14em;
+  color: var(--text-hi);
+}
+.ms-head svg {
+  color: var(--cta);
+}
+.ms-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5) 0;
+}
+.ms-row > .caps {
+  font-size: var(--fs-label);
   letter-spacing: 0.16em;
-  color: var(--text-dim);
-  text-shadow: 0 1px 4px #000;
+  color: var(--label);
+}
+.ms-more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: var(--s-5) var(--s-5) 0;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--cta);
 }
 
 .map-rail {
@@ -213,8 +404,8 @@
   z-index: 2;
 }
 .map-rail .hud-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   background: color-mix(in srgb, var(--surface-1) 82%, transparent);
   backdrop-filter: blur(6px);
 }
@@ -280,6 +471,9 @@
   gap: var(--s-4);
 }
 .md-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
   padding: var(--s-4) var(--s-5);
   border-bottom: 1px solid var(--line);
   font-weight: 700;
@@ -306,6 +500,21 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
+.md-head span {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--label);
+}
+.md-list p {
+  margin: 0;
+  font-size: var(--fs-body-s);
+  line-height: 1.45;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .md-list span {
   font-size: var(--fs-label);
   color: var(--label);
@@ -317,11 +526,25 @@
   color: var(--label);
 }
 .md-more {
-  display: block;
-  margin: 0 var(--s-5) var(--s-4);
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  width: 100%;
+  height: 36px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
   color: var(--cta);
+  cursor: pointer;
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+.md-more:hover {
+  background: var(--surface-3);
 }
 
 /* ---------- Hover card ---------- */

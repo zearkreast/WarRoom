@@ -1,6 +1,6 @@
 import type { Faction, Planet } from "../api/types";
 
-export type PlanetFilter = "all" | "active" | Faction;
+export type PlanetFilter = "all" | "active" | "pinned" | Faction;
 export type SectorSort = "az" | "players" | "active";
 
 export interface SectorGroup {
@@ -21,9 +21,15 @@ export function matchesSearch(p: Planet, query: string): boolean {
   return words.every((w) => hay.includes(w));
 }
 
-export function matchesFilter(p: Planet, filter: PlanetFilter, active: Set<number>): boolean {
+export function matchesFilter(
+  p: Planet,
+  filter: PlanetFilter,
+  active: Set<number>,
+  pinned: ReadonlySet<number> = new Set(),
+): boolean {
   if (filter === "all") return true;
   if (filter === "active") return active.has(p.index);
+  if (filter === "pinned") return pinned.has(p.index);
   return p.currentOwner === filter;
 }
 

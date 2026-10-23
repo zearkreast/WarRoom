@@ -281,6 +281,11 @@
   fill: color-mix(in srgb, var(--c) 30%, transparent);
   stroke-width: 4;
 }
+.tw-owner.contested path {
+  fill: color-mix(in srgb, var(--c) 10%, transparent);
+  stroke-width: 2.5;
+  stroke-opacity: 0.6;
+}
 .tw-owner.enemy {
   filter: drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 18px color-mix(in srgb, var(--c) 55%, transparent));
 }

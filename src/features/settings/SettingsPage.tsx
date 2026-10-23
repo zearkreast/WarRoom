@@ -5,8 +5,16 @@ import { notify } from "../../alerts/notify";
 import { APP_VERSION } from "../../config";
 import { MIN_PLAYERS, MIN_RATE } from "../../domain/campaignFilter";
 import { fmtInt } from "../../domain/format";
-import { useSettings, type AlertSettings, type MapOverlay, type MapQuality, type Popups } from "../../state";
+import {
+  useSettings,
+  type AlertSettings,
+  type MapOverlay,
+  type MapPlanets,
+  type MapQuality,
+  type Popups,
+} from "../../state";
 import { Panel, Stepper } from "../../ui/primitives";
+import { OVERLAY_OPTIONS, PLANET_OPTIONS, QUALITY_OPTIONS } from "../map/mapOptions";
 import "./settings.css";
 
 const ON_OFF = [
@@ -60,6 +68,7 @@ export function SettingsPage() {
         popups: s.popups,
         mapOverlay: s.mapOverlay,
         mapQuality: s.mapQuality,
+        mapPlanets: s.mapPlanets,
         showInactive: s.showInactive,
         pinned: s.pinned.length,
       },
@@ -92,27 +101,27 @@ export function SettingsPage() {
         <Panel title="Galaxy map" icon={Settings}>
           <Row
             title="Map overlay"
-            text="Regions draws merged enemy fronts; Sectors draws sector cells; Galaxy shows supply lines only."
+            text="Regions draws merged enemy fronts; Sectors shows the sector grid with enemy territory hatched; Galaxy shows supply lines only."
           >
             <Stepper<MapOverlay>
               label="Map overlay"
-              options={[
-                { value: "regions", label: "Regions" },
-                { value: "sectors", label: "Sectors" },
-                { value: "galaxy", label: "Galaxy" },
-              ]}
+              options={OVERLAY_OPTIONS}
               value={s.mapOverlay}
               onChange={(v) => s.set("mapOverlay", v)}
+            />
+          </Row>
+          <Row title="Planets" text="Glowing markers, or shaded spheres tinted by biome like the in-game map.">
+            <Stepper<MapPlanets>
+              label="Planet style"
+              options={PLANET_OPTIONS}
+              value={s.mapPlanets}
+              onChange={(v) => s.set("mapPlanets", v)}
             />
           </Row>
           <Row title="Render quality" text="Fewer stars, no glow and no pulsing markers at Minimal, for older devices.">
             <Stepper<MapQuality>
               label="Render quality"
-              options={[
-                { value: "min", label: "Minimal" },
-                { value: "normal", label: "Normal" },
-                { value: "max", label: "Maximum" },
-              ]}
+              options={QUALITY_OPTIONS}
               value={s.mapQuality}
               onChange={(v) => s.set("mapQuality", v)}
             />

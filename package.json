@@ -20,7 +20,6 @@
     "@tauri-apps/plugin-http": "^2.8.3",
     "@tauri-apps/plugin-notification": "^2.7.0",
     "@tauri-apps/plugin-opener": "^2",
-    "d3-delaunay": "^6.0.4",
     "d3-selection": "^3.0.0",
     "d3-transition": "^3.0.1",
     "d3-zoom": "^3.0.0",
@@ -32,7 +31,6 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
-    "@types/d3-delaunay": "^6.0.4",
     "@types/d3-selection": "^3.0.12",
     "@types/d3-transition": "^3.0.9",
     "@types/d3-zoom": "^3.0.9",

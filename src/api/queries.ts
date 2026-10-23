@@ -8,6 +8,7 @@ import {
   type SnapshotKind,
   type StationLive,
 } from "../domain/snapshot";
+import { isPlaceholder } from "../domain/planets";
 import { getSource } from "./source";
 import type { Assignment, Campaign, Dispatch, Planet, War } from "./types";
 
@@ -68,7 +69,7 @@ const selectPlanets = memo((s): Planet[] | undefined => {
   if (!statics || !live) return undefined;
   return live.flatMap((l) => {
     const st = statics.get(l.index);
-    return st ? [toPlanet(st, l)] : [];
+    return st && !isPlaceholder(st) ? [toPlanet(st, l)] : [];
   });
 });
 
