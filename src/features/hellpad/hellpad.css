@@ -108,120 +108,134 @@
   flex-direction: column;
   gap: var(--s-6);
 }
-.pi-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--s-6);
-  align-items: center;
-  padding: var(--s-8) var(--s-8) var(--s-5);
+.pi-count {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--label);
+  vertical-align: middle;
+}
+
+/* Galactic control: collapsible faction ring */
+.gc {
+  background: var(--surface-0);
   border: 1px solid var(--line-strong);
-  background: radial-gradient(60% 80% at 80% 45%, rgba(70, 164, 255, 0.1), transparent 70%), var(--surface-0);
-  box-shadow: var(--lip), var(--shadow-2);
+  box-shadow: var(--lip), var(--shadow-1);
 }
-.pi-hero-main {
+.gc-toggle {
   display: flex;
-  flex-direction: column;
-  gap: var(--s-5);
-  min-width: 0;
-}
-.pi-title {
-  font-size: clamp(1.75rem, 4vw, 2.75rem);
-}
-.pi-tiles {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--s-3);
-}
-.pi-tiles .tile {
-  background: transparent;
-  border: 0;
-  padding: var(--s-2) var(--s-5);
-}
-.pi-control {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-4);
-}
-.pi-control-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-3);
-}
-.pi-chip {
-  display: inline-flex;
   align-items: center;
-  gap: var(--s-3);
-  height: 32px;
-  padding: 0 var(--s-5);
-  background: transparent;
-  border: 1px solid transparent;
+  gap: var(--s-5);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--s-6);
+  background: linear-gradient(90deg, var(--surface-2) 30%, transparent),
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--cta) 22%, transparent) 0 3px, transparent 3px 7px);
+  border: 0;
   color: var(--text-hi);
   cursor: pointer;
-  font-weight: 700;
+  text-align: left;
+}
+.gc.open .gc-toggle {
+  border-bottom: 1px solid var(--line);
+}
+.gc-toggle h2 {
+  font-size: var(--fs-body);
+  letter-spacing: 0.06em;
+}
+.gc-peek {
+  display: flex;
+  gap: var(--s-4);
   font-size: var(--fs-body-s);
-  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+.gc-peek span {
+  text-shadow: 0 0 8px currentColor;
+}
+.gc-chevron {
+  margin-left: auto;
+  color: var(--cta);
+  transition: transform var(--t-reveal) var(--ease);
+}
+.gc.open .gc-chevron {
+  transform: rotate(180deg);
+}
+.gc-toggle:hover .gc-chevron {
+  filter: drop-shadow(0 0 6px var(--cta));
+}
+.gc-body {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  padding: var(--s-6) var(--s-7);
+  background: radial-gradient(40% 90% at 15% 50%, rgba(70, 164, 255, 0.1), transparent 70%);
+  animation: nr-swap var(--t-reveal) var(--ease);
+}
+.gc-legend {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3);
+  min-width: 0;
+}
+.gc-chip {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  background: var(--surface-1);
+  border: 1px solid color-mix(in srgb, var(--k) var(--edge), var(--line));
+  color: var(--text-hi);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color var(--t-state),
+    box-shadow var(--t-state),
+    background var(--t-state);
+}
+.gc-chip svg {
+  grid-row: 1 / -1;
+}
+.gc-chip-name {
+  font-size: var(--fs-body-s);
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
-.pi-chip b {
-  color: var(--k);
-}
-.pi-chip:hover {
-  border-color: var(--line-strong);
-}
-.pi-chip.on {
-  border-color: var(--k);
-  background: color-mix(in srgb, var(--k) var(--wash), transparent);
-}
-.pi-ring {
-  position: relative;
-  width: 240px;
-  height: 240px;
-}
-.pi-ring > svg {
-  width: 100%;
-  height: 100%;
-}
-.pi-ring-dots {
-  fill: none;
-  stroke: var(--line-strong);
-  stroke-dasharray: 1 5;
-}
-.pi-arc {
-  transition:
-    stroke-width var(--t-value) var(--ease),
-    opacity var(--t-value);
-}
-.pi-ring-center {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-}
-.pi-ring-center > .caps {
-  font-size: var(--fs-label);
-  letter-spacing: 0.16em;
-  color: var(--text-hi);
-  font-weight: 700;
-}
-.pi-ring-center b {
+.gc-chip b {
   font-family: var(--font-head);
   font-stretch: 125%;
-  font-size: var(--fs-title);
+  font-size: var(--fs-value);
+  color: var(--k);
 }
-.pi-ring-center .num.caps {
+.gc-chip-sub {
+  grid-column: 2 / -1;
   font-size: var(--fs-micro);
   letter-spacing: 0.16em;
+  text-transform: uppercase;
   color: var(--label);
 }
-.pi-ring-players {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
+.gc-chip:hover,
+.gc-chip:focus-visible,
+.gc-chip.on {
+  border-color: var(--k);
+  background: color-mix(in srgb, var(--k) var(--wash), var(--surface-1));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--k) var(--edge), transparent),
+    0 0 16px color-mix(in srgb, var(--k) var(--edge), transparent);
+}
+.gc-chip.on b {
+  text-shadow: 0 0 10px var(--k);
+}
+.gc-hint {
+  grid-column: 1 / -1;
+  margin: var(--s-2) 0 0;
   font-size: var(--fs-label);
-  color: var(--cta);
+  letter-spacing: 0.1em;
+  color: var(--label);
 }
 
 .pi-controls {
@@ -290,6 +304,7 @@
   border-radius: 50%;
   border: 1px solid var(--k);
   background: color-mix(in srgb, var(--k) var(--fill), var(--surface-1));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--k) var(--edge), transparent);
 }
 .pi-sector-head h2 {
   font-size: var(--fs-value);
@@ -357,10 +372,13 @@
   border: 1px solid color-mix(in srgb, var(--k) var(--edge), var(--line));
   color: var(--text);
   cursor: pointer;
-  transition: border-color var(--t-state);
+  transition:
+    border-color var(--t-state),
+    box-shadow var(--t-state);
 }
 .pi-row:hover {
   border-color: color-mix(in srgb, var(--k) var(--strong), var(--line));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--k) var(--edge), transparent);
 }
 .pi-row-text {
   flex: 1;
@@ -663,17 +681,19 @@
 }
 
 @media (max-width: 860px) {
-  .pi-hero,
   .st-hero {
     grid-template-columns: 1fr;
     padding: var(--s-7) var(--s-6) var(--s-5);
   }
-  .pi-ring,
   .st-hero .sphere {
     justify-self: center;
   }
-  .pi-tiles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .gc-body {
+    flex-direction: column;
+    padding: var(--s-6);
+  }
+  .gc-legend {
+    width: 100%;
   }
   .pi-controls {
     flex-direction: column;
@@ -684,5 +704,11 @@
   }
   .pi-sector-head {
     flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .gc-legend {
+    grid-template-columns: 1fr;
   }
 }
