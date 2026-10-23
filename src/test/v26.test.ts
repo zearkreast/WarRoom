@@ -6,7 +6,7 @@ import { fmtAgeShort } from "../domain/format";
 import { BUCKET_MS, frontBuckets, latestRun, type FrontRow } from "../domain/frontActivity";
 import { factionMarks } from "../domain/factionMarks";
 import { buildPolarSectors, GALAXY_SCALE, sectorAt, sectorTerritory, type PolarSectors } from "../domain/galaxy";
-import { fixStatic, isPlaceholder, ownershipKey } from "../domain/planets";
+import { fixStatic, isOffMap, isPlaceholder, ownershipKey } from "../domain/planets";
 import { mergeEpisodes, toEpisodes } from "../domain/snapshot";
 import { tickerItems } from "../domain/ticker";
 import episodesJson from "./fixtures/episodes.json";
@@ -165,5 +165,13 @@ describe("front activity", () => {
   it("starts the chart after the latest gap in the data", () => {
     const run = latestRun(frontBuckets(rows, () => undefined));
     expect(run.map((b) => b.at)).toEqual([Date.parse(at(4)), Date.parse(at(5))]);
+  });
+});
+
+describe("off-map planets", () => {
+  it("drops Calypso, which the game removed but the API still lists", () => {
+    const calypso = (planetsJson as unknown as Planet[]).find((p) => p.name === "CALYPSO")!;
+    expect(isOffMap(calypso)).toBe(true);
+    expect(isOffMap(planets[1])).toBe(false);
   });
 });

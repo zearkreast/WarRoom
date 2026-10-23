@@ -10,7 +10,7 @@ import {
   type StationLive,
 } from "../domain/snapshot";
 import { buildPolarSectors, type PolarSectors } from "../domain/galaxy";
-import { fixStatic, isPlaceholder } from "../domain/planets";
+import { fixStatic, isOffMap } from "../domain/planets";
 import { getSource } from "./source";
 import type { Assignment, Campaign, Dispatch, Planet, War } from "./types";
 
@@ -83,7 +83,7 @@ const buildPlanets = memoOn((statics: PlanetStatic[], live: PlanetLive[]): Plane
   const byIndex = staticByIndex(statics);
   return live.flatMap((l) => {
     const st = byIndex.get(l.index);
-    return st && !isPlaceholder(st) ? [toPlanet(st, l)] : [];
+    return st && !isOffMap(st) ? [toPlanet(st, l)] : [];
   });
 });
 const selectPlanets = (s: Snapshots): Planet[] | undefined => {
@@ -120,7 +120,7 @@ const selectFreshPlanets = (s: Snapshots): Planet[] | undefined => {
 };
 
 /** Sector shapes depend only on where planets are, so they're built once per static snapshot. */
-const buildGeometry = memo((statics: PlanetStatic[]) => buildPolarSectors(statics.filter((p) => !isPlaceholder(p))));
+const buildGeometry = memo((statics: PlanetStatic[]) => buildPolarSectors(statics.filter((p) => !isOffMap(p))));
 const selectGeometry = (s: Snapshots): PolarSectors | undefined => {
   const statics = staticOf(s);
   return statics && buildGeometry(statics);
