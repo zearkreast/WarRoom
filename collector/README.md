@@ -8,13 +8,15 @@ Supabase; the app reads from Supabase and never calls the API itself.
 - Safe to restart: it reloads its state from Supabase. Running two at once is harmless too (duplicate
   readings are ignored).
 
-| Job | Every | Writes |
-|---|---|---|
-| planets | 3 min | `planets` + `planets_static` snapshots, samples, ownership changes |
-| campaigns | 1 min | `campaigns` snapshot (with progress rates), samples, ownership changes |
-| war, assignments | 1 min | `war`, `assignments` snapshots |
-| dispatches | 5 min | `dispatches` snapshot (newest 50), only when there's a new one |
-| compact | 1 hour | thins samples older than 48 h to one per 15 min |
+| Job              | Every  | Writes                                                                 |
+| ---------------- | ------ | ---------------------------------------------------------------------- |
+| planets          | 3 min  | `planets` + `planets_static` snapshots, samples, ownership changes     |
+| campaigns        | 1 min  | `campaigns` snapshot (with progress rates), samples, ownership changes |
+| war, assignments | 1 min  | `war`, `assignments` snapshots                                         |
+| dispatches       | 5 min  | `dispatches` snapshot (newest 50), only when there's a new one         |
+| stations         | 2 min  | `space_stations` snapshot                                              |
+| episodes         | 15 min | `episodes` snapshot (story campaigns, from the official game API)      |
+| compact          | 1 hour | thins samples older than 48 h to one per 15 min                        |
 
 ## Setup on a VDS (Docker)
 

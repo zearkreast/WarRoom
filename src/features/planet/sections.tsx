@@ -321,7 +321,7 @@ export function ServiceRecordSection({ p }: { p: Planet }) {
                 <span className="tile-label">Accuracy</span>
               </div>
               <div className="pd-big num">{fmtPct(accuracy, 2)}</div>
-              <Meter value={Math.min(100, accuracy)} color="var(--cta)" rest="var(--warn)" size="s" />
+              <Meter value={Math.min(100, accuracy)} color="var(--info)" rest="var(--line-strong)" size="s" />
               <div className="pd-legend num">
                 <span style={{ "--k": "var(--cta)" } as CSSProperties}>Shots fired {fmtInt(s.bulletsFired)}</span>
                 <span style={{ "--k": "var(--warn)" } as CSSProperties}>Projectile hits {fmtInt(s.bulletsHit)}</span>

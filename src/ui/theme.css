@@ -29,7 +29,7 @@
   --info: #9fd4ff;
 
   --f-humans: #46a4ff;
-  --f-terminids: #ffb900;
+  --f-terminids: #ff9433;
   --f-automaton: #ff7171;
   --f-illuminate: #cd8ae9;
   --f-none: #4b6b78;
@@ -38,7 +38,7 @@
      validated with the dataviz palette checker. Stack order Terminids, Illuminate, Automatons
      keeps orange and red apart. UI identity keeps the brighter --f-* tokens above. */
   --c-humans: #3897f1;
-  --c-terminids: #c88500;
+  --c-terminids: #d07c1a;
   --c-automaton: #eb5f61;
   --c-illuminate: #b674d2;
   --c-grid: #1d232c;

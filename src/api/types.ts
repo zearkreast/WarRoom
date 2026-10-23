@@ -143,3 +143,15 @@ export interface SpaceStation {
   flags: number;
   tacticalActions: TacticalAction[];
 }
+
+/** A story campaign as the official game API returns it; times are war seconds. */
+export interface EpisodeRaw {
+  id32: number;
+  title: string;
+  description: string;
+  status: number;
+  startWarTime: number;
+  endWarTime?: number;
+  phases: { introTitle: string; introMessage: string; status: number; rewards: { mixId: number; amount: number }[] }[];
+  rewards: { mixId: number; amount: number }[];
+}

@@ -11,7 +11,7 @@ import type { Front } from "../planets/useFronts";
 import "./campaigns.css";
 
 /** "Victory in …" / "Falls in …" above the card, if the rate says anything. */
-function Eta({ f }: { f: Front }) {
+function Eta({ f, deadline }: { f: Front; deadline?: number }) {
   if (f.rate == null) return null;
   if (f.kind === "defense") {
     const wins = f.victoryAt != null && f.failAt != null && f.victoryAt < f.failAt;
@@ -31,6 +31,7 @@ function Eta({ f }: { f: Front }) {
         <b>
           <Countdown to={f.victoryAt} />
         </b>
+        {deadline != null && f.victoryAt > deadline && <span className="cc-late caps">After MO deadline</span>}
       </span>
     );
   if (f.failAt)
@@ -71,7 +72,7 @@ function Outlook({ f }: { f: Front }) {
   );
 }
 
-export function CampaignCard({ f, totalPlayers }: { f: Front; totalPlayers: number }) {
+export function CampaignCard({ f, totalPlayers, deadline }: { f: Front; totalPlayers: number; deadline?: number }) {
   const openOptions = useUi((s) => s.openOptions);
   const p = f.planet;
   const enemy = factionColor(f.enemy);
@@ -87,7 +88,7 @@ export function CampaignCard({ f, totalPlayers }: { f: Front; totalPlayers: numb
         <span className="cc-type caps">
           <TypeIcon size={13} /> {f.kind}
         </span>
-        <Eta f={f} />
+        <Eta f={f} deadline={deadline} />
       </div>
       <button
         className={`cc-card ${f.inMajorOrder ? "mo" : ""}`}
@@ -141,7 +142,7 @@ export function CampaignCard({ f, totalPlayers }: { f: Front; totalPlayers: numb
         <Outlook f={f} />
         <footer className="cc-foot num">
           <span className="cc-share" title="Share of all Helldivers online">
-            <Meter value={share} color="var(--cta)" size="s" />
+            <Meter value={share} color="var(--info)" size="s" />
             {share.toFixed(0)}%
           </span>
           <span title="Helldivers deployed">

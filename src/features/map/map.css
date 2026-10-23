@@ -317,7 +317,7 @@
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
 }
 .map-title h1.sector {
-  color: var(--cta);
+  color: var(--text-hi);
   font-size: clamp(1.1rem, 2.2vw, 1.5rem);
 }
 .map-subtitle {

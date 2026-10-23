@@ -131,7 +131,7 @@
   min-height: 44px;
   padding: 0 var(--s-6);
   background: linear-gradient(90deg, var(--surface-2) 30%, transparent),
-    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--cta) 22%, transparent) 0 3px, transparent 3px 7px);
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--f-humans) 22%, transparent) 0 3px, transparent 3px 7px);
   border: 0;
   color: var(--text-hi);
   cursor: pointer;
@@ -147,6 +147,9 @@
 .gc-peek {
   display: flex;
   gap: var(--s-4);
+  /* Solid ground so the faction colours read against the hatch. */
+  padding: 2px var(--s-3);
+  background: var(--surface-2);
   font-size: var(--fs-body-s);
   font-weight: 700;
 }
@@ -154,10 +157,6 @@
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
-  text-shadow: 0 0 8px currentColor;
-}
-.gc-peek svg {
-  filter: drop-shadow(0 0 4px currentColor);
 }
 .gc-chevron {
   margin-left: auto;

@@ -1,4 +1,4 @@
-// Rate-limited client for api.helldivers2.dev. The collector is its only caller.
+// Rate-limited client for api.helldivers2.dev and the official game API. The collector is its only caller.
 
 export class RateLimitError extends Error {
   retryAfterMs: number;
@@ -65,6 +65,8 @@ export function createHd2Client(opts: ClientOptions) {
           "X-Super-Client": opts.client,
           "X-Super-Contact": opts.contact,
           Accept: "application/json",
+          // The official game API rejects requests without it.
+          "Accept-Language": "en-US",
         },
       });
     } catch (e) {

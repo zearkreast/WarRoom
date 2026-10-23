@@ -1,6 +1,7 @@
 import type { Assignment, AssignmentTask, Faction, Planet } from "../api/types";
 import { FACTION_BY_ID } from "./factions";
 import { byIndex } from "./planets";
+import { projectedAt } from "./progress";
 
 // valueTypes observed in assignment tasks.
 const VT_FACTION = 1;
@@ -55,3 +56,18 @@ export function describeAssignment(a: Assignment, planets: Planet[] | undefined)
 
 const REWARD_LABELS: Record<number, string> = { 1: "Warbond Medals", 2: "Requisition Slips", 3: "Super Credits" };
 export const rewardLabel = (type: number) => REWARD_LABELS[type] ?? "Reward";
+
+export type DeadlineOutlook = "done" | "on-track" | "behind" | "measuring";
+
+/** Where a target ends up when the order expires if the current rate holds; `end` is clamped to 0-100. */
+export function deadlineOutlook(
+  percent: number,
+  rate: number | null,
+  now: number,
+  deadline: number,
+): { outlook: DeadlineOutlook; end: number | null } {
+  if (percent >= 100) return { outlook: "done", end: 100 };
+  const end = projectedAt(percent, rate, now, deadline);
+  if (end == null) return { outlook: "measuring", end: null };
+  return { outlook: end >= 100 ? "on-track" : "behind", end: Math.min(100, Math.max(0, end)) };
+}

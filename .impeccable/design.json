@@ -36,17 +36,17 @@
       },
       "faction-terminids": {
         "role": "secondary",
-        "displayName": "Terminid Amber",
-        "canonical": "oklch(82.9% 0.171 81.0)",
+        "displayName": "Terminid Orange",
+        "canonical": "oklch(76.5% 0.165 57.6)",
         "tonalRamp": [
-          "#2a0000",
-          "#4a0800",
-          "#6b2c00",
-          "#8d4c00",
-          "#b37100",
-          "#da9600",
-          "#ffbd11",
-          "#ffe150"
+          "#3b0000",
+          "#560000",
+          "#7a1a00",
+          "#9e3e00",
+          "#c66300",
+          "#ee8728",
+          "#ffac54",
+          "#ffc46e"
         ]
       },
       "faction-automaton": {

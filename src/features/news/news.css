@@ -103,7 +103,8 @@
 }
 .hl-1,
 .hl-3 {
-  color: var(--cta);
+  color: var(--text-hi);
+  font-weight: 700;
 }
 .hl-2 {
   color: var(--f-humans);

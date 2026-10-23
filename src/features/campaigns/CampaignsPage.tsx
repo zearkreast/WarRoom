@@ -8,13 +8,16 @@ import { useSettings } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
 import { Hint } from "../../ui/Hint";
 import { Empty, Loading } from "../../ui/primitives";
-import { useFronts, type Front } from "../planets/useFronts";
+import { FeedNote } from "../../ui/feed";
+import { useFronts, useMajorOrderDeadlines, type Front } from "../planets/useFronts";
 import { CampaignCard } from "./CampaignCard";
+import { MoStrip } from "./MoStrip";
 
 type Filter = "all" | "mo" | "defense" | "pinned" | Faction;
 
 export function CampaignsPage() {
   const { fronts, loading } = useFronts();
+  const deadlines = useMajorOrderDeadlines();
   const war = useWar().data;
   const showInactive = useSettings((s) => s.showInactive);
   const setSetting = useSettings((s) => s.set);
@@ -59,6 +62,8 @@ export function CampaignsPage() {
             </p>
           </div>
         </div>
+        <FeedNote />
+        <MoStrip fronts={fronts} />
         <Hint id="campaigns">
           Click a card for its options: pin it to the top, show it on the map, or open the planet's full record.
         </Hint>
@@ -83,7 +88,12 @@ export function CampaignsPage() {
         ) : (
           <div className="cc-grid">
             {shown.map((f) => (
-              <CampaignCard key={f.campaign.id} f={f} totalPlayers={totalPlayers} />
+              <CampaignCard
+                key={f.campaign.id}
+                f={f}
+                totalPlayers={totalPlayers}
+                deadline={deadlines.get(f.planet.index)}
+              />
             ))}
           </div>
         )}
