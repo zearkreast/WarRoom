@@ -50,7 +50,7 @@ export function WarActivity() {
   };
 
   return (
-    <Panel title="Galactic war activity · last 24 h" icon={Activity}>
+    <Panel className="ov-activity" title="Galactic war activity · last 24 h" icon={Activity}>
       <div className="ov-heads">
         <div>
           <span className="tile-label">Galactic impact mod</span>

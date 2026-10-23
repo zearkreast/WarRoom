@@ -2,6 +2,7 @@
 // Only type imports here, so the collector can run this file directly under Node.
 import type {
   Campaign,
+  EpisodeRaw,
   Dispatch,
   Faction,
   Planet,
@@ -20,7 +21,8 @@ export type SnapshotKind =
   | "planets"
   | "planets_static"
   | "dispatches"
-  | "space_stations";
+  | "space_stations"
+  | "episodes";
 
 /** Planet fields that rarely change: sent once per app launch. */
 export interface PlanetStatic {
@@ -228,4 +230,40 @@ export function toWarSample(
     automatons: fronts.Automaton,
     illuminate: fronts.Illuminate,
   };
+}
+
+export type EpisodeStatus = "active" | "won" | "lost";
+
+/** A story campaign with its phases; times are epoch ms. */
+export interface EpisodeLive {
+  id: number;
+  title: string;
+  description: string;
+  status: EpisodeStatus;
+  start: number;
+  end: number | null;
+  phases: { title: string; briefing: string; status: EpisodeStatus; medals: number | null }[];
+}
+
+// The game's episode and phase status codes: 2 won, 3 failed; anything else is still running.
+const EPISODE_STATUS: Record<number, EpisodeStatus> = { 2: "won", 3: "lost" };
+const MEDALS_MIX_ID = 897894480;
+
+/** Converts the game's war-second timestamps using the war clock read at `fetchedAt`. */
+export function toEpisodes(list: EpisodeRaw[], warTime: number, fetchedAt: number): EpisodeLive[] {
+  const at = (t: number) => fetchedAt - (warTime - t) * 1000;
+  return list.map((e) => ({
+    id: e.id32,
+    title: e.title,
+    description: e.description,
+    status: EPISODE_STATUS[e.status] ?? "active",
+    start: at(e.startWarTime),
+    end: e.endWarTime ? at(e.endWarTime) : null,
+    phases: e.phases.map((p) => ({
+      title: p.introTitle,
+      briefing: p.introMessage,
+      status: EPISODE_STATUS[p.status] ?? "active",
+      medals: p.rewards.find((r) => r.mixId === MEDALS_MIX_ID)?.amount ?? null,
+    })),
+  }));
 }

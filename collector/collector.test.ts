@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Campaign, Planet } from "../src/api/types.ts";
-import { toCampaignLive, toLive, toPlanet, toStatic } from "../src/domain/snapshot.ts";
+import { toCampaignLive, toEpisodes, toLive, toPlanet, toStatic } from "../src/domain/snapshot.ts";
 import planetsJson from "../src/test/fixtures/planets.json";
 import campaignsJson from "../src/test/fixtures/campaigns.json";
 import warJson from "../src/test/fixtures/war.json";
@@ -178,5 +178,47 @@ describe("collector cycle", () => {
     const tasks = createTasks(fakeHd2({ ...api, war: new RateLimitError(20_000) }), db, new Recorder(db), () => 0);
     const r = await runTask(tasks.find((t) => t.name === "war")!, () => 0);
     expect(r).toMatchObject({ ok: false, retryAt: 20_000 });
+  });
+});
+
+describe("story campaigns", () => {
+  const raw = [
+    {
+      id32: 1,
+      title: "OLD",
+      description: "",
+      status: 3,
+      startWarTime: 1_000,
+      endWarTime: 2_000,
+      phases: [{ introTitle: "A", introMessage: "", status: 3, rewards: [] }],
+      rewards: [],
+    },
+    {
+      id32: 2,
+      title: "NOW",
+      description: "d",
+      status: 0,
+      startWarTime: 9_000,
+      phases: [{ introTitle: "B", introMessage: "brief", status: 0, rewards: [{ mixId: 897894480, amount: 40 }] }],
+      rewards: [],
+    },
+  ];
+
+  it("dates war-second timestamps against the war clock and maps outcomes", () => {
+    const [old, now] = toEpisodes(raw, 10_000, 50_000_000);
+    expect(old).toMatchObject({ status: "lost", start: 50_000_000 - 9_000_000, end: 50_000_000 - 8_000_000 });
+    expect(now).toMatchObject({ status: "active", end: null, phases: [{ title: "B", status: "active", medals: 40 }] });
+  });
+
+  it("writes an episodes snapshot only when the game API client is given", async () => {
+    const { db, calls } = fakeSupabase();
+    const game = fakeHd2({ WarID: { id: 801 }, "801": { episodes: raw }, Status: { time: 10_000 } });
+    const tasks = createTasks(fakeHd2(api), db, new Recorder(db), () => 50_000_000, game);
+    const t = tasks.find((x) => x.name === "episodes")!;
+    expect((await runTask(t)).message).toBe("2 campaigns, 1 active");
+    expect(calls.some((c) => c.path === "snapshots" && (c.body as { kind: string }[])[0].kind === "episodes")).toBe(
+      true,
+    );
+    expect(createTasks(fakeHd2(api), db, new Recorder(db)).some((x) => x.name === "episodes")).toBe(false);
   });
 });

@@ -462,7 +462,7 @@ export type Hover = { x: number; y: number } & (
 
 function resistance(regen: number): { label: string; color: string } {
   if (regen < 1) return { label: "Low", color: "var(--good)" };
-  if (regen < 2.5) return { label: "Average", color: "var(--cta)" };
+  if (regen < 2.5) return { label: "Average", color: "var(--warn)" };
   return { label: "High", color: "var(--bad)" };
 }
 

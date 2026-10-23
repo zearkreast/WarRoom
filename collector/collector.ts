@@ -1,9 +1,10 @@
-import type { Assignment, Campaign, Dispatch, Planet, SpaceStation, War } from "../src/api/types.ts";
+import type { Assignment, Campaign, Dispatch, EpisodeRaw, Planet, SpaceStation, War } from "../src/api/types.ts";
 import {
   newestDispatches,
   toCampaignLive,
   toLive,
   toStatic,
+  toEpisodes,
   toStationLive,
   toWarSample,
   type SnapshotKind,
@@ -18,8 +19,17 @@ export interface Task {
   run(): Promise<string>;
 }
 
-/** Polling jobs: each fetches from the API, writes to Supabase, and returns a short status for the log. */
-export function createTasks(hd2: Hd2Client, db: Supabase, recorder: Recorder, now = Date.now): Task[] {
+/**
+ * Polling jobs: each fetches from the API, writes to Supabase, and returns a short status for the log.
+ * `game` is the official game API, for data the community API doesn't carry (story campaigns).
+ */
+export function createTasks(
+  hd2: Hd2Client,
+  db: Supabase,
+  recorder: Recorder,
+  now = Date.now,
+  game?: Hd2Client,
+): Task[] {
   let lastStatic = "";
   let lastDispatch = 0;
   /** Latest campaigns, so each war sample can split players by front. */
@@ -30,7 +40,7 @@ export function createTasks(hd2: Hd2Client, db: Supabase, recorder: Recorder, no
 
   const changeNote = (n: number) => (n ? `, ${n} owner change${n > 1 ? "s" : ""}` : "");
 
-  return [
+  const tasks: Task[] = [
     {
       // Full list first, so a fresh database learns every planet's owner on the first cycle.
       name: "planets",
@@ -116,6 +126,20 @@ export function createTasks(hd2: Hd2Client, db: Supabase, recorder: Recorder, no
       },
     },
   ];
+  if (game)
+    tasks.push({
+      name: "episodes",
+      everyMs: 900_000,
+      async run() {
+        const { id } = await game.get<{ id: number }>("/api/WarSeason/current/WarID");
+        const { episodes } = await game.get<{ episodes: EpisodeRaw[] }>(`/api/Episode/${id}`);
+        const { time } = await game.get<{ time: number }>(`/api/WarSeason/${id}/Status`);
+        const list = toEpisodes(episodes, time, now());
+        await snapshot("episodes", list);
+        return `${list.length} campaigns, ${list.filter((e) => e.status === "active").length} active`;
+      },
+    });
+  return tasks;
 }
 
 export interface RunResult {

@@ -119,6 +119,7 @@ export function TheaterOfWar() {
 
   return (
     <Panel
+      className="tw"
       title="Theater of war"
       icon={MapIcon}
       bodyClass="panel-body tw-body"
