@@ -2,14 +2,16 @@ import { isTauri } from "@tauri-apps/api/core";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "../config";
 import {
+  mergeEpisodes,
   newestDispatches,
   toCampaignLive,
+  toEpisodes,
   toLive,
   toStatic,
   toStationLive,
   type SnapshotKind,
 } from "../domain/snapshot";
-import type { Campaign, Dispatch, Planet, SpaceStation } from "./types";
+import type { Campaign, Dispatch, EpisodeRaw, Planet, SpaceStation } from "./types";
 
 type FetchFn = (url: string, init: RequestInit) => Promise<Response>;
 
@@ -32,6 +34,8 @@ export interface Source {
   snapshots(since: string): Promise<SnapshotRow[]>;
   /** Raw PostgREST select, for history tables. */
   select<T>(table: string, query: string): Promise<T[]>;
+  /** A database function's rows, called with its named arguments. */
+  rpc<T>(fn: string, args: Record<string, string | number>): Promise<T[]>;
 }
 
 const REQUEST_TIMEOUT_MS = 20_000;
@@ -62,13 +66,20 @@ export function createSource(opts: { url: string; key: string; fetchFn?: FetchFn
         `select=kind,data,fetched_at${since ? `&fetched_at=gt.${encodeURIComponent(since)}` : ""}`,
       ),
     select,
+    rpc: (fn, args) =>
+      select(
+        `rpc/${fn}`,
+        Object.entries(args)
+          .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+          .join("&"),
+      ),
   };
 }
 
 /** Dev only: `?fixtures` serves the saved test fixtures, shaped like the collector's snapshots. */
 async function fixtureSource(): Promise<Source> {
-  const [war, assignments, campaigns, planets, dispatches, stations] = await Promise.all(
-    ["war", "assignments", "campaigns", "planets", "dispatches", "space-stations"].map((n) =>
+  const [war, assignments, campaigns, planets, dispatches, stations, episodes] = await Promise.all(
+    ["war", "assignments", "campaigns", "planets", "dispatches", "space-stations", "episodes"].map((n) =>
       import(`../test/fixtures/${n}.json`).then((m) => m.default),
     ),
   );
@@ -82,9 +93,16 @@ async function fixtureSource(): Promise<Source> {
     { kind: "dispatches", data: newestDispatches(dispatches as Dispatch[]), fetched_at: at },
     { kind: "space_stations", data: (stations as SpaceStation[]).map(toStationLive), fetched_at: at },
   ];
+  const ep = episodes as { episodes: EpisodeRaw[]; warTime: number; fetchedAt: number };
+  rows.push({
+    kind: "episodes",
+    data: mergeEpisodes([], toEpisodes(ep.episodes, ep.warTime, ep.fetchedAt), 0),
+    fetched_at: at,
+  });
   return {
     snapshots: async (since) => (since ? [] : rows),
     select: async () => [],
+    rpc: async () => [],
   };
 }
 

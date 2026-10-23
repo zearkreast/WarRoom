@@ -149,9 +149,17 @@ export interface EpisodeRaw {
   id32: number;
   title: string;
   description: string;
+  /** Faction code: 1 Super Earth (several fronts), 2 Terminids, 3 Automatons, 4 Illuminate. */
+  race: number;
   status: number;
   startWarTime: number;
   endWarTime?: number;
-  phases: { introTitle: string; introMessage: string; status: number; rewards: { mixId: number; amount: number }[] }[];
+  phases: {
+    introTitle: string;
+    introMessage: string;
+    outroMessage?: string;
+    status: number;
+    rewards: { mixId: number; amount: number }[];
+  }[];
   rewards: { mixId: number; amount: number }[];
 }

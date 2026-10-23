@@ -1,4 +1,36 @@
 import type { Planet } from "../api/types";
+import type { PlanetStatic } from "./snapshot";
+
+/**
+ * Where the game has moved things the API still files under the old planet id. Meridia was dragged
+ * into the Celeste sector. On 12 Aug 2026 Sangis and Alderidge Cove traded names, places, biomes and
+ * links: the API has the new places and links but the old names, sectors and biomes. Values are
+ * absolute, so they stay right if the API catches up.
+ */
+const STATIC_FIXES: Record<number, Partial<Pick<PlanetStatic, "name" | "sector" | "biome">>> = {
+  64: { sector: "Celeste" },
+  99: {
+    name: "ALDERIDGE COVE",
+    sector: "Omega",
+    biome: {
+      name: "Deadlands",
+      description:
+        "The lifeless grey of this planet is interrupted only by the violet flowers that grow from strange, parasitic outcroppings.",
+    },
+  },
+  273: {
+    name: "SANGIS",
+    sector: "Guang",
+    biome: {
+      name: "Deciduous Autumn Forest",
+      description:
+        "Broadleaf woodlands spread across rolling hills, broken by shallow waters that wind through mossy logs, flowers, and stone. (UNOFFICIAL)",
+    },
+  },
+};
+
+export const fixStatic = <T extends PlanetStatic>(p: T): T =>
+  STATIC_FIXES[p.index] ? { ...p, ...STATIC_FIXES[p.index] } : p;
 
 const cache = new WeakMap<Planet[], Map<number, Planet>>();
 
@@ -15,3 +47,20 @@ export function byIndex(planets: Planet[]): Map<number, Planet> {
 /** The API stacks unnamed placeholder worlds on Super Earth at the origin; nothing in the war uses them. */
 export const isPlaceholder = (p: Pick<Planet, "index" | "position">) =>
   p.index !== 0 && p.position.x === 0 && p.position.y === 0;
+
+/**
+ * Planets the game has taken off the map while the API still lists them. Calypso vanished after the
+ * DSS jumped to it on 19 Aug 2026; the API only dropped its supply lines.
+ */
+const OFF_MAP = new Set([97]);
+
+/** Placeholders and planets the game no longer shows: neither is drawn or listed. */
+export const isOffMap = (p: Pick<Planet, "index" | "position">) => isPlaceholder(p) || OFF_MAP.has(p.index);
+
+/**
+ * Who holds and who attacks each planet, as one string. Territory and region shapes depend on nothing
+ * else that changes, so they are recomputed only when this does, not on every poll.
+ */
+export function ownershipKey(planets: Pick<Planet, "currentOwner" | "event">[]): string {
+  return planets.map((p) => `${p.currentOwner[0]}${p.event?.faction[0] ?? "-"}`).join("");
+}

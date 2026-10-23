@@ -1,16 +1,6 @@
 import { select } from "d3-selection";
 import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from "d3-zoom";
-import {
-  ArrowUpRight,
-  Compass,
-  Layers,
-  Maximize,
-  MousePointerClick,
-  Rotate3d,
-  Settings,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { ArrowUpRight, Compass, Layers, MousePointerClick, Rotate3d, Settings, ZoomIn, ZoomOut } from "lucide-react";
 import {
   memo,
   useCallback,
@@ -21,28 +11,30 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { useCampaigns, useFreshPlanets } from "../../api/queries";
+import { useCampaigns, useFreshPlanets, useSectorGeometry } from "../../api/queries";
 import type { Faction, Planet } from "../../api/types";
 import { biomeTint, regenPctPerHour } from "../../domain/biomes";
 import { FACTIONS, factionColor } from "../../domain/factions";
 import { fmtPct } from "../../domain/format";
 import {
   anomalyOf,
-  buildPolarSectors,
   GALAXY_SCALE,
   LANDMARKS,
   project,
   RING_RADII,
+  sectorAt,
   sectorTerritory,
   supplyLines,
-  territoryLabels,
   type Anomaly,
   type Landmark,
+  type PolarSectors,
 } from "../../domain/galaxy";
-import { byIndex } from "../../domain/planets";
+import { factionMarks } from "../../domain/factionMarks";
+import { byIndex, ownershipKey } from "../../domain/planets";
 import { buildRegions } from "../../domain/regions";
 import { liberationPercent, trackedPercent } from "../../domain/progress";
 import { useSettings, useUi, type MapOverlay, type MapPlanets, type MapQuality } from "../../state";
+import { EMBLEM_PATHS } from "../../ui/emblems";
 import { HudButton, Loading, Meter, Stepper } from "../../ui/primitives";
 import { useMajorOrderPlanets } from "../planets/useFronts";
 import { OVERLAY_OPTIONS, PLANET_OPTIONS, QUALITY_OPTIONS } from "./mapOptions";
@@ -96,7 +88,7 @@ function backgroundStars(n: number) {
 
 type Star = ReturnType<typeof backgroundStars>[number];
 
-function drawStars(canvas: HTMLCanvasElement, stars: Star[], t: ZoomTransform, cam: Camera) {
+function drawStars(canvas: HTMLCanvasElement, stars: Star[], t: ZoomTransform, cam: Camera, rings: boolean) {
   const dpr = window.devicePixelRatio || 1;
   const { width, height } = canvas.getBoundingClientRect();
   if (canvas.width !== Math.round(width * dpr)) canvas.width = Math.round(width * dpr);
@@ -133,7 +125,8 @@ function drawStars(canvas: HTMLCanvasElement, stars: Star[], t: ZoomTransform, c
   }
   ctx.globalAlpha = 1;
 
-  // The game's sector rings, so planets read against the same bands in every overlay.
+  // The game's sector rings, so planets read against the same bands; the Sectors overlay draws its own borders.
+  if (!rings) return;
   ctx.strokeStyle = "rgba(120, 170, 230, 0.09)";
   ctx.lineWidth = 1;
   for (const r of RING_RADII) {
@@ -155,7 +148,9 @@ function scaleHatches(svg: SVGSVGElement, k: number) {
 const ENEMIES: Faction[] = ["Terminids", "Automaton", "Illuminate"];
 
 const Regions = memo(function Regions({ planets, glow }: { planets: Planet[]; glow: boolean }) {
-  const regions = useMemo(() => buildRegions(planets), [planets]);
+  const owners = ownershipKey(planets);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const regions = useMemo(() => buildRegions(planets), [owners]);
   return (
     <g className="regions">
       {regions.map((r) => {
@@ -176,17 +171,10 @@ const Regions = memo(function Regions({ planets, glow }: { planets: Planet[]; gl
  * Enemy territory on the game's ring sectors: the sector grid, with hatching that is solid where
  * the enemy holds every planet of a sector and faint where Super Earth still holds some (contested).
  */
-const SectorGrid = memo(function SectorGrid({
-  planets,
-  glow,
-  onHover,
-}: {
-  planets: Planet[];
-  glow: boolean;
-  onHover?: (p: Planet | null) => void;
-}) {
-  const geo = useMemo(() => buildPolarSectors(planets), [planets]);
-  const territory = useMemo(() => sectorTerritory(planets), [planets]);
+const SectorGrid = memo(function SectorGrid({ geo, planets }: { geo: PolarSectors; planets: Planet[] }) {
+  const owners = ownershipKey(planets);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const territory = useMemo(() => sectorTerritory(planets), [owners]);
   const shapes = useMemo(() => {
     let grid = "";
     const fronts = new Map<Faction, string>();
@@ -208,16 +196,11 @@ const SectorGrid = memo(function SectorGrid({
       const t = territory.get(s);
       if (t) (t.held ? held : contested).set(t.faction, ((t.held ? held : contested).get(t.faction) ?? "") + d);
     }
-    return { grid, fronts, splits, held, contested, labels: territoryLabels(geo, territory) };
+    return { grid, fronts, splits, held, contested };
   }, [geo, territory]);
-  const firstOf = useMemo(() => {
-    const m = new Map<string, Planet>();
-    for (const p of planets) if (!m.has(p.sector)) m.set(p.sector, p);
-    return m;
-  }, [planets]);
 
   return (
-    <g className={`territory ${glow ? "glow" : ""}`}>
+    <g className="territory">
       <defs>
         {ENEMIES.flatMap((f) =>
           (["held", "contested"] as const).map((kind) => (
@@ -230,15 +213,15 @@ const SectorGrid = memo(function SectorGrid({
               patternUnits="userSpaceOnUse"
               patternTransform="rotate(45)"
             >
-              <rect width={HATCH} height={HATCH} fill={FACTIONS[f].color} fillOpacity={kind === "held" ? 0.2 : 0.04} />
+              <rect width={HATCH} height={HATCH} fill={FACTIONS[f].color} fillOpacity={kind === "held" ? 0.14 : 0.03} />
               <line
                 x1={1}
                 y1={0}
                 x2={1}
                 y2={HATCH}
                 stroke={FACTIONS[f].color}
-                strokeOpacity={kind === "held" ? 0.5 : 0.28}
-                strokeWidth={kind === "held" ? 2 : 1.2}
+                strokeOpacity={kind === "held" ? 0.38 : 0.22}
+                strokeWidth={kind === "held" ? 1.6 : 1}
               />
             </pattern>
           )),
@@ -256,29 +239,40 @@ const SectorGrid = memo(function SectorGrid({
         <path key={`s-${f}`} d={d} className="tf-split" style={{ color: FACTIONS[f].color }} />
       ))}
       {[...shapes.fronts].map(([f, d]) => (
-        <g key={`f-${f}`} style={{ color: FACTIONS[f].color }}>
-          {glow && <path d={d} className="tf-glow" />}
-          <path d={d} className="tf-front" />
-        </g>
+        <path key={`f-${f}`} d={d} className="tf-front" style={{ color: FACTIONS[f].color }} />
       ))}
       <circle r={geo.rim} className="sg-rim" />
-      {shapes.labels.map((l) => (
-        <g key={l.faction}>
-          <path id={`tl-${l.faction}`} d={l.d} fill="none" />
-          <text className="sg-label" fill={FACTIONS[l.faction].color}>
-            <textPath href={`#tl-${l.faction}`} startOffset="50%">
-              {FACTIONS[l.faction].label}
-            </textPath>
-          </text>
+    </g>
+  );
+});
+
+/** Each enemy's see-through emblem on its largest connected holding, as the overlay draws it; it fades out once zoomed in. */
+const FactionMarks = memo(function FactionMarks(props: {
+  planets: Planet[];
+  overlay: MapOverlay;
+  geo: PolarSectors | undefined;
+}) {
+  const owners = ownershipKey(props.planets);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const marks = useMemo(
+    () => factionMarks(props.planets, props.overlay, props.geo),
+    [owners, props.overlay, props.geo],
+  );
+  return (
+    <g className="faction-marks" aria-hidden>
+      {marks.map((m) => (
+        <g key={m.faction} transform={`translate(${m.x.toFixed(1)},${m.y.toFixed(1)})`}>
+          <g className="upright">
+            <path
+              d={EMBLEM_PATHS[m.faction]}
+              transform="translate(-36,-36) scale(3)"
+              fill={factionColor(m.faction)}
+              color={factionColor(m.faction)}
+              fillRule="evenodd"
+            />
+          </g>
         </g>
       ))}
-      {onHover && (
-        <g className="sg-hits" onPointerLeave={() => onHover(null)}>
-          {[...geo.fills].map(([s, d]) => (
-            <path key={s} d={d} onPointerEnter={() => onHover(firstOf.get(s) ?? null)} />
-          ))}
-        </g>
-      )}
     </g>
   );
 });
@@ -392,18 +386,20 @@ function sphereColor(hex: string): string {
   return `#${mix(1)}${mix(3)}${mix(5)}`;
 }
 
-const HEX = Array.from({ length: 6 }, (_, i) => {
-  const a = ((i * 60 - 90) * Math.PI) / 180;
-  return `${(Math.cos(a) * 3.8).toFixed(2)},${(Math.sin(a) * 3.8).toFixed(2)}`;
-}).join(" ");
-
-/** Hexagon marker over a campaign planet; yellow for Major Order targets. */
-function CampaignBadge({ mo }: { mo: boolean }) {
+/** Square tag over an active planet in the fighting faction's colour: crosshair to liberate, shield to defend. */
+function ActiveTag({ defense, mo, color }: { defense: boolean; mo: boolean; color: string }) {
   return (
-    <g className={`camp-badge ${mo ? "mo" : ""}`} transform="translate(0,-10)">
-      <polygon points={HEX} />
-      <circle r={1.6} />
-      <path d="M-2.7,0H-1.1M1.1,0H2.7M0,-2.7V-1.1M0,1.1V2.7" />
+    <g className={`act-tag ${mo ? "mo" : ""}`} transform="translate(0,-10.5)" style={{ color }}>
+      <path className="act-stem" d="M0,3.4V5.6" />
+      <rect x={-3.4} y={-3.4} width={6.8} height={6.8} />
+      {defense ? (
+        <path d="M0,-2.2 2,-1.4V0.2C2,1.3 1.1,2 0,2.4-1.1,2-2,1.3-2,0.2V-1.4Z" />
+      ) : (
+        <>
+          <circle r={1.3} />
+          <path d="M-2.3,0H-1.3M1.3,0H2.3M0,-2.3V-1.3M0,1.3V2.3" />
+        </>
+      )}
     </g>
   );
 }
@@ -426,6 +422,7 @@ function PlanetBody(props: {
   size: number;
   anomaly?: Anomaly;
   active?: boolean;
+  defense?: boolean;
   mo?: boolean;
   enemy?: boolean;
   pinned?: boolean;
@@ -449,7 +446,9 @@ function PlanetBody(props: {
           <circle r={(props.active ? 2.2 : 1.5) * props.size} className="core" fill={props.color} />
         </>
       )}
-      {props.style === "spheres" && props.active && <CampaignBadge mo={Boolean(props.mo)} />}
+      {props.style === "spheres" && props.active && (
+        <ActiveTag defense={Boolean(props.defense)} mo={Boolean(props.mo)} color={props.color} />
+      )}
       {props.pinned && <PinMark />}
     </g>
   );
@@ -619,7 +618,6 @@ const PlanetLayer = memo(function PlanetLayer(props: {
   glow: boolean;
   onOpen(planet: number, x: number, y: number): void;
   onHover(h: Hover | null): void;
-  onHoverSector?: (p: Planet | null) => void;
 }) {
   const { style, glow, onHover } = props;
   const leave = () => onHover(null);
@@ -649,10 +647,7 @@ const PlanetLayer = memo(function PlanetLayer(props: {
             className={cls}
             transform={`translate(${x},${y})`}
             onClick={(e) => props.onOpen(p.index, e.clientX, e.clientY)}
-            onPointerEnter={(e) => {
-              onHover({ planet: p, x: e.clientX, y: e.clientY });
-              props.onHoverSector?.(p);
-            }}
+            onPointerEnter={(e) => onHover({ planet: p, x: e.clientX, y: e.clientY })}
             onPointerLeave={leave}
           >
             <g className="upright">
@@ -665,6 +660,7 @@ const PlanetLayer = memo(function PlanetLayer(props: {
                 size={p.index === 0 ? 1.6 : 1}
                 anomaly={anomalyOf(p)}
                 active={isActive}
+                defense={Boolean(p.event)}
                 mo={isMo}
                 enemy={p.currentOwner !== "Humans" || Boolean(p.event)}
                 pinned={isPinned}
@@ -710,8 +706,10 @@ const PlanetLayer = memo(function PlanetLayer(props: {
 /** How long the camera must be still before the costly glow filters come back. */
 const SETTLE_MS = 180;
 
-export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null) => void }) {
+/** `onHoverSector` gets the sector under the pointer, whatever the overlay, or null off the disc. */
+export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string | null) => void }) {
   const fresh = useFreshPlanets().data;
+  const geo = useSectorGeometry().data;
   const campaigns = useCampaigns();
   const mo = useMajorOrderPlanets();
   const selectedPlanet = useUi((s) => s.selectedPlanet);
@@ -735,6 +733,14 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
   const [hover, setHover] = useState<Hover | null>(null);
   const hoverRef = useRef(hover);
   hoverRef.current = hover;
+  const [sector, setSector] = useState<string | null>(null);
+  const sectorRef = useRef(sector);
+  const hoverSector = (s: string | null) => {
+    if (s === sectorRef.current) return;
+    sectorRef.current = s;
+    setSector(s);
+    onHoverSector?.(s);
+  };
   const [settingsOpen, setSettingsOpen] = useState(false);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
@@ -746,6 +752,8 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
 
   const starsRef = useRef(stars);
   starsRef.current = stars;
+  const overlayRef = useRef(overlay);
+  overlayRef.current = overlay;
   const frame = useRef(0);
   const settle = useRef(0);
   const written = useRef({ transform: "", k: "", rot: "", squash: "" });
@@ -775,7 +783,8 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
     compassRef.current?.classList.toggle("on", rot !== 0 || tilt !== 0);
     compassRef.current?.querySelector("svg")?.style.setProperty("transform", `rotate(${rot - Math.PI / 4}rad)`);
     tiltRef.current?.classList.toggle("on", tilt > 0);
-    if (canvasRef.current) drawStars(canvasRef.current, starsRef.current, t, camRef.current);
+    if (canvasRef.current)
+      drawStars(canvasRef.current, starsRef.current, t, camRef.current, overlayRef.current !== "sectors");
   }, []);
 
   /** Queues a paint and marks the map as moving, which drops the glow filters until it settles. */
@@ -816,8 +825,9 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
   }, [loaded]);
 
   useEffect(() => {
-    if (canvasRef.current) drawStars(canvasRef.current, stars, transformRef.current, camRef.current);
-  }, [stars]);
+    if (canvasRef.current)
+      drawStars(canvasRef.current, stars, transformRef.current, camRef.current, overlay !== "sectors");
+  }, [stars, overlay]);
   useEffect(() => {
     if (svgRef.current) scaleHatches(svgRef.current, transformRef.current.k);
   }, [overlay, fresh]);
@@ -896,8 +906,15 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
   };
   const onPointerMove = (e: ReactPointerEvent<SVGSVGElement>) => {
     const d = drag.current;
-    if (!d) return;
-    setCamera({ rot: d.cam.rot + (e.clientX - d.x) * DRAG_ROT, tilt: d.cam.tilt - (e.clientY - d.y) * DRAG_TILT });
+    if (d) {
+      setCamera({ rot: d.cam.rot + (e.clientX - d.x) * DRAG_ROT, tilt: d.cam.tilt - (e.clientY - d.y) * DRAG_TILT });
+      return;
+    }
+    if (!geo || e.buttons) return;
+    const box = e.currentTarget.getBoundingClientRect();
+    const at = transformRef.current.invert([e.clientX - box.left, e.clientY - box.top]) as Pt;
+    const [x, y] = fromLayer(at, camRef.current);
+    hoverSector(sectorAt(geo, x / GALAXY_SCALE, -y / GALAXY_SCALE));
   };
   const endDrag = () => (drag.current = null);
 
@@ -921,14 +938,15 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
         onContextMenu={(e) => e.preventDefault()}
         onPointerLeave={() => {
           setHover(null);
-          onHoverSector?.(null);
+          hoverSector(null);
         }}
       >
         <HaloDefs />
         <g ref={layerRef}>
           {overlay === "regions" && <Regions planets={fresh} glow={glow} />}
-          {overlay === "sectors" && <SectorGrid planets={fresh} glow={glow} onHover={onHoverSector} />}
+          {overlay === "sectors" && geo && <SectorGrid geo={geo} planets={fresh} />}
           <Lanes planets={fresh} mode={overlay === "sectors" ? "front" : overlay === "galaxy" ? "bright" : "dim"} />
+          <FactionMarks planets={fresh} overlay={overlay} geo={geo} />
           <AttackLines planets={fresh} active={active} />
           <PlanetLayer
             planets={fresh}
@@ -940,14 +958,12 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (p: Planet | null
             glow={glow}
             onOpen={onOpen}
             onHover={setHover}
-            onHoverSector={onHoverSector}
           />
         </g>
       </svg>
       <div className="map-rail">
         <HudButton icon={ZoomIn} label="Zoom in" keyHint="+" onClick={() => zoomBy(1.5)} />
         <HudButton icon={ZoomOut} label="Zoom out" keyHint="-" onClick={() => zoomBy(1 / 1.5)} />
-        <HudButton icon={Maximize} label="Fit galaxy" keyHint="0" onClick={fit} />
         <button
           ref={compassRef}
           className="hud-btn icon map-compass"

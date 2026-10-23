@@ -15,7 +15,7 @@ Supabase; the app reads from Supabase and never calls the API itself.
 | war, assignments | 1 min  | `war`, `assignments` snapshots                                         |
 | dispatches       | 5 min  | `dispatches` snapshot (newest 50), only when there's a new one         |
 | stations         | 2 min  | `space_stations` snapshot                                              |
-| episodes         | 15 min | `episodes` snapshot (story campaigns, from the official game API)      |
+| episodes         | 15 min | `episodes` snapshot (Galactic Campaigns from the official game API)    |
 | compact          | 1 hour | thins samples older than 48 h to one per 15 min                        |
 
 ## Setup on a VDS (Docker)
@@ -54,8 +54,11 @@ journalctl -u warroom-collector -f
 
 ## Supabase
 
-The schema is in `supabase/migrations/0001_init.sql`. The secret key bypasses row-level security, so it
+The schema is in `supabase/migrations/`, applied in order. The secret key bypasses row-level security, so it
 only ever lives in `collector/.env` on the server. The app uses the publishable key, which can only read.
+
+The `episodes` snapshot keeps every campaign it has seen, so ended campaigns stay even if the game API stops
+listing them.
 
 On the free plan, the history stays well under the 500 MB limit (about 140 MB a year). Free projects pause
 after a week without activity; a running collector keeps it active.

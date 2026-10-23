@@ -56,7 +56,7 @@ export function CampaignsPage() {
       <div className="page-inner">
         <div className="page-head">
           <div>
-            <h1 className="page-title">Active campaigns</h1>
+            <h1 className="page-title">Active planets</h1>
             <p className="page-sub">
               {fronts.length} fronts · {fmtInt(fronts.reduce((n, f) => n + f.players, 0))} Helldivers deployed
             </p>
@@ -67,7 +67,7 @@ export function CampaignsPage() {
         <Hint id="campaigns">
           Click a card for its options: pin it to the top, show it on the map, or open the planet's full record.
         </Hint>
-        <div className="filter-row" role="toolbar" aria-label="Filter campaigns">
+        <div className="filter-row" role="toolbar" aria-label="Filter active planets">
           {options
             .filter((o) => o.n > 0 || o.id === "all" || o.id === filter)
             .map((o) => (
@@ -82,9 +82,9 @@ export function CampaignsPage() {
             ))}
         </div>
         {loading ? (
-          <Loading what="campaign data" rows={4} />
+          <Loading what="active planets" rows={4} />
         ) : shown.length === 0 ? (
-          <Empty>No campaigns match this filter.</Empty>
+          <Empty>No active planets match this filter.</Empty>
         ) : (
           <div className="cc-grid">
             {shown.map((f) => (

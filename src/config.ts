@@ -1,5 +1,5 @@
 export const APP_NAME = "WarCommand Tracker";
-export const APP_VERSION = "0.2.5";
+export const APP_VERSION = "0.2.6";
 
 // The app only reads from Supabase; the collector (collector/) is what calls the Helldivers API.
 // The publishable key is safe to ship: row-level security makes it read-only.

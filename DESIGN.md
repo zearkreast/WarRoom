@@ -138,7 +138,7 @@ components:
 
 ## Overview
 
-A war table read off a Super Destroyer's HUD. The layout: a top bar with News and Overview, a status strip, a three-tab dock (Galaxy map, Campaigns, Hellpad), campaign cards, a planet detail. Every surface speaks one war-map language: near-black void, hairline borders, square corners, uppercase labels with wide tracking, one hot yellow, and faction colour carrying identity. The Hellpad's planet index and the planet detail use sectioned panels in this same skin.
+A war table read off a Super Destroyer's HUD. The layout: a top bar with News and Overview, a status strip, a three-tab dock (Galaxy map, Active planets, Hellpad), active-planet cards, a planet detail. Every surface speaks one war-map language: near-black void, hairline borders, square corners, uppercase labels with wide tracking, one hot yellow, and faction colour carrying identity. The Hellpad's planet index and the planet detail use sectioned panels in this same skin.
 
 It is an Operate surface: people glance at it on a second screen mid-game. Density is high, controls are standard (buttons, tabs, selects, steppers), and the world shows up only through type, palette, density and three signature moves: hatch-striped section headers, tick-gapped faction meters, and the glowing Regions map.
 
@@ -167,7 +167,7 @@ Two faces. **Archivo Variable at width 125, weight 800** (a free, wide display f
 
 - App shell grid: top bar 52px, status strip 26px, content, dock 60px (64px on phones).
 - Pages: `page-inner`, max 1180px, 24px top padding, 16px gaps between panels. The Overview is the exception: from 1280px it is a full-viewport board of three columns that scroll on their own; below that it flows like a page.
-- Card grids use `auto-fill` with a min track (340px campaigns, 380px planet rows, 320px tiles) so they collapse to one column on phones without breakpoints.
+- Card grids use `auto-fill` with a min track (340px active planets, 380px planet rows, 320px tiles) so they collapse to one column on phones without breakpoints.
 - Breakpoints: 860px (two-column layouts stack, heroes stack sphere-first), 760px (dock compacts, keyboard hints hidden, map HUD rearranges).
 - Spacing comes from the 2px-based scale `s1..s8`; panel bodies pad 12px 16px.
 
@@ -183,8 +183,9 @@ Square everywhere (`rounded.none`). Circles appear only for things that are roun
 
 - **Panel**: surface-1, hairline border, header strip with an icon box and a hatch band tinted by `--tone` (Super Earth blue by default; CTA yellow only on Major Order panels). Title in Archivo; right slot for counts and timers.
 - **Meter**: 7px (14px large, 3px inline) bar, fill masked into 4px segments with 1px gaps and a soft glow; remainder hatched in the enemy colour; optional white marker for the projected end result; chevron variant for the big liberation bars.
-- **Campaign card**: type and ETA above; faction-tinted header with emblem, name and sector; biome-tinted art band with MO/DSS badges and hazard discs; large meter; outlook row; four-cell footer (player share, players, Helldiver impact, enemy regen).
+- **Active-planet card**: type and ETA above; faction-tinted header with emblem, name and sector; biome-tinted art band with MO/DSS badges and hazard discs; large meter; outlook row; four-cell footer (player share, players, Helldiver impact, enemy regen).
 - **Planet row** (Hellpad planet index): 64px, emblem, name, status line, icons and a player pill on a biome-tinted ground; active fronts carry a 2px progress line along the bottom.
+- **Galactic Campaign**: emblem and name in the campaign's faction colour, dates and an outcome chip; the campaign reward in a raised box (struck through when lost); the Major Orders as folded rows with outcome chips, opening onto their briefings. The same block fills the Overview panel and each Past campaigns entry.
 - **Radial options**: circular glass menu with four options (pin, details, show on map, space station) around a close hub.
 - **Overlay**: full-viewport planet detail on grid paper with an ESC key button in a fixed footer.
 - **Keycap / KeyButton**: white keycap chip before an uppercase label (ESC CLOSE, H CONTROLS, Z DISPATCHES).

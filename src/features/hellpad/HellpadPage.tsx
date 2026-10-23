@@ -1,9 +1,20 @@
-import { BookOpen, ChevronRight, Globe2, History, Lock, Rocket, Satellite, type LucideIcon } from "lucide-react";
-import { useSpaceStations } from "../../api/queries";
+import {
+  Archive,
+  BookOpen,
+  ChevronRight,
+  Globe2,
+  History,
+  Lock,
+  Rocket,
+  Satellite,
+  type LucideIcon,
+} from "lucide-react";
+import { useEpisodes, useSpaceStations } from "../../api/queries";
 import { useHistory } from "../../history/useHistory";
 import { useUi, type HellpadModule } from "../../state";
 import { Hint } from "../../ui/Hint";
-import { AboutModule, GwwModule, LegendModule } from "./GwwModule";
+import { GwwModule, LegendModule } from "./GwwModule";
+import { PastCampaignsModule } from "./PastCampaignsModule";
 import { PlanetsModule } from "./PlanetsModule";
 import { StationsModule } from "./StationsModule";
 import "./hellpad.css";
@@ -12,7 +23,7 @@ const TITLES: Record<HellpadModule, string> = {
   planets: "Planets",
   stations: "Space stations",
   gww: "G.W.W.",
-  about: "About",
+  campaigns: "Past campaigns",
   legend: "Icons legend",
 };
 
@@ -56,13 +67,14 @@ function Hub() {
   const openModule = useUi((s) => s.openModule);
   const stations = useSpaceStations().data;
   const changes = useHistory((s) => s.changes);
+  const ended = useEpisodes().data?.filter((e) => e.status !== "active").length;
   return (
     <>
       <div className="page-head">
         <div>
           <h1 className="page-title">Hellpad</h1>
           <p className="page-sub">
-            Field modules for planning: the planet index, the Democracy Space Station and the war archive.
+            Field modules for planning: the planet index, the Democracy Space Station and the war archives.
           </p>
         </div>
       </div>
@@ -88,6 +100,13 @@ function Hub() {
           text="Galactic war log: every planet that changed hands."
           meta={changes.length ? `${changes.length} records` : "Open"}
           onClick={() => openModule("gww")}
+        />
+        <Tile
+          icon={Archive}
+          title="Past campaigns"
+          text="Every Galactic Campaign that has ended: its Major Orders, outcome and reward."
+          meta={ended ? `${ended} campaigns` : "Open"}
+          onClick={() => openModule("campaigns")}
         />
         <Tile
           icon={BookOpen}
@@ -121,7 +140,7 @@ export function HellpadPage() {
         {module === "planets" && <PlanetsModule />}
         {module === "stations" && <StationsModule />}
         {module === "gww" && <GwwModule />}
-        {module === "about" && <AboutModule />}
+        {module === "campaigns" && <PastCampaignsModule />}
         {module === "legend" && <LegendModule />}
       </div>
     </div>

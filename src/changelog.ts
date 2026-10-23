@@ -7,6 +7,22 @@ export interface ChangelogEntry {
 /** Newest first. Shown in the Tracker Dispatch panel. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.6",
+    date: "2026-10-24",
+    items: [
+      "Galactic Campaigns as the game runs them: the Overview shows the current one with its Major Orders, outcome so far and campaign reward; between campaigns, the last one and how it ended.",
+      "Hellpad: Past campaigns, every ended campaign with its Major Orders, briefings, result and reward. A campaign moves there as soon as it ends.",
+      "Strohmann News: campaign launches, new Major Orders and results, with their own Campaign filter.",
+      "Campaigns is now Active planets. Its Major Order strip folds away and remembers how you left it.",
+      "Map: sector shapes rebuilt so shared borders line up from ring to ring; hovering anywhere outlines that sector in every overlay and on the Theater of War.",
+      "Map: Meridia counts under Celeste, and Sangis and Alderidge Cove sit where the game moved them, so Umlaut, Guang and Omega are drawn whole.",
+      "Map: see-through faction emblems instead of names, on each enemy's largest holding in every overlay; a calmer Sectors overlay, and themed tags on active planets. The controls panel starts closed; the control bar and the Fit galaxy button are gone (0 still fits the galaxy).",
+      "War activity charts the last 24 hours straight away, or everything since the last gap in the data.",
+      "The status strip scrolls the last day's news, captures and losses; it pauses under the pointer and each item opens its source.",
+      "About opens over the current page.",
+    ],
+  },
+  {
     version: "0.2.5",
     date: "2026-10-23",
     items: [

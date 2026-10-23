@@ -1,18 +1,14 @@
 import { ArrowUpRight, Map as MapIcon } from "lucide-react";
-import { useEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
-import { useFreshPlanets } from "../../api/queries";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
+import { useFreshPlanets, useSectorGeometry } from "../../api/queries";
 import type { Faction } from "../../api/types";
-import {
-  buildPolarSectors,
-  GALAXY_SCALE,
-  project,
-  RING_RADII,
-  sectorTerritory,
-  supplyLines,
-} from "../../domain/galaxy";
-import { byIndex } from "../../domain/planets";
+import { factionColor } from "../../domain/factions";
+import { factionMarks } from "../../domain/factionMarks";
+import { project, sectorTerritory, supplyLines } from "../../domain/galaxy";
+import { byIndex, ownershipKey } from "../../domain/planets";
 import { buildRegions } from "../../domain/regions";
 import { useSettings, useUi } from "../../state";
+import { EMBLEM_PATHS } from "../../ui/emblems";
 import { Panel } from "../../ui/primitives";
 import { CHART } from "./WarActivity";
 
@@ -20,8 +16,8 @@ const SPIN_DEG_PER_S = 4;
 const DRAG_DEG_PER_PX = 0.35;
 const KEY_STEP_DEG = 10;
 const ORDER: Faction[] = ["Humans", "Terminids", "Illuminate", "Automaton"];
-
-const RIM = RING_RADII[RING_RADII.length - 1] * GALAXY_SCALE;
+/** The stage tilts the disc by 56°; emblems are stretched back by 1/cos(56°) to keep their shape. */
+const UNSQUASH = 1 / Math.cos((56 * Math.PI) / 180);
 
 interface OwnerGroup {
   owner: Faction;
@@ -32,10 +28,13 @@ interface OwnerGroup {
 /** The galaxy disc seen at an angle, drawn like the map's chosen overlay; it turns slowly and can be dragged round. */
 export function TheaterOfWar() {
   const planets = useFreshPlanets().data;
+  const geo = useSectorGeometry().data;
   const overlay = useSettings((s) => s.mapOverlay);
   const setView = useUi((s) => s.setView);
+  const [sector, setSector] = useState<string | null>(null);
+  const owners = planets ? ownershipKey(planets) : "";
   const byOwner = useMemo((): OwnerGroup[] => {
-    if (!planets || overlay === "galaxy") return [];
+    if (!planets || !geo || overlay === "galaxy") return [];
     if (overlay === "regions")
       return buildRegions(planets)
         .map((r) => ({ owner: r.owner, held: true, paths: [r.path] }))
@@ -43,7 +42,7 @@ export function TheaterOfWar() {
     // Ring sectors: enemy sectors are solid where held outright, dimmer where contested.
     const territory = sectorTerritory(planets);
     const groups = new Map<string, { owner: Faction; held: boolean; paths: string[] }>();
-    for (const [name, path] of buildPolarSectors(planets).fills) {
+    for (const [name, path] of geo.fills) {
       const t = territory.get(name);
       const owner = t?.faction ?? "Humans";
       const key = `${owner}-${t?.held ?? true}`;
@@ -52,7 +51,10 @@ export function TheaterOfWar() {
       groups.set(key, g);
     }
     return [...groups.values()].sort((a, b) => ORDER.indexOf(a.owner) - ORDER.indexOf(b.owner));
-  }, [planets, overlay]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [owners, geo, overlay]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const marks = useMemo(() => (planets ? factionMarks(planets, overlay, geo) : []), [owners, overlay, geo]);
   const lanes = useMemo(() => {
     if (!planets || overlay !== "galaxy") return "";
     const lookup = byIndex(planets);
@@ -66,7 +68,9 @@ export function TheaterOfWar() {
         return [`M${x1.toFixed(1)},${y1.toFixed(1)}L${x2.toFixed(1)},${y2.toFixed(1)}`];
       })
       .join("");
-  }, [planets, overlay]);
+    // Lanes follow the static waypoints.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geo, overlay]);
 
   const stage = useRef<HTMLDivElement>(null);
   const disc = useRef<SVGGElement>(null);
@@ -75,6 +79,7 @@ export function TheaterOfWar() {
   const turn = (deg: number) => {
     angle.current = (deg + 360) % 360;
     disc.current?.setAttribute("transform", `rotate(${angle.current.toFixed(2)})`);
+    disc.current?.style.setProperty("--unrot", `${(-angle.current).toFixed(2)}deg`);
   };
 
   useEffect(() => {
@@ -98,7 +103,7 @@ export function TheaterOfWar() {
     };
   }, [planets != null]);
 
-  if (!planets) return null;
+  if (!planets || !geo) return null;
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -139,6 +144,7 @@ export function TheaterOfWar() {
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
+        onPointerLeave={() => setSector(null)}
         onKeyDown={onKeyDown}
       >
         <svg viewBox="-560 -560 1120 1120" aria-hidden>
@@ -146,7 +152,7 @@ export function TheaterOfWar() {
           <g ref={disc}>
             {overlay !== "sectors" && (
               <g className="tw-owner se" style={{ "--c": CHART.Humans } as CSSProperties}>
-                <circle r={RIM} />
+                <circle r={geo.rim} />
               </g>
             )}
             {lanes && <path d={lanes} className="tw-lanes" />}
@@ -159,13 +165,31 @@ export function TheaterOfWar() {
                 <path d={g.paths.join("")} />
               </g>
             ))}
+            <g className="tw-hits">
+              {[...geo.fills].map(([name, d]) => (
+                <path key={name} d={d} onPointerEnter={() => setSector(name)} />
+              ))}
+            </g>
+            {marks.map((m) => (
+              <g key={m.faction} transform={`translate(${m.x.toFixed(1)},${m.y.toFixed(1)})`}>
+                <g className="tw-mark" style={{ "--unsquash": UNSQUASH } as CSSProperties}>
+                  <path
+                    d={EMBLEM_PATHS[m.faction]}
+                    transform="translate(-42,-42) scale(3.5)"
+                    fill={factionColor(m.faction)}
+                    color={factionColor(m.faction)}
+                    fillRule="evenodd"
+                  />
+                </g>
+              </g>
+            ))}
             <line x1={0} y1={-545} x2={0} y2={-470} className="tw-tick" />
           </g>
           <circle r={70} className="tw-core-glow" />
           <circle r={36} className="tw-core-ring" />
           <circle r={12} className="tw-core" />
         </svg>
-        <span className="tw-hint caps">Drag to rotate</span>
+        <span className="tw-hint caps">{sector ? `${sector} sector` : "Drag to rotate"}</span>
       </div>
     </Panel>
   );
