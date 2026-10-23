@@ -41,11 +41,22 @@
 .tf-contested {
   stroke: none;
 }
-.territory.regions .tf-held {
-  fill-opacity: 0.08;
+.region-line {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
-.territory.regions .tf-contested {
-  fill-opacity: 0.03;
+.region-glow {
+  fill: none;
+  stroke-width: 9;
+  stroke-opacity: 0.16;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.q-max .region-glow {
+  stroke-width: 12;
+  stroke-opacity: 0.2;
 }
 .tf-front {
   fill: none;

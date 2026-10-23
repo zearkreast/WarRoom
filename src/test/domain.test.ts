@@ -3,6 +3,7 @@ import type { Assignment, Planet } from "../api/types";
 import { anomalyOf, buildPolarSectors, humanControl, sectorAt, sectorTerritory, supplyLines } from "../domain/galaxy";
 import { recentDispatches } from "../domain/dispatch";
 import { isPlaceholder } from "../domain/planets";
+import { chaikin } from "../domain/regions";
 import { describeAssignment } from "../domain/majorOrder";
 import { parseMarkup, dispatchTitle, fmtDuration } from "../domain/format";
 import {
@@ -141,6 +142,19 @@ describe("galaxy geometry", () => {
     expect(anomalyOf({ name: "MERIDIA" })).toBe("wormhole");
     expect(anomalyOf({ name: "Penta" })).toBe("blackhole");
     expect(anomalyOf({ name: "FURY" })).toBeUndefined();
+  });
+
+  it("chaikin doubles the points each pass", () => {
+    expect(
+      chaikin(
+        [
+          [0, 0],
+          [1, 0],
+          [1, 1],
+        ],
+        2,
+      ),
+    ).toHaveLength(12);
   });
 
   it("drops placeholder worlds stacked on Super Earth", () => {

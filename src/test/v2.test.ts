@@ -5,6 +5,7 @@ import { dispatchBody, dispatchKind } from "../domain/dispatch";
 import { busiestPlanets, parseCommunityPlanets, superEarthPlanets } from "../domain/factionPlanets";
 import { sestDate, warDay } from "../domain/format";
 import { sectorTerritory } from "../domain/galaxy";
+import { buildRegions } from "../domain/regions";
 import { controlShares, groupBySector, matchesFilter, matchesSearch } from "../domain/planetIndex";
 import { playersByEnemy, toLive, toPlanet, toStatic, toWarSample } from "../domain/snapshot";
 import { buildWarHistory, defenseEvents, fmtLongDuration } from "../domain/warHistory";
@@ -74,6 +75,17 @@ describe("war history", () => {
     expect(fmtLongDuration(3_551_077_816)).toMatch(/^1C 12Y/);
     expect(fmtLongDuration(12 * 3600)).toBe("12H");
     expect(fmtLongDuration(0)).toBe("0H");
+  });
+});
+
+describe("map regions", () => {
+  it("outlines enemy territory only, one or more loops per enemy faction", () => {
+    const regions = buildRegions(planets);
+    const owners = new Set(regions.map((r) => r.owner));
+    expect(owners.has("Humans")).toBe(false);
+    for (const r of regions) expect(r.path.startsWith("M")).toBe(true);
+    const enemies = new Set(planets.filter((p) => p.currentOwner !== "Humans").map((p) => p.currentOwner));
+    expect(owners).toEqual(enemies);
   });
 });
 
