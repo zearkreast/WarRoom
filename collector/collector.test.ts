@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import type { Campaign, Planet } from "../src/api/types.ts";
-import { toCampaignLive, toEpisodes, toLive, toPlanet, toStatic } from "../src/domain/snapshot.ts";
+import type { Campaign, EpisodeRaw, Planet } from "../src/api/types.ts";
+import {
+  campaignTally,
+  mergeEpisodes,
+  toCampaignLive,
+  toEpisodes,
+  toLive,
+  toPlanet,
+  toStatic,
+} from "../src/domain/snapshot.ts";
+import episodesJson from "../src/test/fixtures/episodes.json";
 import planetsJson from "../src/test/fixtures/planets.json";
 import campaignsJson from "../src/test/fixtures/campaigns.json";
 import warJson from "../src/test/fixtures/war.json";
@@ -181,41 +190,106 @@ describe("collector cycle", () => {
   });
 });
 
-describe("story campaigns", () => {
+describe("galactic campaigns", () => {
   const raw = [
     {
       id32: 1,
       title: "OLD",
       description: "",
+      race: 4,
       status: 3,
       startWarTime: 1_000,
       endWarTime: 2_000,
-      phases: [{ introTitle: "A", introMessage: "", status: 3, rewards: [] }],
-      rewards: [],
+      phases: [{ introTitle: "A", introMessage: "", outroMessage: "lost", status: 3, rewards: [] }],
+      rewards: [{ mixId: 7, amount: 1 }],
     },
     {
       id32: 2,
       title: "NOW",
       description: "d",
+      race: 1,
       status: 0,
       startWarTime: 9_000,
       phases: [{ introTitle: "B", introMessage: "brief", status: 0, rewards: [{ mixId: 897894480, amount: 40 }] }],
       rewards: [],
     },
   ];
+  const episodesTask = (db: ReturnType<typeof fakeSupabase>["db"], list: unknown, at = 50_000_000) =>
+    createTasks(
+      fakeHd2(api),
+      db,
+      new Recorder(db),
+      () => at,
+      fakeHd2({ WarID: { id: 801 }, "801": { episodes: list }, Status: { time: 10_000 } }),
+    ).find((x) => x.name === "episodes")!;
 
-  it("dates war-second timestamps against the war clock and maps outcomes", () => {
+  it("dates war-second timestamps against the war clock and maps outcomes, faction and reward", () => {
     const [old, now] = toEpisodes(raw, 10_000, 50_000_000);
-    expect(old).toMatchObject({ status: "lost", start: 50_000_000 - 9_000_000, end: 50_000_000 - 8_000_000 });
-    expect(now).toMatchObject({ status: "active", end: null, phases: [{ title: "B", status: "active", medals: 40 }] });
+    expect(old).toMatchObject({
+      status: "lost",
+      faction: "Illuminate",
+      reward: 7,
+      start: 50_000_000 - 9_000_000,
+      end: 50_000_000 - 8_000_000,
+      phases: [{ outro: "lost", issued: 50_000_000 - 9_000_000 }],
+    });
+    expect(now).toMatchObject({
+      status: "active",
+      faction: "Humans",
+      end: null,
+      reward: null,
+      phases: [{ title: "B", status: "active", medals: 40 }],
+    });
+  });
+
+  it("maps the live API's campaigns: won by majority, lost by majority", () => {
+    const { episodes, warTime, fetchedAt } = episodesJson as {
+      episodes: EpisodeRaw[];
+      warTime: number;
+      fetchedAt: number;
+    };
+    const list = toEpisodes(episodes, warTime, fetchedAt);
+    for (const e of list.filter((x) => x.status !== "active")) {
+      const t = campaignTally(e);
+      expect(e.status).toBe(t.won > t.lost ? "won" : "lost");
+    }
+    expect(list.find((e) => e.title === "BLAZING ELECTORATE")?.status).toBe("lost");
+    expect(list.every((e) => e.reward != null)).toBe(true);
+  });
+
+  it("keeps campaigns the game stops listing and stamps new Major Orders when they appear", () => {
+    const stored = toEpisodes(raw, 10_000, 50_000_000);
+    const next = toEpisodes(
+      [
+        {
+          ...raw[1],
+          phases: [...raw[1].phases, { introTitle: "C", introMessage: "", status: 0, rewards: [] }],
+        },
+      ],
+      20_000,
+      60_000_123,
+    );
+    const merged = mergeEpisodes(stored, next, 60_000_123);
+    expect(merged.map((e) => e.id)).toEqual([1, 2]);
+    expect(merged[1].start).toBe(stored[1].start);
+    expect(merged[1].phases.map((p) => p.issued)).toEqual([stored[1].start, 60_000_123]);
+    // Nothing stored yet: orders after the first predate the collector, so their date is unknown.
+    expect(mergeEpisodes([], next, 1)[0].phases[1].issued).toBeNull();
+  });
+
+  it("reads the stored archive once, then writes only when something changed", async () => {
+    const stored = toEpisodes(raw, 10_000, 50_000_000);
+    const { db, calls } = fakeSupabase({ snapshots: [{ data: stored }] });
+    const t = episodesTask(db, raw);
+    expect((await runTask(t)).message).toBe("unchanged, 1 active");
+    expect((await runTask(t)).message).toBe("unchanged, 1 active");
+    expect(calls.filter((c) => c.method === "GET")).toHaveLength(1);
+    expect(calls.some((c) => c.method === "POST")).toBe(false);
   });
 
   it("writes an episodes snapshot only when the game API client is given", async () => {
     const { db, calls } = fakeSupabase();
-    const game = fakeHd2({ WarID: { id: 801 }, "801": { episodes: raw }, Status: { time: 10_000 } });
-    const tasks = createTasks(fakeHd2(api), db, new Recorder(db), () => 50_000_000, game);
-    const t = tasks.find((x) => x.name === "episodes")!;
-    expect((await runTask(t)).message).toBe("2 campaigns, 1 active");
+    expect((await runTask(episodesTask(db, raw))).message).toBe("2 campaigns, 1 active");
     expect(calls.some((c) => c.path === "snapshots" && (c.body as { kind: string }[])[0].kind === "episodes")).toBe(
       true,
     );

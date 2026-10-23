@@ -1,6 +1,6 @@
 import { PieChart as PieIcon, Users } from "lucide-react";
 import { useMemo, useState, type CSSProperties } from "react";
-import { useCampaigns, useDispatches, useFreshPlanets, useWar } from "../../api/queries";
+import { useCampaigns, useFreshPlanets, useWar } from "../../api/queries";
 import type { Faction } from "../../api/types";
 import { LIST_SIZE } from "../../domain/factionPlanets";
 import { factionLabel } from "../../domain/factions";
@@ -11,9 +11,8 @@ import { FactionEmblem } from "../../ui/emblems";
 import { NeonRing } from "../../ui/NeonRing";
 import { PointerCard, pointerAt, type CardRow, type PointerAt } from "../../ui/PointerCard";
 import { Panel, Tile, useNow } from "../../ui/primitives";
+import { CampaignPanel } from "../galactic-campaigns/Campaign";
 import { MajorOrderList } from "../major-order/MajorOrder";
-import { NewsCard } from "../news/NewsCard";
-import { ActiveCampaign } from "./ActiveCampaign";
 import { TheaterOfWar } from "./TheaterOfWar";
 import { CHART, ENEMIES, WarActivity } from "./WarActivity";
 import "./overview.css";
@@ -258,9 +257,6 @@ function Distribution() {
 }
 
 export function OverviewPage() {
-  const dispatches = useDispatches().data;
-  const now = useNow(60_000);
-  const latest = useMemo(() => [...(dispatches ?? [])].sort((a, b) => b.id - a.id)[0], [dispatches]);
   return (
     <div className="page ov-page starfield">
       <h1 className="sr-only">High Command overview</h1>
@@ -274,8 +270,7 @@ export function OverviewPage() {
         </div>
         <div className="ov-col ov-col-right">
           <MajorOrderList />
-          <ActiveCampaign />
-          {latest && <NewsCard d={latest} now={now} />}
+          <CampaignPanel />
         </div>
       </div>
     </div>

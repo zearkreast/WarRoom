@@ -110,51 +110,101 @@ export function sectorAt(geo: PolarSectors, x: number, y: number): string | null
   return ring ? runAt(ring, Math.atan2(y, x)) : null;
 }
 
-export function buildPolarSectors(planets: Planet[]): PolarSectors {
+type SectorPlanet = Pick<Planet, "index" | "sector" | "position">;
+
+interface Group {
+  s: string;
+  /** Angles of the run's first and last planet; `first` may be below 0 for the run that wraps past 0. */
+  first: number;
+  last: number;
+}
+
+/** A ring's planets in angle order, consecutive planets of one sector grouped; null for an empty ring. */
+function ringGroups(pins: { s: string; a: number; ring: number }[], i: number): Group[] | null {
+  const inRing = pins.filter((p) => p.ring === i).sort((x, y) => x.a - y.a);
+  if (!inRing.length) return null;
+  const groups: Group[] = [];
+  for (const p of inRing) {
+    const g = groups[groups.length - 1];
+    if (g && g.s === p.s) g.last = p.a;
+    else groups.push({ s: p.s, first: p.a, last: p.a });
+  }
+  if (groups.length > 1 && groups[0].s === groups[groups.length - 1].s) {
+    const tail = groups.pop()!;
+    groups[0].first = tail.first - TAU;
+  }
+  return groups;
+}
+
+/** Ring a galaxy radius falls in, from 1 (just outside the core) to the outermost. */
+function ringIndex(r: number): number {
+  const i = RING_RADII.findIndex((R) => r < R);
+  return i < 0 ? RINGS - 1 : Math.max(1, i);
+}
+
+/**
+ * Sector shapes from planet positions alone, as the game doesn't publish them. Where two sectors meet
+ * in several rings they share one boundary angle wherever their planets allow, so sectors come out as
+ * the game's stepped blocks rather than a zigzag that shifts from ring to ring.
+ */
+export function buildPolarSectors(planets: SectorPlanet[]): PolarSectors {
   const home = planets.find((p) => p.index === 0)?.sector ?? "Sol";
   const rings: PolarRing[] = [{ r0: 0, r1: RING_RADII[0], runs: [{ sector: home, a0: 0, a1: TAU }] }];
+  const pins = planets
+    .filter((p) => p.index !== 0)
+    .map((p) => ({
+      s: p.sector,
+      a: norm(Math.atan2(p.position.y, p.position.x)),
+      ring: ringIndex(Math.hypot(p.position.x, p.position.y)),
+    }));
+  const perRing = Array.from({ length: RINGS }, (_, i) => (i === 0 ? null : ringGroups(pins, i)));
+
+  // Each pair's gap between its planets, over every ring where the two meet, in the first ring's angle frame.
+  const pairs = new Map<string, { ref: number; last: number; first: number }>();
+  const bound = (groups: Group[], k: number) => {
+    const prev = groups[(k - 1 + groups.length) % groups.length];
+    const last = k === 0 ? prev.last - TAU : prev.last;
+    return { key: `${prev.s}|${groups[k].s}`, last, first: groups[k].first };
+  };
+  const shiftTo = (ref: number, a: number) => Math.round((ref - a) / TAU) * TAU;
+  for (const groups of perRing) {
+    if (!groups || groups.length < 2) continue;
+    groups.forEach((_, k) => {
+      const { key, last, first } = bound(groups, k);
+      const p = pairs.get(key);
+      if (!p) return void pairs.set(key, { ref: (last + first) / 2, last, first });
+      const shift = shiftTo(p.ref, (last + first) / 2);
+      p.last = Math.max(p.last, last + shift);
+      p.first = Math.min(p.first, first + shift);
+    });
+  }
 
   for (let i = 1; i < RINGS; i++) {
+    const groups = perRing[i];
     const [r0, r1] = [RING_RADII[i - 1], RING_RADII[i]];
-    const inRing = planets
-      .filter((p) => p.index !== 0)
-      .map((p) => ({
-        s: p.sector,
-        r: Math.hypot(p.position.x, p.position.y),
-        a: norm(Math.atan2(p.position.y, p.position.x)),
-      }))
-      .filter((p) => p.r >= r0 && p.r < r1)
-      .sort((x, y) => x.a - y.a);
-    if (!inRing.length) {
+    if (!groups) {
       rings.push({ r0, r1, runs: rings[i - 1].runs });
       continue;
-    }
-    // Consecutive planets of one sector form a run; a boundary falls halfway between neighbouring runs.
-    const groups: { s: string; first: number; last: number }[] = [];
-    for (const p of inRing) {
-      const g = groups[groups.length - 1];
-      if (g && g.s === p.s) g.last = p.a;
-      else groups.push({ s: p.s, first: p.a, last: p.a });
-    }
-    if (groups.length > 1 && groups[0].s === groups[groups.length - 1].s) {
-      const tail = groups.pop()!;
-      groups[0].first = tail.first - TAU;
     }
     if (groups.length === 1) {
       rings.push({ r0, r1, runs: [{ sector: groups[0].s, a0: 0, a1: TAU }] });
       continue;
     }
-    const cuts = groups.map((g, k) => {
-      const prev = groups[(k - 1 + groups.length) % groups.length];
-      const prevLast = k === 0 ? prev.last - TAU : prev.last;
-      return (prevLast + g.first) / 2;
+    const cuts = groups.map((_, k) => {
+      const { key, last, first } = bound(groups, k);
+      const p = pairs.get(key)!;
+      if (p.last >= p.first) return (last + first) / 2;
+      return (p.last + p.first) / 2 - shiftTo(p.ref, (last + first) / 2);
     });
-    const runs = groups.map((g, k) => ({
-      sector: g.s,
-      a0: cuts[k],
-      a1: k + 1 < groups.length ? cuts[k + 1] : cuts[0] + TAU,
-    }));
-    rings.push({ r0, r1, runs });
+    rings.push({
+      r0,
+      r1,
+      runs: groups.map((g, k) => ({
+        sector: g.s,
+        a0: cuts[k],
+        a1: k + 1 < groups.length ? cuts[k + 1] : cuts[0] + TAU,
+      })),
+    });
   }
 
   const parts = new Map<string, string[]>();
@@ -228,43 +278,6 @@ export function sectorTerritory(planets: Planet[]): Map<string, Territory | null
       return [s, faction ? { faction, held: list.every((p) => p.currentOwner === faction) } : null];
     }),
   );
-}
-
-const LABEL_HALF_ARC = 0.55;
-
-/** One arc per enemy for naming its territory just outside its outermost runs, reading left to right on either half of the disc. */
-export function territoryLabels(
-  geo: PolarSectors,
-  territory: Map<string, Territory | null>,
-): { faction: Faction; d: string }[] {
-  const of = (s: string) => territory.get(s)?.faction;
-  const factions = new Set([...territory.values()].flatMap((t) => (t ? [t.faction] : [])));
-  return [...factions].flatMap((f) => {
-    let ringIndex = -1;
-    geo.rings.forEach((ring, i) => {
-      if (ring.runs.some((run) => of(run.sector) === f)) ringIndex = i;
-    });
-    if (ringIndex < 1) return [];
-    const { runs, r1 } = geo.rings[ringIndex];
-    // Widest stretch of neighbouring runs held by this enemy.
-    let best = { from: 0, to: 0 };
-    for (let k = 0; k < runs.length; k++) {
-      if (of(runs[k].sector) !== f || of(runs[(k - 1 + runs.length) % runs.length].sector) === f) continue;
-      let to = runs[k].a1;
-      for (let j = 1; j < runs.length && of(runs[(k + j) % runs.length].sector) === f; j++)
-        to += runs[(k + j) % runs.length].a1 - runs[(k + j) % runs.length].a0;
-      if (to - runs[k].a0 > best.to - best.from) best = { from: runs[k].a0, to };
-    }
-    if (best.to === best.from) best = { from: 0, to: TAU };
-    const mid = (best.from + best.to) / 2;
-    const r = r1 + 0.035;
-    // Glyphs stand on the path's left side: run clockwise over the top, anticlockwise (and further out) underneath.
-    const d =
-      Math.sin(mid) >= 0
-        ? `M${fmt(polar(r, mid + LABEL_HALF_ARC))}${arcTo(r, mid + LABEL_HALF_ARC, mid - LABEL_HALF_ARC, 1)}`
-        : `M${fmt(polar(r + 0.04, mid - LABEL_HALF_ARC))}${arcTo(r + 0.04, mid - LABEL_HALF_ARC, mid + LABEL_HALF_ARC)}`;
-    return [{ faction: f, d }];
-  });
 }
 
 /** Unique undirected supply-line pairs from planet waypoints. */

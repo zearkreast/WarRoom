@@ -140,28 +140,57 @@
   min-width: 0;
   height: 100%;
   overflow: hidden;
-  background: none;
-  border: 0;
   border-left: 1px solid var(--line);
   border-right: 1px solid var(--line);
-  padding: 0;
-  cursor: pointer;
   color: var(--text);
   mask: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.ticker.still {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--s-5);
+  mask: none;
 }
 .ticker-track {
   display: inline-flex;
   align-items: center;
   height: 100%;
   white-space: nowrap;
-  animation: ticker 90s linear infinite;
-  font-size: var(--fs-label);
-  letter-spacing: 0.12em;
+  animation: ticker 60s linear infinite;
 }
-.ticker:hover .ticker-track {
+.ticker:hover .ticker-track,
+.ticker:focus-within .ticker-track {
   animation-play-state: paused;
 }
-.ticker-item::after {
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ticker-item svg {
+  flex: none;
+  color: var(--text-dim);
+}
+.ticker-item:hover .ticker-text {
+  color: var(--cta);
+}
+.ticker-item.liberated .ticker-text {
+  color: var(--text-hi);
+}
+.ticker-age {
+  color: var(--label);
+}
+.ticker-track .ticker-item::after {
   content: "\\";
   margin: 0 var(--s-6);
   color: var(--faint);
@@ -446,4 +475,27 @@
   .dock-dispatch span {
     display: none;
   }
+}
+
+/* ---------- About ---------- */
+.about-dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - 96px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.about-dialog::backdrop {
+  background: color-mix(in srgb, var(--void) 80%, transparent);
+}
+.about-dialog[open] {
+  animation: overlay-in var(--t-reveal) var(--ease);
+}
+.about-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--s-4);
 }

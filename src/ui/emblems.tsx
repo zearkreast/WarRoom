@@ -1,7 +1,7 @@
 import { factionColor } from "../domain/factions";
 
-// Simple authored marks for each faction (not the game's artwork).
-const PATHS: Record<string, string> = {
+// Simple authored marks for each faction (not the game's artwork), on a 24-unit grid.
+export const EMBLEM_PATHS: Record<string, string> = {
   // A globe inside an orbit ring.
   Humans:
     "M12 6.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Zm0-4.5c6.6 0 11 3.4 11 6.6 0 1.7-1.2 3.2-3.2 4.3a7 7 0 0 0 .2-1.6c0-.3 0-.6-.1-.9 1-.6 1.5-1.2 1.5-1.8 0-2-3.9-4.6-9.4-4.6S2.6 6.6 2.6 8.6c0 .6.5 1.2 1.5 1.8l-.1.9c0 .6.1 1.1.2 1.6C2.2 11.8 1 10.3 1 8.6 1 5.4 5.4 2 12 2Z",
@@ -17,7 +17,7 @@ const PATHS: Record<string, string> = {
 };
 
 export function FactionEmblem({ faction, size = 16, color }: { faction: string; size?: number; color?: string }) {
-  const d = PATHS[faction];
+  const d = EMBLEM_PATHS[faction];
   if (!d) return null;
   return (
     <svg className="emblem" width={size} height={size} viewBox="0 0 24 24" aria-hidden>

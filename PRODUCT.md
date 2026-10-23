@@ -27,7 +27,8 @@ Glanced at on a second monitor or phone during play; opened after an alert (new 
 ## Capabilities and Constraints
 
 - Data: a collector polls api.helldivers2.dev (planets, campaigns, war, assignments, dispatches) into Supabase; the app reads Supabase only. New data types (e.g. space stations) need a collector job and a migration.
-- Views: Campaigns (default), Galaxy Map, Hellpad (Planets, Space Stations, G.W.W./History), High Command Overview, News; settings and alerts.
+- Views: Active planets (default), Galaxy Map, Hellpad (Planets, Space Stations, G.W.W./History, Past campaigns), High Command Overview, News; settings and alerts.
+- Terms: a Galactic Campaign is the game's named arc of Major Orders, won when most of them are; the planets being fought over are active planets (the API calls them campaigns).
 - Terminology follows the game: Major Order, Liberation, Defense, Sector, Supply line, Dispatch, DSS, SEST time, Day N.
 - Not affiliated with Arrowhead Game Studios; no game assets or licensed fonts may be copied.
 - Undecided: Warbonds and Boosters modules (need a static dataset).

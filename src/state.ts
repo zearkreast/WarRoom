@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type View = "campaigns" | "map" | "hellpad" | "overview" | "news" | "settings";
-export type HellpadModule = "planets" | "stations" | "gww" | "about" | "legend";
+export type HellpadModule = "planets" | "stations" | "gww" | "campaigns" | "legend";
 
 /** Where the planet options popover is anchored, in viewport pixels. */
 export interface OptionsAnchor {
@@ -22,6 +22,7 @@ interface UiState {
   detail: number | null;
   options: OptionsAnchor | null;
   dispatchOpen: boolean;
+  aboutOpen: boolean;
   setView(v: View): void;
   openModule(m: HellpadModule | null): void;
   select(planet: number | null): void;
@@ -30,6 +31,7 @@ interface UiState {
   openDetail(planet: number | null): void;
   openOptions(o: OptionsAnchor | null): void;
   toggleDispatch(open?: boolean): void;
+  showAbout(open: boolean): void;
 }
 
 export const useUi = create<UiState>((set) => ({
@@ -40,6 +42,7 @@ export const useUi = create<UiState>((set) => ({
   detail: null,
   options: null,
   dispatchOpen: false,
+  aboutOpen: false,
   setView: (view) => set({ view, options: null, module: null }),
   openModule: (module) => set({ view: "hellpad", module, options: null, detail: null }),
   select: (selectedPlanet) => set({ selectedPlanet }),
@@ -49,6 +52,7 @@ export const useUi = create<UiState>((set) => ({
   openDetail: (detail) => set({ detail, options: null }),
   openOptions: (options) => set({ options }),
   toggleDispatch: (open) => set((s) => ({ dispatchOpen: open ?? !s.dispatchOpen })),
+  showAbout: (aboutOpen) => set({ aboutOpen }),
 }));
 
 export interface AlertSettings {
@@ -73,6 +77,8 @@ interface SettingsState {
   showInactive: boolean;
   /** Whether the Galactic control ring is unfolded on the planet index. */
   planetsControlOpen: boolean;
+  /** Whether the Major Order strip on Active planets is unfolded. */
+  moStripOpen: boolean;
   pinned: number[];
   /** Views whose first-run hint has been dismissed. */
   hintsSeen: string[];
@@ -82,7 +88,16 @@ interface SettingsState {
   /** App version whose changelog the user has opened. */
   seenChangelog: string;
   setAlert(k: keyof AlertSettings, v: boolean): void;
-  set<K extends "popups" | "mapOverlay" | "mapQuality" | "mapPlanets" | "showInactive" | "planetsControlOpen">(
+  set<
+    K extends
+      | "popups"
+      | "mapOverlay"
+      | "mapQuality"
+      | "mapPlanets"
+      | "showInactive"
+      | "planetsControlOpen"
+      | "moStripOpen",
+  >(
     k: K,
     v: SettingsState[K],
   ): void;
@@ -104,6 +119,7 @@ export const useSettings = create<SettingsState>()(
       mapPlanets: "markers",
       showInactive: false,
       planetsControlOpen: true,
+      moStripOpen: false,
       pinned: [],
       hintsSeen: [],
       seenAssignments: [],

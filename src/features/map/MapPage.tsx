@@ -1,9 +1,8 @@
 import { ArrowUpRight, Mouse, MousePointer2, MousePointerClick, Move } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useDispatches, useFreshPlanets } from "../../api/queries";
-import type { Faction, Planet } from "../../api/types";
 import { dispatchBody, recentDispatches } from "../../domain/dispatch";
-import { FACTIONS, factionColor, factionLabel } from "../../domain/factions";
+import { factionColor, factionLabel } from "../../domain/factions";
 import { dispatchTitle, fmtAgo } from "../../domain/format";
 import { useUi } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
@@ -13,15 +12,15 @@ import { GalaxyMap } from "./GalaxyMap";
 
 type Drawer = "dispatches" | "orders" | null;
 
-function TitleStack({ hovered }: { hovered: Planet | null }) {
+function TitleStack({ hovered }: { hovered: string | null }) {
   const planets = useFreshPlanets().data;
   const sector = useMemo(() => {
     if (!hovered || !planets) return null;
-    const inSector = planets.filter((p) => p.sector === hovered.sector);
     const counts = new Map<string, number>();
-    for (const p of inSector) counts.set(p.currentOwner, (counts.get(p.currentOwner) ?? 0) + 1);
-    const owner = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? hovered.currentOwner;
-    return { name: hovered.sector, owner };
+    for (const p of planets)
+      if (p.sector === hovered) counts.set(p.currentOwner, (counts.get(p.currentOwner) ?? 0) + 1);
+    const owner = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Humans";
+    return { name: hovered, owner };
   }, [hovered, planets]);
   return (
     <div className="map-title">
@@ -31,33 +30,6 @@ function TitleStack({ hovered }: { hovered: Planet | null }) {
         <div className="map-subtitle caps" style={sector ? { color: factionColor(sector.owner) } : undefined}>
           {sector ? `${factionLabel(sector.owner)} control` : "Galaxy overview"}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ControlBar() {
-  const planets = useFreshPlanets().data ?? [];
-  const counts = new Map<Faction, number>();
-  for (const p of planets) counts.set(p.currentOwner, (counts.get(p.currentOwner) ?? 0) + 1);
-  const total = planets.length || 1;
-  return (
-    <div className="control-bar panel glass" aria-label="Galactic control">
-      <div className="control-split">
-        {(Object.keys(FACTIONS) as Faction[]).map((f) => (
-          <span key={f} style={{ width: `${((counts.get(f) ?? 0) / total) * 100}%`, background: FACTIONS[f].color }} />
-        ))}
-      </div>
-      <div className="control-legend">
-        {(Object.keys(FACTIONS) as Faction[]).map((f) => (
-          <span key={f} className="caps">
-            <FactionEmblem faction={f} size={13} />
-            <b className="num" style={{ color: FACTIONS[f].color }}>
-              {Math.round(((counts.get(f) ?? 0) / total) * 100)}%
-            </b>
-            <span className="cl-name">{FACTIONS[f].label}</span>
-          </span>
-        ))}
       </div>
     </div>
   );
@@ -143,8 +115,8 @@ function DispatchDrawer({ now }: { now: number }) {
 
 export function MapPage() {
   const [drawer, setDrawer] = useState<Drawer>(null);
-  const [controls, setControls] = useState(true);
-  const [hovered, setHovered] = useState<Planet | null>(null);
+  const [controls, setControls] = useState(false);
+  const [hovered, setHovered] = useState<string | null>(null);
   const now = useNow(60_000);
   const dispatches = recentDispatches(useDispatches().data ?? [], now).length;
 
@@ -170,7 +142,6 @@ export function MapPage() {
         </KeyButton>
         {controls && <ControlsPanel />}
       </div>
-      <ControlBar />
       <div className="map-toggles">
         {drawer === "dispatches" && <DispatchDrawer now={now} />}
         {drawer === "orders" && (
