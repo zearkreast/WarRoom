@@ -266,14 +266,12 @@ export function OverviewPage() {
         </div>
         <div className="ov-col ov-col-mid">
           <TheaterOfWar />
+          <WarActivity />
         </div>
         <div className="ov-col ov-col-right">
           <MajorOrderList />
           <CampaignPanel />
         </div>
-      </div>
-      <div className="ov-wide">
-        <WarActivity />
       </div>
     </div>
   );

@@ -98,7 +98,7 @@ function ActivityTip({ active, payload, label, hidden }: TooltipContentProps<Val
 function LiveRing({ cx, cy }: { cx?: number; cy?: number }) {
   if (cx == null || cy == null) return <g />;
   return (
-    <g aria-hidden>
+    <g aria-hidden className="wa-live">
       <circle cx={cx} cy={cy} r={5} fill="none" stroke={ONLINE} strokeWidth={1.5} className="wa-ping" />
       <circle cx={cx} cy={cy} r={5} fill="none" stroke={ONLINE} strokeWidth={1.5} />
     </g>
@@ -243,6 +243,7 @@ export function WarActivity() {
                   {STACK.filter((f) => !hidden.has(f)).map((f) => (
                     <Area
                       key={f}
+                      className={`wa-front wa-front-${f}`}
                       yAxisId="divers"
                       type="monotone"
                       dataKey={FRONT_KEY[f]!}
@@ -259,6 +260,7 @@ export function WarActivity() {
                   ))}
                   {!hidden.has("online") && (
                     <Line
+                      className="wa-online"
                       yAxisId="divers"
                       type="monotone"
                       dataKey={hasOnline ? "online" : "players"}
@@ -273,6 +275,7 @@ export function WarActivity() {
                   )}
                   {impactAxis && !hidden.has("impact") && (
                     <Line
+                      className="wa-impact"
                       yAxisId="impact"
                       type="monotone"
                       dataKey="impact"
@@ -291,6 +294,7 @@ export function WarActivity() {
                         p && (
                           <ReferenceDot
                             key={i}
+                            className="wa-dot"
                             yAxisId="divers"
                             x={p.at}
                             y={total(p)}

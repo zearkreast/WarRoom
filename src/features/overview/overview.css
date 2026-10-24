@@ -1,9 +1,7 @@
 /* ---------- Board ----------
-   Wide screens: three columns fill the first screen and scroll on their own; the war activity panel
-   runs full width below it, reached by scrolling the page. */
+   Wide screens: three columns fill the viewport and scroll on their own; the page itself never scrolls. */
 .ov-page {
-  overflow-y: auto;
-  scrollbar-width: thin;
+  overflow: hidden;
 }
 .ov-board {
   display: grid;
@@ -11,9 +9,6 @@
   gap: var(--s-6);
   height: 100%;
   padding: var(--s-6);
-}
-.ov-wide {
-  padding: 0 var(--s-6) var(--s-6);
 }
 .ov-col {
   min-width: 0;
@@ -28,7 +23,7 @@
 .ov-col > * {
   flex: none;
 }
-/* The theater takes the column's height; the disc is sized to fit both ways. */
+/* The theater takes whatever height the activity chart leaves; the disc is sized to fit both ways. */
 .ov-col-mid > .tw {
   flex: 1 1 0;
   min-height: 300px;
@@ -386,9 +381,6 @@
 }
 
 @media (max-width: 860px) {
-  .ov-wide {
-    padding: 0 var(--s-4) var(--s-5);
-  }
   .ov-board {
     display: flex;
     flex-direction: column;
@@ -398,7 +390,7 @@
   .ov-col {
     display: contents;
   }
-  /* Phones lead with the Major Order, then the Galactic Campaign, the distribution and the theater. */
+  /* Phones lead with the Major Order, then the Galactic Campaign, the distribution, 24h activity and the theater. */
   .ov-board .mo {
     order: 1;
   }
@@ -407,6 +399,9 @@
   }
   .ov-board .ov-dist {
     order: 3;
+  }
+  .ov-board .wa {
+    order: 4;
   }
   .ov-board .tw {
     order: 5;

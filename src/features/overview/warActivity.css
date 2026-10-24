@@ -37,6 +37,9 @@
   height: 28px;
   border-radius: 999px;
   background: var(--wa-online);
+  box-shadow:
+    0 0 6px var(--wa-online),
+    0 0 16px color-mix(in srgb, var(--wa-online) 55%, transparent);
 }
 .wa-titles {
   display: flex;
@@ -77,11 +80,24 @@
   margin: 0;
 }
 .wa-stat {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding-left: 12px;
-  border-left: 2px solid var(--k);
+  padding-left: 14px;
+}
+/* The key rule, glowing in its series colour. */
+.wa-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: var(--k);
+  box-shadow:
+    0 0 4px var(--k),
+    0 0 10px color-mix(in srgb, var(--k) 50%, transparent);
 }
 .wa-stat dt {
   display: flex;
@@ -105,6 +121,7 @@
 }
 .wa-value.toned {
   color: var(--k);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--k) 70%, transparent);
 }
 .wa-when {
   height: 16px;
@@ -114,6 +131,27 @@
 
 .wa-plot {
   position: relative;
+}
+/* Neon: each line glows in its own colour, the front edges more softly than the two headline lines. */
+.wa-online .recharts-line-curve,
+.wa-dot circle,
+.wa-live {
+  filter: drop-shadow(0 0 2px var(--wa-online)) drop-shadow(0 0 7px color-mix(in srgb, var(--wa-online) 60%, transparent));
+}
+.wa-impact .recharts-line-curve {
+  filter: drop-shadow(0 0 2px var(--wa-impact)) drop-shadow(0 0 7px color-mix(in srgb, var(--wa-impact) 55%, transparent));
+}
+.wa-front-Terminids .recharts-area-curve {
+  filter: drop-shadow(0 0 3px var(--wa-terminids));
+}
+.wa-front-Automaton .recharts-area-curve {
+  filter: drop-shadow(0 0 3px var(--wa-automaton));
+}
+.wa-front-Illuminate .recharts-area-curve {
+  filter: drop-shadow(0 0 3px var(--wa-illuminate));
+}
+.wa-chip svg {
+  filter: drop-shadow(0 0 3px currentColor);
 }
 .wa-corner {
   position: absolute;
