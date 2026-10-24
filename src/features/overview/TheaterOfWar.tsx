@@ -1,15 +1,16 @@
-import { ArrowUpRight, Map as MapIcon } from "lucide-react";
+import { ArrowUpRight, Map as MapIcon, Pause, Play } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
-import { useFreshPlanets, useSectorGeometry } from "../../api/queries";
+import { useEffects, useFreshPlanets, useSectorGeometry } from "../../api/queries";
 import type { Faction } from "../../api/types";
 import { factionColor } from "../../domain/factions";
 import { factionMarks } from "../../domain/factionMarks";
-import { project, sectorTerritory, supplyLines } from "../../domain/galaxy";
+import { project, supplyLines } from "../../domain/galaxy";
 import { byIndex, ownershipKey } from "../../domain/planets";
 import { buildRegions } from "../../domain/regions";
 import { useSettings, useUi } from "../../state";
 import { EMBLEM_PATHS } from "../../ui/emblems";
 import { Panel } from "../../ui/primitives";
+import { GloomLayer, SectorLayer } from "../map/layers";
 import { CHART } from "./WarActivity";
 
 const SPIN_DEG_PER_S = 4;
@@ -18,6 +19,8 @@ const KEY_STEP_DEG = 10;
 const ORDER: Faction[] = ["Humans", "Terminids", "Illuminate", "Automaton"];
 /** The stage tilts the disc by 56°; emblems are stretched back by 1/cos(56°) to keep their shape. */
 const UNSQUASH = 1 / Math.cos((56 * Math.PI) / 180);
+/** Hatch spacing in disc units; the disc is drawn at about a third of its size. */
+const HATCH = 18;
 
 interface OwnerGroup {
   owner: Faction;
@@ -29,30 +32,20 @@ interface OwnerGroup {
 export function TheaterOfWar() {
   const planets = useFreshPlanets().data;
   const geo = useSectorGeometry().data;
+  const effects = useEffects().data;
   const overlay = useSettings((s) => s.mapOverlay);
+  const spin = useSettings((s) => s.twSpin);
+  const setSetting = useSettings((s) => s.set);
   const setView = useUi((s) => s.setView);
   const [sector, setSector] = useState<string | null>(null);
   const owners = planets ? ownershipKey(planets) : "";
   const byOwner = useMemo((): OwnerGroup[] => {
-    if (!planets || !geo || overlay === "galaxy") return [];
-    if (overlay === "regions")
-      return buildRegions(planets)
-        .map((r) => ({ owner: r.owner, held: true, paths: [r.path] }))
-        .sort((a, b) => ORDER.indexOf(a.owner) - ORDER.indexOf(b.owner));
-    // Ring sectors: enemy sectors are solid where held outright, dimmer where contested.
-    const territory = sectorTerritory(planets);
-    const groups = new Map<string, { owner: Faction; held: boolean; paths: string[] }>();
-    for (const [name, path] of geo.fills) {
-      const t = territory.get(name);
-      const owner = t?.faction ?? "Humans";
-      const key = `${owner}-${t?.held ?? true}`;
-      const g = groups.get(key) ?? { owner, held: t?.held ?? true, paths: [] };
-      g.paths.push(path);
-      groups.set(key, g);
-    }
-    return [...groups.values()].sort((a, b) => ORDER.indexOf(a.owner) - ORDER.indexOf(b.owner));
+    if (!planets || overlay !== "regions") return [];
+    return buildRegions(planets)
+      .map((r) => ({ owner: r.owner, held: true, paths: [r.path] }))
+      .sort((a, b) => ORDER.indexOf(a.owner) - ORDER.indexOf(b.owner));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [owners, geo, overlay]);
+  }, [owners, overlay]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const marks = useMemo(() => (planets ? factionMarks(planets, overlay, geo) : []), [owners, overlay, geo]);
   const lanes = useMemo(() => {
@@ -87,6 +80,7 @@ export function TheaterOfWar() {
     if (!el) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let onScreen = true;
+    const spinning = () => useSettings.getState().twSpin;
     const io = new IntersectionObserver(([entry]) => (onScreen = entry.isIntersecting));
     io.observe(el);
     let last = performance.now();
@@ -94,7 +88,8 @@ export function TheaterOfWar() {
       // Frames stop while the window is hidden; don't jump by the whole gap when they resume.
       const dt = Math.min((t - last) / 1000, 0.1);
       last = t;
-      if (!reduced && onScreen && !drag.current && !document.hidden) turn(angle.current + SPIN_DEG_PER_S * dt);
+      if (!reduced && spinning() && onScreen && !drag.current && !document.hidden)
+        turn(angle.current + SPIN_DEG_PER_S * dt);
       raf = requestAnimationFrame(tick);
     });
     return () => {
@@ -129,9 +124,20 @@ export function TheaterOfWar() {
       icon={MapIcon}
       bodyClass="panel-body tw-body"
       right={
-        <button className="hud-btn tw-open" onClick={() => setView("map")}>
-          Open map <ArrowUpRight size={14} />
-        </button>
+        <>
+          <button
+            className="hud-btn icon tw-spin"
+            onClick={() => setSetting("twSpin", !spin)}
+            aria-pressed={!spin}
+            aria-label={spin ? "Stop turning" : "Turn the disc"}
+            title={spin ? "Stop turning" : "Turn the disc"}
+          >
+            {spin ? <Pause size={14} /> : <Play size={14} />}
+          </button>
+          <button className="hud-btn tw-open" onClick={() => setView("map")}>
+            Open map <ArrowUpRight size={14} />
+          </button>
+        </>
       }
     >
       <div
@@ -155,6 +161,7 @@ export function TheaterOfWar() {
                 <circle r={geo.rim} />
               </g>
             )}
+            {overlay === "sectors" && <SectorLayer geo={geo} planets={planets} id="tw" hatch={HATCH} />}
             {lanes && <path d={lanes} className="tw-lanes" />}
             {byOwner.map((g) => (
               <g
@@ -165,6 +172,7 @@ export function TheaterOfWar() {
                 <path d={g.paths.join("")} />
               </g>
             ))}
+            {effects && <GloomLayer planets={planets} gloom={effects.gloom} id="tw" />}
             <g className="tw-hits">
               {[...geo.fills].map(([name, d]) => (
                 <path key={name} d={d} onPointerEnter={() => setSector(name)} />
@@ -186,8 +194,14 @@ export function TheaterOfWar() {
             <line x1={0} y1={-545} x2={0} y2={-470} className="tw-tick" />
           </g>
           <circle r={70} className="tw-core-glow" />
-          <circle r={36} className="tw-core-ring" />
-          <circle r={12} className="tw-core" />
+          <g className="tw-core-mark">
+            <path
+              d={EMBLEM_PATHS.Humans}
+              transform="scale(3.6,6.4) translate(-12,-12)"
+              fill={factionColor("Humans")}
+              fillRule="evenodd"
+            />
+          </g>
         </svg>
         <span className="tw-hint caps">{sector ? `${sector} sector` : "Drag to rotate"}</span>
       </div>

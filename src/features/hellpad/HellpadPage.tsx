@@ -1,6 +1,5 @@
 import {
   Archive,
-  BookOpen,
   ChevronRight,
   Globe2,
   History,
@@ -13,7 +12,7 @@ import { useEpisodes, useSpaceStations } from "../../api/queries";
 import { useHistory } from "../../history/useHistory";
 import { useUi, type HellpadModule } from "../../state";
 import { Hint } from "../../ui/Hint";
-import { GwwModule, LegendModule } from "./GwwModule";
+import { GwwModule } from "./GwwModule";
 import { PastCampaignsModule } from "./PastCampaignsModule";
 import { PlanetsModule } from "./PlanetsModule";
 import { StationsModule } from "./StationsModule";
@@ -24,7 +23,6 @@ const TITLES: Record<HellpadModule, string> = {
   stations: "Space stations",
   gww: "G.W.W.",
   campaigns: "Past campaigns",
-  legend: "Icons legend",
 };
 
 function Tile(props: {
@@ -97,7 +95,7 @@ function Hub() {
         <Tile
           icon={History}
           title="G.W.W."
-          text="Galactic war log: every planet that changed hands."
+          text="Galactic War Web: the war log, training manuals and the Federation's corporations."
           meta={changes.length ? `${changes.length} records` : "Open"}
           onClick={() => openModule("gww")}
         />
@@ -107,13 +105,6 @@ function Hub() {
           text="Every Galactic Campaign that has ended: its Major Orders, outcome and reward."
           meta={ended ? `${ended} campaigns` : "Open"}
           onClick={() => openModule("campaigns")}
-        />
-        <Tile
-          icon={BookOpen}
-          title="Icons legend"
-          text="What every mark on the map and cards means."
-          meta="Open"
-          onClick={() => openModule("legend")}
         />
         <Tile icon={Rocket} title="Warbonds" text="Warbond pages, items and medal costs." locked />
         <Tile icon={Rocket} title="Boosters" text="Booster effects and where to find them." locked />
@@ -141,7 +132,6 @@ export function HellpadPage() {
         {module === "stations" && <StationsModule />}
         {module === "gww" && <GwwModule />}
         {module === "campaigns" && <PastCampaignsModule />}
-        {module === "legend" && <LegendModule />}
       </div>
     </div>
   );

@@ -5,13 +5,14 @@ import {
   mergeEpisodes,
   newestDispatches,
   toCampaignLive,
+  toEffectsLive,
   toEpisodes,
   toLive,
   toStatic,
   toStationLive,
   type SnapshotKind,
 } from "../domain/snapshot";
-import type { Campaign, Dispatch, EpisodeRaw, Planet, SpaceStation } from "./types";
+import type { Campaign, Dispatch, EpisodeRaw, Planet, SpaceStation, WarStatusRaw } from "./types";
 
 type FetchFn = (url: string, init: RequestInit) => Promise<Response>;
 
@@ -78,8 +79,8 @@ export function createSource(opts: { url: string; key: string; fetchFn?: FetchFn
 
 /** Dev only: `?fixtures` serves the saved test fixtures, shaped like the collector's snapshots. */
 async function fixtureSource(): Promise<Source> {
-  const [war, assignments, campaigns, planets, dispatches, stations, episodes] = await Promise.all(
-    ["war", "assignments", "campaigns", "planets", "dispatches", "space-stations", "episodes"].map((n) =>
+  const [war, assignments, campaigns, planets, dispatches, stations, episodes, status] = await Promise.all(
+    ["war", "assignments", "campaigns", "planets", "dispatches", "space-stations", "episodes", "status-effects"].map((n) =>
       import(`../test/fixtures/${n}.json`).then((m) => m.default),
     ),
   );
@@ -92,6 +93,7 @@ async function fixtureSource(): Promise<Source> {
     { kind: "planets_static", data: (planets as Planet[]).map(toStatic), fetched_at: at },
     { kind: "dispatches", data: newestDispatches(dispatches as Dispatch[]), fetched_at: at },
     { kind: "space_stations", data: (stations as SpaceStation[]).map(toStationLive), fetched_at: at },
+    { kind: "planet_effects", data: toEffectsLive(status as WarStatusRaw), fetched_at: at },
   ];
   const ep = episodes as { episodes: EpisodeRaw[]; warTime: number; fetchedAt: number };
   rows.push({

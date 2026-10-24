@@ -56,6 +56,7 @@ describe("api client", () => {
     const c = createClient({
       baseUrl: "",
       minGapMs: 0,
+      backoffMs: 1,
       timeoutMs: 20,
       fetchFn: (_u, init) =>
         calls++ === 0
@@ -82,5 +83,51 @@ describe("api client", () => {
     await expect(c.get("/a")).rejects.toBeInstanceOf(RateLimitError);
     await c.get("/b");
     expect(times).toEqual([0, 20_000]);
+  });
+
+  it("backs the whole queue off, ever longer, while the server is unreachable", async () => {
+    const clock = fakeClock();
+    const times: number[] = [];
+    let calls = 0;
+    const c = createClient({
+      baseUrl: "",
+      minGapMs: 0,
+      backoffMs: 30_000,
+      ...clock,
+      fetchFn: async () => {
+        times.push(clock.now());
+        if (calls++ < 2) throw new Error("socket hang up");
+        return json({ ok: 1 });
+      },
+    });
+    await expect(c.get("/a")).rejects.toMatchObject({ retryAfterMs: 30_000 });
+    await expect(c.get("/b")).rejects.toMatchObject({ retryAfterMs: 60_000 });
+    await expect(c.get("/c")).resolves.toEqual({ ok: 1 });
+    expect(times).toEqual([0, 30_000, 90_000]);
+  });
+
+  it("releases the body of a failed response", async () => {
+    let cancelled = false;
+    const body = new ReadableStream({ cancel: () => void (cancelled = true) });
+    const c = createClient({ baseUrl: "", minGapMs: 0, fetchFn: async () => new Response(body, { status: 404 }) });
+    await expect(c.get("/missing")).rejects.toThrow(/404/);
+    expect(cancelled).toBe(true);
+  });
+
+  it("waits out the window when the server says it is used up", async () => {
+    const clock = fakeClock();
+    const times: number[] = [];
+    const c = createClient({
+      baseUrl: "",
+      minGapMs: 0,
+      ...clock,
+      fetchFn: async () => {
+        times.push(clock.now());
+        return json({ ok: 1 }, 200, { "X-RateLimit-Remaining": "0" });
+      },
+    });
+    await c.get("/a");
+    await c.get("/b");
+    expect(times).toEqual([0, 10_000]);
   });
 });

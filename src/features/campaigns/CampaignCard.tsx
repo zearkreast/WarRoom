@@ -1,6 +1,6 @@
 import { Crosshair, Pin, Satellite, ShieldAlert, Target, TrendingDown, TrendingUp, Users } from "lucide-react";
 import type { CSSProperties } from "react";
-import { biomeTint, regenPctPerHour } from "../../domain/biomes";
+import { planetTint, regenPctPerHour } from "../../domain/biomes";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtInt, fmtPct } from "../../domain/format";
 import { useUi } from "../../state";
@@ -76,10 +76,10 @@ export function CampaignCard({ f, totalPlayers, deadline }: { f: Front; totalPla
   const openOptions = useUi((s) => s.openOptions);
   const p = f.planet;
   const enemy = factionColor(f.enemy);
-  const tint = biomeTint(p.biome?.name);
+  const tint = planetTint(p);
   const regen = regenPctPerHour(p);
   const share = totalPlayers ? (f.players / totalPlayers) * 100 : 0;
-  const style = { "--enemy": enemy, "--sky": tint.sky, "--ground": tint.ground } as CSSProperties;
+  const style = { "--enemy": enemy, "--sky": tint.sky, "--ground": tint.ground, "--art": tint.art } as CSSProperties;
   const TypeIcon = f.kind === "defense" ? ShieldAlert : Crosshair;
 
   return (

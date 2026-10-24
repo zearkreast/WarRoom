@@ -8,13 +8,14 @@ import { fmtInt } from "../../domain/format";
 import {
   useSettings,
   type AlertSettings,
+  type MapDispatches,
   type MapOverlay,
   type MapPlanets,
   type MapQuality,
   type Popups,
 } from "../../state";
 import { Panel, Stepper } from "../../ui/primitives";
-import { OVERLAY_OPTIONS, PLANET_OPTIONS, QUALITY_OPTIONS } from "../map/mapOptions";
+import { DISPATCH_OPTIONS, OVERLAY_OPTIONS, PLANET_OPTIONS, QUALITY_OPTIONS } from "../map/mapOptions";
 import "./settings.css";
 
 const ON_OFF = [
@@ -124,6 +125,17 @@ export function SettingsPage() {
               options={QUALITY_OPTIONS}
               value={s.mapQuality}
               onChange={(v) => s.set("mapQuality", v)}
+            />
+          </Row>
+          <Row
+            title="Map dispatches"
+            text="How many dispatches the map's Dispatches box lists: the latest few whatever their age, or every one from the last 72 hours."
+          >
+            <Stepper<MapDispatches>
+              label="Map dispatches"
+              options={DISPATCH_OPTIONS}
+              value={s.mapDispatches}
+              onChange={(v) => s.set("mapDispatches", v)}
             />
           </Row>
         </Panel>

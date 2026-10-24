@@ -1,10 +1,10 @@
 import { ArrowUpRight, Mouse, MousePointer2, MousePointerClick, Move } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useDispatches, useFreshPlanets } from "../../api/queries";
-import { dispatchBody, recentDispatches } from "../../domain/dispatch";
+import { dispatchBody, latestDispatches } from "../../domain/dispatch";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { dispatchTitle, fmtAgo } from "../../domain/format";
-import { useUi } from "../../state";
+import { useSettings, useUi } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
 import { Keycap, KeyButton, useNow } from "../../ui/primitives";
 import { MajorOrderList } from "../major-order/MajorOrder";
@@ -83,11 +83,12 @@ function ControlsPanel() {
 function DispatchDrawer({ now }: { now: number }) {
   const { data } = useDispatches();
   const setView = useUi((s) => s.setView);
-  const recent = recentDispatches(data ?? [], now);
+  const count = useSettings((s) => s.mapDispatches);
+  const recent = latestDispatches(data ?? [], count, now);
   return (
     <div className="map-drawer panel glass">
       <div className="md-head caps">
-        Dispatches <span>last 72 hours</span>
+        Dispatches <span>{count === "72h" ? "last 72 hours" : `latest ${count}`}</span>
       </div>
       {recent.length === 0 ? (
         <p className="md-empty caps">No dispatches in the last 72 hours.</p>
@@ -118,7 +119,8 @@ export function MapPage() {
   const [controls, setControls] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const now = useNow(60_000);
-  const dispatches = recentDispatches(useDispatches().data ?? [], now).length;
+  const count = useSettings((s) => s.mapDispatches);
+  const dispatches = latestDispatches(useDispatches().data ?? [], count, now).length;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

@@ -2,7 +2,7 @@ import { ArrowDownWideNarrow, Flame, Pin, Satellite, Search, Swords, Target, Use
 import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { useCampaigns, useFreshPlanets } from "../../api/queries";
 import type { Faction, Planet } from "../../api/types";
-import { biomeTint } from "../../domain/biomes";
+import { planetTint } from "../../domain/biomes";
 import { FACTIONS, factionColor, factionLabel } from "../../domain/factions";
 import { fmtInt, fmtPct } from "../../domain/format";
 import {
@@ -27,7 +27,7 @@ function PlanetRow(props: { p: Planet; active: boolean; mo: boolean; station: bo
   const openOptions = useUi((s) => s.openOptions);
   const enemy = p.event?.faction ?? (p.currentOwner === "Humans" ? undefined : p.currentOwner);
   const face = (enemy ?? p.currentOwner) as Faction;
-  const tint = biomeTint(p.biome?.name);
+  const tint = planetTint(p);
   const pct = p.event ? trackedPercent(p) : liberationPercent(p);
   const status = active
     ? `${p.event ? "Defense" : "Liberation"} campaign · ${fmtPct(pct, 1)}`

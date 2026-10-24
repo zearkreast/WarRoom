@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type View = "campaigns" | "map" | "hellpad" | "overview" | "news" | "settings";
-export type HellpadModule = "planets" | "stations" | "gww" | "campaigns" | "legend";
+export type HellpadModule = "planets" | "stations" | "gww" | "campaigns";
+export type InfoDialog = "about" | "legend";
 
 /** Where the planet options popover is anchored, in viewport pixels. */
 export interface OptionsAnchor {
@@ -22,7 +23,8 @@ interface UiState {
   detail: number | null;
   options: OptionsAnchor | null;
   dispatchOpen: boolean;
-  aboutOpen: boolean;
+  /** The About or Icons legend dialog, when one is open. */
+  dialog: InfoDialog | null;
   setView(v: View): void;
   openModule(m: HellpadModule | null): void;
   select(planet: number | null): void;
@@ -31,7 +33,7 @@ interface UiState {
   openDetail(planet: number | null): void;
   openOptions(o: OptionsAnchor | null): void;
   toggleDispatch(open?: boolean): void;
-  showAbout(open: boolean): void;
+  showDialog(d: InfoDialog | null): void;
 }
 
 export const useUi = create<UiState>((set) => ({
@@ -42,7 +44,7 @@ export const useUi = create<UiState>((set) => ({
   detail: null,
   options: null,
   dispatchOpen: false,
-  aboutOpen: false,
+  dialog: null,
   setView: (view) => set({ view, options: null, module: null }),
   openModule: (module) => set({ view: "hellpad", module, options: null, detail: null }),
   select: (selectedPlanet) => set({ selectedPlanet }),
@@ -52,7 +54,7 @@ export const useUi = create<UiState>((set) => ({
   openDetail: (detail) => set({ detail, options: null }),
   openOptions: (options) => set({ options }),
   toggleDispatch: (open) => set((s) => ({ dispatchOpen: open ?? !s.dispatchOpen })),
-  showAbout: (aboutOpen) => set({ aboutOpen }),
+  showDialog: (dialog) => set({ dialog }),
 }));
 
 export interface AlertSettings {
@@ -68,6 +70,8 @@ export type MapQuality = "max" | "normal" | "min";
 export type MapPlanets = "markers" | "spheres";
 export type Popups = "all" | "priority" | "none";
 
+export type MapDispatches = "3" | "5" | "10" | "72h";
+
 interface SettingsState {
   alerts: AlertSettings;
   popups: Popups;
@@ -79,6 +83,10 @@ interface SettingsState {
   planetsControlOpen: boolean;
   /** Whether the Major Order strip on Active planets is unfolded. */
   moStripOpen: boolean;
+  /** Whether the Theater of War disc turns by itself. */
+  twSpin: boolean;
+  /** How many dispatches the map's Dispatches box lists, or "72h" for all from the last 72 hours. */
+  mapDispatches: MapDispatches;
   pinned: number[];
   /** Views whose first-run hint has been dismissed. */
   hintsSeen: string[];
@@ -96,7 +104,9 @@ interface SettingsState {
       | "mapPlanets"
       | "showInactive"
       | "planetsControlOpen"
-      | "moStripOpen",
+      | "moStripOpen"
+      | "twSpin"
+      | "mapDispatches",
   >(
     k: K,
     v: SettingsState[K],
@@ -120,6 +130,8 @@ export const useSettings = create<SettingsState>()(
       showInactive: false,
       planetsControlOpen: true,
       moStripOpen: false,
+      twSpin: typeof window === "undefined" || !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+      mapDispatches: "5",
       pinned: [],
       hintsSeen: [],
       seenAssignments: [],
