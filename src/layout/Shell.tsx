@@ -26,6 +26,7 @@ import { NewsTicker } from "../features/news/NewsTicker";
 import { PlanetDetail } from "../features/planet/PlanetDetail";
 import { PlanetOptions } from "../features/planet/PlanetOptions";
 import { AboutDialog } from "./AboutDialog";
+import { BriefingPopup } from "./BriefingPopup";
 import { DispatchPanel } from "./DispatchPanel";
 import { useSettings, useUi, type View } from "../state";
 import { AppMark } from "../ui/emblems";
@@ -225,7 +226,7 @@ const TOAST_LOOK: Record<ToastKind, { tone: string; icon: LucideIcon }> = {
 };
 
 function Toasts() {
-  const { toasts, dismiss } = useToasts();
+  const { toasts, dismiss, open } = useToasts();
   const popups = useSettings((s) => s.popups);
   const shown = popups === "none" ? [] : popups === "priority" ? toasts.filter((t) => t.kind !== "dispatch") : toasts;
   return (
@@ -234,12 +235,14 @@ function Toasts() {
         const look = TOAST_LOOK[t.kind];
         return (
           <div key={t.id} className="toast" style={{ "--tone": look.tone } as React.CSSProperties}>
-            <span className="toast-icon">
-              <look.icon size={16} />
-            </span>
-            <div className="toast-body">
-              <b>{t.title}</b> {t.body}
-            </div>
+            <button className="toast-open" onClick={() => open(t.id)} title="Open briefing">
+              <span className="toast-icon">
+                <look.icon size={16} />
+              </span>
+              <span className="toast-body">
+                <b>{t.title}</b> {t.body}
+              </span>
+            </button>
             <button className="toast-x" aria-label="Dismiss" onClick={() => dismiss(t.id)}>
               <X size={16} />
             </button>
@@ -276,6 +279,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <PlanetDetail />
       </ErrorBoundary>
       <Toasts />
+      <BriefingPopup />
     </div>
   );
 }

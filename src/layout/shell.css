@@ -464,3 +464,135 @@
   justify-content: flex-end;
   padding-top: var(--s-4);
 }
+
+/* Briefing popup, opened from a toast */
+.briefing {
+  --bp-tone: var(--info);
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.briefing::backdrop {
+  background: color-mix(in srgb, var(--void) 82%, transparent);
+}
+.briefing[open] {
+  animation: overlay-in var(--t-reveal) var(--ease);
+}
+.briefing.waiting {
+  width: auto;
+  overflow: visible;
+}
+.bp-wait {
+  display: grid;
+  justify-items: center;
+  gap: var(--s-6);
+  padding: var(--s-7);
+  color: var(--text-hi);
+  font-size: var(--fs-body);
+  letter-spacing: 0.12em;
+}
+.bp-wait span::after {
+  content: "";
+  display: inline-block;
+  width: 1.5em;
+  text-align: left;
+  animation: bp-dots 1.2s steps(4) infinite;
+}
+@keyframes bp-dots {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+}
+.bp-card {
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-3);
+  animation: overlay-in var(--t-value) var(--ease);
+}
+.bp-banner {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 8 / 3;
+}
+.bp-flag {
+  transform-origin: 74px 110px;
+  animation: bp-wave 5s ease-in-out infinite alternate;
+}
+@keyframes bp-wave {
+  to {
+    transform: skewY(-1.6deg) scaleX(0.985);
+  }
+}
+.bp-ember {
+  fill: color-mix(in srgb, var(--warn) 80%, white);
+  opacity: 0;
+  animation: bp-rise linear infinite;
+}
+@keyframes bp-rise {
+  10% {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-40px, -230px);
+  }
+}
+.bp-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  padding: var(--s-4) var(--s-6);
+  background: var(--surface-3);
+  border-block: 1px solid var(--line);
+}
+.bp-head h2 {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: var(--fs-title);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bp-tone);
+}
+.bp-body {
+  padding: var(--s-6) var(--s-6) var(--s-7);
+  background: linear-gradient(var(--surface-2), var(--surface-1));
+}
+.bp-body h3 {
+  margin: 0 0 var(--s-4);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-hi);
+}
+.bp-text {
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  white-space: pre-line;
+}
+.bp-text .hl-planet {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.bp-foot {
+  display: flex;
+  justify-content: flex-start;
+  padding-top: var(--s-4);
+}
