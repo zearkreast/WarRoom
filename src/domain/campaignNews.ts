@@ -1,6 +1,6 @@
 import type { Dispatch } from "../api/types";
 import { dispatchTitle } from "./format";
-import { issuedAt, type EpisodeLive } from "./snapshot";
+import { issuedAt, phaseName, type EpisodeLive } from "./snapshot";
 
 /** A moment in a Galactic Campaign worth a news item: its launch, a new Major Order, its end. */
 export interface CampaignEvent {
@@ -36,16 +36,30 @@ const NEW_ORDER = /new major order/i;
 
 const published = (d: Dispatch) => Date.parse(d.published);
 
-/** The campaign a dispatch belongs to: one it names, else the one running when an order headline went out. */
+/** Whole words only: order names are plain words ("DEPLOYMENT"), and "deployments" isn't a mention. */
+function mentions(text: string, name: string): boolean {
+  return new RegExp(`(^|[^A-Z0-9])${name.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^A-Z0-9])`).test(text);
+}
+
+/**
+ * The campaign a dispatch belongs to: one running when it went out that it names, else the one running
+ * when an order headline went out. Names alone aren't enough: campaigns reuse them (two have a
+ * "CONTAINMENT"), and an unnamed order's "MAJOR ORDER" is in every order headline.
+ */
 export function campaignOf(d: Dispatch, list: EpisodeLive[]): EpisodeLive | null {
   const text = d.message.toUpperCase();
-  const named = list.find(
-    (e) => text.includes(e.title.toUpperCase()) || e.phases.some((p) => p.title && text.includes(p.title.toUpperCase())),
+  const at = published(d);
+  const running = list.filter((e) => at >= e.start - 2 * HOUR && at <= (e.end ?? Infinity) + 12 * HOUR);
+  const named = running.find(
+    (e) =>
+      mentions(text, e.title) ||
+      e.phases.some((p) => {
+        const name = phaseName(p);
+        return name != null && mentions(text, name);
+      }),
   );
   if (named) return named;
   if (!ORDER_HEADLINE.test(dispatchTitle(d.message))) return null;
-  const at = published(d);
-  const running = list.filter((e) => at >= e.start - 2 * HOUR && at <= (e.end ?? Infinity) + 12 * HOUR);
   return running.sort((a, b) => b.start - a.start)[0] ?? null;
 }
 
@@ -106,6 +120,9 @@ export function campaignEvents(list: EpisodeLive[], dispatches: Dispatch[] = [])
 export function campaignHeadline(ev: CampaignEvent): string {
   const { campaign: e, phase } = ev;
   if (ev.type === "launched") return `New campaign: ${e.title}`;
-  if (ev.type === "order") return `${e.title}: Major Order ${phase + 1}, ${e.phases[phase].title}`;
+  if (ev.type === "order") {
+    const name = phaseName(e.phases[phase]);
+    return `${e.title}: Major Order ${phase + 1}${name ? `, ${name}` : ""}`;
+  }
   return `${e.title} ${e.status === "won" ? "won" : "failed"}`;
 }

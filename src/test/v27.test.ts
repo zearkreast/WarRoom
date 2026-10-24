@@ -4,7 +4,8 @@ import { planetTint } from "../domain/biomes";
 import { latestDispatches } from "../domain/dispatch";
 import { averageReadings } from "../domain/frontActivity";
 import { planetEffects } from "../domain/effects";
-import { toEffectsLive } from "../domain/snapshot";
+import { orderName } from "../domain/majorOrder";
+import { toEffectsLive, type EpisodeLive, type EpisodeStatus } from "../domain/snapshot";
 import statusJson from "./fixtures/status-effects.json";
 
 const live = toEffectsLive(statusJson as unknown as WarStatusRaw);
@@ -73,5 +74,34 @@ describe("activity readings", () => {
     });
     const rows = averageReadings([r(0, 100, 0.01, 10), r(60_000, 300, 0.03, 30), r(w + 1, 50, 0.02, 5)], w);
     expect(rows).toEqual([r(w / 2, 200, 0.02, 20), r(w + w / 2, 50, 0.02, 5)]);
+  });
+});
+
+describe("major order name", () => {
+  const phase = (title: string, status: EpisodeStatus) => ({ title, briefing: "", outro: "", status, medals: null, issued: null });
+  const episode = (status: EpisodeStatus, phases: ReturnType<typeof phase>[]): EpisodeLive => ({
+    id: 1,
+    title: "CAMPAIGN",
+    description: "",
+    faction: "Humans",
+    status,
+    start: 0,
+    end: null,
+    reward: null,
+    phases,
+  });
+
+  it("is the running order of the running campaign", () => {
+    const list = [episode("won", [phase("OLD", "won")]), episode("active", [phase("FIRST", "won"), phase("HONOR THE FALLEN", "active")])];
+    expect(orderName(list)).toBe("HONOR THE FALLEN");
+  });
+
+  it("is left out when it can't be told which order is which", () => {
+    expect(orderName([episode("active", [phase("A", "active"), phase("B", "active")])])).toBeUndefined();
+    expect(orderName(undefined)).toBeUndefined();
+  });
+
+  it("is left out while the game hasn't named the order yet", () => {
+    expect(orderName([episode("active", [phase("HONOR THE FALLEN", "lost"), phase("MAJOR ORDER", "active")])])).toBeUndefined();
   });
 });
