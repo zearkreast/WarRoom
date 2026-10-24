@@ -1,5 +1,5 @@
-/* Galactic war activity: a telemetry panel styled to the user's reference (measured, not eyeballed),
-   so it carries its own neutral surface, rounded shell and series colours instead of the app's. */
+/* Galactic war activity: the chart is drawn to the user's reference (measured, not eyeballed), so it
+   keeps its own series colours; the panel around it is the app's own. */
 .wa {
   --wa-surface: rgba(20, 20, 23, 0.92);
   --wa-border: #27282c;
@@ -10,123 +10,45 @@
   --wa-terminids: #f6b012;
   --wa-automaton: #ff5d5e;
   --wa-illuminate: #cb5dff;
-  overflow: hidden;
-  border: 1px solid var(--wa-border);
-  border-radius: 16px;
-  background: var(--wa-surface);
-  backdrop-filter: blur(12px);
-  color: var(--wa-fg);
-  font-family: "Chakra Petch", var(--font-body, sans-serif);
 }
 
-.wa-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--wa-border);
-  background-image: repeating-linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.035) 0 10px,
-    transparent 10px 20px
-  );
+.ov-heads {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-6);
+  margin-bottom: var(--s-6);
 }
-.wa-bar {
-  flex: none;
-  width: 4px;
-  height: 28px;
-  border-radius: 999px;
-  background: var(--wa-online);
-  box-shadow:
-    0 0 6px var(--wa-online),
-    0 0 16px color-mix(in srgb, var(--wa-online) 55%, transparent);
-}
-.wa-titles {
+.ov-heads > div {
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  gap: var(--s-2);
 }
-.wa-kicker {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--wa-muted);
-}
-.wa-title {
-  margin: 0;
-  overflow: hidden;
-  font-size: 16px;
+.ov-heads b {
+  font-size: var(--fs-title);
+  color: var(--text-hi);
   font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--wa-fg);
 }
-
-.wa-body {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
+.ov-when {
+  font-size: var(--fs-label);
+  color: var(--label);
 }
-
-.wa-stats {
+.ov-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px 40px;
-  margin: 0;
+  gap: var(--s-3);
+  margin-top: var(--s-5);
 }
-.wa-stat {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-left: 14px;
+.ov-chips .filter-chip {
+  gap: var(--s-3);
 }
-/* The key rule, glowing in its series colour. */
-.wa-stat::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 2px;
-  background: var(--k);
-  box-shadow:
-    0 0 4px var(--k),
-    0 0 10px color-mix(in srgb, var(--k) 50%, transparent);
+.ov-chips .filter-chip.on {
+  border-color: var(--k);
+  background: color-mix(in srgb, var(--k) var(--wash), var(--surface-1));
 }
-.wa-stat dt {
-  display: flex;
-  align-items: center;
-  height: 16px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--wa-muted);
-}
-.wa-stat dd {
-  margin: 0;
-}
-.wa-value {
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--wa-fg);
-}
-.wa-value.toned {
-  color: var(--k);
-  text-shadow: 0 0 12px color-mix(in srgb, var(--k) 70%, transparent);
-}
-.wa-when {
-  height: 16px;
-  font-size: 12px;
-  color: var(--wa-muted);
+@media (max-width: 860px) {
+  .ov-heads {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .wa-plot {
@@ -150,7 +72,7 @@
 .wa-front-Illuminate .recharts-area-curve {
   filter: drop-shadow(0 0 3px var(--wa-illuminate));
 }
-.wa-chip svg {
+.ov-chips .filter-chip svg {
   filter: drop-shadow(0 0 3px currentColor);
 }
 .wa-corner {
@@ -206,46 +128,10 @@
   }
 }
 
-.wa-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.wa-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 8px;
-  border: 1px solid var(--wa-border);
-  border-radius: 6px;
-  background: transparent;
-  font: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--wa-muted);
-  cursor: pointer;
-  transition: color 200ms;
-}
-.wa-chip:hover {
-  color: var(--wa-fg);
-}
-.wa-chip:focus-visible {
-  outline: 2px solid var(--wa-online);
-  outline-offset: 1px;
-}
-.wa-chip.off {
-  opacity: 0.45;
-}
 .wa-note {
-  margin: 0;
-  font-size: 12px;
-  color: var(--wa-muted);
+  margin: var(--s-3) 0 0;
+  font-size: var(--fs-body-s);
+  color: var(--text-dim);
 }
 
 .wa-tip {
@@ -280,11 +166,3 @@
   color: var(--wa-fg);
 }
 
-@media (max-width: 640px) {
-  .wa-body {
-    padding: 16px;
-  }
-  .wa-stats {
-    gap: 12px 24px;
-  }
-}

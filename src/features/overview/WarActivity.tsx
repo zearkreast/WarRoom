@@ -21,7 +21,7 @@ import { averageReadings, mergeActivity, type ActivityPoint } from "../../domain
 import { fmtDateTime, fmtInt, fmtTime } from "../../domain/format";
 import { fmtHourTick, hourTicks } from "../../ui/chart";
 import { FactionEmblem } from "../../ui/emblems";
-import { Empty, Loading } from "../../ui/primitives";
+import { Empty, Loading, Panel } from "../../ui/primitives";
 import "./warActivity.css";
 
 /** Chart fills per faction (dark-band steps of the faction hues). */
@@ -105,12 +105,16 @@ function LiveRing({ cx, cy }: { cx?: number; cy?: number }) {
   );
 }
 
-function Stat({ label, value, when, tone, toned }: { label: string; value: string; when: string; tone: string; toned?: boolean }) {
+function Stat({ label, value, when, tone, toned }: { label: string; value: string; when?: string; tone: string; toned?: boolean }) {
   return (
-    <div className="wa-stat" style={{ "--k": tone } as CSSProperties}>
-      <dt>{label}</dt>
-      <dd className={`wa-value num ${toned ? "toned" : ""}`}>{value}</dd>
-      <dd className="wa-when num">{when}</dd>
+    <div>
+      <span className="pd-key" style={{ "--k": tone } as CSSProperties}>
+        {label}
+      </span>
+      <b className="num" style={toned ? { color: tone } : undefined}>
+        {value}
+      </b>
+      {when && <span className="ov-when num">{when}</span>}
     </div>
   );
 }
@@ -144,7 +148,7 @@ export function WarActivity() {
   const top = Math.max(STEP, Math.ceil((peak ? total(peak) : 0) / STEP) * STEP);
   const domain: [number, number] = [rows[0]?.at ?? 0, rows[rows.length - 1]?.at ?? 0];
   const ticks = hourTicks(domain[0], domain[1]);
-  const span = rows.length < 2 || domain[1] - domain[0] >= FULL_DAY_MS ? "Past 24 hours" : `Since ${fmtTime(domain[0])}`;
+  const span = rows.length < 2 || domain[1] - domain[0] >= FULL_DAY_MS ? "last 24 h" : `since ${fmtTime(domain[0])}`;
   const toggle = (s: Series) =>
     setHidden((h) => {
       const n = new Set(h);
@@ -160,28 +164,17 @@ export function WarActivity() {
   const tip = (props: TooltipContentProps<ValueType, NameType>) => <ActivityTip {...props} hidden={hidden} />;
 
   return (
-    <section className="wa" aria-labelledby="wa-title">
-      <header className="wa-head">
-        <span className="wa-bar" aria-hidden />
-        <div className="wa-titles">
-          <span className="wa-kicker">Telemetry · {span}</span>
-          <h2 id="wa-title" className="wa-title">
-            Galactic war activity
-          </h2>
-        </div>
-      </header>
-      <div className="wa-body">
-        <dl className="wa-stats">
-          <Stat label="Peak Helldivers" value={peak ? fmtInt(total(peak)) : "—"} when={peak ? fmtTime(peak.at) : "—"} tone={ONLINE} />
-          <Stat label="Lowest Helldivers" value={low ? fmtInt(total(low)) : "—"} when={low ? fmtTime(low.at) : "—"} tone={ONLINE} />
-          <Stat
-            label="Galactic impact mod"
-            value={(lastImpact?.impact ?? war?.impactMultiplier ?? 0).toFixed(6)}
-            when={lastImpact ? fmtTime(lastImpact.at) : "now"}
-            tone={IMPACT}
-            toned
-          />
-        </dl>
+    <Panel className="ov-activity wa" title={`Galactic war activity · ${span}`} icon={Activity}>
+      <div className="ov-heads">
+        <Stat
+          label="Galactic impact mod"
+          value={`×${(lastImpact?.impact ?? war?.impactMultiplier ?? 0).toFixed(6)}`}
+          tone={IMPACT}
+          toned
+        />
+        <Stat label="Peak Helldivers" value={peak ? fmtInt(total(peak)) : "—"} when={peak ? fmtTime(peak.at) : undefined} tone={ONLINE} />
+        <Stat label="Lowest Helldivers" value={low ? fmtInt(total(low)) : "—"} when={low ? fmtTime(low.at) : undefined} tone="var(--text-dim)" />
+      </div>
         {isLoading || lastUpdate == null ? (
           <Loading what="war telemetry" rows={2} />
         ) : rows.length < 2 ? (
@@ -314,14 +307,15 @@ export function WarActivity() {
             {!impactAxis && (
               <p className="wa-note">The impact multiplier's history is recorded from the next collector update.</p>
             )}
-            <ul className="wa-chips" aria-label="Show series">
+            <div className="ov-chips" role="group" aria-label="Show series">
               {chips.map(([s, label]) => (
-                <li key={s}>
-                  <button
-                    className={`wa-chip ${hidden.has(s) ? "off" : ""}`}
-                    aria-pressed={!hidden.has(s)}
-                    onClick={() => toggle(s)}
-                  >
+                <button
+                  key={s}
+                  className={`filter-chip ${hidden.has(s) ? "" : "on"}`}
+                  aria-pressed={!hidden.has(s)}
+                  onClick={() => toggle(s)}
+                  style={{ "--k": s === "online" ? ONLINE : s === "impact" ? IMPACT : FRONT[s as Faction] } as CSSProperties}
+                >
                     {s === "online" ? (
                       <FactionEmblem faction="Humans" size={14} color={ONLINE} />
                     ) : s === "impact" ? (
@@ -330,13 +324,11 @@ export function WarActivity() {
                       <FactionEmblem faction={s} size={14} color={FRONT[s]} />
                     )}
                     {label}
-                  </button>
-                </li>
+                </button>
               ))}
-            </ul>
+            </div>
           </>
         )}
-      </div>
-    </section>
+    </Panel>
   );
 }
