@@ -1,6 +1,6 @@
 [package]
 name = "warcommand-tracker"
-version = "0.2.6"
+version = "0.2.7"
 description = "WarCommand Tracker: a Helldivers 2 Galactic War companion"
 authors = ["you"]
 edition = "2024"

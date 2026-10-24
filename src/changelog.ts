@@ -7,6 +7,22 @@ export interface ChangelogEntry {
 /** Newest first. Shown in the Tracker Dispatch panel. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.7",
+    date: "2026-10-24",
+    items: [
+      "Planet effects from the game: sub-factions such as the Incineration Corps, Heavy SEAF Presence, and points of interest like TCS+ towers and the three Maximum Security Cities, as pawns beside planets on the map and under each planet's new Operational parameters, with its cities.",
+      "The map draws the Gloom in every overlay, fractured planets as debris, and razed worlds (Widow's Harbor, Pilen V, New Haven, Mars, Merak, Lesath, Chort Bay) scorched.",
+      "Sectors overlay looks like the game's war table: only enemy sectors painted, as hatched tiles. The Theater of War shows the same, fills Super Earth's regions, carries its emblem at the centre and can stop turning.",
+      "Galactic war activity is one chart: Helldivers per front under the online total, with the impact multiplier on the same time axis and one readout for both.",
+      "Every biome has its own colours and landscape on planet cards, the map's hover card and the planet page.",
+      "Strohmann News tells each Galactic Campaign as one card, with its orders, dispatches and outcome on a timeline and the right dates.",
+      "Space stations: a picker that also shows the destroyed Automaton station, active tactical actions with their time left, cooldowns, station effects and an FTL jump history.",
+      "G.W.W. is now the Galactic War Web: the war log, training manuals on how the war works, and the Federation's corporations.",
+      "Settings, About and the icons legend sit together at the bottom left; the map's Dispatches box lists the latest five by default (Settings changes it).",
+      "The status strip no longer jumps, and the collector no longer stalls when the API stops answering.",
+    ],
+  },
+  {
     version: "0.2.6",
     date: "2026-10-24",
     items: [
