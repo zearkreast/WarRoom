@@ -179,6 +179,17 @@
   }
 }
 
+@media (max-width: 480px) {
+  /* The outcome chip drops under the dates so long names keep whole words. */
+  .cmp-head {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .cmp-head > .status-chip {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
 /* ---------- Archive ---------- */
 .pc-list {
   list-style: none;

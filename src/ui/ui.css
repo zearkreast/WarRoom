@@ -704,3 +704,33 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* ---------- Touch screens ---------- */
+@media (pointer: coarse) {
+  .filter-chip,
+  .key-btn {
+    height: 40px;
+  }
+  .stepper-arrow,
+  .toast-x {
+    width: 40px;
+    height: 40px;
+  }
+  /* Text-sized controls get a larger invisible hit area instead of a larger box. */
+  .link,
+  .ms-toggle {
+    position: relative;
+  }
+  .link::after,
+  .ms-toggle::after {
+    content: "";
+    position: absolute;
+    inset: -8px -4px;
+  }
+  .key-btn .keycap {
+    display: none;
+  }
+  .key-btn {
+    padding: 0 var(--s-5);
+  }
+}

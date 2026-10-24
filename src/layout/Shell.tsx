@@ -47,12 +47,12 @@ export function Logo() {
   );
 }
 
-function TopButton(props: { view: View; icon: LucideIcon; small: string; big: string }) {
+function TopButton(props: { view: View; icon: LucideIcon; small: string; big: string; className?: string }) {
   const { view, setView } = useUi();
   const on = view === props.view;
   return (
     <button
-      className={`top-btn ${on ? "on" : ""}`}
+      className={`top-btn ${on ? "on" : ""} ${props.className ?? ""}`}
       onClick={() => setView(on ? "campaigns" : props.view)}
       aria-pressed={on}
     >
@@ -263,6 +263,8 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="top-actions">
           <TopButton view="news" icon={Newspaper} small="Strohmann" big="News" />
           <TopButton view="overview" icon={ShieldHalf} small="High Command" big="Overview" />
+          {/* The dock has no room for Settings on phones. */}
+          <TopButton view="settings" icon={Settings} small="Tracker" big="Settings" className="narrow-only" />
         </div>
       </header>
       <StatusStrip />
