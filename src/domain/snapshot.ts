@@ -251,6 +251,12 @@ export interface EpisodePhase {
   issued: number | null;
 }
 
+/** The order's own name; undefined while the game still titles a freshly issued order just "MAJOR ORDER". */
+export function phaseName(p: Pick<EpisodePhase, "title">): string | undefined {
+  const title = p.title.trim();
+  return title && title.toUpperCase() !== "MAJOR ORDER" ? title : undefined;
+}
+
 /** A Galactic Campaign: Major Orders under one name, won when most of them are won; times are epoch ms. */
 export interface EpisodeLive {
   id: number;

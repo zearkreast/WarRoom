@@ -1,4 +1,5 @@
 import type { Assignment, AssignmentTask, Faction, Planet } from "../api/types";
+import { phaseName, type EpisodeLive } from "./snapshot";
 import { FACTION_BY_ID } from "./factions";
 import { byIndex } from "./planets";
 import { projectedAt } from "./progress";
@@ -56,6 +57,15 @@ export function describeAssignment(a: Assignment, planets: Planet[] | undefined)
 
 const REWARD_LABELS: Record<number, string> = { 1: "Warbond Medals", 2: "Requisition Slips", 3: "Super Credits" };
 export const rewardLabel = (type: number) => REWARD_LABELS[type] ?? "Reward";
+
+/**
+ * The running order's name, taken from its campaign: the assignment itself is titled only "MAJOR ORDER"
+ * and its briefing is worded differently, so a name is given only while exactly one order is running.
+ */
+export function orderName(episodes: EpisodeLive[] | undefined): string | undefined {
+  const running = (episodes ?? []).flatMap((e) => (e.status === "active" ? e.phases.filter((p) => p.status === "active") : []));
+  return running.length === 1 ? phaseName(running[0]) : undefined;
+}
 
 export type DeadlineOutlook = "done" | "on-track" | "behind" | "measuring";
 

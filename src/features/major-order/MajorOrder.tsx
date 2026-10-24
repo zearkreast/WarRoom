@@ -1,9 +1,9 @@
 import { Award, CheckSquare, Square, Target } from "lucide-react";
-import { useAssignments, useFreshPlanets } from "../../api/queries";
+import { useAssignments, useEpisodes, useFreshPlanets } from "../../api/queries";
 import type { Assignment, Planet } from "../../api/types";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtCompact, fmtPct } from "../../domain/format";
-import { describeAssignment, rewardLabel, type TaskView } from "../../domain/majorOrder";
+import { describeAssignment, orderName, rewardLabel, type TaskView } from "../../domain/majorOrder";
 import { liberationPercent, projectedAt, projectedCompletion, trackedPercent } from "../../domain/progress";
 import { useUi } from "../../state";
 import { Countdown, Empty, Loading, Meter, Panel } from "../../ui/primitives";
@@ -78,10 +78,12 @@ function CountTask({ t }: { t: TaskView }) {
 export function OrderCard({
   a,
   planets,
+  name,
   compact,
 }: {
   a: Assignment;
   planets: Planet[] | undefined;
+  name?: string;
   compact?: boolean;
 }) {
   const tasks = describeAssignment(a, planets);
@@ -91,7 +93,12 @@ export function OrderCard({
     <Panel
       className="mo"
       icon={Target}
-      title={a.title ?? "Major Order"}
+      title={
+        <>
+          {a.title ?? "Major Order"}
+          {name && <span className="mo-name">{name}</span>}
+        </>
+      }
       right={
         <span className="mo-ends">
           Ends in{" "}
@@ -125,12 +132,13 @@ export function OrderCard({
 export function MajorOrderList({ compact }: { compact?: boolean }) {
   const { data, isLoading } = useAssignments();
   const planets = useFreshPlanets().data;
+  const episodes = useEpisodes().data;
   if (isLoading) return <Loading what="orders" rows={2} />;
   if (!data?.length) return <Empty>No active Major Order. Await further instructions.</Empty>;
   return (
     <>
       {data.map((a) => (
-        <OrderCard key={a.id} a={a} planets={planets} compact={compact} />
+        <OrderCard key={a.id} a={a} planets={planets} name={data.length === 1 ? orderName(episodes) : undefined} compact={compact} />
       ))}
     </>
   );

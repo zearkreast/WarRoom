@@ -3,6 +3,33 @@
   flex-direction: column;
   gap: var(--s-5);
 }
+.mo {
+  container-type: inline-size;
+}
+.mo .panel-title {
+  min-width: 0;
+}
+.mo-name {
+  color: var(--cta);
+}
+.mo-name::before {
+  content: "·";
+  margin: 0 var(--s-3);
+  color: var(--text-dim);
+}
+/* A narrow card has no room beside the countdown, so the name takes its own line rather than an ellipsis. */
+@container (max-width: 600px) {
+  .mo .panel-title {
+    padding: var(--s-3) 0;
+    line-height: 1.3;
+  }
+  .mo-name {
+    display: block;
+  }
+  .mo-name::before {
+    content: none;
+  }
+}
 .mo-ends {
   display: inline-flex;
   align-items: center;
