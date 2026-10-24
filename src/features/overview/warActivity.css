@@ -1,0 +1,252 @@
+/* Galactic war activity: a telemetry panel styled to the user's reference (measured, not eyeballed),
+   so it carries its own neutral surface, rounded shell and series colours instead of the app's. */
+.wa {
+  --wa-surface: rgba(20, 20, 23, 0.92);
+  --wa-border: #27282c;
+  --wa-fg: #fafafa;
+  --wa-muted: #9e9daa;
+  --wa-online: #fbeb00;
+  --wa-impact: #67e8f9;
+  --wa-terminids: #f6b012;
+  --wa-automaton: #ff5d5e;
+  --wa-illuminate: #cb5dff;
+  overflow: hidden;
+  border: 1px solid var(--wa-border);
+  border-radius: 16px;
+  background: var(--wa-surface);
+  backdrop-filter: blur(12px);
+  color: var(--wa-fg);
+  font-family: "Chakra Petch", var(--font-body, sans-serif);
+}
+
+.wa-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--wa-border);
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.035) 0 10px,
+    transparent 10px 20px
+  );
+}
+.wa-bar {
+  flex: none;
+  width: 4px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--wa-online);
+}
+.wa-titles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.wa-kicker {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--wa-muted);
+}
+.wa-title {
+  margin: 0;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wa-fg);
+}
+
+.wa-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.wa-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 40px;
+  margin: 0;
+}
+.wa-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 2px solid var(--k);
+}
+.wa-stat dt {
+  display: flex;
+  align-items: center;
+  height: 16px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--wa-muted);
+}
+.wa-stat dd {
+  margin: 0;
+}
+.wa-value {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--wa-fg);
+}
+.wa-value.toned {
+  color: var(--k);
+}
+.wa-when {
+  height: 16px;
+  font-size: 12px;
+  color: var(--wa-muted);
+}
+
+.wa-plot {
+  position: relative;
+}
+.wa-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 0 solid rgba(250, 250, 250, 0.25);
+  pointer-events: none;
+}
+.wa-corner.tl {
+  top: -4px;
+  left: -4px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+.wa-corner.tr {
+  top: -4px;
+  right: -4px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+.wa-corner.bl {
+  bottom: -4px;
+  left: -4px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+.wa-corner.br {
+  right: -4px;
+  bottom: -4px;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+}
+.wa-ping {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wa-ping 1.8s ease-out infinite;
+}
+@keyframes wa-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wa-ping {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+.wa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wa-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--wa-border);
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--wa-muted);
+  cursor: pointer;
+  transition: color 200ms;
+}
+.wa-chip:hover {
+  color: var(--wa-fg);
+}
+.wa-chip:focus-visible {
+  outline: 2px solid var(--wa-online);
+  outline-offset: 1px;
+}
+.wa-chip.off {
+  opacity: 0.45;
+}
+.wa-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--wa-muted);
+}
+
+.wa-tip {
+  padding: 10px 12px;
+  border: 1px solid var(--wa-border);
+  border-radius: 8px;
+  background: rgba(19, 19, 22, 0.96);
+  font-size: 12px;
+  color: var(--wa-muted);
+}
+.wa-tip p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.wa-tip p + p {
+  margin-top: 4px;
+}
+.wa-tip .wa-tip-when {
+  margin-bottom: 6px;
+}
+.wa-tip i {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+}
+.wa-tip b {
+  margin-left: auto;
+  padding-left: 16px;
+  color: var(--wa-fg);
+}
+
+@media (max-width: 640px) {
+  .wa-body {
+    padding: 16px;
+  }
+  .wa-stats {
+    gap: 12px 24px;
+  }
+}
