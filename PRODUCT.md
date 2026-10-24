@@ -8,10 +8,6 @@ web
 
 (A Tauri 2 desktop + mobile app whose UI is a React web view; the design language is the same web UI on every OS.)
 
-## Users
-
-Primarily the author: an experienced Helldivers 2 player who checks the Galactic War between and during sessions. Also distributed to other players, so a first-time player must be able to find their way without prior knowledge of the app (icons legend, short first-run hints), while the default density stays tuned for experienced players.
-
 ## Product Purpose
 
 A companion for the live Galactic War: what is being fought, where, how fast it is moving, what the Major Order needs, and what changed. Success is answering "where should I dive right now, and is it working?" in one glance, and being told when something important changes.
