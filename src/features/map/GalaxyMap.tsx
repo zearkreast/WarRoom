@@ -73,6 +73,12 @@ const ROT_STEP = Math.PI / 12;
 const TILT_STEP = Math.PI / 18;
 const DRAG_ROT = 0.006;
 const DRAG_TILT = 0.005;
+const TOUCH_TILT = 0.008;
+/** Finger travel (px) before a touch counts as a drag rather than a tap. */
+const TOUCH_SLOP = 6;
+/** Two fingers must twist this far (radians) before the map turns, so a pinch doesn't wobble it. */
+const TWIST_START = 0.2;
+const SCALE_EXTENT: [number, number] = [0.5, 14];
 
 const turn = ([x, y]: Pt, a: number): Pt => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
 /** Map units to the zoom layer's own units: rotated, then squashed by the tilt. */
@@ -81,6 +87,34 @@ const toLayer = (p: Pt, cam: Camera): Pt => {
   return [x, y * Math.cos(cam.tilt)];
 };
 const fromLayer = ([x, y]: Pt, cam: Camera): Pt => turn([x, y / Math.cos(cam.tilt)], -cam.rot);
+
+type Affine = [number, number, number, number, number, number];
+
+/** Map units to screen pixels, in CSS `matrix()` order. */
+function screenMatrix(t: ZoomTransform, cam: Camera): Affine {
+  const [cr, sr, ct] = [Math.cos(cam.rot), Math.sin(cam.rot), Math.cos(cam.tilt)];
+  return [t.k * cr, t.k * ct * sr, -t.k * sr, t.k * ct * cr, t.x, t.y];
+}
+
+function invert([a, b, c, d, e, f]: Affine): Affine {
+  const det = a * d - b * c;
+  return [d / det, -b / det, -c / det, a / det, (c * f - d * e) / det, (b * e - a * f) / det];
+}
+
+function multiply([a1, b1, c1, d1, e1, f1]: Affine, [a2, b2, c2, d2, e2, f2]: Affine): Affine {
+  return [
+    a1 * a2 + c1 * b2,
+    b1 * a2 + d1 * b2,
+    a1 * c2 + c1 * d2,
+    b1 * c2 + d1 * d2,
+    a1 * e2 + c1 * f2 + e1,
+    b1 * e2 + d1 * f2 + f1,
+  ];
+}
+
+const angleOf = (a: Pt, b: Pt) => Math.atan2(b[1] - a[1], b[0] - a[0]);
+const distance = (a: Pt, b: Pt) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+const midpoint = (a: Pt, b: Pt): Pt => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
 
 /** Deterministic background stars so the field doesn't reshuffle between renders. */
 function backgroundStars(n: number) {
@@ -723,6 +757,11 @@ const PlanetLayer = memo(function PlanetLayer(props: {
 
 /** How long the camera must be still before the costly glow filters come back. */
 const SETTLE_MS = 180;
+/**
+ * Below Maximum, a moving map is its last drawn picture under a GPU-only CSS transform;
+ * the SVG is redrawn this often, and on settle.
+ */
+const REDRAW_MS = 400;
 
 /** `onHoverSector` gets the sector under the pointer, whatever the overlay, or null off the disc. */
 export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string | null) => void }) {
@@ -739,12 +778,13 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   const quality = useSettings((s) => s.mapQuality);
   const pinned = useSettings((s) => s.pinned);
   const setSetting = useSettings((s) => s.set);
+  const stageRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const layerRef = useRef<SVGGElement>(null);
   const compassRef = useRef<HTMLButtonElement>(null);
   const tiltRef = useRef<HTMLButtonElement>(null);
-  const zoomRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+  const zoomRef = useRef<ZoomBehavior<HTMLDivElement, unknown> | null>(null);
   const transformRef = useRef<ZoomTransform>(zoomIdentity);
   const camRef = useRef<Camera>({ rot: 0, tilt: 0 });
   const qualityRef = useRef(quality);
@@ -778,34 +818,46 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   const frame = useRef(0);
   const settle = useRef(0);
   const written = useRef({ transform: "", k: "", rot: "", squash: "" });
+  /** The camera the SVG was last drawn at, and when. */
+  const drawn = useRef<{ t: ZoomTransform; cam: Camera; at: number } | null>(null);
 
-  const writeScale = useCallback(() => {
-    const k = String(transformRef.current.k);
-    if (k !== written.current.k) layerRef.current?.style.setProperty("--k", (written.current.k = k));
+  /** Each style variable restyles every planet, so it's written only when it changes. */
+  const draw = useCallback(() => {
+    const svg = svgRef.current;
+    const layer = layerRef.current;
+    if (!svg || !layer) return;
+    const t = transformRef.current;
+    const cam = camRef.current;
+    const deg = (cam.rot * 180) / Math.PI;
+    const w = written.current;
+    const transform = `translate(${t.x},${t.y}) scale(${t.k}) scale(1,${Math.cos(cam.tilt)}) rotate(${deg})`;
+    if (transform !== w.transform) layer.setAttribute("transform", (w.transform = transform));
+    const k = String(t.k);
+    if (k !== w.k) layer.style.setProperty("--k", (w.k = k));
+    const unrot = `${-deg}deg`;
+    if (unrot !== w.rot) layer.style.setProperty("--unrot", (w.rot = unrot));
+    const squash = String(1 / Math.cos(cam.tilt));
+    if (squash !== w.squash) layer.style.setProperty("--unsquash", (w.squash = squash));
+    svg.classList.toggle("z-labels", t.k > 0.9);
+    svg.classList.toggle("z-sectors", t.k > 1.6);
+    svg.classList.toggle("z-planets", t.k > 3);
+    svg.style.transform = "";
+    drawn.current = { t, cam, at: performance.now() };
   }, []);
 
   /** Writes the camera to the DOM once per frame; nothing here touches React state. */
   const paint = useCallback(() => {
     frame.current = 0;
     const svg = svgRef.current;
-    const layer = layerRef.current;
-    if (!svg || !layer) return;
+    if (!svg) return;
     const t = transformRef.current;
     const { rot, tilt } = camRef.current;
-    const deg = (rot * 180) / Math.PI;
-    const w = written.current;
-    const transform = `translate(${t.x},${t.y}) scale(${t.k}) scale(1,${Math.cos(tilt)}) rotate(${deg})`;
-    if (transform !== w.transform) layer.setAttribute("transform", (w.transform = transform));
-    // Each --k write restyles every planet (tens of ms on a phone), so below Maximum the markers ride
-    // the zoom and take their size once the camera settles.
-    if (!w.k || qualityRef.current === "max") writeScale();
-    const unrot = `${-deg}deg`;
-    if (unrot !== w.rot) layer.style.setProperty("--unrot", (w.rot = unrot));
-    const squash = String(1 / Math.cos(tilt));
-    if (squash !== w.squash) layer.style.setProperty("--unsquash", (w.squash = squash));
-    svg.classList.toggle("z-labels", t.k > 0.9);
-    svg.classList.toggle("z-sectors", t.k > 1.6);
-    svg.classList.toggle("z-planets", t.k > 3);
+    const last = drawn.current;
+    if (!last || qualityRef.current === "max" || performance.now() - last.at > REDRAW_MS) draw();
+    else {
+      const m = multiply(screenMatrix(t, camRef.current), invert(screenMatrix(last.t, last.cam)));
+      svg.style.transform = `matrix(${m.join(",")})`;
+    }
     compassRef.current?.classList.toggle("on", rot !== 0 || tilt !== 0);
     compassRef.current?.querySelector("svg")?.style.setProperty("transform", `rotate(${rot - Math.PI / 4}rad)`);
     tiltRef.current?.classList.toggle("on", tilt > 0);
@@ -818,42 +870,147 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
         overlayRef.current !== "sectors",
         STAR_DPR[qualityRef.current],
       );
-  }, [writeScale]);
+  }, [draw]);
 
   /** Queues a paint and marks the map as moving, which drops the glow filters until it settles. */
   const schedule = useCallback(() => {
     const svg = svgRef.current;
     if (!svg) return;
     if (!frame.current) frame.current = requestAnimationFrame(paint);
+    // The picture on screen is current when a move begins, so the first redraw waits a full REDRAW_MS.
+    if (drawn.current && !svg.classList.contains("moving")) drawn.current.at = performance.now();
     svg.classList.add("moving");
     clearTimeout(settle.current);
     settle.current = window.setTimeout(() => {
       svg.classList.remove("moving");
-      writeScale();
+      draw();
       scaleHatches(svg, transformRef.current.k);
     }, SETTLE_MS);
-  }, [paint, writeScale]);
+  }, [paint, draw]);
 
+  // Zoom lives on the stage, not the SVG: a CSS transform on the SVG would skew d3's pointer maths.
   useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg || !layerRef.current) return;
-    const z = zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 14])
+    const stage = stageRef.current;
+    if (!stage || !layerRef.current) return;
+    const z = zoom<HTMLDivElement, unknown>()
+      .scaleExtent(SCALE_EXTENT)
+      .touchable(() => false)
       .on("zoom", (e) => {
         transformRef.current = e.transform as ZoomTransform;
         schedule();
         if (hoverRef.current) setHover(null);
       });
     zoomRef.current = z;
-    select(svg).call(z).on("dblclick.zoom", null);
+    select(stage).call(z).on("dblclick.zoom", null);
     fit();
     const ro = new ResizeObserver(() => fit());
-    ro.observe(svg);
+    ro.observe(stage);
     return () => {
       ro.disconnect();
       cancelAnimationFrame(frame.current);
       frame.current = 0;
       clearTimeout(settle.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded]);
+
+  // Touch, which d3 is told to leave alone: one finger pans; two fingers pinch to zoom and twist to
+  // turn, or slide up and down together to tilt.
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const fingers = new Map<number, Pt>();
+    let start: { pts: Pt[]; t: ZoomTransform; cam: Camera } | null = null;
+    let mode: "still" | "pan" | "pinch" | "tilt" = "still";
+    let twist: number | null = null;
+    let dragged = false;
+
+    const local = (e: PointerEvent): Pt => {
+      const b = stage.getBoundingClientRect();
+      return [e.clientX - b.left, e.clientY - b.top];
+    };
+    // Each change in the number of fingers starts the gesture afresh from where the camera is.
+    const restart = () => {
+      const pts = [...fingers.values()].slice(0, 2);
+      start = pts.length ? { pts, t: transformRef.current, cam: camRef.current } : null;
+      mode = "still";
+      twist = null;
+    };
+    const apply = (x: number, y: number, k: number) => {
+      if (zoomRef.current) select(stage).call(zoomRef.current.transform, zoomIdentity.translate(x, y).scale(k));
+    };
+
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType !== "touch") return;
+      if (!fingers.size) dragged = false;
+      fingers.set(e.pointerId, local(e));
+      restart();
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!fingers.has(e.pointerId) || !start) return;
+      fingers.set(e.pointerId, local(e));
+      const now = [...fingers.values()].slice(0, 2);
+      const s0 = start;
+      if (now.length === 1) {
+        const [dx, dy] = [now[0][0] - s0.pts[0][0], now[0][1] - s0.pts[0][1]];
+        if (mode === "still" && Math.hypot(dx, dy) < TOUCH_SLOP) return;
+        mode = "pan";
+        dragged = true;
+        apply(s0.t.x + dx, s0.t.y + dy, s0.t.k);
+        return;
+      }
+      const [a0, b0] = s0.pts;
+      const [a, b] = now;
+      if (mode === "still") {
+        const da: Pt = [a[0] - a0[0], a[1] - a0[1]];
+        const db: Pt = [b[0] - b0[0], b[1] - b0[1]];
+        const [ma, mb] = [Math.hypot(...da), Math.hypot(...db)];
+        if (Math.max(ma, mb) < TOUCH_SLOP) return;
+        // Fingers report moves one at a time; wait for the other before telling a tilt from a pinch.
+        if (Math.min(ma, mb) < TOUCH_SLOP / 2 && Math.max(ma, mb) < 3 * TOUCH_SLOP) return;
+        dragged = true;
+        const sideBySide = Math.abs(b0[1] - a0[1]) < Math.abs(b0[0] - a0[0]);
+        const vertical = (d: Pt) => Math.abs(d[1]) > 2 * Math.abs(d[0]);
+        mode = sideBySide && da[1] * db[1] > 0 && vertical(da) && vertical(db) ? "tilt" : "pinch";
+      }
+      if (mode === "tilt") {
+        const dy = (a[1] - a0[1] + b[1] - b0[1]) / 2;
+        setCamera({ tilt: s0.cam.tilt - dy * TOUCH_TILT });
+        return;
+      }
+      let turned = angleOf(a, b) - angleOf(a0, b0);
+      turned = Math.atan2(Math.sin(turned), Math.cos(turned));
+      if (twist == null && Math.abs(turned) > TWIST_START) twist = turned;
+      camRef.current = { rot: s0.cam.rot + (twist == null ? 0 : turned - twist), tilt: s0.cam.tilt };
+      // A small window fits the galaxy below the zoom-out limit; don't snap to the limit on pinch.
+      const least = Math.min(SCALE_EXTENT[0], s0.t.k);
+      const k = Math.min(SCALE_EXTENT[1], Math.max(least, (s0.t.k * distance(a, b)) / distance(a0, b0)));
+      // What was under the fingers' midpoint stays under it.
+      const world = fromLayer(s0.t.invert(midpoint(a0, b0)) as Pt, s0.cam);
+      const [x, y] = toLayer(world, camRef.current);
+      const m = midpoint(a, b);
+      apply(m[0] - k * x, m[1] - k * y, k);
+    };
+    const onUp = (e: PointerEvent) => {
+      if (fingers.delete(e.pointerId)) restart();
+    };
+    // A drag that ends over a planet shouldn't open it.
+    const onClick = (e: MouseEvent) => {
+      if (!dragged) return;
+      dragged = false;
+      e.stopPropagation();
+    };
+    stage.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    stage.addEventListener("click", onClick, true);
+    return () => {
+      stage.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      stage.removeEventListener("click", onClick, true);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
@@ -867,27 +1024,27 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   }, [overlay, fresh]);
 
   function centre(): Pt {
-    const { width, height } = svgRef.current!.getBoundingClientRect();
+    const { width, height } = stageRef.current!.getBoundingClientRect();
     return [width / 2, height / 2];
   }
 
   function fit() {
-    const svg = svgRef.current;
-    if (!svg || !zoomRef.current) return;
-    const { width, height } = svg.getBoundingClientRect();
+    const stage = stageRef.current;
+    if (!stage || !zoomRef.current) return;
+    const { width, height } = stage.getBoundingClientRect();
     const k = Math.min(width, height) / (EXTENT * 2);
-    select(svg).call(zoomRef.current.transform, zoomIdentity.translate(width / 2, height / 2).scale(k));
+    select(stage).call(zoomRef.current.transform, zoomIdentity.translate(width / 2, height / 2).scale(k));
   }
 
   function zoomBy(f: number) {
-    if (svgRef.current && zoomRef.current)
-      select(svgRef.current).transition().duration(250).call(zoomRef.current.scaleBy, f);
+    if (stageRef.current && zoomRef.current)
+      select(stageRef.current).transition().duration(250).call(zoomRef.current.scaleBy, f);
   }
 
   /** Rotates and tilts about the middle of the screen, keeping whatever is there in place. */
   function setCamera(next: Partial<Camera>) {
-    const svg = svgRef.current;
-    if (!svg || !zoomRef.current) return;
+    const stage = stageRef.current;
+    if (!stage || !zoomRef.current) return;
     const t = transformRef.current;
     const c = centre();
     const world = fromLayer(t.invert(c) as Pt, camRef.current);
@@ -896,18 +1053,18 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
       tilt: Math.min(MAX_TILT, Math.max(0, next.tilt ?? camRef.current.tilt)),
     };
     const [x, y] = toLayer(world, camRef.current);
-    select(svg).call(zoomRef.current.transform, zoomIdentity.translate(c[0] - t.k * x, c[1] - t.k * y).scale(t.k));
+    select(stage).call(zoomRef.current.transform, zoomIdentity.translate(c[0] - t.k * x, c[1] - t.k * y).scale(t.k));
   }
 
   // Fly to a planet chosen elsewhere ("Show on map") or from the map's own options ("Focus").
   useEffect(() => {
-    const svg = svgRef.current;
+    const stage = stageRef.current;
     const p = selectedPlanet != null && freshRef.current ? byIndex(freshRef.current).get(selectedPlanet) : undefined;
-    if (!svg || !zoomRef.current || !p || focusSeq === 0) return;
-    const { width, height } = svg.getBoundingClientRect();
+    if (!stage || !zoomRef.current || !p || focusSeq === 0) return;
+    const { width, height } = stage.getBoundingClientRect();
     const [x, y] = toLayer(project(p.position), camRef.current);
     const k = Math.max(3, Math.min(width, height) / 280);
-    select(svg)
+    select(stage)
       .transition()
       .duration(700)
       .call(zoomRef.current.transform, zoomIdentity.translate(width / 2 - x * k, height / 2 - y * k).scale(k));
@@ -945,7 +1102,7 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
       return;
     }
     if (!geo || e.buttons) return;
-    const box = e.currentTarget.getBoundingClientRect();
+    const box = stageRef.current!.getBoundingClientRect();
     const at = transformRef.current.invert([e.clientX - box.left, e.clientY - box.top]) as Pt;
     const [x, y] = fromLayer(at, camRef.current);
     hoverSector(sectorAt(geo, x / GALAXY_SCALE, -y / GALAXY_SCALE));
@@ -959,42 +1116,44 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   return (
     <div className={`map-wrap q-${quality}`}>
       <canvas ref={canvasRef} className="starfield-canvas" aria-hidden />
-      <svg
-        ref={svgRef}
-        className={`galaxy ov-${overlay} pl-${planetStyle}`}
-        role="img"
-        aria-label="Galactic war map"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-        onContextMenu={(e) => e.preventDefault()}
-        onPointerLeave={() => {
-          setHover(null);
-          hoverSector(null);
-        }}
-      >
-        <HaloDefs />
-        <g ref={layerRef}>
-          {overlay === "regions" && <Regions planets={fresh} />}
-          {overlay === "sectors" && geo && <SectorLayer geo={geo} planets={fresh} id="map" hatch={HATCH} />}
-          <Lanes planets={fresh} mode={overlay === "sectors" ? "front" : overlay === "galaxy" ? "bright" : "dim"} />
-          {effects && <GloomLayer planets={fresh} gloom={effects.gloom} />}
-          <FactionMarks planets={fresh} overlay={overlay} geo={geo} />
-          <AttackLines planets={fresh} active={active} />
-          <PlanetLayer
-            planets={fresh}
-            effects={effects?.planets}
-            active={active}
-            mo={mo}
-            pinned={pinnedSet}
-            selected={selectedPlanet}
-            style={planetStyle}
-            onOpen={onOpen}
-            onHover={setHover}
-          />
-        </g>
-      </svg>
+      <div ref={stageRef} className="map-stage">
+        <svg
+          ref={svgRef}
+          className={`galaxy ov-${overlay} pl-${planetStyle}`}
+          role="img"
+          aria-label="Galactic war map"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onContextMenu={(e) => e.preventDefault()}
+          onPointerLeave={() => {
+            setHover(null);
+            hoverSector(null);
+          }}
+        >
+          <HaloDefs />
+          <g ref={layerRef}>
+            {overlay === "regions" && <Regions planets={fresh} />}
+            {overlay === "sectors" && geo && <SectorLayer geo={geo} planets={fresh} id="map" hatch={HATCH} />}
+            <Lanes planets={fresh} mode={overlay === "sectors" ? "front" : overlay === "galaxy" ? "bright" : "dim"} />
+            {effects && <GloomLayer planets={fresh} gloom={effects.gloom} />}
+            <FactionMarks planets={fresh} overlay={overlay} geo={geo} />
+            <AttackLines planets={fresh} active={active} />
+            <PlanetLayer
+              planets={fresh}
+              effects={effects?.planets}
+              active={active}
+              mo={mo}
+              pinned={pinnedSet}
+              selected={selectedPlanet}
+              style={planetStyle}
+              onOpen={onOpen}
+              onHover={setHover}
+            />
+          </g>
+        </svg>
+      </div>
       <div className="map-rail">
         <HudButton icon={ZoomIn} label="Zoom in" keyHint="+" onClick={() => zoomBy(1.5)} />
         <HudButton icon={ZoomOut} label="Zoom out" keyHint="-" onClick={() => zoomBy(1 / 1.5)} />
