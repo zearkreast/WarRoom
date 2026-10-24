@@ -119,7 +119,10 @@ export function SettingsPage() {
               onChange={(v) => s.set("mapPlanets", v)}
             />
           </Row>
-          <Row title="Render quality" text="Fewer stars, no glow and no pulsing markers at Minimal, for older devices.">
+          <Row
+            title="Render quality"
+            text="Minimal keeps the look but stops the pulsing markers and draws fewer, softer stars. Maximum resizes planet markers live while zooming."
+          >
             <Stepper<MapQuality>
               label="Render quality"
               options={QUALITY_OPTIONS}
