@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   Flag,
   FlagOff,
   Info,
@@ -148,7 +149,7 @@ const TABS: { view: View; label: string; icon: LucideIcon; key: string }[] = [
 ];
 
 function Dock() {
-  const { view, setView, showAbout, toggleDispatch, dispatchOpen } = useUi();
+  const { view, setView, showDialog, toggleDispatch, dispatchOpen } = useUi();
   const seen = useSettings((s) => s.seenChangelog);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -162,9 +163,6 @@ function Dock() {
   return (
     <nav className="dock" aria-label="Main">
       <div className="dock-side">
-        <button className="hud-btn icon" aria-label="About" title="About" onClick={() => showAbout(true)}>
-          <Info size={18} strokeWidth={1.75} />
-        </button>
         <button
           className={`hud-btn icon ${view === "settings" ? "on" : ""}`}
           aria-label="Settings"
@@ -172,6 +170,17 @@ function Dock() {
           onClick={() => setView(view === "settings" ? "campaigns" : "settings")}
         >
           <Settings size={18} strokeWidth={1.75} />
+        </button>
+        <button className="hud-btn icon" aria-label="About" title="About" onClick={() => showDialog("about")}>
+          <Info size={18} strokeWidth={1.75} />
+        </button>
+        <button
+          className="hud-btn icon"
+          aria-label="Icons legend"
+          title="Icons legend"
+          onClick={() => showDialog("legend")}
+        >
+          <BookOpen size={18} strokeWidth={1.75} />
         </button>
       </div>
       <div className="dock-tabs" role="tablist">
