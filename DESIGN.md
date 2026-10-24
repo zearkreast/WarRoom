@@ -189,7 +189,7 @@ Square everywhere (`rounded.none`). Circles appear only for things that are roun
 - **Sectors overlay**: only enemy sectors are painted, as hatched tiles in the enemy colour split by dark seams, as on the game's war table; contested sectors are faint. The Theater of War draws the same layer.
 - **The Gloom**: a pre-rendered amber cloud texture masked around the planets in or on the edge of the Gloom, on every overlay; it thins once zoomed in to the planets.
 - **Pawns**: small square tags beside a planet once zoomed in: sub-factions in the enemy colour, SEAF in Super Earth blue, points of interest in CTA yellow. Fractured planets are drawn as debris, razed ones scorched.
-- **Activity chart**: fronts stacked with faction gradients under a 2px yellow online line with peak and low dots; the impact multiplier sits in its own strip on the same time axis, with one shared readout, inside HUD corner brackets.
+- **Activity chart**: fronts stacked with faction gradients under a 2.5px yellow online line with peak, low and latest dots, and the impact multiplier as a cyan line on its own right-hand axis; one shared readout, HUD corner brackets, neutral series chips.
 - **Radial options**: circular glass menu with four options (pin, details, show on map, space station) around a close hub.
 - **Overlay**: full-viewport planet detail on grid paper with an ESC key button in a fixed footer.
 - **Keycap / KeyButton**: white keycap chip before an uppercase label (ESC CLOSE, H CONTROLS, Z DISPATCHES).
@@ -209,6 +209,6 @@ Do:
 Don't:
 - Add kickers or eyebrow labels above headings; breadcrumbs are navigation and are fine.
 - Draw coloured left borders thicker than 1px on cards, rows or callouts.
-- Use dual-axis charts, rainbow ramps, or a categorical hue beyond the four factions.
+- Use dual-axis charts (the one exception, at the user's request, is the activity chart's impact multiplier), rainbow ramps, or a categorical hue beyond the four factions.
 - Round corners, or use glass where there is no map underneath.
 - Copy game art or licensed game fonts. The one exception, asked for by the user, is the biome landscape banners in `src/assets/biomes/`, credited in About.

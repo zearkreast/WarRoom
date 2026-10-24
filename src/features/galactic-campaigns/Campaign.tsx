@@ -16,6 +16,9 @@ const OUTCOME: Record<EpisodeStatus, { label: string; tone: string }> = {
   lost: { label: "Failed", tone: "var(--bad)" },
 };
 
+/** A Galactic Campaign runs three Major Orders; the game names each one only when it is issued. */
+const CAMPAIGN_ORDERS = 3;
+
 const REWARD_RULE: Record<EpisodeStatus, string> = {
   active: "Earned by winning most of the campaign's Major Orders.",
   won: "Earned: most Major Orders were won.",
@@ -48,6 +51,7 @@ export function CampaignHead({ e }: { e: EpisodeLive }) {
 export function CampaignBody({ e }: { e: EpisodeLive }) {
   const tally = campaignTally(e);
   const reward = e.reward == null ? undefined : CAMPAIGN_REWARDS[e.reward];
+  const toCome = e.status === "active" ? Math.max(0, CAMPAIGN_ORDERS - e.phases.length) : 0;
   return (
     <div className="cmp-body">
       {e.description && <p className="cmp-desc">{e.description}</p>}
@@ -65,6 +69,12 @@ export function CampaignBody({ e }: { e: EpisodeLive }) {
             · <b>{tally.running}</b> running
           </>
         )}
+        {toCome > 0 && (
+          <>
+            {" "}
+            · <b>{toCome}</b> to come
+          </>
+        )}
       </div>
       <ol className="cmp-orders">
         {e.phases.map((p, i) => (
@@ -80,6 +90,12 @@ export function CampaignBody({ e }: { e: EpisodeLive }) {
               {p.briefing && <MarkupText message={p.briefing} className="cmp-text" whole />}
               {p.outro && <MarkupText message={p.outro} className="cmp-text cmp-outro" whole />}
             </details>
+          </li>
+        ))}
+        {Array.from({ length: toCome }, (_, i) => (
+          <li key={`slot-${i}`} className="cmp-slot">
+            <span className="cmp-mo caps num">MO {e.phases.length + i + 1}</span>
+            <span className="cmp-slot-text caps">Awaiting orders from High Command</span>
           </li>
         ))}
       </ol>

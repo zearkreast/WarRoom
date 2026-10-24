@@ -29,7 +29,13 @@ export const LANDMARKS: Landmark[] = [
 export type Anomaly = "wormhole" | "blackhole" | "fractured" | "scorched";
 
 /** Planets the game draws as space anomalies instead of worlds. */
-export const ANOMALIES: Record<string, Anomaly> = { MERIDIA: "wormhole", PENTA: "blackhole" };
+export const ANOMALIES: Record<string, Anomaly> = {
+  MERIDIA: "wormhole",
+  PENTA: "blackhole",
+  "ANGEL'S VENTURE": "fractured",
+  MORADESH: "fractured",
+  IVIS: "fractured",
+};
 /** Galactic effects that change how the game draws a planet. */
 const LOOK_EFFECTS: Record<number, Anomaly> = { 1229: "wormhole", 1177: "blackhole", 1352: "blackhole", 1241: "fractured", 1252: "fractured" };
 

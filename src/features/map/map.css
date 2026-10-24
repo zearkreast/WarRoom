@@ -262,20 +262,28 @@
 .pawn svg {
   color: currentColor;
 }
-.anomaly.fractured path,
-.anomaly.fractured circle {
-  fill: #8f8a86;
-  stroke: #2a2624;
-  stroke-width: 0.3;
+.anomaly.fractured .rock {
+  fill: #a39b95;
+  stroke: #3a2a26;
+  stroke-width: 0.35;
+  stroke-linejoin: round;
 }
-.anomaly.scorched {
-  filter: drop-shadow(0 0 2px rgba(255, 110, 40, 0.7));
+.anomaly.fractured .rock.small {
+  fill: #7d7470;
 }
-.anomaly.scorched .cracks {
-  fill: none;
-  stroke: #2a0904;
-  stroke-width: 0.5;
-  stroke-linecap: round;
+.anomaly.fractured .ember {
+  fill: #ffb070;
+}
+.galaxy:not(.q-min) .anomaly.fractured .ember {
+  filter: drop-shadow(0 0 1.5px #ff6a3a);
+}
+.planet .core.scorched {
+  stroke: #ffd2a1;
+  stroke-width: 0.4;
+}
+.planet .sphere.scorched {
+  stroke: #ff7a2e;
+  stroke-width: 0.6;
 }
 .q-min .planet .pulse {
   animation: none;

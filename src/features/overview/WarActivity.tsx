@@ -43,7 +43,6 @@ const ONLINE = "var(--cta)";
 const IMPACT = "var(--info)";
 const FULL_DAY_MS = 23.5 * 3_600_000;
 const AXIS_W = 52;
-const MARGIN = { top: 8, right: 8, bottom: 0, left: 0 };
 
 /** The multiplier moves in the fourth decimal, so "auto" gives identical tick labels; use round steps instead. */
 function impactScale(values: number[]): { domain: [number, number]; ticks: number[] } {
@@ -87,8 +86,7 @@ function ActivityTip({ active, payload, label, hidden }: TooltipContentProps<Val
 
 /**
  * Galaxy-wide telemetry for the last 24 hours, or since the collector's latest gap: Helldivers per
- * front stacked under the online total, and the impact multiplier in a strip on the same time axis.
- * Two scales would need two axes on one chart, so the multiplier gets its own strip instead.
+ * front stacked under the online total, with the impact multiplier on its own right-hand axis.
  */
 export function WarActivity() {
   const { data, isLoading } = useFrontActivity();
@@ -104,6 +102,7 @@ export function WarActivity() {
   // The online total once the collector has recorded it; until then, everyone on the fronts.
   const total = (p: ActivityPoint) => (online.length > 1 ? (p.online ?? 0) : p.players);
   const pool = online.length > 1 ? online : rows;
+  const last = pool[pool.length - 1];
   const peak = extreme(pool, total, (a, b) => a > b);
   const low = extreme(pool, total, (a, b) => a < b);
   const impacts = rows.flatMap((r) => (r.impact == null ? [] : [r.impact]));
@@ -158,40 +157,74 @@ export function WarActivity() {
         <Empty>No front readings in the last 24 hours; the collector may be down.</Empty>
       ) : (
         <div className="ov-charts ov-frame">
-          <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart data={rows} syncId="ov-war" margin={MARGIN}>
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={rows} margin={{ top: 10, right: 4, bottom: 0, left: 0 }}>
               <defs>
                 {ENEMIES.map((f) => (
                   <linearGradient key={f} id={`ov-front-${f}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={CHART[f]} stopOpacity={0.5} />
-                    <stop offset="100%" stopColor={CHART[f]} stopOpacity={0.06} />
+                    <stop offset="0%" stopColor={CHART[f]} stopOpacity={0.55} />
+                    <stop offset="100%" stopColor={CHART[f]} stopOpacity={0.12} />
                   </linearGradient>
                 ))}
               </defs>
               <CartesianGrid {...gridProps} />
-              <XAxis dataKey="at" type="number" scale="time" domain={domain} ticks={ticks} hide />
-              <YAxis tickFormatter={(v) => fmtCompact(Number(v))} {...axisProps} width={AXIS_W} />
+              <XAxis
+                dataKey="at"
+                type="number"
+                scale="time"
+                domain={domain}
+                ticks={ticks}
+                tickFormatter={fmtHourTick}
+                {...axisProps}
+              />
+              <YAxis yAxisId="divers" tickFormatter={(v) => fmtCompact(Number(v))} {...axisProps} width={AXIS_W} />
+              {impactAxis && (
+                <YAxis
+                  yAxisId="impact"
+                  orientation="right"
+                  domain={impactAxis.domain}
+                  ticks={impactAxis.ticks}
+                  tickFormatter={(v) => Number(v).toFixed(4)}
+                  {...axisProps}
+                  width={AXIS_W}
+                />
+              )}
               <Tooltip {...tooltipProps} content={tip} />
               {ENEMIES.filter((f) => !hidden.has(f)).map((f) => (
                 <Area
                   key={f}
+                  yAxisId="divers"
                   dataKey={FRONT_KEY[f]!}
                   name={factionLabel(f)}
                   stackId="fronts"
                   stroke={CHART[f]}
-                  strokeWidth={1.5}
+                  strokeWidth={1}
                   fill={`url(#ov-front-${f})`}
                   isAnimationActive={false}
                 />
               ))}
+              {impactAxis && !hidden.has("impact") && (
+                <Line
+                  yAxisId="impact"
+                  dataKey="impact"
+                  name="Impact"
+                  stroke={IMPACT}
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+              )}
               {!hidden.has("online") && (
                 <Line
+                  yAxisId="divers"
                   dataKey={online.length > 1 ? "online" : "players"}
                   name="Helldivers online"
                   stroke={ONLINE}
-                  strokeWidth={2}
+                  strokeWidth={2.5}
+                  strokeLinejoin="round"
                   dot={false}
-                  connectNulls={false}
+                  connectNulls
                   isAnimationActive={false}
                 />
               )}
@@ -201,6 +234,7 @@ export function WarActivity() {
                     p && (
                       <ReferenceDot
                         key={i}
+                        yAxisId="divers"
                         x={p.at}
                         y={total(p)}
                         r={4}
@@ -210,63 +244,33 @@ export function WarActivity() {
                       />
                     ),
                 )}
+              {!hidden.has("online") && last && (
+                <ReferenceDot
+                  yAxisId="divers"
+                  x={last.at}
+                  y={total(last)}
+                  r={6}
+                  fill="none"
+                  stroke={ONLINE}
+                  strokeWidth={2}
+                />
+              )}
             </ComposedChart>
           </ResponsiveContainer>
-          <div className="pd-chart-label caps">Impact multiplier</div>
-          {impactAxis ? (
-            <ResponsiveContainer width="100%" height={84}>
-              <ComposedChart data={rows} syncId="ov-war" margin={MARGIN}>
-                <defs>
-                  <linearGradient id="ov-impact" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={IMPACT} stopOpacity={0.28} />
-                    <stop offset="100%" stopColor={IMPACT} stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid {...gridProps} />
-                <XAxis
-                  dataKey="at"
-                  type="number"
-                  scale="time"
-                  domain={domain}
-                  ticks={ticks}
-                  tickFormatter={fmtHourTick}
-                  {...axisProps}
-                />
-                <YAxis
-                  domain={impactAxis.domain}
-                  ticks={[impactAxis.ticks[0], impactAxis.ticks[impactAxis.ticks.length - 1]]}
-                  tickFormatter={(v) => Number(v).toFixed(4)}
-                  {...axisProps}
-                  width={AXIS_W}
-                />
-                <Tooltip {...tooltipProps} content={() => null} />
-                {!hidden.has("impact") && (
-                  <Area
-                    dataKey="impact"
-                    stroke={IMPACT}
-                    strokeWidth={2}
-                    fill="url(#ov-impact)"
-                    baseValue="dataMin"
-                    connectNulls={false}
-                    isAnimationActive={false}
-                  />
-                )}
-              </ComposedChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="ov-note">Its history is recorded from the next collector update; the current value is above.</p>
+          {!impactAxis && (
+            <p className="ov-note">The impact multiplier's history is recorded from the next collector update.</p>
           )}
           <div className="ov-chips" role="group" aria-label="Show series">
             {chips.map(([s, label, color]) => (
               <button
                 key={s}
-                className={`filter-chip ${hidden.has(s) ? "" : "on"}`}
+                className={`filter-chip ov-chip ${hidden.has(s) ? "off" : ""}`}
                 aria-pressed={!hidden.has(s)}
                 onClick={() => toggle(s)}
                 style={{ "--k": color } as CSSProperties}
               >
                 {s === "online" || s === "impact" ? (
-                  <i className="ov-chip-key" style={{ background: color }} aria-hidden />
+                  <i className={`ov-chip-key ${s}`} style={{ background: color }} aria-hidden />
                 ) : (
                   <FactionEmblem faction={s} size={13} />
                 )}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { WarStatusRaw } from "../api/types";
+import { planetTint } from "../domain/biomes";
 import { latestDispatches } from "../domain/dispatch";
 import { planetEffects } from "../domain/effects";
 import { toEffectsLive } from "../domain/snapshot";
@@ -46,5 +47,14 @@ describe("map dispatches", () => {
   it("lists the newest few whatever their age, or the last 72 hours'", () => {
     expect(latestDispatches(list, "3", now).map((x) => x.id)).toEqual([4, 3, 2]);
     expect(latestDispatches(list, "72h", now).map((x) => x.id)).toEqual([4]);
+  });
+});
+
+describe("planet pictures", () => {
+  it("shows what a destroyed planet has become instead of its old biome", () => {
+    expect(planetTint({ name: "MERIDIA", biome: { name: "Supercolony", description: "" } }).art).toMatch(/meridian-black-hole/);
+    expect(planetTint({ name: "PENTA", biome: { name: "Deadlands", description: "" } }).art).toMatch(/black-hole/);
+    expect(planetTint({ name: "MORADESH", biome: { name: "Desert Dunes", description: "" } }).art).toMatch(/fractured/);
+    expect(planetTint({ name: "FURY", biome: { name: "Magma", description: "" } }).art).toMatch(/magma/);
   });
 });

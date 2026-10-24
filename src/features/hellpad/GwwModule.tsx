@@ -240,7 +240,7 @@ export function AboutModule() {
         <h3>Not affiliated</h3>
         <p>
           A fan project, not affiliated with Arrowhead Game Studios or Sony Interactive Entertainment. Faction marks and
-          map artwork are drawn for the app. The biome landscapes are the game's, taken from the Helldivers Wiki
+          map artwork are drawn for the app. The biome landscapes and the black hole and fractured planet pictures are the game's, taken from the Helldivers Wiki
           (helldivers.wiki.gg), and belong to their owners. Effect names come from the Helldivers 2 community's
           data set (github.com/helldivers-2/json, MIT licence).
         </p>

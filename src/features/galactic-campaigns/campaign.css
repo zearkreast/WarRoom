@@ -139,6 +139,19 @@
   display: block;
   margin-top: var(--s-2);
 }
+/* A Major Order not issued yet: a dashed slot that fills when the game names it. */
+.cmp-slot {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  border: 1px dashed var(--line-strong);
+}
+.cmp-slot-text {
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--faint);
+}
 .cmp-mo {
   font-size: var(--fs-label);
   letter-spacing: 0.14em;
