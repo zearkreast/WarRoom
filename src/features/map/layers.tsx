@@ -111,14 +111,14 @@ export const SectorLayer = memo(function SectorLayer({
 
 const NOISE_SIZE = 256;
 
-/** Tileable fractal value noise as a PNG data URL, coloured like the Gloom; made once per session. */
-let noiseUrl: string | null = null;
-function gloomTexture(): string {
-  if (noiseUrl) return noiseUrl;
+/** Tileable fractal value noise, coloured like the Gloom; made once per session. */
+let noise: HTMLCanvasElement | null = null;
+function gloomNoise(): HTMLCanvasElement | null {
+  if (noise) return noise;
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = NOISE_SIZE;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return "";
+  if (!ctx) return null;
   let seed = 11;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const field = new Float32Array(NOISE_SIZE * NOISE_SIZE);
@@ -150,63 +150,63 @@ function gloomTexture(): string {
     img.data[i * 4 + 3] = Math.round(Math.pow(v, 1.3) * 240);
   }
   ctx.putImageData(img, 0, 0);
-  return (noiseUrl = canvas.toDataURL());
+  return (noise = canvas);
 }
 
 /** Map units around a Gloom planet that its cloud covers. */
 const GLOOM_REACH = 78;
 
 /**
- * The Gloom: a drifting amber cloud over the planets the game marks as in or on the edge of it, on
- * every overlay. The texture is a pre-rendered image, so panning doesn't re-run a filter.
+ * The tiled noise cut to soft discs around each spot, as one PNG at one pixel per map unit (the
+ * noise's own resolution).
  */
-export const GloomLayer = memo(function GloomLayer({
-  planets,
-  gloom,
-  id,
-}: {
-  planets: Planet[];
-  gloom: Set<number>;
-  id: string;
-}) {
-  const spots = useMemo(
-    () => planets.filter((p) => gloom.has(p.index)).map((p) => project(p.position)),
-    [planets, gloom],
-  );
-  const box = useMemo(() => {
+function gloomImage(spots: [number, number][], box: { x: number; y: number; w: number; h: number }): string {
+  const tex = gloomNoise();
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(box.w);
+  canvas.height = Math.ceil(box.h);
+  const ctx = canvas.getContext("2d");
+  if (!tex || !ctx) return "";
+  ctx.translate(-box.x, -box.y);
+  for (const [x, y] of spots) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, GLOOM_REACH);
+    g.addColorStop(0, "#fff");
+    g.addColorStop(0.55, "rgba(255,255,255,0.75)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(x - GLOOM_REACH, y - GLOOM_REACH, GLOOM_REACH * 2, GLOOM_REACH * 2);
+  }
+  ctx.globalCompositeOperation = "source-in";
+  // Tiled from the map origin, so the texture doesn't shift when the box changes.
+  ctx.fillStyle = ctx.createPattern(tex, "repeat")!;
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  return canvas.toDataURL();
+}
+
+/**
+ * The Gloom: a drifting amber cloud over the planets the game marks as in or on the edge of it, on
+ * every overlay. It is one pre-rendered image, so panning doesn't re-run a mask or filter.
+ */
+export const GloomLayer = memo(function GloomLayer({ planets, gloom }: { planets: Planet[]; gloom: Set<number> }) {
+  const inGloom = planets.filter((p) => gloom.has(p.index));
+  // Planets don't move, so the image only needs redrawing when the set of Gloom planets changes,
+  // not on every data refresh.
+  const key = inGloom.map((p) => p.index).sort((a, b) => a - b).join(",");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const spots = useMemo(() => inGloom.map((p) => project(p.position)), [key]);
+  const image = useMemo(() => {
     if (!spots.length) return null;
     const xs = spots.map(([x]) => x);
     const ys = spots.map(([, y]) => y);
     const pad = GLOOM_REACH * 1.2;
-    return { x: Math.min(...xs) - pad, y: Math.min(...ys) - pad, w: Math.max(...xs) - Math.min(...xs) + 2 * pad, h: Math.max(...ys) - Math.min(...ys) + 2 * pad };
+    const box = { x: Math.min(...xs) - pad, y: Math.min(...ys) - pad, w: Math.max(...xs) - Math.min(...xs) + 2 * pad, h: Math.max(...ys) - Math.min(...ys) + 2 * pad };
+    const href = gloomImage(spots, box);
+    return href ? { ...box, href } : null;
   }, [spots]);
-  const texture = useMemo(() => (box ? gloomTexture() : ""), [box]);
-  if (!box || !texture) return null;
+  if (!image) return null;
   return (
     <g className="gloom" aria-hidden>
-      <defs>
-        <radialGradient id={`${id}-gloom-spot`}>
-          <stop offset="0%" stopColor="#fff" stopOpacity={1} />
-          <stop offset="55%" stopColor="#fff" stopOpacity={0.75} />
-          <stop offset="100%" stopColor="#fff" stopOpacity={0} />
-        </radialGradient>
-        <mask id={`${id}-gloom-mask`} maskUnits="userSpaceOnUse" x={box.x} y={box.y} width={box.w} height={box.h}>
-          {spots.map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r={GLOOM_REACH} fill={`url(#${id}-gloom-spot)`} />
-          ))}
-        </mask>
-        <pattern id={`${id}-gloom-tex`} width={NOISE_SIZE} height={NOISE_SIZE} patternUnits="userSpaceOnUse">
-          <image href={texture} width={NOISE_SIZE} height={NOISE_SIZE} />
-        </pattern>
-      </defs>
-      <rect
-        x={box.x}
-        y={box.y}
-        width={box.w}
-        height={box.h}
-        fill={`url(#${id}-gloom-tex)`}
-        mask={`url(#${id}-gloom-mask)`}
-      />
+      <image href={image.href} x={image.x} y={image.y} width={Math.ceil(image.w)} height={Math.ceil(image.h)} />
     </g>
   );
 });

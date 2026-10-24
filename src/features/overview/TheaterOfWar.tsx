@@ -172,7 +172,7 @@ export function TheaterOfWar() {
                 <path d={g.paths.join("")} />
               </g>
             ))}
-            {effects && <GloomLayer planets={planets} gloom={effects.gloom} id="tw" />}
+            {effects && <GloomLayer planets={planets} gloom={effects.gloom} />}
             <g className="tw-hits">
               {[...geo.fills].map(([name, d]) => (
                 <path key={name} d={d} onPointerEnter={() => setSector(name)} />
