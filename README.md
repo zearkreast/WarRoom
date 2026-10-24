@@ -3,16 +3,18 @@
 A fan-made Helldivers 2 Galactic War companion. Not affiliated with Arrowhead Game Studios.
 
 ```
-collector (VDS) ──► api.helldivers2.dev      the only API caller
+collector (VDS) ──► api.helldivers2.dev                 the only API caller
+      │        └──► api.live.prod.thehelldiversgame.com  (campaigns, planet effects)
       │
-      └──► Supabase ◄── app (desktop / mobile)  reads only
+      └──► Supabase ◄── app (desktop / mobile / web)     reads only
 ```
 
 - **App** (`src/`, `src-tauri/`): Tauri 2 + React + TypeScript, for Windows/macOS/Linux and Android/iOS.
 - **Collector** (`collector/`): a dependency-free Node service that polls the API and writes to Supabase.
   See [collector/README.md](collector/README.md) for VDS setup.
-- **Database** (`supabase/migrations/`): snapshots of the current war, planet progress samples, and
-  every ownership change. Shared by all users.
+- **Database** (`supabase/migrations/`): snapshots of the current war, planet progress samples, every
+  ownership change, galaxy-wide war samples and the space station's FTL jumps. Shared by all users.
+  Apply the migrations in order (`0001` to `0004`).
 
 ## Run the app
 
@@ -42,14 +44,21 @@ npm run collect:once     # every job once, then exits
 
 ## Layout
 
-- `collector/`: API client (one queue, 1.5 s between requests, pauses on 429, 25 s timeout), recorder,
-  polling jobs, Docker and systemd files.
+- `collector/`: API client (one queue, 2.5 s between requests, a fresh connection per request, backs
+  off while the API is unreachable or rate-limiting), recorder, polling jobs, Docker and systemd files.
 - `src/domain/`: pure logic shared by the app and the collector: liberation rates and ETAs, Major Order
-  tasks, galaxy sector geometry, owner-change detection, and the snapshot format. Covered by tests.
+  tasks, galaxy sector geometry, planet effects, campaign news, owner-change detection, and the snapshot
+  format. Covered by tests.
+- `src/data/`: hand-kept data the APIs don't carry: campaign rewards, effect names (from the community
+  list at github.com/helldivers-2/json) and overrides, scorched planets, past space stations, and the
+  G.W.W. manuals and corporations.
+- `src/assets/biomes/`: one landscape banner per biome, from the Helldivers Wiki.
 - `src/api/`: reads snapshots from Supabase and rebuilds them into the planet and campaign shapes the UI uses.
 - `src/history/`: reads the shared sample and ownership history.
-- `src/features/`: map, major-order, planets (fronts), news, stats, history.
-- `src/layout/`: the shell. Top nav on desktop, bottom tab bar under 900 px.
+- `src/features/`: overview (High Command), map, campaigns (Active planets), galactic-campaigns, hellpad
+  (planets, space stations, G.W.W., past campaigns), planet detail, news, settings.
+- `src/layout/`: the shell: top bar, status strip with the news ticker, the dock, the About and legend
+  dialogs, Tracker Dispatch.
 
 ## Notes
 
