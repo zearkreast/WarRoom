@@ -79,7 +79,7 @@ export function CampaignCard({ f, totalPlayers, deadline }: { f: Front; totalPla
   const tint = biomeTint(p.biome?.name);
   const regen = regenPctPerHour(p);
   const share = totalPlayers ? (f.players / totalPlayers) * 100 : 0;
-  const style = { "--enemy": enemy, "--sky": tint.sky, "--ground": tint.ground } as CSSProperties;
+  const style = { "--enemy": enemy, "--sky": tint.sky, "--ground": tint.ground, "--art": tint.art } as CSSProperties;
   const TypeIcon = f.kind === "defense" ? ShieldAlert : Crosshair;
 
   return (

@@ -102,7 +102,7 @@ function Hero({ p, front }: { p: Planet; front: Front | null }) {
   const tone = factionColor(front?.enemy ?? p.currentOwner);
   const percent = front ? front.percent : trackedPercent(p);
   const tint = biomeTint(p.biome?.name);
-  const style = { "--tone": tone, "--sky": tint.sky, "--ground": tint.ground } as CSSProperties;
+  const style = { "--tone": tone, "--sky": tint.sky, "--ground": tint.ground, "--art": tint.art } as CSSProperties;
   return (
     <section className="pd-hero brackets" style={style}>
       <div className="pd-hero-main">
