@@ -146,19 +146,41 @@ describe("campaign news", () => {
 });
 
 describe("activity chart rows", () => {
-  it("keeps every war reading and interpolates the fronts between their buckets", () => {
-    const t0 = 1_000 * BUCKET_MS;
-    const bucket = (at: number, n: number) => ({ at, terminids: n, automatons: 0, illuminate: 0, players: n });
+  const t0 = 1_000 * BUCKET_MS;
+  const bucket = (at: number, n: number) => ({ at, terminids: n, automatons: 0, illuminate: 0, players: n });
+  const reading = (at: number, split: number) => ({
+    at,
+    impact: 0.01,
+    players: 5000,
+    terminids: split,
+    automatons: 0,
+    illuminate: 0,
+  });
+
+  it("uses the buckets until the first reading, then each reading's own split by front", () => {
     const rows = mergeActivity(
       [bucket(t0, 100), bucket(t0 + BUCKET_MS, 200), bucket(t0 + 2 * BUCKET_MS, 999)],
-      [{ at: t0 + BUCKET_MS / 2, impact: 0.01, players: 5000 }],
+      [reading(t0 + BUCKET_MS / 2, 4000)],
       t0 + 2 * BUCKET_MS + 60_000,
     );
-    expect(rows.map((r) => [r.terminids, r.online, r.impact])).toEqual([
-      [100, null, null],
-      [150, 5000, 0.01],
-      [200, null, null],
+    expect(rows.map((r) => [r.at - t0, r.terminids, r.online])).toEqual([
+      [0, 100, null],
+      [BUCKET_MS / 2, 4000, 5000],
     ]);
+  });
+
+  it("draws from the readings alone once they cover an hour", () => {
+    const rows = mergeActivity(
+      [bucket(t0, 100), bucket(t0 + 8 * BUCKET_MS, 200)],
+      [reading(t0 + 4 * BUCKET_MS, 4000), reading(t0 + 8 * BUCKET_MS, 4100)],
+      t0 + 10 * BUCKET_MS,
+    );
+    expect(rows.map((r) => r.terminids)).toEqual([4000, 4100]);
+  });
+
+  it("falls back to the buckets for a reading saved without a split", () => {
+    const rows = mergeActivity([bucket(t0, 100), bucket(t0 + BUCKET_MS, 200)], [reading(t0 + BUCKET_MS / 2, 0)], t0 + 3 * BUCKET_MS);
+    expect(rows[rows.length - 1].terminids).toBe(150);
   });
 });
 

@@ -1,7 +1,9 @@
 /* ---------- Board ----------
-   Wide screens: three columns fill the viewport and scroll on their own; the page itself never scrolls. */
+   Wide screens: three columns fill the first screen and scroll on their own; the war activity panel
+   runs full width below it, reached by scrolling the page. */
 .ov-page {
-  overflow: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 .ov-board {
   display: grid;
@@ -9,6 +11,9 @@
   gap: var(--s-6);
   height: 100%;
   padding: var(--s-6);
+}
+.ov-wide {
+  padding: 0 var(--s-6) var(--s-6);
 }
 .ov-col {
   min-width: 0;
@@ -23,7 +28,7 @@
 .ov-col > * {
   flex: none;
 }
-/* The theater takes whatever height the activity chart leaves; the disc is sized to fit both ways. */
+/* The theater takes the column's height; the disc is sized to fit both ways. */
 .ov-col-mid > .tw {
   flex: 1 1 0;
   min-height: 300px;
@@ -225,108 +230,6 @@
   text-align: right;
 }
 
-.ov-heads {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--s-6);
-  margin-bottom: var(--s-6);
-}
-/* Headline readings, each keyed by a hairline in its series colour. */
-.ov-stat {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-  padding-left: var(--s-5);
-  box-shadow: inset 1px 0 0 var(--k);
-}
-.ov-stat-label {
-  min-height: 2.4em;
-  font-size: var(--fs-label);
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  line-height: 1.2;
-  color: var(--label);
-}
-.ov-stat b {
-  font-size: clamp(1.125rem, 2.2vw, 1.5rem);
-  line-height: 1;
-  font-weight: 700;
-  color: var(--text-hi);
-}
-.ov-stat:last-child b {
-  color: var(--k);
-}
-.ov-when {
-  font-size: var(--fs-body-s);
-  color: var(--label);
-}
-.ov-note {
-  margin: 0;
-  padding: var(--s-4) 0;
-  font-size: var(--fs-body-s);
-  color: var(--text-dim);
-}
-.ov-charts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-}
-.ov-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-3);
-  margin-top: var(--s-5);
-}
-/* Series chips: outlined, the series mark leading; a hidden series dims. */
-.ov-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-3);
-  height: 28px;
-  padding: 0 var(--s-4);
-  background: transparent;
-  border: 1px solid var(--line-strong);
-  color: var(--text-dim);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition:
-    color var(--t-state),
-    border-color var(--t-state);
-}
-.ov-chip:hover {
-  color: var(--text-hi);
-  border-color: var(--text-dim);
-}
-.ov-chip.off {
-  color: var(--faint);
-}
-.ov-chip.off svg {
-  opacity: 0.35;
-}
-.ov-live-ping {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: ov-ping 1.8s ease-out infinite;
-}
-@keyframes ov-ping {
-  from {
-    transform: scale(1);
-    opacity: 0.9;
-  }
-  to {
-    transform: scale(2.4);
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ov-live-ping {
-    animation: none;
-    opacity: 0;
-  }
-}
-
 /* ---------- Theater of war ---------- */
 .tw-body {
   /* The disc's near edge widens past its stage under perspective; clip at the panel instead. */
@@ -483,8 +386,8 @@
 }
 
 @media (max-width: 860px) {
-  .ov-heads {
-    grid-template-columns: 1fr 1fr;
+  .ov-wide {
+    padding: 0 var(--s-4) var(--s-5);
   }
   .ov-board {
     display: flex;
@@ -495,7 +398,7 @@
   .ov-col {
     display: contents;
   }
-  /* Phones lead with the Major Order, then the Galactic Campaign, the distribution, 24h activity and the theater. */
+  /* Phones lead with the Major Order, then the Galactic Campaign, the distribution and the theater. */
   .ov-board .mo {
     order: 1;
   }
@@ -505,54 +408,8 @@
   .ov-board .ov-dist {
     order: 3;
   }
-  .ov-board .ov-activity {
-    order: 4;
-  }
   .ov-board .tw {
     order: 5;
   }
 }
 
-/* Activity chart: HUD corner brackets on all four corners of the plot. */
-.ov-frame {
-  position: relative;
-  padding: var(--s-5) var(--s-4) var(--s-4);
-  background:
-    linear-gradient(var(--line-strong), var(--line-strong)) top left / 12px 1px,
-    linear-gradient(var(--line-strong), var(--line-strong)) top left / 1px 12px,
-    linear-gradient(var(--line-strong), var(--line-strong)) top right / 12px 1px,
-    linear-gradient(var(--line-strong), var(--line-strong)) top right / 1px 12px,
-    linear-gradient(var(--line-strong), var(--line-strong)) bottom left / 12px 1px,
-    linear-gradient(var(--line-strong), var(--line-strong)) bottom left / 1px 12px,
-    linear-gradient(var(--line-strong), var(--line-strong)) bottom right / 12px 1px,
-    linear-gradient(var(--line-strong), var(--line-strong)) bottom right / 1px 12px;
-  background-repeat: no-repeat;
-}
-.ov-tip {
-  padding: var(--s-4) var(--s-5);
-  font-size: var(--fs-body-s);
-}
-.ov-tip p {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  margin: 0;
-  color: var(--text-dim);
-}
-.ov-tip p + p {
-  margin-top: var(--s-2);
-}
-.ov-tip .ov-tip-when {
-  margin-bottom: var(--s-3);
-  color: var(--label);
-}
-.ov-tip i {
-  width: 8px;
-  height: 8px;
-  flex: none;
-}
-.ov-tip b {
-  margin-left: auto;
-  padding-left: var(--s-5);
-  color: var(--text-hi);
-}

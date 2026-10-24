@@ -63,17 +63,15 @@ describe("planet pictures", () => {
 describe("activity readings", () => {
   it("averages war readings over each window, stamped at its middle", () => {
     const w = 300_000;
-    const rows = averageReadings(
-      [
-        { at: 0, players: 100, impact: 0.01 },
-        { at: 60_000, players: 300, impact: 0.03 },
-        { at: w + 1, players: 50, impact: 0.02 },
-      ],
-      w,
-    );
-    expect(rows).toEqual([
-      { at: w / 2, players: 200, impact: 0.02 },
-      { at: w + w / 2, players: 50, impact: 0.02 },
-    ]);
+    const r = (at: number, players: number, impact: number, terminids: number) => ({
+      at,
+      players,
+      impact,
+      terminids,
+      automatons: 0,
+      illuminate: 0,
+    });
+    const rows = averageReadings([r(0, 100, 0.01, 10), r(60_000, 300, 0.03, 30), r(w + 1, 50, 0.02, 5)], w);
+    expect(rows).toEqual([r(w / 2, 200, 0.02, 20), r(w + w / 2, 50, 0.02, 5)]);
   });
 });

@@ -13,7 +13,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       "Planet effects from the game: sub-factions such as the Incineration Corps, Heavy SEAF Presence, and points of interest like TCS+ towers and the three Maximum Security Cities, as pawns beside planets on the map and under each planet's new Operational parameters, with its cities.",
       "The map draws the Gloom in every overlay, fractured planets as debris, and razed worlds (Widow's Harbor, Pilen V, New Haven, Mars, Merak, Lesath, Chort Bay) scorched.",
       "Sectors overlay looks like the game's war table: only enemy sectors painted, as hatched tiles. The Theater of War shows the same, fills Super Earth's regions, carries its emblem at the centre and can stop turning.",
-      "Galactic war activity is one chart: Helldivers per front under the online total, with the impact multiplier on its own right-hand axis and one readout for all of them.",
+      "Galactic war activity has its own full-width panel under the Overview board: Helldivers per front, minute by minute, stacked under the online total, with the impact multiplier on its own right-hand axis.",
       "Every biome has its own colours and landscape on planet cards, the map's hover card and the planet page; black holes and fractured planets show what they have become instead.",
       "The campaign panel keeps a slot for each of a campaign's three Major Orders, filled as the game issues them.",
       "Strohmann News tells each Galactic Campaign as one card, with its orders, dispatches and outcome on a timeline and the right dates.",
