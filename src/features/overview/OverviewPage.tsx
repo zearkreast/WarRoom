@@ -265,11 +265,11 @@ export function OverviewPage() {
           <Distribution />
         </div>
         <div className="ov-col ov-col-mid">
-          <TheaterOfWar />
+          <MajorOrderList />
           <WarActivity />
         </div>
         <div className="ov-col ov-col-right">
-          <MajorOrderList />
+          <TheaterOfWar />
           <CampaignPanel />
         </div>
       </div>

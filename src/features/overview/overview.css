@@ -23,21 +23,21 @@
 .ov-col > * {
   flex: none;
 }
-/* The theater takes whatever height the activity chart leaves; the disc is sized to fit both ways. */
-.ov-col-mid > .tw {
+/* The theater takes whatever height its column leaves; the disc is sized to fit both ways. */
+.ov-col > .tw {
   flex: 1 1 0;
   min-height: 300px;
   display: flex;
   flex-direction: column;
 }
-.ov-col-mid .tw-body {
+.ov-col .tw-body {
   flex: 1;
   min-height: 0;
   container-type: size;
   display: grid;
   place-items: center;
 }
-.ov-col-mid .tw-stage {
+.ov-col .tw-stage {
   width: min(100cqw, 155cqh);
 }
 
@@ -289,7 +289,16 @@
   stroke-opacity: 0.6;
 }
 .tw-owner.enemy {
-  filter: drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 18px color-mix(in srgb, var(--c) 55%, transparent));
+  filter: drop-shadow(0 0 4px var(--c)) drop-shadow(0 0 12px var(--c))
+    drop-shadow(0 0 26px color-mix(in srgb, var(--c) 60%, transparent));
+}
+.tw-owner.enemy path {
+  stroke: color-mix(in srgb, var(--c) 55%, #fff);
+}
+/* Neon on the Sectors overlay too: enemy borders glow in the enemy's colour. */
+.tw .tf-front,
+.tw .tf-cell {
+  filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 10px currentColor);
 }
 .tw-hits path {
   fill: transparent;
@@ -366,16 +375,16 @@
   .ov-col-right {
     grid-area: right;
   }
-  .ov-col-mid > .tw {
+  .ov-col > .tw {
     flex: none;
     min-height: 0;
     display: block;
   }
-  .ov-col-mid .tw-body {
+  .ov-col .tw-body {
     container-type: normal;
     display: block;
   }
-  .ov-col-mid .tw-stage {
+  .ov-col .tw-stage {
     width: min(100%, 560px);
   }
 }
