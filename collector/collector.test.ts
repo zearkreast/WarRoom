@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Campaign, EpisodeRaw, Planet } from "../src/api/types.ts";
+import type { Campaign, EpisodeRaw, Planet, SpaceStation } from "../src/api/types.ts";
 import {
   campaignTally,
   mergeEpisodes,
@@ -105,6 +105,25 @@ describe("snapshot shapes", () => {
 });
 
 describe("collector cycle", () => {
+  it("logs a station's FTL jump when its planet changes, starting from the stored snapshot", async () => {
+    const [station] = stationsJson as unknown as SpaceStation[];
+    const { db, calls } = fakeSupabase({
+      snapshots: [{ data: [{ id32: station.id32, planetIndex: station.planet.index + 1 }] }],
+    });
+    const task = createTasks(fakeHd2(api), db, new Recorder(db), () => 5_000_000).find((t) => t.name === "stations")!;
+    expect((await runTask(task)).message).toMatch(/1 FTL jump$/);
+    expect(calls.find((c) => c.path === "station_jumps")!.body).toEqual([
+      {
+        station: station.id32,
+        at: new Date(5_000_000).toISOString(),
+        from_planet: station.planet.index + 1,
+        to_planet: station.planet.index,
+      },
+    ]);
+    await runTask(task);
+    expect(calls.filter((c) => c.path === "station_jumps")).toHaveLength(1);
+  });
+
   it("writes snapshots, samples and owners on a first run", async () => {
     const { db, calls } = fakeSupabase();
     const recorder = new Recorder(db);

@@ -20,6 +20,7 @@ import {
   toWarSample,
   type EpisodeLive,
   type SnapshotKind,
+  type StationLive,
 } from "../src/domain/snapshot.ts";
 import type { Hd2Client } from "./hd2.ts";
 import type { Recorder } from "./recorder.ts";
@@ -46,6 +47,8 @@ export function createTasks(
   let lastDispatch = 0;
   /** Latest campaigns, so each war sample can split players by front. */
   let lastCampaigns: Campaign[] = [];
+  /** Each station's planet as last seen; read back from the stored snapshot after a restart. */
+  let stationAt: Map<number, number> | null = null;
 
   const snapshot = (kind: SnapshotKind, data: unknown) =>
     db.upsert("snapshots", [{ kind, data, fetched_at: new Date(now()).toISOString() }]);
@@ -124,8 +127,21 @@ export function createTasks(
       everyMs: 300_000,
       async run() {
         const stations = await hd2.get<SpaceStation[]>("/api/v2/space-stations");
+        if (!stationAt) {
+          const rows = await db.select<{ data: StationLive[] }>("snapshots", "select=data&kind=eq.space_stations");
+          stationAt = new Map((rows[0]?.data ?? []).map((s) => [s.id32, s.planetIndex]));
+        }
+        const jumps = stations.flatMap((s) => {
+          const from = stationAt!.get(s.id32);
+          return from !== undefined && from !== s.planet.index
+            ? [{ station: s.id32, at: new Date(now()).toISOString(), from_planet: from, to_planet: s.planet.index }]
+            : [];
+        });
+        if (jumps.length) await db.upsert("station_jumps", jumps, { ignoreDuplicates: true });
         await snapshot("space_stations", stations.map(toStationLive));
-        return `${stations.length} station${stations.length === 1 ? "" : "s"}`;
+        for (const s of stations) stationAt.set(s.id32, s.planet.index);
+        const count = `${stations.length} station${stations.length === 1 ? "" : "s"}`;
+        return jumps.length ? `${count}, ${jumps.length} FTL jump${jumps.length > 1 ? "s" : ""}` : count;
       },
     },
     {
