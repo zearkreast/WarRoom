@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Dispatch, EpisodeRaw, Planet } from "../api/types";
 import { rewardLabel } from "../data/campaignRewards";
-import { campaignEvents, campaignHeadline, campaignThreads } from "../domain/campaignNews";
+import { campaignEvents, campaignHeadline, campaignOf, campaignThreads } from "../domain/campaignNews";
 import { fmtAgeShort } from "../domain/format";
 import { BUCKET_MS, frontBuckets, latestRun, mergeActivity, type FrontRow } from "../domain/frontActivity";
 import { factionMarks } from "../domain/factionMarks";
@@ -129,6 +129,22 @@ describe("campaign news", () => {
     expect(mine.entries[0].event?.type).toBe("launched");
     expect(mine.entries[0].dispatch?.id).toBe(1);
     expect(mine.entries.every((x, i) => i === 0 || mine.entries[i - 1].at <= x.at)).toBe(true);
+  });
+
+  it("doesn't let an order the game hasn't named yet claim every Major Order headline", () => {
+    const [older, newer] = [...campaigns].sort((a, b) => a.start - b.start).slice(-2);
+    const unnamed = { ...newer, phases: [...newer.phases, { ...newer.phases[0], title: "MAJOR ORDER", status: "active" as const }] };
+    const old: Dispatch = { id: 9, published: new Date(older.start + 3_600_000).toISOString(), type: 0, message: "<i=3>MAJOR ORDER WON</i> Done" };
+    const { threads } = campaignThreads([older, unnamed], [old]);
+    expect(threads.find((t) => t.campaign.id === unnamed.id)!.entries.some((x) => x.dispatch?.id === 9)).toBe(false);
+  });
+
+  it("matches order names as whole words, and only while their campaign runs", () => {
+    const e = { ...campaigns[0], title: "CELESTIAL FENCE", start: 0, end: 10 * 3_600_000, phases: [{ ...campaigns[0].phases[0], title: "DEPLOYMENT" }] };
+    const d = (h: number, message: string): Dispatch => ({ id: h, published: new Date(h * 3_600_000).toISOString(), type: 0, message });
+    expect(campaignOf(d(5, "<i=3>WARFRONT UPDATE</i> DEPLOYMENT is under way"), [e])).toBe(e);
+    expect(campaignOf(d(5, "<i=3>ARSENAL AUGMENTATION</i> for all Helldiver deployments"), [e])).toBeNull();
+    expect(campaignOf(d(500, "<i=3>WARFRONT UPDATE</i> DEPLOYMENT is under way"), [e])).toBeNull();
   });
 
   it("never dates an order after its campaign ended or before it began", () => {
