@@ -1,4 +1,5 @@
 import type { Faction, Planet } from "../api/types";
+import { SCORCHED } from "../data/planetLooks";
 
 /** Map units: the API's [-1, 1] galaxy coordinates scaled up, y flipped so north is up. */
 export const GALAXY_SCALE = 500;
@@ -25,11 +26,20 @@ export const LANDMARKS: Landmark[] = [
   },
 ];
 
-export type Anomaly = "wormhole" | "blackhole";
+export type Anomaly = "wormhole" | "blackhole" | "fractured" | "scorched";
 
 /** Planets the game draws as space anomalies instead of worlds. */
 export const ANOMALIES: Record<string, Anomaly> = { MERIDIA: "wormhole", PENTA: "blackhole" };
-export const anomalyOf = (p: { name: string }): Anomaly | undefined => ANOMALIES[p.name.toUpperCase()];
+/** Galactic effects that change how the game draws a planet. */
+const LOOK_EFFECTS: Record<number, Anomaly> = { 1229: "wormhole", 1177: "blackhole", 1352: "blackhole", 1241: "fractured", 1252: "fractured" };
+
+/** How the game draws a planet when it isn't a plain world, from its effects, then by name. */
+export function anomalyOf(p: { name: string }, effects: { id: number }[] = []): Anomaly | undefined {
+  const byEffect = effects.map((e) => LOOK_EFFECTS[e.id]).find(Boolean);
+  if (byEffect) return byEffect;
+  const name = p.name.toUpperCase();
+  return ANOMALIES[name] ?? (SCORCHED[name] ? "scorched" : undefined);
+}
 
 // ---------- Sectors ----------
 

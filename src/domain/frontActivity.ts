@@ -51,3 +51,35 @@ export function latestRun(buckets: FrontBucket[]): FrontBucket[] {
   while (start > 0 && buckets[start].at - buckets[start - 1].at <= BUCKET_MS) start--;
   return buckets.slice(Math.max(start, 0));
 }
+
+/** A bucket with the galaxy-wide readings averaged in; null where the collector has none for it. */
+export interface ActivityPoint extends FrontBucket {
+  online: number | null;
+  impact: number | null;
+}
+
+/**
+ * Front buckets joined with the per-minute war readings, so both charts share one row per bucket.
+ * The bucket still filling at `now` is dropped: its partial sum would draw a fall that isn't there.
+ */
+export function mergeActivity(
+  buckets: FrontBucket[],
+  readings: { at: number; impact: number; players: number }[],
+  now: number,
+): ActivityPoint[] {
+  const sums = new Map<number, { impact: number; online: number; n: number }>();
+  for (const r of readings) {
+    const at = Math.floor(r.at / BUCKET_MS) * BUCKET_MS;
+    const s = sums.get(at) ?? { impact: 0, online: 0, n: 0 };
+    s.impact += r.impact;
+    s.online += r.players;
+    s.n++;
+    sums.set(at, s);
+  }
+  return buckets
+    .filter((b) => b.at + BUCKET_MS <= now)
+    .map((b) => {
+      const s = sums.get(b.at);
+      return { ...b, online: s ? Math.round(s.online / s.n) : null, impact: s ? s.impact / s.n : null };
+    });
+}

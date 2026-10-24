@@ -306,16 +306,16 @@
   stroke-linejoin: round;
 }
 .tw-owner.se path {
-  fill: color-mix(in srgb, var(--c) 10%, transparent);
-  stroke-width: 1.5;
-  stroke-opacity: 0.35;
+  fill: color-mix(in srgb, var(--c) 24%, transparent);
+  stroke-width: 2;
+  stroke-opacity: 0.6;
 }
 .tw-owner.enemy path {
   fill: color-mix(in srgb, var(--c) 30%, transparent);
   stroke-width: 4;
 }
 .tw-owner.se circle {
-  fill: color-mix(in srgb, var(--c) 8%, transparent);
+  fill: color-mix(in srgb, var(--c) 14%, transparent);
   stroke: var(--c);
   stroke-width: 1.5;
   stroke-opacity: 0.35;
@@ -353,15 +353,12 @@
   fill: color-mix(in srgb, var(--c-humans) 25%, transparent);
   filter: blur(18px);
 }
-.tw-core-ring {
-  fill: none;
-  stroke: var(--f-humans);
-  stroke-width: 3;
+.tw-core-mark {
   filter: drop-shadow(0 0 8px var(--f-humans));
 }
-.tw-core {
-  fill: #eaf4fa;
-  filter: drop-shadow(0 0 10px #9fd4ff);
+.tw-spin {
+  width: 28px;
+  height: 28px;
 }
 .tw-hint {
   position: absolute;
@@ -454,4 +451,64 @@
   .ov-board .tw {
     order: 5;
   }
+}
+
+/* Activity chart: HUD corner brackets around both charts, and one shared readout. */
+.ov-frame {
+  position: relative;
+  padding: var(--s-4) var(--s-3) 0;
+}
+.ov-frame::before,
+.ov-frame::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--line-strong);
+  pointer-events: none;
+}
+.ov-frame::before {
+  top: 0;
+  left: 0;
+  border-right: 0;
+  border-bottom: 0;
+}
+.ov-frame::after {
+  top: 0;
+  right: 0;
+  border-left: 0;
+  border-bottom: 0;
+}
+.ov-chip-key {
+  width: 8px;
+  height: 8px;
+  flex: none;
+}
+.ov-tip {
+  padding: var(--s-4) var(--s-5);
+  font-size: var(--fs-body-s);
+}
+.ov-tip p {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: 0;
+  color: var(--text-dim);
+}
+.ov-tip p + p {
+  margin-top: var(--s-2);
+}
+.ov-tip .ov-tip-when {
+  margin-bottom: var(--s-3);
+  color: var(--label);
+}
+.ov-tip i {
+  width: 8px;
+  height: 8px;
+  flex: none;
+}
+.ov-tip b {
+  margin-left: auto;
+  padding-left: var(--s-5);
+  color: var(--text-hi);
 }

@@ -1,6 +1,18 @@
 import { select } from "d3-selection";
 import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from "d3-zoom";
-import { ArrowUpRight, Compass, Layers, MousePointerClick, Rotate3d, Settings, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  ArrowUpRight,
+  Compass,
+  Landmark as PoiIcon,
+  Layers,
+  MousePointerClick,
+  Rotate3d,
+  Settings,
+  Shield,
+  TriangleAlert,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import {
   memo,
   useCallback,
@@ -11,9 +23,10 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { useCampaigns, useFreshPlanets, useSectorGeometry } from "../../api/queries";
-import type { Faction, Planet } from "../../api/types";
+import { useCampaigns, useEffects, useFreshPlanets, useSectorGeometry } from "../../api/queries";
+import type { Planet } from "../../api/types";
 import { biomeTint, regenPctPerHour } from "../../domain/biomes";
+import { hasPawn, type PlanetEffect } from "../../domain/effects";
 import { FACTIONS, factionColor } from "../../domain/factions";
 import { fmtPct } from "../../domain/format";
 import {
@@ -23,7 +36,6 @@ import {
   project,
   RING_RADII,
   sectorAt,
-  sectorTerritory,
   supplyLines,
   type Anomaly,
   type Landmark,
@@ -37,6 +49,7 @@ import { useSettings, useUi, type MapOverlay, type MapPlanets, type MapQuality }
 import { EMBLEM_PATHS } from "../../ui/emblems";
 import { HudButton, Loading, Meter, Stepper } from "../../ui/primitives";
 import { useMajorOrderPlanets } from "../planets/useFronts";
+import { GloomLayer, SectorLayer } from "./layers";
 import { OVERLAY_OPTIONS, PLANET_OPTIONS, QUALITY_OPTIONS } from "./mapOptions";
 import "./map.css";
 
@@ -145,8 +158,6 @@ function scaleHatches(svg: SVGSVGElement, k: number) {
     p.setAttribute("patternTransform", `rotate(45) scale(${(1 / k).toFixed(4)})`);
 }
 
-const ENEMIES: Faction[] = ["Terminids", "Automaton", "Illuminate"];
-
 const Regions = memo(function Regions({ planets, glow }: { planets: Planet[]; glow: boolean }) {
   const owners = ownershipKey(planets);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -163,85 +174,6 @@ const Regions = memo(function Regions({ planets, glow }: { planets: Planet[]; gl
           </g>
         );
       })}
-    </g>
-  );
-});
-
-/**
- * Enemy territory on the game's ring sectors: the sector grid, with hatching that is solid where
- * the enemy holds every planet of a sector and faint where Super Earth still holds some (contested).
- */
-const SectorGrid = memo(function SectorGrid({ geo, planets }: { geo: PolarSectors; planets: Planet[] }) {
-  const owners = ownershipKey(planets);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const territory = useMemo(() => sectorTerritory(planets), [owners]);
-  const shapes = useMemo(() => {
-    let grid = "";
-    const fronts = new Map<Faction, string>();
-    const splits = new Map<Faction, string>();
-    for (const e of geo.edges) {
-      grid += e.d;
-      const ta = territory.get(e.a) ?? null;
-      const tb = e.b ? (territory.get(e.b) ?? null) : null;
-      if (ta?.faction === tb?.faction) {
-        // Same enemy on both sides: only the held/contested line between them is drawn.
-        if (ta && ta.held !== tb?.held) splits.set(ta.faction, (splits.get(ta.faction) ?? "") + e.d);
-        continue;
-      }
-      for (const t of [ta, tb]) if (t) fronts.set(t.faction, (fronts.get(t.faction) ?? "") + e.d);
-    }
-    const held = new Map<Faction, string>();
-    const contested = new Map<Faction, string>();
-    for (const [s, d] of geo.fills) {
-      const t = territory.get(s);
-      if (t) (t.held ? held : contested).set(t.faction, ((t.held ? held : contested).get(t.faction) ?? "") + d);
-    }
-    return { grid, fronts, splits, held, contested };
-  }, [geo, territory]);
-
-  return (
-    <g className="territory">
-      <defs>
-        {ENEMIES.flatMap((f) =>
-          (["held", "contested"] as const).map((kind) => (
-            <pattern
-              key={`${f}-${kind}`}
-              id={`hatch-${f}-${kind}`}
-              className="hatch"
-              width={HATCH}
-              height={HATCH}
-              patternUnits="userSpaceOnUse"
-              patternTransform="rotate(45)"
-            >
-              <rect width={HATCH} height={HATCH} fill={FACTIONS[f].color} fillOpacity={kind === "held" ? 0.14 : 0.03} />
-              <line
-                x1={1}
-                y1={0}
-                x2={1}
-                y2={HATCH}
-                stroke={FACTIONS[f].color}
-                strokeOpacity={kind === "held" ? 0.38 : 0.22}
-                strokeWidth={kind === "held" ? 1.6 : 1}
-              />
-            </pattern>
-          )),
-        )}
-      </defs>
-      <circle r={geo.rim} className="sg-disc" />
-      {[...shapes.held].map(([f, d]) => (
-        <path key={`h-${f}`} d={d} className="tf-held" fill={`url(#hatch-${f}-held)`} />
-      ))}
-      {[...shapes.contested].map(([f, d]) => (
-        <path key={`c-${f}`} d={d} className="tf-contested" fill={`url(#hatch-${f}-contested)`} />
-      ))}
-      <path d={shapes.grid} className="sg-grid" />
-      {[...shapes.splits].map(([f, d]) => (
-        <path key={`s-${f}`} d={d} className="tf-split" style={{ color: FACTIONS[f].color }} />
-      ))}
-      {[...shapes.fronts].map(([f, d]) => (
-        <path key={`f-${f}`} d={d} className="tf-front" style={{ color: FACTIONS[f].color }} />
-      ))}
-      <circle r={geo.rim} className="sg-rim" />
     </g>
   );
 });
@@ -351,6 +283,11 @@ const HaloDefs = memo(function HaloDefs() {
         <stop offset="72%" stopColor="#7d3fb0" stopOpacity={0.45} />
         <stop offset="100%" stopColor="#7d3fb0" stopOpacity={0} />
       </radialGradient>
+      <radialGradient id="scorched" cx="40%" cy="35%">
+        <stop offset="0%" stopColor="#ffb36b" />
+        <stop offset="45%" stopColor="#c8481c" />
+        <stop offset="100%" stopColor="#3a0f06" />
+      </radialGradient>
       <radialGradient id="blackhole">
         <stop offset="0%" stopColor="#000" stopOpacity={1} />
         <stop offset="46%" stopColor="#000" stopOpacity={1} />
@@ -362,17 +299,63 @@ const HaloDefs = memo(function HaloDefs() {
   );
 });
 
-/** Meridia's purple wormhole and Penta's black hole, drawn in place of a world. */
+/** Planets the game draws as something other than a whole world: wormhole, black hole, debris, burnt rock. */
 function AnomalyMark({ kind }: { kind: Anomaly }) {
-  return kind === "wormhole" ? (
-    <g className="anomaly wormhole">
-      <circle r={9} fill="url(#wormhole)" />
-      <circle r={5.6} className="swirl" />
+  if (kind === "wormhole")
+    return (
+      <g className="anomaly wormhole">
+        <circle r={9} fill="url(#wormhole)" />
+        <circle r={5.6} className="swirl" />
+      </g>
+    );
+  if (kind === "blackhole")
+    return (
+      <g className="anomaly blackhole">
+        <circle r={8} fill="url(#blackhole)" />
+        <circle r={3.6} className="horizon" />
+      </g>
+    );
+  if (kind === "fractured")
+    return (
+      <g className="anomaly fractured">
+        <path d="M-1.6,-3.4L1.4,-3.8L2.6,-1L0.2,0.4L-2.4,-0.6Z" />
+        <path d="M2.2,0.8L4.4,1.6L3.6,4L1.2,3.2Z" />
+        <path d="M-3.8,1.2L-1.2,1.8L-1.8,4.2L-4.4,3.4Z" />
+        <circle cx={4.6} cy={-3.2} r={0.7} />
+        <circle cx={-4.2} cy={-2.6} r={0.5} />
+      </g>
+    );
+  return (
+    <g className="anomaly scorched">
+      <circle r={5} fill="url(#scorched)" />
+      <path className="cracks" d="M-3,-1.6L-0.6,-0.4L0.8,-2.6M-0.6,-0.4L0.4,2.2L2.8,1.4M0.4,2.2L-1.6,3.4" />
     </g>
-  ) : (
-    <g className="anomaly blackhole">
-      <circle r={8} fill="url(#blackhole)" />
-      <circle r={3.6} className="horizon" />
+  );
+}
+
+const PAWN_ICON = { threat: TriangleAlert, seaf: Shield, poi: PoiIcon } as const;
+
+/** The planet's sub-factions, SEAF presence and points of interest, as the game shows them beside it. */
+function Pawns({ effects, faction }: { effects: PlanetEffect[]; faction: string }) {
+  return (
+    <g className="pawns" transform="translate(7,1)">
+      {effects.map((e, i) => {
+        const x = i * 6.4;
+        const tone = e.kind === "subfaction" ? factionColor(faction) : e.kind === "seaf" ? "var(--f-humans)" : "var(--cta)";
+        return (
+          <g key={e.id} className={`pawn ${e.kind}`} transform={`translate(${x},0)`} style={{ color: tone }}>
+            <rect x={-2.8} y={-2.8} width={5.6} height={5.6} />
+            {e.kind === "subfaction" ? (
+              <path d={EMBLEM_PATHS[faction]} transform="translate(-2.1,-2.1) scale(0.175)" fillRule="evenodd" />
+            ) : (
+              (() => {
+                const Icon = PAWN_ICON[e.kind as keyof typeof PAWN_ICON];
+                return <Icon size={4} x={-2} y={-2} strokeWidth={2.6} />;
+              })()
+            )}
+          </g>
+        );
+      })}
     </g>
   );
 }
@@ -426,6 +409,7 @@ function PlanetBody(props: {
   mo?: boolean;
   enemy?: boolean;
   pinned?: boolean;
+  pawns?: PlanetEffect[];
 }) {
   return (
     <g className="pbody">
@@ -450,6 +434,7 @@ function PlanetBody(props: {
         <ActiveTag defense={Boolean(props.defense)} mo={Boolean(props.mo)} color={props.color} />
       )}
       {props.pinned && <PinMark />}
+      {props.pawns && props.pawns.length > 0 && <Pawns effects={props.pawns} faction={props.faction} />}
     </g>
   );
 }
@@ -465,7 +450,7 @@ function resistance(regen: number): { label: string; color: string } {
   return { label: "High", color: "var(--bad)" };
 }
 
-function HoverCard({ h, active }: { h: Hover; active: boolean }) {
+function HoverCard({ h, active, effects }: { h: Hover; active: boolean; effects?: PlanetEffect[] }) {
   const place = { left: Math.min(h.x + 18, window.innerWidth - 300), top: Math.max(8, h.y - 40) };
   if (h.landmark) {
     const tint = biomeTint(h.landmark.biome);
@@ -491,18 +476,23 @@ function HoverCard({ h, active }: { h: Hover; active: boolean }) {
   const p = h.planet;
   const tint = biomeTint(p.biome?.name);
   const enemy = p.event?.faction ?? (p.currentOwner === "Humans" ? undefined : p.currentOwner);
-  const anomaly = anomalyOf(p);
+  const anomaly = anomalyOf(p, effects);
+  const ANOMALY_KIND: Record<string, string> = {
+    wormhole: "Wormhole",
+    blackhole: "Black hole",
+    fractured: "Fractured planet",
+    scorched: "Scorched",
+  };
   const kind = p.event
     ? "Defense"
     : active
       ? "Liberation"
       : anomaly
-        ? anomaly === "wormhole"
-          ? "Wormhole"
-          : "Black hole"
+        ? ANOMALY_KIND[anomaly]
         : p.currentOwner === "Humans"
           ? "Secured"
           : "Enemy held";
+  const shown = (effects ?? []).filter(hasPawn);
   const pct = enemy ? trackedPercent(p) : 100;
   const regen = regenPctPerHour(p);
   const res = resistance(regen);
@@ -521,6 +511,15 @@ function HoverCard({ h, active }: { h: Hover; active: boolean }) {
         <span className="hc-sector caps">{p.sector} sector</span>
       </div>
       {p.biome?.description && <p className="hc-desc">{p.biome.description}</p>}
+      {shown.length > 0 && (
+        <ul className="hc-effects caps">
+          {shown.map((e) => (
+            <li key={e.id} className={e.kind}>
+              {e.name}
+            </li>
+          ))}
+        </ul>
+      )}
       {enemy && (
         <div className="hc-progress">
           <Meter value={pct} color="var(--f-humans)" rest={factionColor(enemy)} size="m" />
@@ -610,6 +609,7 @@ function MapSettings({ onClose }: { onClose(): void }) {
 
 const PlanetLayer = memo(function PlanetLayer(props: {
   planets: Planet[];
+  effects: Map<number, PlanetEffect[]> | undefined;
   active: Set<number>;
   mo: Set<number>;
   pinned: Set<number>;
@@ -658,12 +658,13 @@ const PlanetLayer = memo(function PlanetLayer(props: {
                 color={color}
                 fill={p.index === 0 ? "#3f8cc2" : sphereColor(biomeTint(p.biome?.name).ground)}
                 size={p.index === 0 ? 1.6 : 1}
-                anomaly={anomalyOf(p)}
+                anomaly={anomalyOf(p, props.effects?.get(p.index))}
                 active={isActive}
                 defense={Boolean(p.event)}
                 mo={isMo}
                 enemy={p.currentOwner !== "Humans" || Boolean(p.event)}
                 pinned={isPinned}
+                pawns={props.effects?.get(p.index)?.filter(hasPawn)}
               />
               <text className="planet-label">{p.name}</text>
               {isActive && (
@@ -693,6 +694,7 @@ const PlanetLayer = memo(function PlanetLayer(props: {
                 color="#c98a6a"
                 fill="#b5532f"
                 size={style === "spheres" ? 0.85 : 0.9}
+                anomaly="scorched"
               />
               <text className="planet-label">{l.name}</text>
             </g>
@@ -710,6 +712,7 @@ const SETTLE_MS = 180;
 export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string | null) => void }) {
   const fresh = useFreshPlanets().data;
   const geo = useSectorGeometry().data;
+  const effects = useEffects().data;
   const campaigns = useCampaigns();
   const mo = useMajorOrderPlanets();
   const selectedPlanet = useUi((s) => s.selectedPlanet);
@@ -944,12 +947,14 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
         <HaloDefs />
         <g ref={layerRef}>
           {overlay === "regions" && <Regions planets={fresh} glow={glow} />}
-          {overlay === "sectors" && geo && <SectorGrid geo={geo} planets={fresh} />}
+          {overlay === "sectors" && geo && <SectorLayer geo={geo} planets={fresh} id="map" hatch={HATCH} />}
           <Lanes planets={fresh} mode={overlay === "sectors" ? "front" : overlay === "galaxy" ? "bright" : "dim"} />
+          {effects && <GloomLayer planets={fresh} gloom={effects.gloom} id="map" />}
           <FactionMarks planets={fresh} overlay={overlay} geo={geo} />
           <AttackLines planets={fresh} active={active} />
           <PlanetLayer
             planets={fresh}
+            effects={effects?.planets}
             active={active}
             mo={mo}
             pinned={pinnedSet}
@@ -995,7 +1000,13 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
         />
       </div>
       {settingsOpen && <MapSettings onClose={closeSettings} />}
-      {hover && <HoverCard h={hover} active={hover.planet ? active.has(hover.planet.index) : false} />}
+      {hover && (
+        <HoverCard
+          h={hover}
+          active={hover.planet ? active.has(hover.planet.index) : false}
+          effects={hover.planet ? effects?.planets.get(hover.planet.index) : undefined}
+        />
+      )}
     </div>
   );
 }

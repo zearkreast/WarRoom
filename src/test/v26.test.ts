@@ -3,7 +3,7 @@ import type { Dispatch, EpisodeRaw, Planet } from "../api/types";
 import { rewardLabel } from "../data/campaignRewards";
 import { campaignEvents, campaignHeadline, campaignThreads } from "../domain/campaignNews";
 import { fmtAgeShort } from "../domain/format";
-import { BUCKET_MS, frontBuckets, latestRun, type FrontRow } from "../domain/frontActivity";
+import { BUCKET_MS, frontBuckets, latestRun, mergeActivity, type FrontRow } from "../domain/frontActivity";
 import { factionMarks } from "../domain/factionMarks";
 import { buildPolarSectors, GALAXY_SCALE, sectorAt, sectorTerritory, type PolarSectors } from "../domain/galaxy";
 import { fixStatic, isOffMap, isPlaceholder, ownershipKey } from "../domain/planets";
@@ -142,6 +142,25 @@ describe("campaign news", () => {
     expect(rewardLabel(campaigns[0].reward)).toBe("M-103 Supply FRV");
     expect(rewardLabel(2659326411)).toBe("Stratagem");
     expect(rewardLabel(null)).toBe("Campaign reward");
+  });
+});
+
+describe("activity chart rows", () => {
+  it("averages the war readings into each bucket and leaves out the one still filling", () => {
+    const t0 = 1_000 * BUCKET_MS;
+    const bucket = (at: number) => ({ at, terminids: 1, automatons: 2, illuminate: 3, players: 6 });
+    const rows = mergeActivity(
+      [bucket(t0), bucket(t0 + BUCKET_MS), bucket(t0 + 2 * BUCKET_MS)],
+      [
+        { at: t0 + 60_000, impact: 0.01, players: 100 },
+        { at: t0 + 120_000, impact: 0.03, players: 300 },
+      ],
+      t0 + 2 * BUCKET_MS + 60_000,
+    );
+    expect(rows.map((r) => [r.online, r.impact])).toEqual([
+      [200, 0.02],
+      [null, null],
+    ]);
   });
 });
 

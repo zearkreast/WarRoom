@@ -68,6 +68,8 @@ export type MapQuality = "max" | "normal" | "min";
 export type MapPlanets = "markers" | "spheres";
 export type Popups = "all" | "priority" | "none";
 
+export type MapDispatches = 3 | 5 | 10 | "72h";
+
 interface SettingsState {
   alerts: AlertSettings;
   popups: Popups;
@@ -79,6 +81,10 @@ interface SettingsState {
   planetsControlOpen: boolean;
   /** Whether the Major Order strip on Active planets is unfolded. */
   moStripOpen: boolean;
+  /** Whether the Theater of War disc turns by itself. */
+  twSpin: boolean;
+  /** How many dispatches the map's Dispatches box lists, or "72h" for all from the last 72 hours. */
+  mapDispatches: MapDispatches;
   pinned: number[];
   /** Views whose first-run hint has been dismissed. */
   hintsSeen: string[];
@@ -96,7 +102,9 @@ interface SettingsState {
       | "mapPlanets"
       | "showInactive"
       | "planetsControlOpen"
-      | "moStripOpen",
+      | "moStripOpen"
+      | "twSpin"
+      | "mapDispatches",
   >(
     k: K,
     v: SettingsState[K],
@@ -120,6 +128,8 @@ export const useSettings = create<SettingsState>()(
       showInactive: false,
       planetsControlOpen: true,
       moStripOpen: false,
+      twSpin: typeof window === "undefined" || !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+      mapDispatches: 5,
       pinned: [],
       hintsSeen: [],
       seenAssignments: [],
