@@ -529,6 +529,7 @@
 .hc-art {
   height: 54px;
   background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px),
+    var(--art, none) center / cover no-repeat,
     radial-gradient(120% 90% at 70% 140%, color-mix(in srgb, var(--ground) 75%, transparent), transparent 62%),
     linear-gradient(180deg, var(--sky), color-mix(in srgb, var(--ground) 30%, var(--sky)));
   border-bottom: 1px solid var(--line);

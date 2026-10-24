@@ -139,7 +139,9 @@
   gap: var(--s-6);
   padding: var(--s-8) var(--s-8) var(--s-5);
   border: 1px solid var(--line-strong);
-  background: radial-gradient(70% 90% at 80% 50%, color-mix(in srgb, var(--ground) 18%, transparent), transparent 70%),
+  background: linear-gradient(90deg, var(--surface-0) 30%, color-mix(in srgb, var(--surface-0) 55%, transparent) 70%, transparent),
+    var(--art, none) right center / auto 100% no-repeat,
+    radial-gradient(70% 90% at 80% 50%, color-mix(in srgb, var(--ground) 18%, transparent), transparent 70%),
     linear-gradient(160deg, color-mix(in srgb, var(--tone) 10%, var(--surface-0)), var(--surface-0) 60%);
   box-shadow: var(--lip), var(--shadow-2);
 }

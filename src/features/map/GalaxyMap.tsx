@@ -500,6 +500,7 @@ function HoverCard({ h, active, effects }: { h: Hover; active: boolean; effects?
     ...place,
     "--sky": tint.sky,
     "--ground": tint.ground,
+    "--art": tint.art,
     "--tone": factionColor(enemy ?? "Humans"),
   } as CSSProperties;
   return (
