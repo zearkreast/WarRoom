@@ -59,12 +59,3 @@ npm run collect:once     # every job once, then exits
   (planets, space stations, G.W.W., past campaigns), planet detail, news, settings.
 - `src/layout/`: the shell: top bar, status strip with the news ticker, the dock, the About and legend
   dialogs, Tracker Dispatch.
-
-## Notes
-
-- Planet `index` is not the array position: the list has gaps. Always look planets up with `byIndex()`.
-- Several planets share position (0,0), so sector geometry dedupes sites.
-- Files in `src/domain/` must only use type imports from outside the folder: the collector runs them
-  directly under Node.
-- Free Supabase plan: about 140 MB of history a year against a 500 MB limit; download traffic is the
-  tighter limit with many users. Pro ($25/month) is the upgrade path.
