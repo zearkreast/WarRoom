@@ -1,0 +1,168 @@
+/* Galactic war activity: the chart is drawn to the user's reference (measured, not eyeballed), so it
+   keeps its own series colours; the panel around it is the app's own. */
+.wa {
+  --wa-surface: rgba(20, 20, 23, 0.92);
+  --wa-border: #27282c;
+  --wa-fg: #fafafa;
+  --wa-muted: #9e9daa;
+  --wa-online: #fbeb00;
+  --wa-impact: #67e8f9;
+  --wa-terminids: #f6b012;
+  --wa-automaton: #ff5d5e;
+  --wa-illuminate: #cb5dff;
+}
+
+.ov-heads {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-6);
+  margin-bottom: var(--s-6);
+}
+.ov-heads > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.ov-heads b {
+  font-size: var(--fs-title);
+  color: var(--text-hi);
+  font-weight: 700;
+}
+.ov-when {
+  font-size: var(--fs-label);
+  color: var(--label);
+}
+.ov-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  margin-top: var(--s-5);
+}
+.ov-chips .filter-chip {
+  gap: var(--s-3);
+}
+.ov-chips .filter-chip.on {
+  border-color: var(--k);
+  background: color-mix(in srgb, var(--k) var(--wash), var(--surface-1));
+}
+@media (max-width: 860px) {
+  .ov-heads {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.wa-plot {
+  position: relative;
+}
+/* Neon: each line glows in its own colour, the front edges more softly than the two headline lines. */
+.wa-online .recharts-line-curve,
+.wa-dot circle,
+.wa-live {
+  filter: drop-shadow(0 0 2px var(--wa-online)) drop-shadow(0 0 7px color-mix(in srgb, var(--wa-online) 60%, transparent));
+}
+.wa-impact .recharts-line-curve {
+  filter: drop-shadow(0 0 2px var(--wa-impact)) drop-shadow(0 0 7px color-mix(in srgb, var(--wa-impact) 55%, transparent));
+}
+.wa-front-Terminids .recharts-area-curve {
+  filter: drop-shadow(0 0 3px var(--wa-terminids));
+}
+.wa-front-Automaton .recharts-area-curve {
+  filter: drop-shadow(0 0 3px var(--wa-automaton));
+}
+.wa-front-Illuminate .recharts-area-curve {
+  filter: drop-shadow(0 0 3px var(--wa-illuminate));
+}
+.ov-chips .filter-chip svg {
+  filter: drop-shadow(0 0 3px currentColor);
+}
+.wa-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 0 solid rgba(250, 250, 250, 0.25);
+  pointer-events: none;
+}
+.wa-corner.tl {
+  top: -4px;
+  left: -4px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+.wa-corner.tr {
+  top: -4px;
+  right: -4px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+.wa-corner.bl {
+  bottom: -4px;
+  left: -4px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+.wa-corner.br {
+  right: -4px;
+  bottom: -4px;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+}
+.wa-ping {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wa-ping 1.8s ease-out infinite;
+}
+@keyframes wa-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wa-ping {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+.wa-note {
+  margin: var(--s-3) 0 0;
+  font-size: var(--fs-body-s);
+  color: var(--text-dim);
+}
+
+.wa-tip {
+  padding: 10px 12px;
+  border: 1px solid var(--wa-border);
+  border-radius: 8px;
+  background: rgba(19, 19, 22, 0.96);
+  font-size: 12px;
+  color: var(--wa-muted);
+}
+.wa-tip p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.wa-tip p + p {
+  margin-top: 4px;
+}
+.wa-tip .wa-tip-when {
+  margin-bottom: 6px;
+}
+.wa-tip i {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+}
+.wa-tip b {
+  margin-left: auto;
+  padding-left: 16px;
+  color: var(--wa-fg);
+}
+

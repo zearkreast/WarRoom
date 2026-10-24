@@ -139,7 +139,9 @@
   gap: var(--s-6);
   padding: var(--s-8) var(--s-8) var(--s-5);
   border: 1px solid var(--line-strong);
-  background: radial-gradient(70% 90% at 80% 50%, color-mix(in srgb, var(--ground) 18%, transparent), transparent 70%),
+  background: linear-gradient(90deg, var(--surface-0) 30%, color-mix(in srgb, var(--surface-0) 55%, transparent) 70%, transparent),
+    var(--art, none) right center / auto 100% no-repeat,
+    radial-gradient(70% 90% at 80% 50%, color-mix(in srgb, var(--ground) 18%, transparent), transparent 70%),
     linear-gradient(160deg, color-mix(in srgb, var(--tone) 10%, var(--surface-0)), var(--surface-0) 60%);
   box-shadow: var(--lip), var(--shadow-2);
 }
@@ -627,5 +629,41 @@
 .pd-chart-label {
   font-size: var(--fs-label);
   letter-spacing: 0.14em;
+  color: var(--label);
+}
+
+/* Operational parameters: enemy units and allied forces wear their side's colour on the icon disc. */
+.pd-env-icon.toned {
+  background: color-mix(in srgb, var(--k) 22%, var(--surface-2));
+  color: var(--k);
+  box-shadow: inset 0 0 0 1px var(--k);
+}
+.pd-cities-head {
+  margin-top: var(--s-6);
+}
+.pd-cities {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin: var(--s-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pd-cities li {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  background: var(--surface-2);
+  color: var(--text-dim);
+}
+.pd-cities b {
+  color: var(--text-hi);
+  letter-spacing: 0.08em;
+}
+.pd-cities span {
+  margin-left: auto;
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
   color: var(--label);
 }

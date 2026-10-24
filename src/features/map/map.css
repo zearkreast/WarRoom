@@ -45,10 +45,6 @@
 .upright {
   transform: rotate(var(--unrot)) scale(1, var(--unsquash));
 }
-.tf-held,
-.tf-contested {
-  stroke: none;
-}
 .region-line {
   fill: none;
   stroke-width: 2.4;
@@ -65,39 +61,6 @@
 .q-max .region-glow {
   stroke-width: 12;
   stroke-opacity: 0.2;
-}
-.tf-front {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-opacity: 0.85;
-  stroke-linecap: square;
-  stroke-linejoin: miter;
-  vector-effect: non-scaling-stroke;
-}
-/* Where an enemy's outright holdings meet its contested sectors. */
-.tf-split {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.2;
-  stroke-opacity: 0.55;
-  stroke-dasharray: 3 4;
-  vector-effect: non-scaling-stroke;
-}
-.sg-disc {
-  fill: color-mix(in srgb, var(--f-humans) 4%, transparent);
-}
-.sg-grid {
-  fill: none;
-  stroke: color-mix(in srgb, var(--f-humans) 18%, transparent);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-.sg-rim {
-  fill: none;
-  stroke: color-mix(in srgb, var(--f-humans) 40%, transparent);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
 }
 /* Enemy emblems: read at galaxy scale, then step aside for the planets once zoomed in. */
 .faction-marks {
@@ -276,6 +239,51 @@
 }
 .planet:hover .planet-label {
   fill: var(--cta);
+}
+/* Sub-faction, SEAF and point-of-interest pawns: shown with the names, once zoomed in or on hover. */
+.pawns {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-reveal) var(--ease);
+}
+.z-sectors .pawns,
+.planet:hover .pawns,
+.planet.selected .pawns {
+  opacity: 1;
+}
+.pawn rect {
+  fill: var(--surface-0);
+  stroke: currentColor;
+  stroke-width: 0.5;
+}
+.pawn path {
+  fill: currentColor;
+}
+.pawn svg {
+  color: currentColor;
+}
+.anomaly.fractured .rock {
+  fill: #a39b95;
+  stroke: #3a2a26;
+  stroke-width: 0.35;
+  stroke-linejoin: round;
+}
+.anomaly.fractured .rock.small {
+  fill: #7d7470;
+}
+.anomaly.fractured .ember {
+  fill: #ffb070;
+}
+.galaxy:not(.q-min) .anomaly.fractured .ember {
+  filter: drop-shadow(0 0 1.5px #ff6a3a);
+}
+.planet .core.scorched {
+  stroke: #ffd2a1;
+  stroke-width: 0.4;
+}
+.planet .sphere.scorched {
+  stroke: #ff7a2e;
+  stroke-width: 0.6;
 }
 .q-min .planet .pulse {
   animation: none;
@@ -529,6 +537,7 @@
 .hc-art {
   height: 54px;
   background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px),
+    var(--art, none) center / cover no-repeat,
     radial-gradient(120% 90% at 70% 140%, color-mix(in srgb, var(--ground) 75%, transparent), transparent 62%),
     linear-gradient(180deg, var(--sky), color-mix(in srgb, var(--ground) 30%, var(--sky)));
   border-bottom: 1px solid var(--line);
@@ -555,6 +564,24 @@
   font-size: var(--fs-micro);
   letter-spacing: 0.18em;
   color: var(--tone);
+}
+.hc-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin: var(--s-3) var(--s-5) 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.12em;
+}
+.hc-effects li {
+  padding: 2px var(--s-3);
+  border: 1px solid var(--line-strong);
+  color: var(--text-hi);
+}
+.hc-effects li.subfaction {
+  border-color: var(--tone);
 }
 .hc-desc {
   margin: var(--s-3) var(--s-5) 0;

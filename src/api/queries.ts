@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { POLL_MS } from "../config";
+import { GLOOM_IDS, planetEffects, type PlanetEffect } from "../domain/effects";
 import {
   toPlanet,
   type CampaignLive,
+  type EffectsLive,
   type EpisodeLive,
   type PlanetLive,
   type PlanetStatic,
@@ -126,6 +128,25 @@ const selectGeometry = (s: Snapshots): PolarSectors | undefined => {
   return statics && buildGeometry(statics);
 };
 
+export interface WarEffects {
+  /** Named effects per planet index; planets without any are absent. */
+  planets: Map<number, PlanetEffect[]>;
+  /** Planets in or on the edge of the Gloom. */
+  gloom: Set<number>;
+  stations: Map<number, PlanetEffect[]>;
+}
+const buildEffects = memo(
+  (live: EffectsLive): WarEffects => ({
+    planets: new Map(live.planets.map((p) => [p.index, planetEffects(p.ids)])),
+    gloom: new Set(live.planets.filter((p) => p.ids.some((id) => GLOOM_IDS.has(id))).map((p) => p.index)),
+    stations: new Map(live.stations.map((s) => [s.id, planetEffects(s.ids)])),
+  }),
+);
+const selectEffects = (s: Snapshots) => {
+  const live = s.data.planet_effects as EffectsLive | undefined;
+  return live && buildEffects(live);
+};
+
 const selectStations = (s: Snapshots) => s.data.space_stations as StationLive[] | undefined;
 const selectEpisodes = (s: Snapshots) => s.data.episodes as EpisodeLive[] | undefined;
 
@@ -146,6 +167,8 @@ export const useSectorGeometry = () => useSnapshot(selectGeometry);
 export const useSpaceStations = () => useSnapshot(selectStations);
 /** Story campaigns, oldest first; undefined until the collector has written them once. */
 export const useEpisodes = () => useSnapshot(selectEpisodes);
+/** Galactic effects on planets and stations; undefined until the collector has written them once. */
+export const useEffects = () => useSnapshot(selectEffects);
 
 /** One planet by index, fresh copy preferred; undefined while loading or unknown. */
 export function usePlanet(index: number | null | undefined): Planet | undefined {

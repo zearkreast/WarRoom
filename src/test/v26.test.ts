@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Dispatch, EpisodeRaw, Planet } from "../api/types";
 import { rewardLabel } from "../data/campaignRewards";
-import { campaignEvents, campaignHeadline } from "../domain/campaignNews";
+import { campaignEvents, campaignHeadline, campaignThreads } from "../domain/campaignNews";
 import { fmtAgeShort } from "../domain/format";
-import { BUCKET_MS, frontBuckets, latestRun, type FrontRow } from "../domain/frontActivity";
+import { BUCKET_MS, frontBuckets, latestRun, mergeActivity, type FrontRow } from "../domain/frontActivity";
 import { factionMarks } from "../domain/factionMarks";
 import { buildPolarSectors, GALAXY_SCALE, sectorAt, sectorTerritory, type PolarSectors } from "../domain/galaxy";
 import { fixStatic, isOffMap, isPlaceholder, ownershipKey } from "../domain/planets";
-import { mergeEpisodes, toEpisodes } from "../domain/snapshot";
+import { issuedAt, mergeEpisodes, toEpisodes } from "../domain/snapshot";
 import { tickerItems } from "../domain/ticker";
 import episodesJson from "./fixtures/episodes.json";
 import planetsJson from "./fixtures/planets.json";
@@ -112,10 +112,75 @@ describe("campaign news", () => {
     expect(campaignHeadline(lost)).toBe("BLAZING ELECTORATE failed");
   });
 
+  it("gathers a campaign's orders and dispatches on one thread, and leaves other dispatches alone", () => {
+    const e = campaigns.find((c) => c.status === "active") ?? campaigns[campaigns.length - 1];
+    const at = (h: number) => new Date(e.start + h * 3_600_000).toISOString();
+    const d = (id: number, message: string, h: number): Dispatch => ({ id, published: at(h), type: 0, message });
+    const list = [
+      d(1, "<i=3>NEW MAJOR ORDER</i> First", 0.5),
+      d(2, "<i=3>MAJOR ORDER FAILED</i> Too few samples", 30),
+      d(3, "<i=3>STRATEGIC ALERT</i> Incineration Corps sighted", 31),
+    ];
+    const { threads, claimed } = campaignThreads(campaigns, list);
+    expect([...claimed].sort()).toEqual([1, 2]);
+    const mine = threads.find((t) => t.campaign.id === e.id)!;
+    expect(mine.entries.filter((x) => x.dispatch).map((x) => x.dispatch!.id)).toEqual([1, 2]);
+    // The first order's announcement is told on the launch, not as a second line.
+    expect(mine.entries[0].event?.type).toBe("launched");
+    expect(mine.entries[0].dispatch?.id).toBe(1);
+    expect(mine.entries.every((x, i) => i === 0 || mine.entries[i - 1].at <= x.at)).toBe(true);
+  });
+
+  it("never dates an order after its campaign ended or before it began", () => {
+    const ended = campaigns.find((c) => c.status !== "active")!;
+    expect(issuedAt(ended, ended.end! + 1)).toBeNull();
+    expect(issuedAt(ended, ended.start - 1)).toBeNull();
+    expect(issuedAt(ended, ended.start + 1)).toBe(ended.start + 1);
+  });
+
   it("names known rewards and falls back to the type, then a generic label", () => {
     expect(rewardLabel(campaigns[0].reward)).toBe("M-103 Supply FRV");
     expect(rewardLabel(2659326411)).toBe("Stratagem");
     expect(rewardLabel(null)).toBe("Campaign reward");
+  });
+});
+
+describe("activity chart rows", () => {
+  const t0 = 1_000 * BUCKET_MS;
+  const bucket = (at: number, n: number) => ({ at, terminids: n, automatons: 0, illuminate: 0, players: n });
+  const reading = (at: number, split: number) => ({
+    at,
+    impact: 0.01,
+    players: 5000,
+    terminids: split,
+    automatons: 0,
+    illuminate: 0,
+  });
+
+  it("uses the buckets until the first reading, then each reading's own split by front", () => {
+    const rows = mergeActivity(
+      [bucket(t0, 100), bucket(t0 + BUCKET_MS, 200), bucket(t0 + 2 * BUCKET_MS, 999)],
+      [reading(t0 + BUCKET_MS / 2, 4000)],
+      t0 + 2 * BUCKET_MS + 60_000,
+    );
+    expect(rows.map((r) => [r.at - t0, r.terminids, r.online])).toEqual([
+      [0, 100, null],
+      [BUCKET_MS / 2, 4000, 5000],
+    ]);
+  });
+
+  it("draws from the readings alone once they cover an hour", () => {
+    const rows = mergeActivity(
+      [bucket(t0, 100), bucket(t0 + 8 * BUCKET_MS, 200)],
+      [reading(t0 + 4 * BUCKET_MS, 4000), reading(t0 + 8 * BUCKET_MS, 4100)],
+      t0 + 10 * BUCKET_MS,
+    );
+    expect(rows.map((r) => r.terminids)).toEqual([4000, 4100]);
+  });
+
+  it("falls back to the buckets for a reading saved without a split", () => {
+    const rows = mergeActivity([bucket(t0, 100), bucket(t0 + BUCKET_MS, 200)], [reading(t0 + BUCKET_MS / 2, 0)], t0 + 3 * BUCKET_MS);
+    expect(rows[rows.length - 1].terminids).toBe(150);
   });
 });
 

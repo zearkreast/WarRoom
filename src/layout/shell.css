@@ -156,11 +156,7 @@
   align-items: center;
   height: 100%;
   white-space: nowrap;
-  animation: ticker 60s linear infinite;
-}
-.ticker:hover .ticker-track,
-.ticker:focus-within .ticker-track {
-  animation-play-state: paused;
+  will-change: transform;
 }
 .ticker-item {
   display: inline-flex;
@@ -350,40 +346,6 @@
 .dispatch-panel > .panel-body {
   display: contents;
 }
-.dp-links {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-  padding: var(--s-4);
-  border-bottom: 1px solid var(--line);
-}
-.dp-link {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--s-5);
-  padding: var(--s-4) var(--s-5);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--text-dim);
-  cursor: pointer;
-  text-align: left;
-  font-size: var(--fs-body-s);
-}
-.dp-link svg {
-  color: var(--cta);
-  margin-top: 2px;
-  flex: none;
-}
-.dp-link b {
-  display: block;
-  color: var(--text-hi);
-  font-size: var(--fs-body);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.dp-link:hover {
-  border-color: var(--text-dim);
-}
 .dp-head {
   display: flex;
   align-items: center;
@@ -487,6 +449,9 @@
   color: var(--text);
   overflow: auto;
   scrollbar-width: thin;
+}
+.about-dialog.wide {
+  width: min(880px, calc(100vw - 32px));
 }
 .about-dialog::backdrop {
   background: color-mix(in srgb, var(--void) 80%, transparent);

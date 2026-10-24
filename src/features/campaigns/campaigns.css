@@ -109,7 +109,7 @@
   flex: none;
 }
 
-/* Biome stand-in for planet art: sky over a lit horizon, with a scanline veil. */
+/* The biome's landscape under a scanline veil, darkened at the foot; a sky-and-horizon gradient where there is no picture. */
 .cc-art {
   position: relative;
   height: 92px;
@@ -119,6 +119,8 @@
   gap: var(--s-4);
   padding: var(--s-4) var(--s-5);
   background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, transparent 35%, rgba(4, 7, 11, 0.7)),
+    var(--art, none) center / cover no-repeat,
     radial-gradient(130% 80% at 70% 130%, color-mix(in srgb, var(--ground) 70%, transparent), transparent 62%),
     radial-gradient(60% 50% at 20% 110%, color-mix(in srgb, var(--ground) 35%, transparent), transparent 70%),
     linear-gradient(

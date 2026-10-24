@@ -31,3 +31,9 @@ export const RECENT_DISPATCH_MS = 72 * 3_600_000;
 export function recentDispatches(list: Dispatch[], now: number): Dispatch[] {
   return list.filter((d) => now - Date.parse(d.published) <= RECENT_DISPATCH_MS).sort((a, b) => b.id - a.id);
 }
+
+/** The newest `count` dispatches whatever their age, or the last 72 hours' for "72h". */
+export function latestDispatches(list: Dispatch[], count: string, now: number): Dispatch[] {
+  if (count === "72h") return recentDispatches(list, now);
+  return [...list].sort((a, b) => b.id - a.id).slice(0, Number(count));
+}

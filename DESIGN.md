@@ -22,6 +22,7 @@ colors:
   warn: "#ffb23f"
   bad: "#ff5a5a"
   info: "#9fd4ff"
+  impact: "#67e8f9"
   faction-humans: "#46a4ff"
   faction-terminids: "#ff9433"
   faction-automaton: "#ff7171"
@@ -183,9 +184,13 @@ Square everywhere (`rounded.none`). Circles appear only for things that are roun
 
 - **Panel**: surface-1, hairline border, header strip with an icon box and a hatch band tinted by `--tone` (Super Earth blue by default; CTA yellow only on Major Order panels). Title in Archivo; right slot for counts and timers.
 - **Meter**: 7px (14px large, 3px inline) bar, fill masked into 4px segments with 1px gaps and a soft glow; remainder hatched in the enemy colour; optional white marker for the projected end result; chevron variant for the big liberation bars.
-- **Active-planet card**: type and ETA above; faction-tinted header with emblem, name and sector; biome-tinted art band with MO/DSS badges and hazard discs; large meter; outlook row; four-cell footer (player share, players, Helldiver impact, enemy regen).
+- **Active-planet card**: type and ETA above; faction-tinted header with emblem, name and sector; the biome's landscape banner under a scanline veil, with MO/DSS badges and hazard discs; large meter; outlook row; four-cell footer (player share, players, Helldiver impact, enemy regen).
 - **Planet row** (Hellpad planet index): 64px, emblem, name, status line, icons and a player pill on a biome-tinted ground; active fronts carry a 2px progress line along the bottom.
 - **Galactic Campaign**: emblem and name in the campaign's faction colour, dates and an outcome chip; the campaign reward in a raised box (struck through when lost); the Major Orders as folded rows with outcome chips, opening onto their briefings. The same block fills the Overview panel and each Past campaigns entry.
+- **Sectors overlay**: only enemy sectors are painted, as hatched tiles in the enemy colour split by dark seams, as on the game's war table; contested sectors are faint. The Theater of War draws the same layer.
+- **The Gloom**: a pre-rendered amber cloud texture masked around the planets in or on the edge of the Gloom, on every overlay; it thins once zoomed in to the planets.
+- **Pawns**: small square tags beside a planet once zoomed in: sub-factions in the enemy colour, SEAF in Super Earth blue, points of interest in CTA yellow. Fractured planets are drawn as debris, razed ones scorched.
+- **War activity panel** (Overview, under the Theater of War): an ordinary Panel with dot-keyed readings (impact, peak, lowest) and filter chips; only the plot is drawn to a reference telemetry chart, with its own series tokens in `warActivity.css`: smooth stacked fronts (#F6B012, #FF5D5E, #CB5DFF; gradient 45% to 12%, 1px edge) under a 2.5px #FBEB00 online line with peak and low dots and a pinging ring, the impact multiplier as a 2px #67E8F9 line on a right-hand axis with five even ticks, 12px corner brackets. Neon: the lines, dots and ring glow in their own colour, the front edges softly. The plot is the one place a dual axis is allowed.
 - **Radial options**: circular glass menu with four options (pin, details, show on map, space station) around a close hub.
 - **Overlay**: full-viewport planet detail on grid paper with an ESC key button in a fixed footer.
 - **Keycap / KeyButton**: white keycap chip before an uppercase label (ESC CLOSE, H CONTROLS, Z DISPATCHES).
@@ -205,6 +210,6 @@ Do:
 Don't:
 - Add kickers or eyebrow labels above headings; breadcrumbs are navigation and are fine.
 - Draw coloured left borders thicker than 1px on cards, rows or callouts.
-- Use dual-axis charts, rainbow ramps, or a categorical hue beyond the four factions.
+- Use dual-axis charts (the one exception, at the user's request, is the activity chart's impact multiplier), rainbow ramps, or a categorical hue beyond the four factions.
 - Round corners, or use glass where there is no map underneath.
-- Copy game art or licensed game fonts.
+- Copy game art or licensed game fonts. The one exception, asked for by the user, is the biome landscape banners in `src/assets/biomes/`, credited in About.

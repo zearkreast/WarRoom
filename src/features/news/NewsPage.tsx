@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useDispatches, useEpisodes } from "../../api/queries";
 import type { Dispatch } from "../../api/types";
-import { campaignEvents, type CampaignEvent } from "../../domain/campaignNews";
+import { campaignThreads, type CampaignThread } from "../../domain/campaignNews";
 import { dispatchKind, type DispatchKind } from "../../domain/dispatch";
 import { Hint } from "../../ui/Hint";
 import { Empty, Loading, useNow } from "../../ui/primitives";
@@ -11,7 +11,7 @@ import { KIND_LABEL, NewsCard } from "./NewsCard";
 const PAGE = 20;
 type Kind = DispatchKind | "campaign";
 type Filter = "all" | Kind;
-type Item = { kind: Kind; at: number; key: string } & ({ d: Dispatch; ev?: never } | { ev: CampaignEvent; d?: never });
+type Item = { kind: Kind; at: number; key: string } & ({ d: Dispatch; t?: never } | { t: CampaignThread; d?: never });
 
 export function NewsPage() {
   const { data, isLoading } = useDispatches();
@@ -20,12 +20,12 @@ export function NewsPage() {
   const [shown, setShown] = useState(PAGE);
   const [filter, setFilter] = useState<Filter>("all");
   const items = useMemo((): Item[] => {
-    const dispatches = (data ?? []).map(
-      (d): Item => ({ kind: dispatchKind(d.message), at: Date.parse(d.published), key: `d${d.id}`, d }),
-    );
-    const campaign = campaignEvents(episodes ?? []).map(
-      (ev): Item => ({ kind: "campaign", at: ev.at, key: ev.key, ev }),
-    );
+    // Dispatches about a campaign live on its card, so its orders and outcomes read as one story.
+    const { threads, claimed } = campaignThreads(episodes ?? [], data ?? []);
+    const dispatches = (data ?? [])
+      .filter((d) => !claimed.has(d.id))
+      .map((d): Item => ({ kind: dispatchKind(d.message), at: Date.parse(d.published), key: `d${d.id}`, d }));
+    const campaign = threads.map((t): Item => ({ kind: "campaign", at: t.at, key: t.key, t }));
     return [...dispatches, ...campaign].sort((a, b) => b.at - a.at);
   }, [data, episodes]);
   const kinds = useMemo(() => {
@@ -71,7 +71,7 @@ export function NewsPage() {
                 i.d ? (
                   <NewsCard key={i.key} d={i.d} now={now} />
                 ) : (
-                  <CampaignNewsCard key={i.key} ev={i.ev!} now={now} />
+                  <CampaignNewsCard key={i.key} thread={i.t!} now={now} />
                 ),
               )}
           </div>

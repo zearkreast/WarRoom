@@ -2,7 +2,7 @@ import { Compass, MapPin, Mountain, Pin, PinOff, Satellite, Target, Users } from
 import type { CSSProperties } from "react";
 import { useCampaigns, usePlanet } from "../../api/queries";
 import type { Planet } from "../../api/types";
-import { biomeTint } from "../../domain/biomes";
+import { planetTint } from "../../domain/biomes";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtInt, sestClock, sestDate } from "../../domain/format";
 import { trackedPercent } from "../../domain/progress";
@@ -13,7 +13,7 @@ import { CtaButton, Loading, Overlay, useNow } from "../../ui/primitives";
 import { buildFront, useMajorOrderPlanets, usePlanetRate, useStationPlanets, type Front } from "../planets/useFronts";
 import {
   DispatchSection,
-  EnvironmentSection,
+  OperationsSection,
   FrontLineSection,
   LiberationSection,
   ServiceRecordSection,
@@ -35,7 +35,7 @@ export function PlanetSphere({
   enemy: string;
   size?: number;
 }) {
-  const tint = biomeTint(planet.biome?.name);
+  const tint = planetTint(planet);
   const r = 100;
   const c = 2 * Math.PI * r;
   const se = (Math.max(0, Math.min(100, percent)) / 100) * c;
@@ -101,8 +101,8 @@ function Hero({ p, front }: { p: Planet; front: Front | null }) {
   const enemy = factionColor(enemyFaction);
   const tone = factionColor(front?.enemy ?? p.currentOwner);
   const percent = front ? front.percent : trackedPercent(p);
-  const tint = biomeTint(p.biome?.name);
-  const style = { "--tone": tone, "--sky": tint.sky, "--ground": tint.ground } as CSSProperties;
+  const tint = planetTint(p);
+  const style = { "--tone": tone, "--sky": tint.sky, "--ground": tint.ground, "--art": tint.art } as CSSProperties;
   return (
     <section className="pd-hero brackets" style={style}>
       <div className="pd-hero-main">
@@ -182,7 +182,7 @@ function Body({ index }: { index: number }) {
       <WarHistorySection p={p} record={record} />
       <div className="pd-cols">
         <DispatchSection p={p} front={front} inMajorOrder={mo.has(p.index)} station={stations.has(p.index)} />
-        <EnvironmentSection p={p} />
+        <OperationsSection p={p} />
       </div>
       <SupplyLinesSection p={p} />
     </div>

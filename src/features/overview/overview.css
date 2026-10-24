@@ -23,21 +23,21 @@
 .ov-col > * {
   flex: none;
 }
-/* The theater takes whatever height the activity chart leaves; the disc is sized to fit both ways. */
-.ov-col-mid > .tw {
+/* The theater takes whatever height its column leaves; the disc is sized to fit both ways. */
+.ov-col > .tw {
   flex: 1 1 0;
   min-height: 300px;
   display: flex;
   flex-direction: column;
 }
-.ov-col-mid .tw-body {
+.ov-col .tw-body {
   flex: 1;
   min-height: 0;
   container-type: size;
   display: grid;
   place-items: center;
 }
-.ov-col-mid .tw-stage {
+.ov-col .tw-stage {
   width: min(100cqw, 155cqh);
 }
 
@@ -225,48 +225,6 @@
   text-align: right;
 }
 
-.ov-heads {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--s-6);
-  margin-bottom: var(--s-5);
-}
-.ov-heads > div {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-}
-.ov-heads b {
-  font-size: var(--fs-title);
-  color: var(--text-hi);
-  font-weight: 700;
-}
-.ov-when {
-  font-size: var(--fs-label);
-  color: var(--label);
-}
-.ov-note {
-  margin: 0;
-  padding: var(--s-4) 0;
-  font-size: var(--fs-body-s);
-  color: var(--text-dim);
-}
-.ov-charts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-}
-.ov-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-3);
-  margin-top: var(--s-4);
-}
-.ov-chips .filter-chip.on {
-  border-color: var(--k);
-  background: color-mix(in srgb, var(--k) var(--wash), var(--surface-1));
-}
-
 /* ---------- Theater of war ---------- */
 .tw-body {
   /* The disc's near edge widens past its stage under perspective; clip at the panel instead. */
@@ -306,16 +264,16 @@
   stroke-linejoin: round;
 }
 .tw-owner.se path {
-  fill: color-mix(in srgb, var(--c) 10%, transparent);
-  stroke-width: 1.5;
-  stroke-opacity: 0.35;
+  fill: color-mix(in srgb, var(--c) 24%, transparent);
+  stroke-width: 2;
+  stroke-opacity: 0.6;
 }
 .tw-owner.enemy path {
   fill: color-mix(in srgb, var(--c) 30%, transparent);
   stroke-width: 4;
 }
 .tw-owner.se circle {
-  fill: color-mix(in srgb, var(--c) 8%, transparent);
+  fill: color-mix(in srgb, var(--c) 14%, transparent);
   stroke: var(--c);
   stroke-width: 1.5;
   stroke-opacity: 0.35;
@@ -331,7 +289,16 @@
   stroke-opacity: 0.6;
 }
 .tw-owner.enemy {
-  filter: drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 18px color-mix(in srgb, var(--c) 55%, transparent));
+  filter: drop-shadow(0 0 4px var(--c)) drop-shadow(0 0 12px var(--c))
+    drop-shadow(0 0 26px color-mix(in srgb, var(--c) 60%, transparent));
+}
+.tw-owner.enemy path {
+  stroke: color-mix(in srgb, var(--c) 55%, #fff);
+}
+/* Neon on the Sectors overlay too: enemy borders glow in the enemy's colour. */
+.tw .tf-front,
+.tw .tf-cell {
+  filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 10px currentColor);
 }
 .tw-hits path {
   fill: transparent;
@@ -353,15 +320,12 @@
   fill: color-mix(in srgb, var(--c-humans) 25%, transparent);
   filter: blur(18px);
 }
-.tw-core-ring {
-  fill: none;
-  stroke: var(--f-humans);
-  stroke-width: 3;
+.tw-core-mark {
   filter: drop-shadow(0 0 8px var(--f-humans));
 }
-.tw-core {
-  fill: #eaf4fa;
-  filter: drop-shadow(0 0 10px #9fd4ff);
+.tw-spin {
+  width: 28px;
+  height: 28px;
 }
 .tw-hint {
   position: absolute;
@@ -411,24 +375,21 @@
   .ov-col-right {
     grid-area: right;
   }
-  .ov-col-mid > .tw {
+  .ov-col > .tw {
     flex: none;
     min-height: 0;
     display: block;
   }
-  .ov-col-mid .tw-body {
+  .ov-col .tw-body {
     container-type: normal;
     display: block;
   }
-  .ov-col-mid .tw-stage {
+  .ov-col .tw-stage {
     width: min(100%, 560px);
   }
 }
 
 @media (max-width: 860px) {
-  .ov-heads {
-    grid-template-columns: 1fr 1fr;
-  }
   .ov-board {
     display: flex;
     flex-direction: column;
@@ -448,10 +409,11 @@
   .ov-board .ov-dist {
     order: 3;
   }
-  .ov-board .ov-activity {
+  .ov-board .wa {
     order: 4;
   }
   .ov-board .tw {
     order: 5;
   }
 }
+

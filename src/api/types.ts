@@ -163,3 +163,10 @@ export interface EpisodeRaw {
   }[];
   rewards: { mixId: number; amount: number }[];
 }
+
+/** The parts of the official game API's war status the collector keeps: effects on planets and stations. */
+export interface WarStatusRaw {
+  time: number;
+  planetActiveEffects: { index: number; galacticEffectId: number }[];
+  spaceStations: { id32: number; planetIndex: number; activeEffectIds: number[] }[];
+}
