@@ -13,7 +13,7 @@ import { CtaButton, Loading, Overlay, useNow } from "../../ui/primitives";
 import { buildFront, useMajorOrderPlanets, usePlanetRate, useStationPlanets, type Front } from "../planets/useFronts";
 import {
   DispatchSection,
-  EnvironmentSection,
+  OperationsSection,
   FrontLineSection,
   LiberationSection,
   ServiceRecordSection,
@@ -182,7 +182,7 @@ function Body({ index }: { index: number }) {
       <WarHistorySection p={p} record={record} />
       <div className="pd-cols">
         <DispatchSection p={p} front={front} inMajorOrder={mo.has(p.index)} station={stations.has(p.index)} />
-        <EnvironmentSection p={p} />
+        <OperationsSection p={p} />
       </div>
       <SupplyLinesSection p={p} />
     </div>

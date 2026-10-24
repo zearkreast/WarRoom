@@ -18,8 +18,15 @@ import {
   TriangleAlert,
   Users,
   CloudSun,
+  Building2,
+  CloudFog,
+  CloudLightning,
+  Landmark,
+  Orbit,
+  Satellite,
+  type LucideIcon,
 } from "lucide-react";
-import { useMemo, type CSSProperties } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
 import {
   Area,
   CartesianGrid,
@@ -32,7 +39,8 @@ import {
   YAxis,
 } from "recharts";
 import { axisProps, fmtHourTick, gridProps, HOUR, hourTicks, tooltipProps } from "../../ui/chart";
-import { useCampaigns, useFreshPlanets } from "../../api/queries";
+import { useCampaigns, useEffects, useFreshPlanets } from "../../api/queries";
+import type { EffectKind } from "../../domain/effects";
 import type { Faction, Planet } from "../../api/types";
 import { regenPctPerHour } from "../../domain/biomes";
 import { factionColor, factionLabel } from "../../domain/factions";
@@ -569,37 +577,67 @@ export function DispatchSection(props: { p: Planet; front: Front | null; inMajor
   );
 }
 
-export function EnvironmentSection({ p }: { p: Planet }) {
+const EFFECT_ICON: Record<EffectKind, LucideIcon> = {
+  subfaction: Skull,
+  threat: TriangleAlert,
+  seaf: Shield,
+  poi: Landmark,
+  dss: Satellite,
+  arsenal: Crosshair,
+  condition: CloudLightning,
+  event: Flag,
+  look: Orbit,
+  gloom: CloudFog,
+  hidden: Flag,
+};
+
+/**
+ * The planet's operational parameters in the game's order: the enemy units and allied forces on it,
+ * its points of interest and standing effects, then the environment and its cities.
+ */
+export function OperationsSection({ p }: { p: Planet }) {
+  const effects = useEffects().data?.planets.get(p.index) ?? [];
+  const enemy = p.event?.faction ?? (p.currentOwner === "Humans" ? undefined : p.currentOwner);
+  const row = (key: string, icon: ReactNode, name: string, text: string, tone?: string) => (
+    <div key={key} className="pd-env-row" style={tone ? ({ "--k": tone } as CSSProperties) : undefined}>
+      <span className={`pd-env-icon ${tone ? "toned" : ""}`}>{icon}</span>
+      <div>
+        <b className="caps">{name}</b>
+        {text && <p>{text}</p>}
+      </div>
+    </div>
+  );
   return (
-    <Panel title="Environment" icon={CloudSun}>
+    <Panel title="Operational parameters" icon={CloudSun}>
       <div className="pd-env">
-        {p.biome?.name && (
-          <div className="pd-env-row">
-            <span className="pd-env-icon">
-              <CloudSun size={16} />
-            </span>
-            <div>
-              <b className="caps">{p.biome.name}</b>
-              {p.biome.description && <p>{p.biome.description}</p>}
-            </div>
-          </div>
-        )}
+        {effects.map((e) => {
+          const Icon = EFFECT_ICON[e.kind];
+          const icon =
+            e.kind === "subfaction" && enemy ? <FactionEmblem faction={enemy} size={16} color="currentColor" /> : <Icon size={16} />;
+          const tone = e.kind === "subfaction" && enemy ? factionColor(enemy) : e.kind === "seaf" ? "var(--f-humans)" : undefined;
+          return row(`e${e.id}`, icon, e.name, e.description, tone);
+        })}
         {p.hazards.map((h) => {
           const Icon = hazardIcon(h.name);
-          return (
-            <div key={h.name} className="pd-env-row">
-              <span className="pd-env-icon">
-                <Icon size={16} />
-              </span>
-              <div>
-                <b className="caps">{h.name}</b>
-                <p>{h.description}</p>
-              </div>
-            </div>
-          );
+          return row(`h${h.name}`, <Icon size={16} />, h.name, h.description);
         })}
-        {!p.biome?.name && p.hazards.length === 0 && <Empty>No environmental data.</Empty>}
+        {p.biome?.name && row("biome", <CloudSun size={16} />, p.biome.name, p.biome.description)}
+        {!p.biome?.name && p.hazards.length === 0 && effects.length === 0 && <Empty>No environmental data.</Empty>}
       </div>
+      {p.regions.length > 0 && (
+        <>
+          <div className="pd-chart-label caps pd-cities-head">Cities</div>
+          <ul className="pd-cities">
+            {p.regions.map((r) => (
+              <li key={r.id}>
+                <Building2 size={14} aria-hidden />
+                <b className="caps">{r.name}</b>
+                <span className="caps">{r.size.replace(/([a-z])([A-Z])/g, "$1 $2")}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </Panel>
   );
 }
