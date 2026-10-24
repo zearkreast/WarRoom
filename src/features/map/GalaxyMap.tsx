@@ -54,7 +54,9 @@ import { OVERLAY_OPTIONS, PLANET_OPTIONS, QUALITY_OPTIONS } from "./mapOptions";
 import "./map.css";
 
 const EXTENT = GALAXY_SCALE * 1.1;
-const STAR_COUNT: Record<MapQuality, number> = { max: 4200, normal: 2600, min: 900 };
+const STAR_COUNT: Record<MapQuality, number> = { max: 4200, normal: 2600, min: 1600 };
+/** Highest device pixel ratio the starfield canvas is drawn at; phones report up to 3 or 4. */
+const STAR_DPR: Record<MapQuality, number> = { max: 4, normal: 2, min: 1.5 };
 const OVERLAYS: MapOverlay[] = ["regions", "sectors", "galaxy"];
 
 type Pt = [number, number];
@@ -101,8 +103,15 @@ function backgroundStars(n: number) {
 
 type Star = ReturnType<typeof backgroundStars>[number];
 
-function drawStars(canvas: HTMLCanvasElement, stars: Star[], t: ZoomTransform, cam: Camera, rings: boolean) {
-  const dpr = window.devicePixelRatio || 1;
+function drawStars(
+  canvas: HTMLCanvasElement,
+  stars: Star[],
+  t: ZoomTransform,
+  cam: Camera,
+  rings: boolean,
+  maxDpr: number,
+) {
+  const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
   const { width, height } = canvas.getBoundingClientRect();
   if (canvas.width !== Math.round(width * dpr)) canvas.width = Math.round(width * dpr);
   if (canvas.height !== Math.round(height * dpr)) canvas.height = Math.round(height * dpr);
@@ -158,7 +167,7 @@ function scaleHatches(svg: SVGSVGElement, k: number) {
     p.setAttribute("patternTransform", `rotate(45) scale(${(1 / k).toFixed(4)})`);
 }
 
-const Regions = memo(function Regions({ planets, glow }: { planets: Planet[]; glow: boolean }) {
+const Regions = memo(function Regions({ planets }: { planets: Planet[] }) {
   const owners = ownershipKey(planets);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const regions = useMemo(() => buildRegions(planets), [owners]);
@@ -169,7 +178,7 @@ const Regions = memo(function Regions({ planets, glow }: { planets: Planet[]; gl
         return (
           <g key={r.name}>
             <path d={r.path} fill={c} fillOpacity={0.05} stroke="none" />
-            {glow && <path d={r.path} className="region-glow" stroke={c} />}
+            <path d={r.path} className="region-glow" stroke={c} />
             <path d={r.path} className="region-line" stroke={c} />
           </g>
         );
@@ -211,30 +220,24 @@ const FactionMarks = memo(function FactionMarks(props: {
 
 type LaneMode = "dim" | "bright" | "front";
 
+/** All lanes as one path: hundreds of separate lines cost far more to restyle and paint. */
 const Lanes = memo(function Lanes({ planets, mode }: { planets: Planet[]; mode: LaneMode }) {
-  const lookup = byIndex(planets);
-  const lines = useMemo(() => supplyLines(planets), [planets]);
+  const d = useMemo(() => {
+    const lookup = byIndex(planets);
+    let d = "";
+    for (const [a, b] of supplyLines(planets)) {
+      const pa = lookup.get(a);
+      const pb = lookup.get(b);
+      if (!pa || !pb) continue;
+      const [x1, y1] = project(pa.position);
+      const [x2, y2] = project(pb.position);
+      d += `M${x1},${y1}L${x2},${y2}`;
+    }
+    return d;
+  }, [planets]);
   return (
     <g className={`lanes ${mode}`}>
-      {lines.map(([a, b]) => {
-        const pa = lookup.get(a);
-        const pb = lookup.get(b);
-        if (!pa || !pb) return null;
-        const [x1, y1] = project(pa.position);
-        const [x2, y2] = project(pb.position);
-        // Lanes inside one enemy's holdings take its colour, as on the in-game map.
-        const held = mode === "front" && pa.currentOwner === pb.currentOwner && pa.currentOwner !== "Humans";
-        return (
-          <line
-            key={`${a}-${b}`}
-            x1={x1}
-            y1={y1}
-            x2={x2}
-            y2={y2}
-            stroke={held ? factionColor(pa.currentOwner) : undefined}
-          />
-        );
-      })}
+      <path d={d} />
     </g>
   );
 });
@@ -400,7 +403,6 @@ function PinMark() {
 
 function PlanetBody(props: {
   style: MapPlanets;
-  glow: boolean;
   faction: string;
   color: string;
   fill: string;
@@ -432,13 +434,11 @@ function PlanetBody(props: {
         </>
       ) : (
         <>
-          {props.glow && (
-            <circle
-              r={props.active ? 9 : 6}
-              fill={scorched ? "url(#halo-scorched)" : `url(#halo-${props.faction})`}
-              className="halo"
-            />
-          )}
+          <circle
+            r={props.active ? 9 : 6}
+            fill={scorched ? "url(#halo-scorched)" : `url(#halo-${props.faction})`}
+            className="halo"
+          />
           {props.active && <circle r={7} className="pulse" stroke={props.color} />}
           {props.mo && <circle r={5} className="mo-ring" />}
           <circle
@@ -634,11 +634,10 @@ const PlanetLayer = memo(function PlanetLayer(props: {
   pinned: Set<number>;
   selected: number | null;
   style: MapPlanets;
-  glow: boolean;
   onOpen(planet: number, x: number, y: number): void;
   onHover(h: Hover | null): void;
 }) {
-  const { style, glow, onHover } = props;
+  const { style, onHover } = props;
   const leave = () => onHover(null);
   return (
     <g className="planets">
@@ -672,7 +671,6 @@ const PlanetLayer = memo(function PlanetLayer(props: {
             <g className="upright">
               <PlanetBody
                 style={style}
-                glow={glow}
                 faction={faction}
                 color={color}
                 fill={p.index === 0 ? "#3f8cc2" : sphereColor(planetTint(p, props.effects?.get(p.index)).ground)}
@@ -708,7 +706,6 @@ const PlanetLayer = memo(function PlanetLayer(props: {
             <g className="upright">
               <PlanetBody
                 style={style}
-                glow={glow}
                 faction="Humans"
                 color="#c98a6a"
                 fill="#b5532f"
@@ -750,6 +747,8 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   const zoomRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const transformRef = useRef<ZoomTransform>(zoomIdentity);
   const camRef = useRef<Camera>({ rot: 0, tilt: 0 });
+  const qualityRef = useRef(quality);
+  qualityRef.current = quality;
   const freshRef = useRef(fresh);
   freshRef.current = fresh;
   const [hover, setHover] = useState<Hover | null>(null);
@@ -780,6 +779,11 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   const settle = useRef(0);
   const written = useRef({ transform: "", k: "", rot: "", squash: "" });
 
+  const writeScale = useCallback(() => {
+    const k = String(transformRef.current.k);
+    if (k !== written.current.k) layerRef.current?.style.setProperty("--k", (written.current.k = k));
+  }, []);
+
   /** Writes the camera to the DOM once per frame; nothing here touches React state. */
   const paint = useCallback(() => {
     frame.current = 0;
@@ -792,9 +796,9 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
     const w = written.current;
     const transform = `translate(${t.x},${t.y}) scale(${t.k}) scale(1,${Math.cos(tilt)}) rotate(${deg})`;
     if (transform !== w.transform) layer.setAttribute("transform", (w.transform = transform));
-    // Each variable write restyles every planet, so write only on change (a plain pan writes none).
-    const k = String(t.k);
-    if (k !== w.k) layer.style.setProperty("--k", (w.k = k));
+    // Each --k write restyles every planet (tens of ms on a phone), so below Maximum the markers ride
+    // the zoom and take their size once the camera settles.
+    if (!w.k || qualityRef.current === "max") writeScale();
     const unrot = `${-deg}deg`;
     if (unrot !== w.rot) layer.style.setProperty("--unrot", (w.rot = unrot));
     const squash = String(1 / Math.cos(tilt));
@@ -806,8 +810,15 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
     compassRef.current?.querySelector("svg")?.style.setProperty("transform", `rotate(${rot - Math.PI / 4}rad)`);
     tiltRef.current?.classList.toggle("on", tilt > 0);
     if (canvasRef.current)
-      drawStars(canvasRef.current, starsRef.current, t, camRef.current, overlayRef.current !== "sectors");
-  }, []);
+      drawStars(
+        canvasRef.current,
+        starsRef.current,
+        t,
+        camRef.current,
+        overlayRef.current !== "sectors",
+        STAR_DPR[qualityRef.current],
+      );
+  }, [writeScale]);
 
   /** Queues a paint and marks the map as moving, which drops the glow filters until it settles. */
   const schedule = useCallback(() => {
@@ -818,9 +829,10 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
     clearTimeout(settle.current);
     settle.current = window.setTimeout(() => {
       svg.classList.remove("moving");
+      writeScale();
       scaleHatches(svg, transformRef.current.k);
     }, SETTLE_MS);
-  }, [paint]);
+  }, [paint, writeScale]);
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -848,8 +860,8 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
 
   useEffect(() => {
     if (canvasRef.current)
-      drawStars(canvasRef.current, stars, transformRef.current, camRef.current, overlay !== "sectors");
-  }, [stars, overlay]);
+      drawStars(canvasRef.current, stars, transformRef.current, camRef.current, overlay !== "sectors", STAR_DPR[quality]);
+  }, [stars, overlay, quality]);
   useEffect(() => {
     if (svgRef.current) scaleHatches(svgRef.current, transformRef.current.k);
   }, [overlay, fresh]);
@@ -943,7 +955,6 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   if (!fresh) return <Loading what="galactic war data" />;
 
   const nextOverlay = OVERLAYS[(OVERLAYS.indexOf(overlay) + 1) % OVERLAYS.length];
-  const glow = quality !== "min";
 
   return (
     <div className={`map-wrap q-${quality}`}>
@@ -965,10 +976,10 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
       >
         <HaloDefs />
         <g ref={layerRef}>
-          {overlay === "regions" && <Regions planets={fresh} glow={glow} />}
+          {overlay === "regions" && <Regions planets={fresh} />}
           {overlay === "sectors" && geo && <SectorLayer geo={geo} planets={fresh} id="map" hatch={HATCH} />}
           <Lanes planets={fresh} mode={overlay === "sectors" ? "front" : overlay === "galaxy" ? "bright" : "dim"} />
-          {effects && <GloomLayer planets={fresh} gloom={effects.gloom} id="map" />}
+          {effects && <GloomLayer planets={fresh} gloom={effects.gloom} />}
           <FactionMarks planets={fresh} overlay={overlay} geo={geo} />
           <AttackLines planets={fresh} active={active} />
           <PlanetLayer
@@ -979,7 +990,6 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
             pinned={pinnedSet}
             selected={selectedPlanet}
             style={planetStyle}
-            glow={glow}
             onOpen={onOpen}
             onHover={setHover}
           />
