@@ -6,6 +6,7 @@ import { factionColor, factionLabel } from "../../domain/factions";
 import { dispatchTitle, fmtAgo } from "../../domain/format";
 import { useSettings, useUi } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
+import { Hint } from "../../ui/Hint";
 import { Keycap, KeyButton, useNow } from "../../ui/primitives";
 import { MajorOrderList } from "../major-order/MajorOrder";
 import { GalaxyMap } from "./GalaxyMap";
@@ -138,6 +139,11 @@ export function MapPage() {
     <div className="map-page">
       <GalaxyMap onHoverSector={setHovered} />
       <TitleStack hovered={hovered} />
+      <div className="map-touch-hint">
+        <Hint id="map-touch">
+          One finger pans. Two fingers pinch to zoom, twist to turn, or slide up and down together to tilt.
+        </Hint>
+      </div>
       <div className="map-controls-hint">
         <KeyButton k="H" active={controls} onClick={() => setControls((c) => !c)}>
           Controls
