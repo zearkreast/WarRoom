@@ -1,0 +1,82 @@
+# Builds the Tauri desktop app for Windows, macOS and Linux and publishes
+# the installers as a GitHub Release.
+#
+# Run it from the Actions tab (Release -> Run workflow), or push a tag like v0.2.7.
+# The release version and name come from src-tauri/tauri.conf.json.
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows (.exe / .msi)
+          - platform: windows-latest
+            args: ""
+          # macOS Apple Silicon (.dmg)
+          - platform: macos-latest
+            args: "--target aarch64-apple-darwin"
+          # macOS Intel (.dmg)
+          - platform: macos-latest
+            args: "--target x86_64-apple-darwin"
+          # Linux (.AppImage / .deb / .rpm)
+          - platform: ubuntu-22.04
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      # The crate uses Rust edition 2024, so the current stable toolchain is required.
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ startsWith(matrix.platform, 'macos') && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and publish release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: "WarRoom v__VERSION__"
+          releaseBody: "Installers are listed under Assets below."
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
