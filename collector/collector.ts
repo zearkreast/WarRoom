@@ -1,17 +1,27 @@
-import type { Assignment, Campaign, Dispatch, EpisodeRaw, Planet, SpaceStation, War } from "../src/api/types.ts";
+import type {
+  Assignment,
+  Campaign,
+  Dispatch,
+  EpisodeRaw,
+  Planet,
+  SpaceStation,
+  War,
+  WarStatusRaw,
+} from "../src/api/types.ts";
 import {
   mergeEpisodes,
   newestDispatches,
   toCampaignLive,
   toLive,
   toStatic,
+  toEffectsLive,
   toEpisodes,
   toStationLive,
   toWarSample,
   type EpisodeLive,
   type SnapshotKind,
 } from "../src/domain/snapshot.ts";
-import { RateLimitError, type Hd2Client } from "./hd2.ts";
+import type { Hd2Client } from "./hd2.ts";
 import type { Recorder } from "./recorder.ts";
 import type { Supabase } from "./supabase.ts";
 
@@ -46,7 +56,7 @@ export function createTasks(
     {
       // Full list first, so a fresh database learns every planet's owner on the first cycle.
       name: "planets",
-      everyMs: 180_000,
+      everyMs: 300_000,
       async run() {
         const planets = await hd2.get<Planet[]>("/api/v1/planets");
         const { samples, changes } = await recorder.ingest(planets, now());
@@ -80,7 +90,7 @@ export function createTasks(
     },
     {
       name: "war",
-      everyMs: 60_000,
+      everyMs: 120_000,
       async run() {
         const war = await hd2.get<War>("/api/v1/war");
         await snapshot("war", war);
@@ -90,7 +100,7 @@ export function createTasks(
     },
     {
       name: "assignments",
-      everyMs: 60_000,
+      everyMs: 300_000,
       async run() {
         const a = await hd2.get<Assignment[]>("/api/v1/assignments");
         await snapshot("assignments", a);
@@ -111,7 +121,7 @@ export function createTasks(
     },
     {
       name: "stations",
-      everyMs: 120_000,
+      everyMs: 300_000,
       async run() {
         const stations = await hd2.get<SpaceStation[]>("/api/v2/space-stations");
         await snapshot("space_stations", stations.map(toStationLive));
@@ -130,6 +140,7 @@ export function createTasks(
   ];
   /** Campaigns as last written; read back once after a restart so the archive and issue dates survive it. */
   let episodes: EpisodeLive[] | null = null;
+  let lastEffects = "";
   if (game)
     tasks.push({
       name: "episodes",
@@ -137,7 +148,14 @@ export function createTasks(
       async run() {
         const { id } = await game.get<{ id: number }>("/api/WarSeason/current/WarID");
         const raw = await game.get<{ episodes: EpisodeRaw[] }>(`/api/Episode/${id}`);
-        const { time } = await game.get<{ time: number }>(`/api/WarSeason/${id}/Status`);
+        const status = await game.get<WarStatusRaw>(`/api/WarSeason/${id}/Status`);
+        const { time } = status;
+        // Effects come from the status this job already reads, at no extra request.
+        const effects = JSON.stringify(toEffectsLive(status));
+        if (effects !== lastEffects) {
+          await snapshot("planet_effects", JSON.parse(effects));
+          lastEffects = effects;
+        }
         if (!episodes) {
           const rows = await db.select<{ data: EpisodeLive[] }>("snapshots", "select=data&kind=eq.episodes");
           episodes = rows[0]?.data ?? [];
@@ -157,7 +175,7 @@ export interface RunResult {
   name: string;
   ok: boolean;
   message: string;
-  /** When set, the task should not run again before this time (e.g. after a 429). */
+  /** When set, the task should not run again before this time (after a 429 or while the API is down). */
   retryAt?: number;
 }
 
@@ -166,7 +184,8 @@ export async function runTask(t: Task, now = Date.now): Promise<RunResult> {
     return { name: t.name, ok: true, message: await t.run() };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    const retryAt = e instanceof RateLimitError ? now() + e.retryAfterMs : undefined;
+    const after = (e as { retryAfterMs?: number }).retryAfterMs;
+    const retryAt = after ? now() + after : undefined;
     return { name: t.name, ok: false, message, retryAt };
   }
 }

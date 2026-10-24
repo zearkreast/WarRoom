@@ -284,7 +284,49 @@ describe("galactic campaigns", () => {
     expect((await runTask(t)).message).toBe("unchanged, 1 active");
     expect((await runTask(t)).message).toBe("unchanged, 1 active");
     expect(calls.filter((c) => c.method === "GET")).toHaveLength(1);
-    expect(calls.some((c) => c.method === "POST")).toBe(false);
+    const kinds = calls.filter((c) => c.method === "POST").map((c) => (c.body as { kind: string }[])[0].kind);
+    expect(kinds).toEqual(["planet_effects"]);
+  });
+
+  it("keeps the planet effects from the status it already reads, without another request", async () => {
+    const { db, calls } = fakeSupabase();
+    const t = createTasks(
+      fakeHd2(api),
+      db,
+      new Recorder(db),
+      () => 50_000_000,
+      fakeHd2({
+        WarID: { id: 801 },
+        "801": { episodes: raw },
+        Status: {
+          time: 10_000,
+          planetActiveEffects: [
+            { index: 5, galacticEffectId: 1249 },
+            { index: 5, galacticEffectId: 1248 },
+            { index: 2, galacticEffectId: 1395 },
+          ],
+          spaceStations: [{ id32: 9, planetIndex: 5, activeEffectIds: [1238] }],
+        },
+      }),
+    ).find((x) => x.name === "episodes")!;
+    await runTask(t);
+    const written = calls.find((c) => c.method === "POST" && (c.body as { kind: string }[])[0].kind === "planet_effects");
+    expect((written!.body as { data: unknown }[])[0].data).toEqual({
+      planets: [
+        { index: 2, ids: [1395] },
+        { index: 5, ids: [1248, 1249] },
+      ],
+      stations: [{ id: 9, ids: [1238] }],
+    });
+  });
+
+  it("dates a new order only on a running campaign it already knew, and drops impossible dates", () => {
+    const stored = toEpisodes(raw, 10_000, 50_000_000);
+    const ended = { ...raw[0], phases: [...raw[0].phases, { introTitle: "Late", introMessage: "", status: 3, rewards: [] }] };
+    const merged = mergeEpisodes(stored, toEpisodes([ended, raw[1]], 20_000, 60_000_000), 60_000_000);
+    expect(merged[0].phases[1].issued).toBeNull();
+    const broken = [{ ...stored[0], phases: [stored[0].phases[0], { ...stored[0].phases[0], issued: 60_000_000 }] }];
+    expect(mergeEpisodes(broken, toEpisodes([ended], 20_000, 60_000_000), 70_000_000)[0].phases[1].issued).toBeNull();
   });
 
   it("writes an episodes snapshot only when the game API client is given", async () => {

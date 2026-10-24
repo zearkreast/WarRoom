@@ -113,3 +113,60 @@
   color: var(--cta);
   font-weight: 700;
 }
+
+/* Campaign card: result line, the newest entry in full, earlier entries folded underneath. */
+.nc-sub {
+  display: flex;
+  gap: var(--s-4);
+  margin: var(--s-3) var(--s-5) 0;
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  color: var(--label);
+}
+.nc-result {
+  color: var(--f-humans);
+  font-weight: 700;
+}
+.nc-result.won {
+  color: var(--good);
+}
+.nc-result.lost {
+  color: var(--bad);
+}
+.nc-latest {
+  margin: var(--s-5) var(--s-5) 0;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--text-hi);
+}
+.nc-thread {
+  list-style: none;
+  margin: var(--s-5) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.nc-thread li + li {
+  border-top: 1px solid var(--line);
+}
+.nc-thread summary {
+  display: flex;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-5);
+  cursor: pointer;
+  font-size: var(--fs-body-s);
+  color: var(--text-dim);
+  list-style: none;
+}
+.nc-thread summary::-webkit-details-marker {
+  display: none;
+}
+.nc-thread summary:hover {
+  color: var(--text-hi);
+}
+.nc-thread summary .num {
+  flex: none;
+  color: var(--label);
+}
+.nc-thread details[open] {
+  padding-bottom: var(--s-4);
+}

@@ -156,11 +156,7 @@
   align-items: center;
   height: 100%;
   white-space: nowrap;
-  animation: ticker 60s linear infinite;
-}
-.ticker:hover .ticker-track,
-.ticker:focus-within .ticker-track {
-  animation-play-state: paused;
+  will-change: transform;
 }
 .ticker-item {
   display: inline-flex;
