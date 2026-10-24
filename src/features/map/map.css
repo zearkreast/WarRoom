@@ -33,8 +33,11 @@
   --unrot: 0deg;
   --unsquash: 1;
 }
-/* While the camera moves, drop-shadow filters (the costliest paint here) are skipped; they return once it settles. */
-.galaxy.moving * {
+/* While the camera moves, drop-shadow filters (the costliest paint here) are skipped; they return once it settles.
+   Listed by name: a `*` here restyles every node in the map on each start and stop. */
+.galaxy.moving .faction-marks path,
+.galaxy.moving .anomaly.wormhole,
+.galaxy.moving .anomaly.fractured .ember {
   filter: none !important;
 }
 .galaxy.moving .pulse,
@@ -75,15 +78,16 @@
   opacity: 0;
 }
 
-.lanes line {
+.lanes path {
+  fill: none;
   stroke: rgba(210, 228, 255, 0.2);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
-.lanes.bright line {
+.lanes.bright path {
   stroke: rgba(210, 228, 255, 0.36);
 }
-.lanes.front line {
+.lanes.front path {
   stroke: rgba(228, 240, 255, 0.5);
   stroke-width: 1.2;
 }
@@ -416,6 +420,13 @@
   height: 36px;
   background: color-mix(in srgb, var(--surface-1) 82%, transparent);
   backdrop-filter: blur(6px);
+}
+/* A blur over a map that repaints every frame is costly on phones; a denser fill looks the same. */
+@media (pointer: coarse) {
+  .map-rail .hud-btn {
+    background: color-mix(in srgb, var(--surface-1) 94%, transparent);
+    backdrop-filter: none;
+  }
 }
 
 .map-toggles {
