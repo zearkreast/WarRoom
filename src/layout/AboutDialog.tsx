@@ -10,7 +10,11 @@ export function AboutDialog() {
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
-    if (dialog && !d.open) d.showModal();
+    if (dialog && !d.open) {
+      d.showModal();
+      // showModal focuses Close, which scrolls a tall dialog to its end on short screens.
+      d.scrollTop = 0;
+    }
     if (!dialog && d.open) d.close();
   }, [dialog]);
   return (
