@@ -146,20 +146,18 @@ describe("campaign news", () => {
 });
 
 describe("activity chart rows", () => {
-  it("averages the war readings into each bucket and leaves out the one still filling", () => {
+  it("keeps every war reading and interpolates the fronts between their buckets", () => {
     const t0 = 1_000 * BUCKET_MS;
-    const bucket = (at: number) => ({ at, terminids: 1, automatons: 2, illuminate: 3, players: 6 });
+    const bucket = (at: number, n: number) => ({ at, terminids: n, automatons: 0, illuminate: 0, players: n });
     const rows = mergeActivity(
-      [bucket(t0), bucket(t0 + BUCKET_MS), bucket(t0 + 2 * BUCKET_MS)],
-      [
-        { at: t0 + 60_000, impact: 0.01, players: 100 },
-        { at: t0 + 120_000, impact: 0.03, players: 300 },
-      ],
+      [bucket(t0, 100), bucket(t0 + BUCKET_MS, 200), bucket(t0 + 2 * BUCKET_MS, 999)],
+      [{ at: t0 + BUCKET_MS / 2, impact: 0.01, players: 5000 }],
       t0 + 2 * BUCKET_MS + 60_000,
     );
-    expect(rows.map((r) => [r.online, r.impact])).toEqual([
-      [200, 0.02],
-      [null, null],
+    expect(rows.map((r) => [r.terminids, r.online, r.impact])).toEqual([
+      [100, null, null],
+      [150, 5000, 0.01],
+      [200, null, null],
     ]);
   });
 });

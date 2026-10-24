@@ -229,20 +229,35 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--s-6);
-  margin-bottom: var(--s-5);
+  margin-bottom: var(--s-6);
 }
-.ov-heads > div {
+/* Headline readings, each keyed by a hairline in its series colour. */
+.ov-stat {
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
+  padding-left: var(--s-5);
+  box-shadow: inset 1px 0 0 var(--k);
 }
-.ov-heads b {
-  font-size: var(--fs-title);
-  color: var(--text-hi);
+.ov-stat-label {
+  min-height: 2.4em;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+  color: var(--label);
+}
+.ov-stat b {
+  font-size: clamp(1.125rem, 2.2vw, 1.5rem);
+  line-height: 1;
   font-weight: 700;
+  color: var(--text-hi);
+}
+.ov-stat:last-child b {
+  color: var(--k);
 }
 .ov-when {
-  font-size: var(--fs-label);
+  font-size: var(--fs-body-s);
   color: var(--label);
 }
 .ov-note {
@@ -260,22 +275,56 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--s-3);
-  margin-top: var(--s-4);
+  margin-top: var(--s-5);
 }
-/* Series chips: neutral pills with the series mark; a hidden series dims. */
+/* Series chips: outlined, the series mark leading; a hidden series dims. */
 .ov-chip {
+  display: inline-flex;
+  align-items: center;
   gap: var(--s-3);
-  background: var(--surface-2);
-  border-color: var(--line-strong);
+  height: 28px;
+  padding: 0 var(--s-4);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--text-dim);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition:
+    color var(--t-state),
+    border-color var(--t-state);
+}
+.ov-chip:hover {
   color: var(--text-hi);
+  border-color: var(--text-dim);
 }
 .ov-chip.off {
-  color: var(--label);
-  background: var(--surface-1);
+  color: var(--faint);
 }
-.ov-chip.off svg,
-.ov-chip.off .ov-chip-key {
+.ov-chip.off svg {
   opacity: 0.35;
+}
+.ov-live-ping {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ov-ping 1.8s ease-out infinite;
+}
+@keyframes ov-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ov-live-ping {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 /* ---------- Theater of war ---------- */
@@ -478,17 +527,6 @@
     linear-gradient(var(--line-strong), var(--line-strong)) bottom right / 12px 1px,
     linear-gradient(var(--line-strong), var(--line-strong)) bottom right / 1px 12px;
   background-repeat: no-repeat;
-}
-.ov-chip-key {
-  width: 8px;
-  height: 8px;
-  flex: none;
-  border-radius: 50%;
-}
-.ov-chip-key.impact {
-  width: 12px;
-  height: 2px;
-  border-radius: 0;
 }
 .ov-tip {
   padding: var(--s-4) var(--s-5);

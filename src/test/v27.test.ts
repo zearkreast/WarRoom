@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { WarStatusRaw } from "../api/types";
 import { planetTint } from "../domain/biomes";
 import { latestDispatches } from "../domain/dispatch";
+import { averageReadings } from "../domain/frontActivity";
 import { planetEffects } from "../domain/effects";
 import { toEffectsLive } from "../domain/snapshot";
 import statusJson from "./fixtures/status-effects.json";
@@ -56,5 +57,23 @@ describe("planet pictures", () => {
     expect(planetTint({ name: "PENTA", biome: { name: "Deadlands", description: "" } }).art).toMatch(/black-hole/);
     expect(planetTint({ name: "MORADESH", biome: { name: "Desert Dunes", description: "" } }).art).toMatch(/fractured/);
     expect(planetTint({ name: "FURY", biome: { name: "Magma", description: "" } }).art).toMatch(/magma/);
+  });
+});
+
+describe("activity readings", () => {
+  it("averages war readings over each window, stamped at its middle", () => {
+    const w = 300_000;
+    const rows = averageReadings(
+      [
+        { at: 0, players: 100, impact: 0.01 },
+        { at: 60_000, players: 300, impact: 0.03 },
+        { at: w + 1, players: 50, impact: 0.02 },
+      ],
+      w,
+    );
+    expect(rows).toEqual([
+      { at: w / 2, players: 200, impact: 0.02 },
+      { at: w + w / 2, players: 50, impact: 0.02 },
+    ]);
   });
 });

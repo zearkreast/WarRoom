@@ -52,34 +52,67 @@ export function latestRun(buckets: FrontBucket[]): FrontBucket[] {
   return buckets.slice(Math.max(start, 0));
 }
 
-/** A bucket with the galaxy-wide readings averaged in; null where the collector has none for it. */
+type Reading = { at: number; impact: number; players: number };
+
+/**
+ * War readings averaged over `windowMs`, stamped at the window's middle. The API's player count swings
+ * by thousands from one minute to the next, which turns a narrow chart's line into noise.
+ */
+export function averageReadings(readings: Reading[], windowMs: number): Reading[] {
+  const sums = new Map<number, { impact: number; players: number; n: number }>();
+  for (const r of readings) {
+    const at = Math.floor(r.at / windowMs) * windowMs;
+    const s = sums.get(at) ?? { impact: 0, players: 0, n: 0 };
+    s.impact += r.impact;
+    s.players += r.players;
+    s.n++;
+    sums.set(at, s);
+  }
+  return [...sums]
+    .sort(([a], [b]) => a - b)
+    .map(([at, s]) => ({ at: at + windowMs / 2, impact: s.impact / s.n, players: Math.round(s.players / s.n) }));
+}
+
+/** One moment on the activity chart: the fronts, and the galaxy-wide reading when there is one. */
 export interface ActivityPoint extends FrontBucket {
   online: number | null;
   impact: number | null;
 }
 
 /**
- * Front buckets joined with the per-minute war readings, so both charts share one row per bucket.
- * The bucket still filling at `now` is dropped: its partial sum would draw a fall that isn't there.
+ * Front buckets joined with the war readings: one row per bucket and per reading, so the online and
+ * impact lines keep every reading while the fronts, summed per 15 minutes, are interpolated between
+ * their buckets. The bucket still filling at `now` is dropped: its partial sum would draw a fall that
+ * isn't there.
  */
 export function mergeActivity(
   buckets: FrontBucket[],
-  readings: { at: number; impact: number; players: number }[],
+  readings: Reading[],
   now: number,
 ): ActivityPoint[] {
-  const sums = new Map<number, { impact: number; online: number; n: number }>();
-  for (const r of readings) {
-    const at = Math.floor(r.at / BUCKET_MS) * BUCKET_MS;
-    const s = sums.get(at) ?? { impact: 0, online: 0, n: 0 };
-    s.impact += r.impact;
-    s.online += r.players;
-    s.n++;
-    sums.set(at, s);
-  }
-  return buckets
-    .filter((b) => b.at + BUCKET_MS <= now)
-    .map((b) => {
-      const s = sums.get(b.at);
-      return { ...b, online: s ? Math.round(s.online / s.n) : null, impact: s ? s.impact / s.n : null };
-    });
+  const done = buckets.filter((b) => b.at + BUCKET_MS <= now);
+  if (!done.length) return [];
+  const first = done[0].at;
+  const last = done[done.length - 1].at;
+  const inside = readings.filter((r) => r.at >= first && r.at <= last).sort((a, b) => a.at - b.at);
+  const fronts = (t: number): FrontBucket => {
+    let i = 0;
+    while (i < done.length - 2 && done[i + 1].at <= t) i++;
+    const a = done[i];
+    const b = done[Math.min(i + 1, done.length - 1)];
+    const f = b.at === a.at ? 0 : Math.min(1, Math.max(0, (t - a.at) / (b.at - a.at)));
+    const mix = (k: keyof Omit<FrontBucket, "at">) => Math.round(a[k] + (b[k] - a[k]) * f);
+    return {
+      at: t,
+      terminids: mix("terminids"),
+      automatons: mix("automatons"),
+      illuminate: mix("illuminate"),
+      players: mix("players"),
+    };
+  };
+  const rows: ActivityPoint[] = [
+    ...done.map((b) => ({ ...b, online: null, impact: null })),
+    ...inside.map((r) => ({ ...fronts(r.at), online: r.players, impact: r.impact })),
+  ];
+  return rows.sort((a, b) => a.at - b.at || (a.online == null ? -1 : 1));
 }

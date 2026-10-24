@@ -22,6 +22,7 @@ colors:
   warn: "#ffb23f"
   bad: "#ff5a5a"
   info: "#9fd4ff"
+  impact: "#67e8f9"
   faction-humans: "#46a4ff"
   faction-terminids: "#ff9433"
   faction-automaton: "#ff7171"
@@ -189,7 +190,7 @@ Square everywhere (`rounded.none`). Circles appear only for things that are roun
 - **Sectors overlay**: only enemy sectors are painted, as hatched tiles in the enemy colour split by dark seams, as on the game's war table; contested sectors are faint. The Theater of War draws the same layer.
 - **The Gloom**: a pre-rendered amber cloud texture masked around the planets in or on the edge of the Gloom, on every overlay; it thins once zoomed in to the planets.
 - **Pawns**: small square tags beside a planet once zoomed in: sub-factions in the enemy colour, SEAF in Super Earth blue, points of interest in CTA yellow. Fractured planets are drawn as debris, razed ones scorched.
-- **Activity chart**: fronts stacked with faction gradients under a 2.5px yellow online line with peak, low and latest dots, and the impact multiplier as a cyan line on its own right-hand axis; one shared readout, HUD corner brackets, neutral series chips.
+- **Activity chart**: smooth stacked fronts in the full faction colours (gradient 45% to 12%, 1px edge), Terminids at the bottom and Illuminate on top, under a 2.5px yellow online line with peak and low dots and a pinging ring on the newest reading; the impact multiplier is a 2px `impact` cyan line on a right-hand axis with five even ticks. Headline readings sit beside a hairline in their series colour; outlined series chips lead with the series mark; HUD corner brackets frame the plot.
 - **Radial options**: circular glass menu with four options (pin, details, show on map, space station) around a close hub.
 - **Overlay**: full-viewport planet detail on grid paper with an ESC key button in a fixed footer.
 - **Keycap / KeyButton**: white keycap chip before an uppercase label (ESC CLOSE, H CONTROLS, Z DISPATCHES).

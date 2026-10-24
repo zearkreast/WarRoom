@@ -27,6 +27,8 @@
   --warn: #ffb23f;
   --bad: #ff5a5a;
   --info: #9fd4ff;
+  /* The galactic impact multiplier's line: a saturated cyan that holds up beside the online yellow. */
+  --impact: #67e8f9;
 
   --f-humans: #46a4ff;
   --f-terminids: #ff9433;
