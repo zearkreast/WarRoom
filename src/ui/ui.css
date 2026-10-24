@@ -490,6 +490,22 @@
   box-shadow: var(--shadow-2);
   animation: toast-in var(--t-reveal) var(--ease);
 }
+.toast-open {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--s-5);
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.toast-open:hover .toast-icon,
+.toast-open:focus-visible .toast-icon {
+  background: color-mix(in srgb, var(--tone) var(--fill), transparent);
+}
 .toast-body {
   flex: 1;
   font-size: var(--fs-body-s);
