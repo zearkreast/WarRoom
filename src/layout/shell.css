@@ -391,9 +391,15 @@
 }
 
 /* ---------- Narrow screens ---------- */
+.top-btn.narrow-only {
+  display: none;
+}
 @media (max-width: 760px) {
   :root {
     --dock-h: 64px;
+  }
+  .top-btn.narrow-only {
+    display: flex;
   }
   .logo-sub,
   .top-btn-text,
