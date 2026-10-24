@@ -25,7 +25,7 @@ import {
 } from "react";
 import { useCampaigns, useEffects, useFreshPlanets, useSectorGeometry } from "../../api/queries";
 import type { Planet } from "../../api/types";
-import { biomeTint, regenPctPerHour } from "../../domain/biomes";
+import { biomeTint, planetTint, regenPctPerHour } from "../../domain/biomes";
 import { hasPawn, type PlanetEffect } from "../../domain/effects";
 import { FACTIONS, factionColor } from "../../domain/factions";
 import { fmtPct } from "../../domain/format";
@@ -283,10 +283,15 @@ const HaloDefs = memo(function HaloDefs() {
         <stop offset="72%" stopColor="#7d3fb0" stopOpacity={0.45} />
         <stop offset="100%" stopColor="#7d3fb0" stopOpacity={0} />
       </radialGradient>
-      <radialGradient id="scorched" cx="40%" cy="35%">
-        <stop offset="0%" stopColor="#ffb36b" />
-        <stop offset="45%" stopColor="#c8481c" />
-        <stop offset="100%" stopColor="#3a0f06" />
+      <radialGradient id="halo-scorched">
+        <stop offset="0%" stopColor="#ffd2a1" stopOpacity={0.9} />
+        <stop offset="30%" stopColor="#ff7a2e" stopOpacity={0.5} />
+        <stop offset="100%" stopColor="#ff7a2e" stopOpacity={0} />
+      </radialGradient>
+      <radialGradient id="fracture-glow">
+        <stop offset="0%" stopColor="#ff7a4a" stopOpacity={0.55} />
+        <stop offset="60%" stopColor="#c83a2a" stopOpacity={0.12} />
+        <stop offset="100%" stopColor="#c83a2a" stopOpacity={0} />
       </radialGradient>
       <radialGradient id="blackhole">
         <stop offset="0%" stopColor="#000" stopOpacity={1} />
@@ -315,20 +320,17 @@ function AnomalyMark({ kind }: { kind: Anomaly }) {
         <circle r={3.6} className="horizon" />
       </g>
     );
-  if (kind === "fractured")
-    return (
-      <g className="anomaly fractured">
-        <path d="M-1.6,-3.4L1.4,-3.8L2.6,-1L0.2,0.4L-2.4,-0.6Z" />
-        <path d="M2.2,0.8L4.4,1.6L3.6,4L1.2,3.2Z" />
-        <path d="M-3.8,1.2L-1.2,1.8L-1.8,4.2L-4.4,3.4Z" />
-        <circle cx={4.6} cy={-3.2} r={0.7} />
-        <circle cx={-4.2} cy={-2.6} r={0.5} />
-      </g>
-    );
+  // What the Meridian singularity left: a hot core with the planet's crust drifting apart around it.
   return (
-    <g className="anomaly scorched">
-      <circle r={5} fill="url(#scorched)" />
-      <path className="cracks" d="M-3,-1.6L-0.6,-0.4L0.8,-2.6M-0.6,-0.4L0.4,2.2L2.8,1.4M0.4,2.2L-1.6,3.4" />
+    <g className="anomaly fractured">
+      <circle r={6.5} fill="url(#fracture-glow)" />
+      <path className="rock" d="M-1.9,-2.6L0.4,-3.3L2.1,-1.9L1.6,0.2L-0.6,0.9L-2.4,-0.6Z" />
+      <path className="rock" d="M2.6,0.9L4.6,1.3L4.9,3.3L3.1,4.2L1.8,2.7Z" />
+      <path className="rock" d="M-4.6,1.1L-2.3,1.5L-2.0,3.6L-3.9,4.4L-5.2,2.9Z" />
+      <path className="rock" d="M3.4,-4.6L4.9,-4.2L4.6,-2.8L3.2,-3.0Z" />
+      <path className="rock small" d="M-4.6,-3.6L-3.5,-3.9L-3.3,-2.9L-4.4,-2.7Z" />
+      <circle className="rock small" cx={0.2} cy={4.4} r={0.6} />
+      <circle className="ember" r={0.9} cx={0.1} cy={1.6} />
     </g>
   );
 }
@@ -411,23 +413,39 @@ function PlanetBody(props: {
   pinned?: boolean;
   pawns?: PlanetEffect[];
 }) {
+  // Razed worlds keep a planet's size and shape; only their colour and glow turn to embers.
+  const scorched = props.anomaly === "scorched";
   return (
     <g className="pbody">
       <circle r={10} className="hit" />
-      {props.anomaly ? (
+      {props.anomaly && props.anomaly !== "scorched" ? (
         <AnomalyMark kind={props.anomaly} />
       ) : props.style === "spheres" ? (
         <>
-          <circle r={4.4 * props.size} className="sphere" fill={props.fill} />
+          <circle
+            r={4.4 * props.size}
+            className={`sphere ${scorched ? "scorched" : ""}`}
+            fill={scorched ? "#8a3a16" : props.fill}
+          />
           <circle r={4.4 * props.size} fill="url(#sphere-shade)" className="shade" />
           {props.enemy && <circle r={5.6} className="owner-ring" stroke={props.color} />}
         </>
       ) : (
         <>
-          {props.glow && <circle r={props.active ? 9 : 6} fill={`url(#halo-${props.faction})`} className="halo" />}
+          {props.glow && (
+            <circle
+              r={props.active ? 9 : 6}
+              fill={scorched ? "url(#halo-scorched)" : `url(#halo-${props.faction})`}
+              className="halo"
+            />
+          )}
           {props.active && <circle r={7} className="pulse" stroke={props.color} />}
           {props.mo && <circle r={5} className="mo-ring" />}
-          <circle r={(props.active ? 2.2 : 1.5) * props.size} className="core" fill={props.color} />
+          <circle
+            r={(props.active ? 2.2 : 1.5) * props.size}
+            className={`core ${scorched ? "scorched" : ""}`}
+            fill={scorched ? "#ff7a2e" : props.color}
+          />
         </>
       )}
       {props.style === "spheres" && props.active && (
@@ -474,7 +492,7 @@ function HoverCard({ h, active, effects }: { h: Hover; active: boolean; effects?
     );
   }
   const p = h.planet;
-  const tint = biomeTint(p.biome?.name);
+  const tint = planetTint(p, effects);
   const enemy = p.event?.faction ?? (p.currentOwner === "Humans" ? undefined : p.currentOwner);
   const anomaly = anomalyOf(p, effects);
   const ANOMALY_KIND: Record<string, string> = {
@@ -657,7 +675,7 @@ const PlanetLayer = memo(function PlanetLayer(props: {
                 glow={glow}
                 faction={faction}
                 color={color}
-                fill={p.index === 0 ? "#3f8cc2" : sphereColor(biomeTint(p.biome?.name).ground)}
+                fill={p.index === 0 ? "#3f8cc2" : sphereColor(planetTint(p, props.effects?.get(p.index)).ground)}
                 size={p.index === 0 ? 1.6 : 1}
                 anomaly={anomalyOf(p, props.effects?.get(p.index))}
                 active={isActive}

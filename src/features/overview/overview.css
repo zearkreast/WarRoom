@@ -262,9 +262,20 @@
   gap: var(--s-3);
   margin-top: var(--s-4);
 }
-.ov-chips .filter-chip.on {
-  border-color: var(--k);
-  background: color-mix(in srgb, var(--k) var(--wash), var(--surface-1));
+/* Series chips: neutral pills with the series mark; a hidden series dims. */
+.ov-chip {
+  gap: var(--s-3);
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  color: var(--text-hi);
+}
+.ov-chip.off {
+  color: var(--label);
+  background: var(--surface-1);
+}
+.ov-chip.off svg,
+.ov-chip.off .ov-chip-key {
+  opacity: 0.35;
 }
 
 /* ---------- Theater of war ---------- */
@@ -453,36 +464,31 @@
   }
 }
 
-/* Activity chart: HUD corner brackets around both charts, and one shared readout. */
+/* Activity chart: HUD corner brackets on all four corners of the plot. */
 .ov-frame {
   position: relative;
-  padding: var(--s-4) var(--s-3) 0;
-}
-.ov-frame::before,
-.ov-frame::after {
-  content: "";
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border: 1px solid var(--line-strong);
-  pointer-events: none;
-}
-.ov-frame::before {
-  top: 0;
-  left: 0;
-  border-right: 0;
-  border-bottom: 0;
-}
-.ov-frame::after {
-  top: 0;
-  right: 0;
-  border-left: 0;
-  border-bottom: 0;
+  padding: var(--s-5) var(--s-4) var(--s-4);
+  background:
+    linear-gradient(var(--line-strong), var(--line-strong)) top left / 12px 1px,
+    linear-gradient(var(--line-strong), var(--line-strong)) top left / 1px 12px,
+    linear-gradient(var(--line-strong), var(--line-strong)) top right / 12px 1px,
+    linear-gradient(var(--line-strong), var(--line-strong)) top right / 1px 12px,
+    linear-gradient(var(--line-strong), var(--line-strong)) bottom left / 12px 1px,
+    linear-gradient(var(--line-strong), var(--line-strong)) bottom left / 1px 12px,
+    linear-gradient(var(--line-strong), var(--line-strong)) bottom right / 12px 1px,
+    linear-gradient(var(--line-strong), var(--line-strong)) bottom right / 1px 12px;
+  background-repeat: no-repeat;
 }
 .ov-chip-key {
   width: 8px;
   height: 8px;
   flex: none;
+  border-radius: 50%;
+}
+.ov-chip-key.impact {
+  width: 12px;
+  height: 2px;
+  border-radius: 0;
 }
 .ov-tip {
   padding: var(--s-4) var(--s-5);

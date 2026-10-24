@@ -1,4 +1,5 @@
 import type { Planet } from "../api/types";
+import { anomalyOf, type Anomaly } from "./galaxy";
 
 /** Two colours standing in for a biome's look, sky/atmosphere and ground, and its landscape picture. */
 export interface BiomeTint {
@@ -63,6 +64,25 @@ export function biomeTint(biome: string | undefined): BiomeTint {
   const art = ART[`../assets/biomes/${slug(biome)}.png`];
   const tint = known ?? TINTS.find(([re]) => re.test(biome))?.[1] ?? DEFAULT_TINT;
   return art ? { ...tint, art: `url("${art}")` } : tint;
+}
+
+const LOOK_ART = import.meta.glob<string>("../assets/looks/*.png", { eager: true, import: "default", query: "?url" });
+const look = (file: string, sky: string, ground: string): BiomeTint => {
+  const art = LOOK_ART[`../assets/looks/${file}.png`];
+  return { sky, ground, art: art ? `url("${art}")` : undefined };
+};
+
+// A planet the war has destroyed no longer looks like its biome.
+const LOOKS: Partial<Record<Anomaly, BiomeTint>> = {
+  wormhole: look("meridian-black-hole", "#0a0a2a", "#6a5cff"),
+  blackhole: look("black-hole", "#050508", "#7d93ad"),
+  fractured: look("fractured", "#140a10", "#e0553a"),
+};
+
+/** A planet's colours and picture: its biome's, or the black hole or debris it has become. */
+export function planetTint(p: Pick<Planet, "name" | "biome">, effects?: { id: number }[]): BiomeTint {
+  const anomaly = anomalyOf(p, effects);
+  return (anomaly && LOOKS[anomaly]) || biomeTint(p.biome?.name);
 }
 
 /** Enemy regeneration in % of max health per hour. */
