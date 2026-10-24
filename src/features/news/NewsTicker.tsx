@@ -1,5 +1,5 @@
 import { Flag, Radio } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatches, useEpisodes } from "../../api/queries";
 import { campaignEvents } from "../../domain/campaignNews";
 import { fmtAgeShort } from "../../domain/format";
@@ -27,18 +27,33 @@ export function NewsTicker() {
   const { setView, showOnMap } = useUi();
   const now = useNow(60_000);
   const items = useMemo(
-    () => tickerItems(dispatches ?? [], changes, campaignEvents(episodes ?? []), now),
+    () => tickerItems(dispatches ?? [], changes, campaignEvents(episodes ?? [], dispatches ?? []), now),
     [dispatches, changes, episodes, now],
   );
   const track = useRef<HTMLDivElement>(null);
-  const [duration, setDuration] = useState(60);
+  const held = useRef(false);
   const reduced = useMemo(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   const [step, setStep] = useState(0);
 
-  useLayoutEffect(() => {
-    const el = track.current;
-    if (el) setDuration(Math.max(20, el.scrollWidth / 2 / PX_PER_S));
-  }, [items]);
+  // Scrolled by offset rather than a CSS animation: the strip's width changes every minute as ages
+  // tick over, and re-timing an animation mid-run made it jump.
+  useEffect(() => {
+    if (reduced) return;
+    let offset = 0;
+    let last = performance.now();
+    let raf = requestAnimationFrame(function tick(t) {
+      const dt = Math.min((t - last) / 1000, 0.1);
+      last = t;
+      const el = track.current;
+      if (el && !held.current && !document.hidden) {
+        const loop = el.scrollWidth / 2;
+        offset = loop > 0 ? (offset + PX_PER_S * dt) % loop : 0;
+        el.style.transform = `translateX(${-offset.toFixed(1)}px)`;
+      }
+      raf = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [reduced]);
   useEffect(() => {
     if (!reduced) return;
     const id = setInterval(() => setStep((n) => n + 1), STEP_MS);
@@ -71,8 +86,15 @@ export function NewsTicker() {
       </div>
     );
   return (
-    <div className="ticker" aria-label="Latest war news">
-      <div ref={track} className="ticker-track caps" style={{ animationDuration: `${duration}s` }}>
+    <div
+      className="ticker"
+      aria-label="Latest war news"
+      onPointerEnter={() => (held.current = true)}
+      onPointerLeave={() => (held.current = false)}
+      onFocus={() => (held.current = true)}
+      onBlur={() => (held.current = false)}
+    >
+      <div ref={track} className="ticker-track caps">
         {items.map((i) => item(i, false))}
         {items.map((i) => item(i, true))}
       </div>

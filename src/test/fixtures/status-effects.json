@@ -1,0 +1,565 @@
+{
+ "planetActiveEffects": [
+  {
+   "index": 256,
+   "galacticEffectId": 1190
+  },
+  {
+   "index": 259,
+   "galacticEffectId": 1188
+  },
+  {
+   "index": 167,
+   "galacticEffectId": 1188
+  },
+  {
+   "index": 167,
+   "galacticEffectId": 1190
+  },
+  {
+   "index": 258,
+   "galacticEffectId": 1188
+  },
+  {
+   "index": 256,
+   "galacticEffectId": 1193
+  },
+  {
+   "index": 166,
+   "galacticEffectId": 1193
+  },
+  {
+   "index": 166,
+   "galacticEffectId": 1190
+  },
+  {
+   "index": 257,
+   "galacticEffectId": 1188
+  },
+  {
+   "index": 257,
+   "galacticEffectId": 1190
+  },
+  {
+   "index": 209,
+   "galacticEffectId": 1188
+  },
+  {
+   "index": 209,
+   "galacticEffectId": 1190
+  },
+  {
+   "index": 122,
+   "galacticEffectId": 1193
+  },
+  {
+   "index": 161,
+   "galacticEffectId": 1198
+  },
+  {
+   "index": 130,
+   "galacticEffectId": 1232
+  },
+  {
+   "index": 125,
+   "galacticEffectId": 1234
+  },
+  {
+   "index": 45,
+   "galacticEffectId": 1236
+  },
+  {
+   "index": 127,
+   "galacticEffectId": 1241
+  },
+  {
+   "index": 85,
+   "galacticEffectId": 1252
+  },
+  {
+   "index": 114,
+   "galacticEffectId": 1239
+  },
+  {
+   "index": 51,
+   "galacticEffectId": 1252
+  },
+  {
+   "index": 126,
+   "galacticEffectId": 1197
+  },
+  {
+   "index": 22,
+   "galacticEffectId": 1282
+  },
+  {
+   "index": 42,
+   "galacticEffectId": 1291
+  },
+  {
+   "index": 32,
+   "galacticEffectId": 1292
+  },
+  {
+   "index": 16,
+   "galacticEffectId": 1287
+  },
+  {
+   "index": 34,
+   "galacticEffectId": 1304
+  },
+  {
+   "index": 122,
+   "galacticEffectId": 1315
+  },
+  {
+   "index": 122,
+   "galacticEffectId": 1316
+  },
+  {
+   "index": 122,
+   "galacticEffectId": 1317
+  },
+  {
+   "index": 207,
+   "galacticEffectId": 1324
+  },
+  {
+   "index": 123,
+   "galacticEffectId": 1193
+  },
+  {
+   "index": 123,
+   "galacticEffectId": 1188
+  },
+  {
+   "index": 123,
+   "galacticEffectId": 1315
+  },
+  {
+   "index": 123,
+   "galacticEffectId": 1316
+  },
+  {
+   "index": 123,
+   "galacticEffectId": 1317
+  },
+  {
+   "index": 75,
+   "galacticEffectId": 1188
+  },
+  {
+   "index": 75,
+   "galacticEffectId": 1193
+  },
+  {
+   "index": 75,
+   "galacticEffectId": 1315
+  },
+  {
+   "index": 75,
+   "galacticEffectId": 1316
+  },
+  {
+   "index": 75,
+   "galacticEffectId": 1317
+  },
+  {
+   "index": 92,
+   "galacticEffectId": 1327
+  },
+  {
+   "index": 64,
+   "galacticEffectId": 1229
+  },
+  {
+   "index": 212,
+   "galacticEffectId": 1333
+  },
+  {
+   "index": 210,
+   "galacticEffectId": 1188
+  },
+  {
+   "index": 210,
+   "galacticEffectId": 1190
+  },
+  {
+   "index": 45,
+   "galacticEffectId": 1272
+  },
+  {
+   "index": 264,
+   "galacticEffectId": 1190
+  },
+  {
+   "index": 265,
+   "galacticEffectId": 1190
+  },
+  {
+   "index": 259,
+   "galacticEffectId": 1311
+  },
+  {
+   "index": 115,
+   "galacticEffectId": 1246
+  },
+  {
+   "index": 115,
+   "galacticEffectId": 1352
+  },
+  {
+   "index": 258,
+   "galacticEffectId": 1311
+  },
+  {
+   "index": 258,
+   "galacticEffectId": 1318
+  },
+  {
+   "index": 258,
+   "galacticEffectId": 1319
+  },
+  {
+   "index": 258,
+   "galacticEffectId": 1320
+  },
+  {
+   "index": 259,
+   "galacticEffectId": 1318
+  },
+  {
+   "index": 259,
+   "galacticEffectId": 1319
+  },
+  {
+   "index": 259,
+   "galacticEffectId": 1320
+  },
+  {
+   "index": 162,
+   "galacticEffectId": 1353
+  },
+  {
+   "index": 114,
+   "galacticEffectId": 1363
+  },
+  {
+   "index": 160,
+   "galacticEffectId": 1365
+  },
+  {
+   "index": 260,
+   "galacticEffectId": 1360
+  },
+  {
+   "index": 260,
+   "galacticEffectId": 1361
+  },
+  {
+   "index": 204,
+   "galacticEffectId": 1246
+  },
+  {
+   "index": 260,
+   "galacticEffectId": 1246
+  },
+  {
+   "index": 212,
+   "galacticEffectId": 1310
+  },
+  {
+   "index": 212,
+   "galacticEffectId": 1309
+  },
+  {
+   "index": 212,
+   "galacticEffectId": 1308
+  },
+  {
+   "index": 212,
+   "galacticEffectId": 1303
+  },
+  {
+   "index": 212,
+   "galacticEffectId": 1306
+  },
+  {
+   "index": 212,
+   "galacticEffectId": 1307
+  },
+  {
+   "index": 82,
+   "galacticEffectId": 1279
+  },
+  {
+   "index": 137,
+   "galacticEffectId": 1379
+  },
+  {
+   "index": 137,
+   "galacticEffectId": 1380
+  },
+  {
+   "index": 201,
+   "galacticEffectId": 1387
+  },
+  {
+   "index": 259,
+   "galacticEffectId": 1307
+  },
+  {
+   "index": 259,
+   "galacticEffectId": 1308
+  },
+  {
+   "index": 259,
+   "galacticEffectId": 1306
+  },
+  {
+   "index": 259,
+   "galacticEffectId": 1309
+  },
+  {
+   "index": 272,
+   "galacticEffectId": 1377
+  },
+  {
+   "index": 272,
+   "galacticEffectId": 1378
+  },
+  {
+   "index": 269,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 76,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 168,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 78,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 170,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 231,
+   "galacticEffectId": 1377
+  },
+  {
+   "index": 231,
+   "galacticEffectId": 1378
+  },
+  {
+   "index": 270,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 126,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 131,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 126,
+   "galacticEffectId": 1366
+  },
+  {
+   "index": 128,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 130,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 175,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 218,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 185,
+   "galacticEffectId": 1402
+  },
+  {
+   "index": 185,
+   "galacticEffectId": 1403
+  },
+  {
+   "index": 97,
+   "galacticEffectId": 1418
+  },
+  {
+   "index": 97,
+   "galacticEffectId": 1190
+  },
+  {
+   "index": 136,
+   "galacticEffectId": 1344
+  },
+  {
+   "index": 258,
+   "galacticEffectId": 1246
+  },
+  {
+   "index": 122,
+   "galacticEffectId": 1246
+  },
+  {
+   "index": 124,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 211,
+   "galacticEffectId": 1395
+  },
+  {
+   "index": 253,
+   "galacticEffectId": 1360
+  },
+  {
+   "index": 253,
+   "galacticEffectId": 1361
+  },
+  {
+   "index": 245,
+   "galacticEffectId": 1248
+  },
+  {
+   "index": 245,
+   "galacticEffectId": 1249
+  },
+  {
+   "index": 215,
+   "galacticEffectId": 1303
+  },
+  {
+   "index": 215,
+   "galacticEffectId": 1310
+  },
+  {
+   "index": 203,
+   "galacticEffectId": 1202
+  },
+  {
+   "index": 203,
+   "galacticEffectId": 1203
+  },
+  {
+   "index": 246,
+   "galacticEffectId": 1248
+  },
+  {
+   "index": 246,
+   "galacticEffectId": 1249
+  },
+  {
+   "index": 170,
+   "galacticEffectId": 1243
+  },
+  {
+   "index": 170,
+   "galacticEffectId": 1245
+  },
+  {
+   "index": 75,
+   "galacticEffectId": 1244
+  },
+  {
+   "index": 75,
+   "galacticEffectId": 1386
+  },
+  {
+   "index": 75,
+   "galacticEffectId": 1306
+  },
+  {
+   "index": 75,
+   "galacticEffectId": 1309
+  },
+  {
+   "index": 7,
+   "galacticEffectId": 1402
+  },
+  {
+   "index": 7,
+   "galacticEffectId": 1403
+  },
+  {
+   "index": 7,
+   "galacticEffectId": 1413
+  },
+  {
+   "index": 7,
+   "galacticEffectId": 1414
+  },
+  {
+   "index": 261,
+   "galacticEffectId": 1248
+  },
+  {
+   "index": 261,
+   "galacticEffectId": 1249
+  },
+  {
+   "index": 242,
+   "galacticEffectId": 1249
+  },
+  {
+   "index": 242,
+   "galacticEffectId": 1248
+  },
+  {
+   "index": 215,
+   "galacticEffectId": 1400
+  },
+  {
+   "index": 215,
+   "galacticEffectId": 1401
+  },
+  {
+   "index": 75,
+   "galacticEffectId": 1400
+  },
+  {
+   "index": 75,
+   "galacticEffectId": 1401
+  },
+  {
+   "index": 261,
+   "galacticEffectId": 1400
+  },
+  {
+   "index": 261,
+   "galacticEffectId": 1401
+  }
+ ],
+ "spaceStations": [
+  {
+   "id32": 749875195,
+   "planetIndex": 75,
+   "activeEffectIds": [
+    1237,
+    1214,
+    1238,
+    1261,
+    1262,
+    1384,
+    1385
+   ],
+   "currentElectionEndWarTime": 84875990,
+   "flags": 1
+  }
+ ]
+}

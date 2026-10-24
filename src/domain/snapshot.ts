@@ -12,6 +12,7 @@ import type {
   Statistics,
   TacticalAction,
   War,
+  WarStatusRaw,
 } from "../api/types";
 
 export type SnapshotKind =
@@ -22,7 +23,8 @@ export type SnapshotKind =
   | "planets_static"
   | "dispatches"
   | "space_stations"
-  | "episodes";
+  | "episodes"
+  | "planet_effects";
 
 /** Planet fields that rarely change: sent once per app launch. */
 export interface PlanetStatic {
@@ -297,23 +299,33 @@ export function toEpisodes(list: EpisodeRaw[], warTime: number, fetchedAt: numbe
 }
 
 /**
+ * An order's issue date, or null when it can't be right: an older collector stamped orders of
+ * campaigns that had already ended with the time it first saw them.
+ */
+export function issuedAt(e: Pick<EpisodeLive, "start" | "end">, issued: number | null | undefined): number | null {
+  if (issued == null || issued < e.start) return null;
+  return e.end != null && issued > e.end ? null : issued;
+}
+
+/**
  * Folds a fresh read into the stored list. Campaigns the game stops listing are kept, stored dates
  * win over re-derived ones (the war clock drifts a little between reads), and a Major Order that
- * wasn't stored before is stamped as issued at `now`.
+ * appears on an already stored, still running campaign is stamped as issued at `now`.
  */
 export function mergeEpisodes(stored: EpisodeLive[], fresh: EpisodeLive[], now: number): EpisodeLive[] {
   const before = new Map(stored.map((e) => [e.id, e]));
   const seen = new Set(fresh.map((e) => e.id));
   const merged = fresh.map((e) => {
     const was = before.get(e.id);
+    const dates = { start: was?.start ?? e.start, end: was?.end ?? e.end };
     return {
       ...e,
-      start: was?.start ?? e.start,
-      end: was?.end ?? e.end,
-      phases: e.phases.map((p, i) => ({
-        ...p,
-        issued: i === 0 ? (was?.start ?? e.start) : (was?.phases[i]?.issued ?? (stored.length ? now : null)),
-      })),
+      ...dates,
+      phases: e.phases.map((p, i) => {
+        if (i === 0) return { ...p, issued: dates.start };
+        const known = was?.phases[i] ? issuedAt(dates, was.phases[i].issued) : undefined;
+        return { ...p, issued: known !== undefined ? known : was && e.status === "active" ? now : null };
+      }),
     };
   });
   return [...stored.filter((e) => !seen.has(e.id)), ...merged].sort((a, b) => a.start - b.start);
@@ -324,4 +336,23 @@ export function campaignTally(e: EpisodeLive): { won: number; lost: number; runn
   const won = e.phases.filter((p) => p.status === "won").length;
   const lost = e.phases.filter((p) => p.status === "lost").length;
   return { won, lost, running: e.phases.length - won - lost };
+}
+
+/** Galactic effect ids active on each planet and space station, from the official war status. */
+export interface EffectsLive {
+  planets: { index: number; ids: number[] }[];
+  stations: { id: number; ids: number[] }[];
+}
+
+export function toEffectsLive(status: Pick<WarStatusRaw, "planetActiveEffects" | "spaceStations">): EffectsLive {
+  const byPlanet = new Map<number, number[]>();
+  for (const e of status.planetActiveEffects ?? []) {
+    const ids = byPlanet.get(e.index) ?? [];
+    if (!ids.includes(e.galacticEffectId)) ids.push(e.galacticEffectId);
+    byPlanet.set(e.index, ids);
+  }
+  return {
+    planets: [...byPlanet].sort(([a], [b]) => a - b).map(([index, ids]) => ({ index, ids: ids.sort((a, b) => a - b) })),
+    stations: (status.spaceStations ?? []).map((s) => ({ id: s.id32, ids: [...s.activeEffectIds].sort((a, b) => a - b) })),
+  };
 }

@@ -13,6 +13,8 @@ import { Recorder } from "./recorder.ts";
 import { createSupabase } from "./supabase.ts";
 
 const TICK_MS = 5_000;
+/** With no job succeeding for this long, exit so Docker or systemd starts a clean process. */
+const STALL_MS = 10 * 60_000;
 
 const stamp = () => new Date().toISOString().slice(11, 19);
 const log = (msg: string) => console.log(`[${stamp()}] ${msg}`);
@@ -64,15 +66,21 @@ async function main(): Promise<number> {
     });
   }
 
+  let lastOk = Date.now();
   while (!stopping) {
     const parts: string[] = [];
     for (const t of tasks) {
       if (stopping || Date.now() < due.get(t)!) continue;
       const r = await runTask(t);
+      if (r.ok) lastOk = Date.now();
       due.set(t, r.retryAt ?? Date.now() + t.everyMs);
       parts.push(`${r.ok ? "" : "FAIL "}${r.name}: ${r.message}`);
     }
     if (parts.length) log(parts.join(" | "));
+    if (Date.now() - lastOk > STALL_MS) {
+      log(`no job has succeeded for ${STALL_MS / 60_000} minutes, exiting for a clean restart`);
+      return 1;
+    }
     await new Promise<void>((r) => {
       const timer = setTimeout(r, TICK_MS);
       wake = () => {

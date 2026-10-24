@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Dispatch, EpisodeRaw, Planet } from "../api/types";
 import { rewardLabel } from "../data/campaignRewards";
-import { campaignEvents, campaignHeadline } from "../domain/campaignNews";
+import { campaignEvents, campaignHeadline, campaignThreads } from "../domain/campaignNews";
 import { fmtAgeShort } from "../domain/format";
 import { BUCKET_MS, frontBuckets, latestRun, type FrontRow } from "../domain/frontActivity";
 import { factionMarks } from "../domain/factionMarks";
 import { buildPolarSectors, GALAXY_SCALE, sectorAt, sectorTerritory, type PolarSectors } from "../domain/galaxy";
 import { fixStatic, isOffMap, isPlaceholder, ownershipKey } from "../domain/planets";
-import { mergeEpisodes, toEpisodes } from "../domain/snapshot";
+import { issuedAt, mergeEpisodes, toEpisodes } from "../domain/snapshot";
 import { tickerItems } from "../domain/ticker";
 import episodesJson from "./fixtures/episodes.json";
 import planetsJson from "./fixtures/planets.json";
@@ -110,6 +110,32 @@ describe("campaign news", () => {
     expect(events.every((e, i) => i === 0 || events[i - 1].at >= e.at)).toBe(true);
     const lost = events.find((e) => e.type === "ended" && e.campaign.title === "BLAZING ELECTORATE")!;
     expect(campaignHeadline(lost)).toBe("BLAZING ELECTORATE failed");
+  });
+
+  it("gathers a campaign's orders and dispatches on one thread, and leaves other dispatches alone", () => {
+    const e = campaigns.find((c) => c.status === "active") ?? campaigns[campaigns.length - 1];
+    const at = (h: number) => new Date(e.start + h * 3_600_000).toISOString();
+    const d = (id: number, message: string, h: number): Dispatch => ({ id, published: at(h), type: 0, message });
+    const list = [
+      d(1, "<i=3>NEW MAJOR ORDER</i> First", 0.5),
+      d(2, "<i=3>MAJOR ORDER FAILED</i> Too few samples", 30),
+      d(3, "<i=3>STRATEGIC ALERT</i> Incineration Corps sighted", 31),
+    ];
+    const { threads, claimed } = campaignThreads(campaigns, list);
+    expect([...claimed].sort()).toEqual([1, 2]);
+    const mine = threads.find((t) => t.campaign.id === e.id)!;
+    expect(mine.entries.filter((x) => x.dispatch).map((x) => x.dispatch!.id)).toEqual([1, 2]);
+    // The first order's announcement is told on the launch, not as a second line.
+    expect(mine.entries[0].event?.type).toBe("launched");
+    expect(mine.entries[0].dispatch?.id).toBe(1);
+    expect(mine.entries.every((x, i) => i === 0 || mine.entries[i - 1].at <= x.at)).toBe(true);
+  });
+
+  it("never dates an order after its campaign ended or before it began", () => {
+    const ended = campaigns.find((c) => c.status !== "active")!;
+    expect(issuedAt(ended, ended.end! + 1)).toBeNull();
+    expect(issuedAt(ended, ended.start - 1)).toBeNull();
+    expect(issuedAt(ended, ended.start + 1)).toBe(ended.start + 1);
   });
 
   it("names known rewards and falls back to the type, then a generic label", () => {
