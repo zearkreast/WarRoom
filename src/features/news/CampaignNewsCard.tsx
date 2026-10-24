@@ -3,7 +3,7 @@ import { rewardLabel } from "../../data/campaignRewards";
 import type { CampaignThread, ThreadEntry } from "../../domain/campaignNews";
 import { factionColor } from "../../domain/factions";
 import { dispatchTitle, fmtAgo, sestClock, sestDate } from "../../domain/format";
-import { campaignTally, type EpisodeLive } from "../../domain/snapshot";
+import { campaignTally, phaseName, type EpisodeLive } from "../../domain/snapshot";
 import { MarkupText } from "./NewsCard";
 
 const RESULT: Record<EpisodeLive["status"], string> = { active: "In progress", won: "Won", lost: "Failed" };
@@ -13,7 +13,8 @@ function entryLabel(x: ThreadEntry): string {
   const { type, campaign: e, phase } = x.event;
   if (type === "launched") return "Campaign launched";
   if (type === "ended") return `Campaign ${e.status === "won" ? "won" : "failed"}`;
-  return `Major Order ${phase + 1}: ${e.phases[phase].title}`;
+  const name = phaseName(e.phases[phase]);
+  return name ? `Major Order ${phase + 1}: ${name}` : `Major Order ${phase + 1}`;
 }
 
 function EntryBody({ x }: { x: ThreadEntry }) {
