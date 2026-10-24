@@ -68,12 +68,13 @@ export function useDataSync() {
     if (!firstRun) {
       if (s.alerts.orders) {
         for (const a of assignments.data.filter((a) => !s.seenAssignments.includes(a.id))) {
-          notify("order", "New Major Order", a.briefing ?? a.title ?? "High Command has issued new orders.", s.alerts.system);
+          const briefing = a.briefing ?? a.title ?? "High Command has issued new orders.";
+          notify("order", "New Major Order", briefing, s.alerts.system, briefing);
         }
       }
       if (s.alerts.dispatches) {
         for (const d of dispatches.data.filter((d) => d.id > s.seenDispatch).slice(0, 3)) {
-          notify("dispatch", "New dispatch", dispatchTitle(d.message), s.alerts.system);
+          notify("dispatch", "New dispatch", dispatchTitle(d.message), s.alerts.system, d.message);
         }
       }
     }
