@@ -1,5 +1,4 @@
 /* ---------- Hub ---------- */
-/* Styled after the G.W.W.: a masthead, a live strip, then each module as a site in its own colour. */
 .hp-hub {
   display: flex;
   flex-direction: column;
@@ -1036,6 +1035,320 @@
 }
 .st-jumps b {
   color: var(--text-hi);
+}
+
+.st-aka {
+  margin: 0;
+  font-size: var(--fs-body-s);
+  font-style: italic;
+  color: var(--label);
+}
+.st-planet-link {
+  font: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+.st-sop,
+.st-dossier {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  line-height: 1.55;
+}
+.st-sop p,
+.st-dossier p {
+  margin: 0;
+}
+.st-lead {
+  max-width: 80ch;
+  color: var(--text-hi);
+}
+.st-sub {
+  margin: var(--s-3) 0 0;
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+  color: var(--tone, var(--cta));
+}
+.st-dossier section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.st-dossier section .st-sub {
+  margin: 0;
+}
+.st-points {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.st-points li {
+  padding: var(--s-4) var(--s-5);
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--tone, var(--cta));
+  color: var(--text-dim);
+  font-size: var(--fs-body-s);
+}
+.st-points b {
+  color: var(--text-hi);
+}
+.st-timeline {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.st-timeline li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: var(--s-5);
+  padding: var(--s-3) 0 var(--s-3) var(--s-5);
+  border-left: 1px solid var(--line-strong);
+}
+.st-timeline li::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--s-3) + 5px);
+  left: -4px;
+  width: 7px;
+  height: 7px;
+  background: var(--tone, var(--cta));
+  transform: rotate(45deg);
+}
+.st-timeline-when {
+  padding-top: 2px;
+  font-size: var(--fs-label);
+  letter-spacing: 0.1em;
+  color: var(--tone, var(--cta));
+}
+.st-timeline p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: var(--fs-body-s);
+  line-height: 1.5;
+}
+.st-source {
+  font-size: var(--fs-label);
+  line-height: 1.6;
+  color: var(--label);
+}
+.st-source a {
+  color: var(--info);
+}
+
+/* ---------- Station holograms ---------- */
+.st-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  align-items: start;
+  gap: var(--s-6);
+}
+.st-holo {
+  --holo: var(--f-humans);
+  position: sticky;
+  top: var(--s-6);
+  display: flex;
+  flex-direction: column;
+  min-height: min(620px, calc(100vh - 220px));
+  padding: var(--s-4);
+  background:
+    radial-gradient(ellipse 80% 45% at 50% 100%, color-mix(in srgb, var(--holo) 16%, transparent), transparent 70%),
+    var(--void);
+  border: 1px solid color-mix(in srgb, var(--holo) 35%, var(--line));
+  box-shadow: var(--lip), inset 0 0 40px color-mix(in srgb, var(--holo) 8%, transparent);
+  color: var(--holo);
+  overflow: hidden;
+}
+.st-holo-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px dashed color-mix(in srgb, var(--holo) 30%, transparent);
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+}
+.st-holo-stage {
+  position: relative;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+  margin: var(--s-4) 0 0;
+}
+.st-holo-art,
+.st-holo-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 460px;
+  animation: holo-flicker 6s steps(1) infinite;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--holo) 70%, transparent));
+}
+.st-holo-art {
+  display: block;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, color-mix(in srgb, var(--holo) 55%, white), var(--holo) 65%, color-mix(in srgb, var(--holo) 70%, black));
+  mask: var(--art) center / contain no-repeat;
+}
+.st-holo-svg {
+  overflow: visible;
+}
+.st-holo-svg path,
+.st-holo-svg circle,
+.st-holo-svg ellipse {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.st-holo-svg .ash-back {
+  opacity: 0.25;
+  stroke-dasharray: 2 3;
+}
+.st-holo-svg .ash-rim {
+  stroke-width: 1.6;
+}
+.st-holo-svg .ash-seam {
+  opacity: 0.55;
+}
+.st-holo-svg .ash-light {
+  fill: #ffb08a;
+  stroke: none;
+}
+.st-holo-svg .ash-debris path:first-child {
+  fill: color-mix(in srgb, currentColor 35%, transparent);
+}
+.st-holo-svg .ash-trail {
+  opacity: 0.45;
+  stroke-dasharray: 3 2;
+}
+.st-holo-svg.glitch {
+  animation:
+    holo-flicker 6s steps(1) infinite,
+    holo-glitch 4.2s steps(1) infinite;
+}
+.st-holo-sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0 45%, color-mix(in srgb, var(--holo) 22%, transparent) 50%, transparent 55% 100%);
+  background-size: 100% 220%;
+  animation: holo-sweep 5s linear infinite;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+.st-holo-stamp {
+  position: absolute;
+  top: 78%;
+  left: 50%;
+  padding: var(--s-2) var(--s-5);
+  border: 2px solid var(--bad);
+  color: var(--bad);
+  font-size: var(--fs-body);
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  background: color-mix(in srgb, var(--void) 70%, transparent);
+  transform: translate(-50%, -50%) rotate(-12deg);
+}
+.st-holo-base {
+  display: block;
+  height: 10px;
+  margin: 0 12% var(--s-5);
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--holo) 60%, transparent);
+  box-shadow: 0 -6px 18px color-mix(in srgb, var(--holo) 40%, transparent);
+}
+.st-holo-read {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin: 0;
+}
+.st-holo-read div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 1px solid color-mix(in srgb, var(--holo) 18%, transparent);
+}
+.st-holo-read dt {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.18em;
+  color: var(--label);
+}
+.st-holo-read dd {
+  margin: 0;
+  font-size: var(--fs-body-s);
+  color: var(--text-hi);
+  text-align: right;
+}
+@keyframes holo-flicker {
+  0%,
+  100% {
+    opacity: 0.92;
+  }
+  41% {
+    opacity: 0.6;
+  }
+  42% {
+    opacity: 0.95;
+  }
+  77% {
+    opacity: 0.78;
+  }
+  78% {
+    opacity: 0.92;
+  }
+}
+@keyframes holo-glitch {
+  0%,
+  100% {
+    transform: none;
+  }
+  63% {
+    transform: translateX(3px) skewX(-4deg);
+  }
+  65% {
+    transform: translateX(-2px);
+  }
+  67% {
+    transform: none;
+  }
+}
+@keyframes holo-sweep {
+  from {
+    background-position: 0 120%;
+  }
+  to {
+    background-position: 0 -120%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-holo-art,
+  .st-holo-svg,
+  .st-holo-sweep {
+    animation: none;
+  }
+}
+@media (max-width: 900px) {
+  .st-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .st-holo {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  .st-timeline li {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
 }
 
 /* ---------- About, legend ---------- */

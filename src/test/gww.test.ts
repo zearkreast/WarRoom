@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CHAPTERS, MANUALS, TIPS } from "../data/gww";
 import { ADS, COMPANIES, GOV, MINISTRIES, type SiteSection } from "../data/gwwSites";
+import { PAST_STATIONS, STAR_OF_PEACE } from "../data/stations";
 import { linksIn, nextYearly, parseRich, plainText } from "../domain/gwwText";
 import { adUrl, iconUrl, logoUrl } from "../features/hellpad/gwwArt";
 import { APP_PAGES, pageOf } from "../features/hellpad/gwwNav";
@@ -70,6 +71,18 @@ describe("galactic wide web", () => {
       return !pageOf(t);
     });
     expect(broken).toEqual([]);
+  });
+
+  it("names only planets that exist in the station histories", () => {
+    const planets = new Set((planetsJson as { name: string }[]).map((p) => p.name.toLowerCase()));
+    const text = [
+      STAR_OF_PEACE.summary,
+      ...STAR_OF_PEACE.points,
+      ...STAR_OF_PEACE.timeline.map((e) => e.text),
+      ...PAST_STATIONS.flatMap((s) => [s.note, ...s.sections.map((x) => x.text), ...s.timeline.map((e) => e.text)]),
+    ];
+    const links = text.flatMap(linksIn);
+    expect(links.filter((t) => !t.startsWith("planet:") || !planets.has(t.slice(7).toLowerCase()))).toEqual([]);
   });
 
   it("puts every manual in a chapter, and the chapters in reading order", () => {

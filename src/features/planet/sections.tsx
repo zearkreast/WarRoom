@@ -23,8 +23,6 @@ import {
   CloudLightning,
   Landmark,
   Orbit,
-  Satellite,
-  type LucideIcon,
 } from "lucide-react";
 import { useMemo, type CSSProperties, type ReactNode } from "react";
 import {
@@ -48,7 +46,7 @@ import { fmtCompact, fmtDate, fmtDateTime, fmtInt, fmtPct } from "../../domain/f
 import { liberationPercent } from "../../domain/progress";
 import { buildWarHistory, defenseEvents, fmtLongDuration, type LogEntry } from "../../domain/warHistory";
 import { useUi } from "../../state";
-import { FactionEmblem, SubfactionEmblem } from "../../ui/emblems";
+import { DssIcon, FactionEmblem, type IconLike, SubfactionEmblem } from "../../ui/emblems";
 import { hazardIcon } from "../../ui/hazardIcons";
 import { Countdown, Empty, Meter, Panel, Tile } from "../../ui/primitives";
 import type { Front } from "../planets/useFronts";
@@ -577,12 +575,12 @@ export function DispatchSection(props: { p: Planet; front: Front | null; inMajor
   );
 }
 
-const EFFECT_ICON: Record<EffectKind, LucideIcon> = {
+const EFFECT_ICON: Record<EffectKind, IconLike> = {
   subfaction: Skull,
   threat: TriangleAlert,
   seaf: Shield,
   poi: Landmark,
-  dss: Satellite,
+  dss: DssIcon,
   arsenal: Crosshair,
   condition: CloudLightning,
   event: Flag,

@@ -3,12 +3,12 @@ import { ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { factionColor, factionLabel } from "../domain/factions";
 import { fmtDuration } from "../domain/format";
-import { FactionEmblem } from "./emblems";
+import { FactionEmblem, type IconLike } from "./emblems";
 
 /** Panel with a hatch-striped header strip: icon box, title, and an optional right slot. */
 export function Panel(props: {
   title?: ReactNode;
-  icon?: LucideIcon;
+  icon?: IconLike;
   right?: ReactNode;
   /** Tints the header stripe and icon box. Defaults to the CTA yellow. */
   tone?: string;

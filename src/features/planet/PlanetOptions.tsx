@@ -1,7 +1,8 @@
-import { Crosshair, FileText, MapPin, Pin, PinOff, Satellite, X } from "lucide-react";
+import { Crosshair, FileText, MapPin, Pin, PinOff, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { usePlanet } from "../../api/queries";
 import { useSettings, useUi } from "../../state";
+import { DssIcon } from "../../ui/emblems";
 import { useStationPlanets } from "../planets/useFronts";
 import "./planet.css";
 
@@ -45,7 +46,7 @@ export function PlanetOptions() {
     view === "map"
       ? { pos: "s", label: "Focus", icon: Crosshair, run: () => focus(planet.index) }
       : { pos: "s", label: "Show on map", icon: MapPin, run: () => showOnMap(planet.index) },
-    { pos: "w", label: "Space station", icon: Satellite, run: () => openModule("stations"), disabled: !hasStation },
+    { pos: "w", label: "Space station", icon: DssIcon, run: () => openModule("stations"), disabled: !hasStation },
   ];
 
   return (

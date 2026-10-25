@@ -1,4 +1,4 @@
-import { Crosshair, FileText, MousePointerClick, Pin, PinOff, Satellite, X } from "lucide-react";
+import { Crosshair, FileText, MousePointerClick, Pin, PinOff, X } from "lucide-react";
 import { useEffect, type CSSProperties } from "react";
 import type { Planet } from "../../api/types";
 import { biomeTint, planetTint, regenPctPerHour } from "../../domain/biomes";
@@ -8,7 +8,7 @@ import { fmtInt, fmtPct } from "../../domain/format";
 import { anomalyOf, type Landmark } from "../../domain/galaxy";
 import { liberationPercent, trackedPercent } from "../../domain/progress";
 import { useSettings, useUi } from "../../state";
-import { SubfactionEmblem } from "../../ui/emblems";
+import { DssIcon, SubfactionEmblem } from "../../ui/emblems";
 import { Meter } from "../../ui/primitives";
 import { useStationPlanets } from "../planets/useFronts";
 import { PoiGlyph, poiImage, poiKind, poiOrigin } from "./poi";
@@ -204,7 +204,7 @@ export function PlanetPanel(props: { p: Planet; active: boolean; effects?: Plane
           disabled={!hasStation}
           title={hasStation ? "Space station" : "No space station at this planet"}
         >
-          <Satellite size={16} />
+          <DssIcon size={16} />
           <span>Station</span>
         </button>
       </div>
