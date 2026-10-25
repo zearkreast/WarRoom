@@ -46,7 +46,7 @@ import { byIndex, ownershipKey } from "../../domain/planets";
 import { buildRegions } from "../../domain/regions";
 import { liberationPercent, trackedPercent } from "../../domain/progress";
 import { useSettings, useUi, type MapOverlay, type MapPlanets, type MapQuality } from "../../state";
-import { EMBLEM_PATHS } from "../../ui/emblems";
+import { EmblemArt, subfactionArt } from "../../ui/emblems";
 import { HudButton, Loading, Meter, Stepper } from "../../ui/primitives";
 import { useMajorOrderPlanets } from "../planets/useFronts";
 import { GloomLayer, SectorLayer } from "./layers";
@@ -217,13 +217,7 @@ const FactionMarks = memo(function FactionMarks(props: {
       {marks.map((m) => (
         <g key={m.faction} transform={`translate(${m.x.toFixed(1)},${m.y.toFixed(1)})`}>
           <g className="upright">
-            <path
-              d={EMBLEM_PATHS[m.faction]}
-              transform="translate(-36,-36) scale(3)"
-              fill={factionColor(m.faction)}
-              color={factionColor(m.faction)}
-              fillRule="evenodd"
-            />
+            <EmblemArt art={m.faction} size={72} />
           </g>
         </g>
       ))}
@@ -574,7 +568,7 @@ function PawnTags(props: { effects: PlanetEffect[]; faction: string; x: number; 
           <g key={e.id} className={`pawn ${e.kind}`} transform={`translate(${x},0)`} style={{ color: tone }}>
             <rect x={-2.8} y={-2.8} width={5.6} height={5.6} />
             {e.kind === "subfaction" ? (
-              <path d={EMBLEM_PATHS[faction]} transform="translate(-2.1,-2.1) scale(0.175)" fillRule="evenodd" />
+              <EmblemArt art={subfactionArt(e.name) ?? faction} size={4.4} />
             ) : (
               (() => {
                 const Icon = PAWN_ICON[e.kind as keyof typeof PAWN_ICON];

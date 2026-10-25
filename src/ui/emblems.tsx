@@ -1,27 +1,115 @@
+import { useId, type CSSProperties } from "react";
 import { factionColor } from "../domain/factions";
+import invasionFleet from "../assets/emblems/invasion-fleet.png";
 
-// Simple authored marks for each faction (not the game's artwork), on a 24-unit grid.
-export const EMBLEM_PATHS: Record<string, string> = {
-  // A globe inside an orbit ring.
-  Humans:
-    "M12 6.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Zm0-4.5c6.6 0 11 3.4 11 6.6 0 1.7-1.2 3.2-3.2 4.3a7 7 0 0 0 .2-1.6c0-.3 0-.6-.1-.9 1-.6 1.5-1.2 1.5-1.8 0-2-3.9-4.6-9.4-4.6S2.6 6.6 2.6 8.6c0 .6.5 1.2 1.5 1.8l-.1.9c0 .6.1 1.1.2 1.6C2.2 11.8 1 10.3 1 8.6 1 5.4 5.4 2 12 2Z",
-  // Three swept claws.
-  Terminids:
-    "M4 20c3.5-1 7.2-4.6 8.2-10.8C13 4.8 11.6 2.6 10 2c4.6 1.3 7.4 5.5 6.6 10.4C15.8 17.8 10.6 21 4 20Zm9.6.6c3.4-1.6 5.6-5 5.7-8.8 0-1.8-.3-3.2-.9-4.4 2.6 1.8 4 4.6 3.4 7.8-.6 3.4-4 5.6-8.2 5.4ZM2.2 15.2c2.2-.4 4.6-2.4 5.4-6.2.3-1.6.1-3-.5-4 2.4 1.2 3.4 3.8 2.6 6.6-.9 3.2-4 4.6-7.5 3.6Z",
-  // A broken five-point star.
-  Automaton:
-    "M12 1.5 14.7 8.6 22.5 8.9 16.4 13.7 18.6 21.2 12 16.9 5.4 21.2 7.6 13.7 1.5 8.9 9.3 8.6Zm0 6.2-1.2 3.3H7.6l2.6 2-1 3.3 2.8-1.9 2.8 1.9-1-3.3 2.6-2h-3.2Z",
-  // A crescent cradling an eye.
-  Illuminate:
-    "M12 9.2a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM3 9.5c.6 5.4 4.3 9 9 9s8.4-3.6 9-9c1 1.3 1.5 2.9 1.5 4.6C22.5 19.6 17.8 23 12 23S1.5 19.6 1.5 14.1c0-1.7.5-3.3 1.5-4.6ZM12 1c1.8 0 3.3 1.3 3.6 3a5.9 5.9 0 0 0-7.2 0C8.7 2.3 10.2 1 12 1Z",
+// The game's faction and sub-faction emblems, as traced on the Helldivers Wiki; every shape fills with `currentColor`.
+const FILES = import.meta.glob<string>("../assets/emblems/*.svg", { query: "?raw", import: "default", eager: true });
+
+interface Art {
+  box: [number, number, number, number];
+  /** Inner SVG markup, or a white-on-clear picture used as a mask. */
+  body?: string;
+  mask?: string;
+}
+
+const ART: Record<string, Art> = { "invasion-fleet": { box: [0, 0, 128, 128], mask: invasionFleet } };
+for (const [path, svg] of Object.entries(FILES)) {
+  const slug = path.split("/").pop()!.replace(".svg", "");
+  const box = svg.match(/viewBox="([^"]+)"/)![1].split(/\s+/).map(Number) as Art["box"];
+  const body = svg.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "").replace(/<desc>[\s\S]*?<\/desc>/, "");
+  ART[slug] = { box, body };
+}
+
+const FACTION_ART: Record<string, string> = {
+  Humans: "super-earth",
+  Terminids: "terminids",
+  Automaton: "automaton",
+  Illuminate: "illuminate",
 };
 
+// Effect names as the game writes them. Hive Lords and Dragonroaches are units with no emblem of their own.
+const SUBFACTION_ART: [RegExp, string][] = [
+  [/predator strain/i, "predator-strain"],
+  [/spore burst strain/i, "spore-burst-strain"],
+  [/rupture strain/i, "rupture-strain"],
+  [/jet brigade/i, "jet-brigade"],
+  [/incineration corps/i, "incineration-corps"],
+  [/cyborg/i, "cyborgs"],
+  [/appropriators/i, "appropriators"],
+  [/vote snatchers/i, "vote-snatchers"],
+  [/mindless masses/i, "mindless-masses"],
+  [/invasion fleet|great host/i, "invasion-fleet"],
+];
+
+/** The emblem for a sub-faction effect, by its name; null for units that have none. */
+export function subfactionArt(name: string): string | null {
+  return SUBFACTION_ART.find(([re]) => re.test(name))?.[1] ?? null;
+}
+
+export const hasEmblem = (faction: string) => faction in FACTION_ART;
+
+/**
+ * An emblem as SVG content, centred on (0, 0) and `size` units across, for use inside another SVG.
+ * `art` is a faction name or a sub-faction art key; it takes the colour of `color`, else the faction's.
+ */
+export function EmblemArt({
+  art,
+  size,
+  color,
+  className,
+  style,
+}: {
+  art: string;
+  size: number;
+  color?: string;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  const maskId = useId();
+  const a = ART[FACTION_ART[art] ?? art];
+  if (!a) return null;
+  const [x, y, w, h] = a.box;
+  const s = size / Math.max(w, h);
+  const transform = `translate(${-(w * s) / 2},${-(h * s) / 2}) scale(${s}) translate(${-x},${-y})`;
+  const tone = color ?? (art in FACTION_ART ? factionColor(art) : undefined);
+  // --u: a 24-grid unit in the emblem's own units, for strokes drawn over it.
+  const look = { ...style, ...(tone ? { color: tone } : {}), "--u": Math.max(w, h) / 24 } as CSSProperties;
+  if (a.mask)
+    return (
+      <g className={className} style={look} transform={transform}>
+        <mask id={maskId}>
+          <image href={a.mask} x={x} y={y} width={w} height={h} />
+        </mask>
+        <rect x={x} y={y} width={w} height={h} style={{ fill: "currentColor", stroke: "none" }} mask={`url(#${maskId})`} />
+      </g>
+    );
+  return <g className={className} style={look} transform={transform} dangerouslySetInnerHTML={{ __html: a.body! }} />;
+}
+
 export function FactionEmblem({ faction, size = 16, color }: { faction: string; size?: number; color?: string }) {
-  const d = EMBLEM_PATHS[faction];
-  if (!d) return null;
+  if (!hasEmblem(faction)) return null;
   return (
-    <svg className="emblem" width={size} height={size} viewBox="0 0 24 24" aria-hidden>
-      <path d={d} fill={color ?? factionColor(faction)} fillRule="evenodd" />
+    <svg className="emblem" width={size} height={size} viewBox="-12 -12 24 24" aria-hidden>
+      <EmblemArt art={faction} size={24} color={color} />
+    </svg>
+  );
+}
+
+/** A sub-faction's emblem by its effect name, or its faction's when the unit has none. */
+export function SubfactionEmblem({
+  name,
+  faction,
+  size = 16,
+  color,
+}: {
+  name: string;
+  faction: string;
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <svg className="emblem" width={size} height={size} viewBox="-12 -12 24 24" aria-hidden>
+      <EmblemArt art={subfactionArt(name) ?? faction} size={24} color={color ?? factionColor(faction)} />
     </svg>
   );
 }

@@ -2,13 +2,12 @@ import { ArrowUpRight, Map as MapIcon, Pause, Play } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import { useEffects, useFreshPlanets, useSectorGeometry } from "../../api/queries";
 import type { Faction } from "../../api/types";
-import { factionColor } from "../../domain/factions";
 import { factionMarks } from "../../domain/factionMarks";
 import { project, supplyLines } from "../../domain/galaxy";
 import { byIndex, ownershipKey } from "../../domain/planets";
 import { buildRegions } from "../../domain/regions";
 import { useSettings, useUi } from "../../state";
-import { EMBLEM_PATHS } from "../../ui/emblems";
+import { EmblemArt } from "../../ui/emblems";
 import { Panel } from "../../ui/primitives";
 import { GloomLayer, SectorLayer } from "../map/layers";
 import { CHART } from "./WarActivity";
@@ -181,13 +180,7 @@ export function TheaterOfWar() {
             {marks.map((m) => (
               <g key={m.faction} transform={`translate(${m.x.toFixed(1)},${m.y.toFixed(1)})`}>
                 <g className="tw-mark" style={{ "--unsquash": UNSQUASH } as CSSProperties}>
-                  <path
-                    d={EMBLEM_PATHS[m.faction]}
-                    transform="translate(-42,-42) scale(3.5)"
-                    fill={factionColor(m.faction)}
-                    color={factionColor(m.faction)}
-                    fillRule="evenodd"
-                  />
+                  <EmblemArt art={m.faction} size={84} />
                 </g>
               </g>
             ))}
@@ -195,12 +188,9 @@ export function TheaterOfWar() {
           </g>
           <circle r={70} className="tw-core-glow" />
           <g className="tw-core-mark">
-            <path
-              d={EMBLEM_PATHS.Humans}
-              transform="scale(3.6,6.4) translate(-12,-12)"
-              fill={factionColor("Humans")}
-              fillRule="evenodd"
-            />
+            <g transform="scale(1,1.778)">
+              <EmblemArt art="Humans" size={86} />
+            </g>
           </g>
         </svg>
         <span className="tw-hint caps">{sector ? `${sector} sector` : "Drag to rotate"}</span>

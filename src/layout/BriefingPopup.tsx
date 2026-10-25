@@ -3,7 +3,7 @@ import { useToasts, type Toast } from "../alerts/notify";
 import { dispatchKind, type DispatchKind } from "../domain/dispatch";
 import { dispatchTitle } from "../domain/format";
 import { MarkupText } from "../features/news/NewsCard";
-import { EMBLEM_PATHS } from "../ui/emblems";
+import { FactionEmblem } from "../ui/emblems";
 import { HoloGlobe } from "../ui/HoloGlobe";
 import { KeyButton } from "../ui/primitives";
 import "../ui/neonRing.css";
@@ -140,9 +140,7 @@ export function BriefingPopup() {
           <article className="bp-card">
             <Banner />
             <header className="bp-head">
-              <svg width={30} height={30} viewBox="0 0 24 24" aria-hidden>
-                <path d={EMBLEM_PATHS.Humans} fill="var(--text-hi)" fillRule="evenodd" />
-              </svg>
+              <FactionEmblem faction="Humans" size={30} color="var(--text-hi)" />
               <h2>{verdict.word}</h2>
             </header>
             <div className="bp-body">
