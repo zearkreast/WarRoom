@@ -218,6 +218,27 @@
   stroke: rgba(234, 244, 250, 0.16);
   stroke-width: 0.8;
 }
+.se-grid {
+  fill: none;
+  stroke: rgba(234, 244, 250, 0.12);
+  stroke-width: 0.6;
+}
+.se-land {
+  fill: #6fae8c;
+  stroke: #d3f0df;
+  stroke-width: 0.6;
+  stroke-linejoin: round;
+}
+.se-city circle {
+  fill: var(--cta);
+  filter: drop-shadow(0 0 3px var(--cta));
+}
+.se-city path {
+  fill: none;
+  stroke: var(--bad);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
 .pd-hero-foot {
   grid-column: 1 / -1;
   display: flex;
@@ -641,29 +662,8 @@
 .pd-cities-head {
   margin-top: var(--s-6);
 }
-.pd-cities {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-  margin: var(--s-3) 0 0;
-  padding: 0;
-  list-style: none;
-}
-.pd-cities li {
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  padding: var(--s-3) var(--s-4);
+/* Points of interest draw in their builder's colour, so they sit on a dark disc. */
+.pd-env-icon.poi {
   background: var(--surface-2);
-  color: var(--text-dim);
-}
-.pd-cities b {
-  color: var(--text-hi);
-  letter-spacing: 0.08em;
-}
-.pd-cities span {
-  margin-left: auto;
-  font-size: var(--fs-label);
-  letter-spacing: 0.12em;
-  color: var(--label);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
 }

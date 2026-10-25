@@ -14,12 +14,14 @@ import { buildFront, useMajorOrderPlanets, usePlanetRate, useStationPlanets, typ
 import {
   DispatchSection,
   OperationsSection,
+  PoisSection,
   FrontLineSection,
   LiberationSection,
   ServiceRecordSection,
   SupplyLinesSection,
   WarHistorySection,
 } from "./sections";
+import { SuperEarthGlobe } from "./SuperEarthGlobe";
 import { usePlanetRecord } from "./usePlanetRecord";
 import "./planet.css";
 
@@ -65,13 +67,19 @@ export function PlanetSphere({
       />
       <circle r={88} fill="var(--void)" />
       <g clipPath={`url(#${id}-clip)`}>
-        <circle r={84} fill={`url(#${id})`} />
-        {[-60, -30, 0, 30, 60].map((y) => (
-          <ellipse key={y} cx={0} cy={y} rx={Math.sqrt(84 * 84 - y * y)} ry={6} className="sphere-grid" />
-        ))}
-        {[-50, -20, 20, 50].map((x) => (
-          <ellipse key={x} cx={0} cy={0} rx={Math.abs(x)} ry={84} className="sphere-grid" />
-        ))}
+        {planet.index === 0 ? (
+          <SuperEarthGlobe r={84} />
+        ) : (
+          <>
+            <circle r={84} fill={`url(#${id})`} />
+            {[-60, -30, 0, 30, 60].map((y) => (
+              <ellipse key={y} cx={0} cy={y} rx={Math.sqrt(84 * 84 - y * y)} ry={6} className="sphere-grid" />
+            ))}
+            {[-50, -20, 20, 50].map((x) => (
+              <ellipse key={x} cx={0} cy={0} rx={Math.abs(x)} ry={84} className="sphere-grid" />
+            ))}
+          </>
+        )}
         <circle r={84} fill="url(#sphere-shade)" />
       </g>
       <defs>
@@ -184,6 +192,7 @@ function Body({ index }: { index: number }) {
         <DispatchSection p={p} front={front} inMajorOrder={mo.has(p.index)} station={stations.has(p.index)} />
         <OperationsSection p={p} />
       </div>
+      <PoisSection p={p} />
       <SupplyLinesSection p={p} />
     </div>
   );

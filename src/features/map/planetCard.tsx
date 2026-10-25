@@ -10,6 +10,7 @@ import { liberationPercent, trackedPercent } from "../../domain/progress";
 import { useSettings, useUi } from "../../state";
 import { DssIcon, SubfactionEmblem } from "../../ui/emblems";
 import { Meter } from "../../ui/primitives";
+import { CityList } from "../planet/Cities";
 import { useStationPlanets } from "../planets/useFronts";
 import { PoiGlyph, poiImage, poiKind, poiOrigin } from "./poi";
 
@@ -141,6 +142,22 @@ export function HoverCard({ h, active, effects }: { h: Hover; active: boolean; e
           <span className="hc-sector caps">{h.landmark.sector} sector</span>
         </div>
         <p className="hc-desc">{h.landmark.note}</p>
+        {h.landmark.pois && (
+          <>
+            <div className="hc-pois-head caps">Points of interest</div>
+            {h.landmark.pois.map((poi) => (
+              <div key={poi.name} className="hc-poi">
+                <div className="hc-poi-head caps">
+                  <svg viewBox="-12 -12 24 24" width={16} height={16} aria-hidden>
+                    <PoiGlyph kind={poiKind(poi.name)} faction="Humans" size={24} />
+                  </svg>
+                  {poi.name}
+                </div>
+                <p>{poi.description}</p>
+              </div>
+            ))}
+          </>
+        )}
         <div className="hc-foot caps">No campaign data</div>
       </div>
     );
@@ -174,6 +191,12 @@ export function PlanetPanel(props: { p: Planet; active: boolean; effects?: Plane
       </button>
       <div className="pp-scroll">
         <PlanetSummary p={p} active={props.active} effects={props.effects} />
+        {p.regions.length > 0 && (
+          <section className="pp-cities" aria-label="Cities">
+            <h3 className="caps">Cities</h3>
+            <CityList p={p} />
+          </section>
+        )}
         <dl className="pp-stats">
           <div>
             <dt className="caps">Helldivers</dt>

@@ -583,7 +583,7 @@ export const MANUALS: Manual[] = [
     ],
     tips: [
       "Each Helldiver's stratagems follow their own ship's modules, so in a squad the same orbital can come down faster for one player than another.",
-      "The Hellpad's stratagem terminal knows a code for this page: the Super Destroyer Uplink.",
+      "Key Call In Super Destroyer (its code is the Konami Code) into the Hellpad's masthead and it opens this page.",
     ],
     related: ["manual:dss", "manual:campaigns", "app:stations"],
     sources: [WIKI.superDestroyer, WIKI.shipModules],
