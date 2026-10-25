@@ -58,7 +58,6 @@
   color: var(--good);
 }
 
-/* The Reinforce code, each arrow lighting in turn as if keyed in. */
 .hp-code {
   display: flex;
   flex-direction: column;
