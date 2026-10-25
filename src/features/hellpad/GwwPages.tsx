@@ -1,28 +1,59 @@
 import {
   Activity,
+  Archive,
   ArrowLeft,
   ArrowRight,
+  ArrowUpRight,
   Building2,
+  Check,
   CircleHelp,
   CloudFog,
   Flag,
+  Globe2,
+  GraduationCap,
   History,
+  Landmark,
+  LayoutGrid,
   Lightbulb,
   Network,
+  Newspaper,
+  Orbit,
   Quote,
+  Radio,
   Satellite,
+  Shield,
+  ShoppingBag,
   type LucideIcon,
 } from "lucide-react";
-import { type CSSProperties, type RefCallback } from "react";
-import { ADS, COMPANIES, MANUALS, WIKI, WIKI_LICENCE, type Ad, type Company, type Manual, type Ministry } from "../../data/gww";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefCallback } from "react";
+import { CHAPTERS, MANUALS, WIKI, WIKI_LICENCE, type Manual, type Section, type Source } from "../../data/gww";
+import {
+  ADS,
+  BRANDS,
+  COMPANIES,
+  GOV,
+  MINISTRIES,
+  type Ad,
+  type Brand,
+  type Company,
+  type Ministry,
+  type SiteSection,
+  type Tie,
+} from "../../data/gwwSites";
 import { factionColor, factionLabel } from "../../domain/factions";
-import { fmtDateTime } from "../../domain/format";
+import { fmtDate, fmtDateTime } from "../../domain/format";
 import { useHistory } from "../../history/useHistory";
-import { useUi } from "../../state";
+import { useSettings, useUi } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
-import { Empty, Loading, OutLink, Panel } from "../../ui/primitives";
+import { Empty, Loading, OutLink } from "../../ui/primitives";
 import { Figure } from "./GwwFigures";
+import { LivePanel } from "./GwwLive";
 import { adUrl, iconUrl, logoUrl } from "./gwwArt";
+import { DIRS, Rich, titleOf, useGwwNav } from "./gwwNav";
+
+type HeadingRef = RefCallback<HTMLElement>;
+
+/* ---------- Pictures ---------- */
 
 /** Drawn icons for manuals the game has no picture for. */
 const MANUAL_ICONS: Record<string, LucideIcon> = {
@@ -35,6 +66,23 @@ const MANUAL_ICONS: Record<string, LucideIcon> = {
   misconceptions: CircleHelp,
 };
 
+const APP_ICONS: Record<string, LucideIcon> = {
+  news: Newspaper,
+  overview: Shield,
+  map: Orbit,
+  campaigns: LayoutGrid,
+  stations: Satellite,
+  past: Archive,
+  planets: Globe2,
+};
+
+const DIR_ICONS: Record<string, LucideIcon> = {
+  manuals: GraduationCap,
+  gov: Landmark,
+  corps: Building2,
+  market: ShoppingBag,
+};
+
 export function ManualIcon({ m, size }: { m: Manual; size: number }) {
   const url = m.icon && iconUrl(m.icon);
   if (url) return <img src={url} alt="" width={size} height={size} />;
@@ -42,16 +90,69 @@ export function ManualIcon({ m, size }: { m: Manual; size: number }) {
   return <Icon size={size} strokeWidth={1.5} aria-hidden />;
 }
 
-export function AdBox({ ad }: { ad: Ad }) {
+export function CompanyMark({ c }: { c: Company }) {
+  const url = c.logo && logoUrl(c.logo);
+  return url ? (
+    <img className="gww-logo" src={url} alt="" />
+  ) : (
+    <span className="gww-wordmark caps" aria-hidden>
+      {c.name}
+    </span>
+  );
+}
+
+/** A small picture for any link target, for chips and lists. */
+export function TargetIcon({ target, size = 20 }: { target: string; size?: number }) {
+  const [kind, id] = [target.slice(0, target.indexOf(":")), target.slice(target.indexOf(":") + 1)];
+  const img = (src: string | undefined) => (src ? <img src={src} alt="" width={size} height={size} /> : null);
+  if (kind === "manual") {
+    const m = MANUALS.find((x) => x.id === id);
+    return m ? <ManualIcon m={m} size={size} /> : null;
+  }
+  if (kind === "ministry") return img(iconUrl(MINISTRIES.find((x) => x.id === id)?.icon ?? ""));
+  if (kind === "company") {
+    const c = COMPANIES.find((x) => x.id === id);
+    const src = c?.logo && logoUrl(c.logo);
+    return src ? img(src) : <Building2 size={size} strokeWidth={1.5} aria-hidden />;
+  }
+  if (kind === "site") return id === "gov" ? img(iconUrl("super-earth")) : <History size={size} strokeWidth={1.5} aria-hidden />;
+  const Icon = kind === "dir" ? DIR_ICONS[id] : kind === "app" ? APP_ICONS[id] : ShoppingBag;
+  return Icon ? <Icon size={size} strokeWidth={1.5} aria-hidden /> : null;
+}
+
+const KIND_LABEL: Record<string, string> = {
+  manual: "Training manual",
+  ministry: "Ministry",
+  company: "Corporation",
+  brand: "Marketplace",
+  site: "Super Earth",
+  dir: "Directory",
+  app: "In the tracker",
+};
+
+/** An advert from the city billboards; it opens its advertiser's site, unless that is the page it is on. */
+export function AdBox({ ad, here }: { ad: Ad; here?: string }) {
+  const { follow } = useGwwNav();
   const url = adUrl(ad.file);
   if (!url) return null;
   return (
     <figure className={`gww-ad ${ad.shape}`}>
-      <img src={url} alt={ad.alt} loading="lazy" />
-      <figcaption className="caps">Sponsored</figcaption>
+      {ad.by === here ? (
+        <img src={url} alt={ad.alt} loading="lazy" />
+      ) : (
+        <button className="gww-ad-open" onClick={(e) => follow(ad.by, e)} aria-label={`${ad.alt} Open ${titleOf(ad.by)}.`}>
+          <img src={url} alt="" loading="lazy" />
+        </button>
+      )}
+      <figcaption className="caps">
+        <span>Sponsored</span>
+        <span className="gww-ad-by">{titleOf(ad.by)}</span>
+      </figcaption>
     </figure>
   );
 }
+
+/* ---------- Text ---------- */
 
 /** The in-game Training Manual Tip box, for the game's own words. */
 export function TrainingTip({ text }: { text: string }) {
@@ -66,84 +167,267 @@ export function TrainingTip({ text }: { text: string }) {
   );
 }
 
-function FieldTip({ text }: { text: string }) {
+function Broadcast({ text }: { text: string }) {
   return (
-    <aside className="gww-tip">
-      <Lightbulb size={16} aria-hidden />
+    <aside className="gww-quote broadcast">
+      <Radio size={16} aria-hidden />
       <p>
-        <b className="caps">Field tip</b> {text}
+        <b className="caps">Ship broadcast</b>
+        <span>“{text}”</span>
       </p>
     </aside>
   );
 }
 
-/** Galaxy-wide war log: every capture and loss the collector has recorded. */
-export function WarLog({ headingRef }: { headingRef: RefCallback<HTMLElement> }) {
-  const { changes, ready } = useHistory();
-  const openOptions = useUi((s) => s.openOptions);
-  const liberated = changes.filter((c) => c.to === "Humans").length;
+function FieldTip({ text }: { text: string }) {
   return (
-    <Panel
-      title={
-        <span ref={headingRef} tabIndex={-1}>
-          Galactic war log
-        </span>
-      }
-      icon={History}
-      right={
-        ready && (
-          <span className="num">
-            <span style={{ color: "var(--f-humans)" }}>{liberated} liberated</span> ·{" "}
-            <span style={{ color: "var(--bad)" }}>{changes.length - liberated} lost</span>
-          </span>
-        )
-      }
-    >
-      {!ready ? (
-        <Loading what="the war archive" rows={3} />
-      ) : changes.length === 0 ? (
-        <Empty>No planet has changed hands since tracking began.</Empty>
-      ) : (
-        <ol className="wl">
-          {changes.map((c) => {
-            const won = c.to === "Humans";
-            const color = factionColor(won ? "Humans" : c.to);
-            return (
-              <li key={c.id} className="wl-row">
-                <span className="wl-mark" style={{ "--k": color } as CSSProperties}>
-                  <FactionEmblem faction={won ? "Humans" : c.to} size={14} />
-                </span>
-                <div>
-                  <div className="wl-title caps">
-                    <button
-                      className="link"
-                      style={{ color: "var(--text-hi)" }}
-                      onClick={(e) => openOptions({ planet: c.planet, x: e.clientX, y: e.clientY })}
-                    >
-                      {c.planetName}
-                    </button>{" "}
-                    <span style={{ color }}>
-                      {won ? `liberated from ${factionLabel(c.from)}` : `fell to ${factionLabel(c.to)}`}
-                    </span>
-                  </div>
-                  <div className="wl-sub">{fmtDateTime(c.at)}</div>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-    </Panel>
+    <aside className="gww-tip">
+      <Lightbulb size={16} aria-hidden />
+      <p>
+        <b className="caps">Field tip</b> <Rich text={text} />
+      </p>
+    </aside>
   );
 }
 
-function Sources({ m }: { m: Manual }) {
+/** "Term: text" points get their term in bold; the colon must come after any link in the term. */
+function Point({ text }: { text: string }) {
+  const at = text.indexOf(": ");
+  if (at < 0 || at > 80) return <Rich text={text} />;
+  return (
+    <>
+      <b>
+        <Rich text={text.slice(0, at)} />
+      </b>
+      : <Rich text={text.slice(at + 2)} />
+    </>
+  );
+}
+
+function SectionBlock({ sec, id }: { sec: SiteSection; id: string }) {
+  return (
+    <section id={id} className="gww-section">
+      <h3>{sec.heading}</h3>
+      {sec.text && (
+        <p>
+          <Rich text={sec.text} />
+        </p>
+      )}
+      {sec.points && (
+        <ul className="gww-points">
+          {sec.points.map((p) => (
+            <li key={p}>
+              <Point text={p} />
+            </li>
+          ))}
+        </ul>
+      )}
+      {sec.products && (
+        <ul className="gww-products" aria-label="Products">
+          {sec.products.map((p) => (
+            <li key={p} className="caps">
+              {p}
+            </li>
+          ))}
+        </ul>
+      )}
+      {sec.timeline && (
+        <ol className="gww-timeline">
+          {sec.timeline.map((d) => (
+            <li key={d.when + d.text}>
+              <span className="gww-timeline-when caps num">{d.when}</span>
+              <p>
+                <Rich text={d.text} />
+              </p>
+            </li>
+          ))}
+        </ol>
+      )}
+      {sec.table && (
+        <div className="gww-table-wrap">
+          <table className="gww-table num">
+            <thead>
+              <tr>
+                {sec.table.head.map((h) => (
+                  <th key={h} scope="col">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sec.table.rows.map((r) => (
+                <tr key={r.cells[0]}>
+                  {r.cells.map((c, i) =>
+                    i === 0 ? (
+                      <th key={i} scope="row">
+                        {r.icon && iconUrl(r.icon) && <img src={iconUrl(r.icon)} alt="" />}
+                        <Rich text={c} />
+                      </th>
+                    ) : (
+                      <td key={i}>
+                        <Rich text={c} />
+                      </td>
+                    ),
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {sec.table.note && <p className="gww-note">{sec.table.note}</p>}
+        </div>
+      )}
+      {sec.kinds && (
+        <ul className="gww-kinds">
+          {sec.kinds.map((k) => (
+            <li key={k.name}>
+              <span className="gww-kind-icon">{iconUrl(k.icon) && <img src={iconUrl(k.icon)} alt="" />}</span>
+              <div>
+                <b className="caps">{k.name}</b>
+                <p>
+                  <Rich text={k.text} />
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {sec.faq && (
+        <div className="gww-faq">
+          {sec.faq.map((f) => (
+            <details key={f.q}>
+              <summary>{f.q}</summary>
+              <p>
+                <Rich text={f.a} />
+              </p>
+            </details>
+          ))}
+        </div>
+      )}
+      {sec.figure && <Figure kind={sec.figure} />}
+    </section>
+  );
+}
+
+/* ---------- Page frame ---------- */
+
+export interface Crumb {
+  label: string;
+  target?: string;
+}
+
+function Banner(props: {
+  icon?: ReactNode;
+  crumbs: Crumb[];
+  title: string;
+  lead?: ReactNode;
+  headingRef: HeadingRef;
+  corp?: boolean;
+}) {
+  const { follow } = useGwwNav();
+  return (
+    <header className={`gww-banner ${props.corp ? "corp" : ""}`}>
+      {props.icon && <span className="gww-banner-icon">{props.icon}</span>}
+      <div className="gww-banner-text">
+        <nav className="gww-crumbs caps" aria-label="Where this page sits">
+          {props.crumbs.map((c, i) => (
+            <span key={c.label}>
+              {i > 0 && <span aria-hidden> › </span>}
+              {c.target ? (
+                <button className="gww-crumb" onClick={(e) => follow(c.target!, e)}>
+                  {c.label}
+                </button>
+              ) : (
+                c.label
+              )}
+            </span>
+          ))}
+        </nav>
+        <h2 className="gww-title" ref={props.headingRef} tabIndex={-1}>
+          {props.title}
+        </h2>
+        {props.lead && <p className="gww-lead">{props.lead}</p>}
+      </div>
+    </header>
+  );
+}
+
+const reducedMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+/** Jump links to a long page's sections. */
+function Toc({ sections, prefix }: { sections: Section[]; prefix: string }) {
+  if (sections.length < 3) return null;
+  return (
+    <nav className="gww-toc" aria-label="On this page">
+      <span className="caps">On this page</span>
+      {sections.map((s, i) => (
+        <button
+          key={s.heading}
+          className="gww-toc-link"
+          onClick={() =>
+            document.getElementById(`${prefix}-${i}`)?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" })
+          }
+        >
+          {s.heading}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+export function Related({ targets, title = "Read next" }: { targets: string[]; title?: string }) {
+  const { follow } = useGwwNav();
+  if (targets.length === 0) return null;
+  return (
+    <nav className="gww-related" aria-label={title}>
+      <h3 className="caps">{title}</h3>
+      <div className="gww-related-list">
+        {targets.map((t) => (
+          <button key={t} className="gww-related-link" onClick={(e) => follow(t, e)}>
+            <span className="gww-related-icon">
+              <TargetIcon target={t} />
+            </span>
+            <span>
+              <span className="caps">{KIND_LABEL[t.slice(0, t.indexOf(":"))]}</span>
+              <b>{titleOf(t)}</b>
+            </span>
+            {t.startsWith("app:") ? <ArrowUpRight size={14} aria-hidden /> : <ArrowRight size={14} aria-hidden />}
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
+function Ties({ ties, title }: { ties: Tie[]; title: string }) {
+  const { follow } = useGwwNav();
+  return (
+    <section className="gww-section">
+      <h3>{title}</h3>
+      <div className="gww-ties">
+        {ties.map((t) => (
+          <button key={t.to} className="gww-tie" onClick={(e) => follow(t.to, e)}>
+            <span className="gww-related-icon">
+              <TargetIcon target={t.to} size={28} />
+            </span>
+            <span>
+              <b>{titleOf(t.to)}</b>
+              <span>{t.how}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SourceLine({ sources, quoted }: { sources?: Source[]; quoted?: string }) {
   return (
     <footer className="gww-source">
-      {m.sources?.length ? (
+      {sources?.length ? (
         <>
           Adapted from the {WIKI.home.title}:{" "}
-          {m.sources.map((s, i) => (
+          {sources.map((s, i) => (
             <span key={s.url}>
               {i > 0 && ", "}
               <OutLink href={s.url}>{s.title}</OutLink>
@@ -154,210 +438,539 @@ function Sources({ m }: { m: Manual }) {
       ) : (
         <>Written for this tracker.</>
       )}
-      {m.quotes?.length ? <> Training manual tips are quoted from the game.</> : null}
+      {quoted && <> {quoted}</>}
     </footer>
   );
 }
 
-export function ManualPage(props: { m: Manual; headingRef: RefCallback<HTMLElement>; open(id: string): void }) {
-  const { m } = props;
+/** Previous and next pages in the same series. */
+function Pager({ list, at, noun }: { list: string[]; at: number; noun: string }) {
+  const { follow } = useGwwNav();
+  const prev = list[at - 1];
+  const next = list[at + 1];
+  return (
+    <nav className="gww-pager" aria-label={`Other ${noun}s`}>
+      {prev ? (
+        <button className="gww-pager-link" onClick={(e) => follow(prev, e)}>
+          <ArrowLeft size={14} aria-hidden />
+          <span>
+            <span className="caps">Previous {noun}</span> {titleOf(prev)}
+          </span>
+        </button>
+      ) : (
+        <span />
+      )}
+      {next && (
+        <button className="gww-pager-link next" onClick={(e) => follow(next, e)}>
+          <span>
+            <span className="caps">Next {noun}</span> {titleOf(next)}
+          </span>
+          <ArrowRight size={14} aria-hidden />
+        </button>
+      )}
+    </nav>
+  );
+}
+
+function Ads({ files, here }: { files?: string[]; here: string }) {
+  const ads = ADS.filter((a) => files?.includes(a.file));
+  if (ads.length === 0) return null;
+  return (
+    <div className="gww-ads-inline">
+      {ads.map((a) => (
+        <AdBox key={a.file} ad={a} here={here} />
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Tiles ---------- */
+
+export function SiteTile(props: {
+  target: string;
+  address: string;
+  title: string;
+  text: string;
+  icon: ReactNode;
+  color?: string;
+  done?: boolean;
+  /** Marks a tile that leaves the G.W.W. for another page of the tracker. */
+  out?: boolean;
+}) {
+  const { follow } = useGwwNav();
+  return (
+    <button
+      className={`gww-site ${props.done ? "done" : ""}`}
+      style={props.color ? ({ "--site": props.color } as CSSProperties) : undefined}
+      onClick={(e) => follow(props.target, e)}
+    >
+      <span className="gww-site-icon">{props.icon}</span>
+      <span className="gww-site-body">
+        <span className="gww-address num">
+          {props.address}
+          {props.out && (
+            <>
+              <ArrowUpRight size={11} aria-hidden />
+              <span className="sr-only"> (leaves the G.W.W.)</span>
+            </>
+          )}
+        </span>
+        <b className="gww-site-title">{props.title}</b>
+        <span className="gww-site-text">{props.text}</span>
+      </span>
+      {props.done && (
+        <span className="gww-site-done" title="Read">
+          <Check size={12} aria-label="Read" />
+        </span>
+      )}
+    </button>
+  );
+}
+
+export function CompanyTile({ c }: { c: Company }) {
+  const { follow } = useGwwNav();
+  return (
+    <button className="gww-site corp" style={{ "--site": c.color } as CSSProperties} onClick={(e) => follow(`company:${c.id}`, e)}>
+      <span className="gww-corp-logo">
+        <CompanyMark c={c} />
+      </span>
+      <span className="gww-site-body">
+        <span className="gww-address num">{c.address}</span>
+        <b className="gww-site-title">{c.name}</b>
+        <span className="gww-site-text">{c.slogan ?? c.summary}</span>
+      </span>
+    </button>
+  );
+}
+
+export function BrandTile({ b }: { b: Brand }) {
+  const { follow } = useGwwNav();
+  const thumb = adUrl(b.ads[0]);
+  return (
+    <button className="gww-brand-tile" onClick={(e) => follow(`brand:${b.id}`, e)}>
+      {thumb && <img src={thumb} alt="" loading="lazy" />}
+      <span>
+        <b>{b.name}</b>
+        <span className="caps">{b.trade}</span>
+      </span>
+    </button>
+  );
+}
+
+export const manualTarget = (m: Manual) => `manual:${m.id}`;
+
+export function ManualTile({ m }: { m: Manual }) {
+  const read = useSettings((s) => s.gwwRead.includes(m.id));
+  return (
+    <SiteTile
+      target={manualTarget(m)}
+      address={m.address}
+      title={m.title}
+      text={m.summary}
+      icon={<ManualIcon m={m} size={30} />}
+      color="var(--cta)"
+      done={read}
+    />
+  );
+}
+
+export function MinistryTile({ m }: { m: Ministry }) {
+  return (
+    <SiteTile
+      target={`ministry:${m.id}`}
+      address={m.address}
+      title={m.name}
+      text={m.summary}
+      icon={<img src={iconUrl(m.icon)} alt="" />}
+      color={m.color}
+    />
+  );
+}
+
+/** The war log, the government site and the news, ahead of the ministries. */
+export function OfficialTiles({ logText }: { logText: string }) {
+  return (
+    <>
+      <SiteTile
+        target="site:gov"
+        address={GOV.address}
+        title={GOV.title}
+        text={GOV.summary}
+        icon={<img src={iconUrl(GOV.icon)} alt="" />}
+        color="var(--f-humans)"
+      />
+      <SiteTile
+        target="site:log"
+        address="se://hc/war-log"
+        title="Galactic war log"
+        text={logText}
+        icon={<History size={26} strokeWidth={1.5} />}
+        color="var(--f-humans)"
+      />
+      <SiteTile
+        target="app:news"
+        address="se://strohmann.news"
+        title="Strohmann News"
+        text="Dispatches and campaign news, in the tracker's news page."
+        icon={<Newspaper size={26} strokeWidth={1.5} />}
+        color="#f074d8"
+        out
+      />
+    </>
+  );
+}
+
+/** How far through the recruit's course this browser is, and the next manual to read. */
+export function CourseProgress({ compact }: { compact?: boolean }) {
+  const read = useSettings((s) => s.gwwRead);
+  const clearRead = useSettings((s) => s.clearRead);
+  const { follow } = useGwwNav();
+  const done = MANUALS.filter((m) => read.includes(m.id)).length;
+  const next = MANUALS.find((m) => !read.includes(m.id));
+  return (
+    <section className={`gww-course ${compact ? "compact" : ""}`} aria-label="Recruit's course">
+      <div className="gww-course-head">
+        <GraduationCap size={20} aria-hidden />
+        <div>
+          <b className="caps">Recruit's course</b>
+          <span className="num">
+            {done} of {MANUALS.length} training manuals read
+          </span>
+        </div>
+        {next ? (
+          <button className="gww-course-next" onClick={(e) => follow(manualTarget(next), e)}>
+            <span className="caps">{done === 0 ? "Start with" : "Continue with"}</span>
+            <b>{next.title}</b>
+            <ArrowRight size={14} aria-hidden />
+          </button>
+        ) : (
+          <span className="gww-course-done caps">Course complete. Democracy thanks you.</span>
+        )}
+      </div>
+      <ol className="gww-course-bar" aria-label="Manuals, in reading order">
+        {MANUALS.map((m) => (
+          <li key={m.id} className={read.includes(m.id) ? "on" : ""}>
+            <button
+              title={m.title}
+              aria-label={`${m.title}${read.includes(m.id) ? ", read" : ""}`}
+              onClick={(e) => follow(manualTarget(m), e)}
+            />
+          </li>
+        ))}
+      </ol>
+      {!compact && done > 0 && (
+        <button className="link gww-course-reset caps" onClick={clearRead}>
+          Start the course over
+        </button>
+      )}
+    </section>
+  );
+}
+
+/* ---------- Pages ---------- */
+
+export function ManualPage({ m, headingRef }: { m: Manual; headingRef: HeadingRef }) {
+  const markRead = useSettings((s) => s.markRead);
+  const end = useRef<HTMLElement>(null);
   const at = MANUALS.indexOf(m);
-  const prev = MANUALS[at - 1];
-  const next = MANUALS[at + 1];
+  const chapter = CHAPTERS.findIndex((c) => c.id === m.chapter);
+  const prefix = `gww-${m.id}`;
+  // A manual counts as read once its end has been on screen.
+  useEffect(() => {
+    const el = end.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const seen = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) markRead(m.id);
+    });
+    seen.observe(el);
+    return () => seen.disconnect();
+  }, [m.id, markRead]);
   return (
     <article className="gww-page">
-      <header className="gww-page-head">
-        <span className="gww-page-icon">
-          <ManualIcon m={m} size={40} />
-        </span>
-        <div>
-          <p className="gww-kicker caps num">
-            Training manual {at + 1} of {MANUALS.length}
-          </p>
-          <h2 className="gww-title" ref={props.headingRef} tabIndex={-1}>
-            {m.title}
-          </h2>
-          <p className="gww-lead">{m.summary}</p>
-        </div>
-      </header>
-      {m.sections.map((sec) => (
-        <section key={sec.heading}>
-          <h3>{sec.heading}</h3>
-          {sec.text && <p>{sec.text}</p>}
-          {sec.points && (
-            <ul className="gww-points">
-              {sec.points.map((p) => {
-                const [term, rest] = p.includes(": ") ? [p.slice(0, p.indexOf(": ")), p.slice(p.indexOf(": ") + 2)] : [null, p];
-                return (
-                  <li key={p}>
-                    {term && <b>{term}</b>} {rest}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          {sec.table && (
-            <div className="gww-table-wrap">
-              <table className="gww-table num">
-                <thead>
-                  <tr>
-                    {sec.table.head.map((h) => (
-                      <th key={h} scope="col">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sec.table.rows.map((r) => (
-                    <tr key={r.cells[0]}>
-                      {r.cells.map((c, i) =>
-                        i === 0 ? (
-                          <th key={i} scope="row">
-                            {r.icon && iconUrl(r.icon) && <img src={iconUrl(r.icon)} alt="" />}
-                            {c}
-                          </th>
-                        ) : (
-                          <td key={i}>{c}</td>
-                        ),
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {sec.table.note && <p className="gww-note">{sec.table.note}</p>}
-            </div>
-          )}
-          {sec.kinds && (
-            <ul className="gww-kinds">
-              {sec.kinds.map((k) => (
-                <li key={k.name}>
-                  <span className="gww-kind-icon">{iconUrl(k.icon) && <img src={iconUrl(k.icon)} alt="" />}</span>
-                  <div>
-                    <b className="caps">{k.name}</b>
-                    <p>{k.text}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-          {sec.faq && (
-            <div className="gww-faq">
-              {sec.faq.map((f) => (
-                <details key={f.q}>
-                  <summary>{f.q}</summary>
-                  <p>{f.a}</p>
-                </details>
-              ))}
-            </div>
-          )}
-          {sec.figure && <Figure kind={sec.figure} />}
-        </section>
+      <Banner
+        icon={<ManualIcon m={m} size={42} />}
+        crumbs={[
+          { label: "Training manuals", target: "dir:manuals" },
+          { label: `Chapter ${chapter + 1}: ${CHAPTERS[chapter].title}` },
+        ]}
+        title={m.title}
+        lead={m.summary}
+        headingRef={headingRef}
+      />
+      <Toc sections={m.sections} prefix={prefix} />
+      <LivePanel manual={m.id} />
+      {m.sections.map((sec, i) => (
+        <SectionBlock key={sec.heading} sec={sec} id={`${prefix}-${i}`} />
       ))}
       {m.quotes?.map((q) => <TrainingTip key={q} text={q} />)}
       {m.tips.map((t) => (
         <FieldTip key={t} text={t} />
       ))}
-      <Sources m={m} />
-      <nav className="gww-pager" aria-label="Other manuals">
-        {prev ? (
-          <button className="gww-pager-link" onClick={() => props.open(prev.id)}>
-            <ArrowLeft size={14} aria-hidden />
-            <span>
-              <span className="caps">Previous</span> {prev.title}
-            </span>
-          </button>
-        ) : (
-          <span />
-        )}
-        {next && (
-          <button className="gww-pager-link next" onClick={() => props.open(next.id)}>
-            <span>
-              <span className="caps">Next</span> {next.title}
-            </span>
-            <ArrowRight size={14} aria-hidden />
-          </button>
-        )}
-      </nav>
+      <Related targets={m.related} />
+      <span ref={end} className="gww-end" aria-hidden />
+      <SourceLine sources={m.sources} quoted={m.quotes?.length ? "Training manual tips are quoted from the game." : undefined} />
+      <Pager list={MANUALS.map(manualTarget)} at={at} noun="manual" />
     </article>
   );
 }
 
-export function MinistryPage(props: { m: Ministry; headingRef: RefCallback<HTMLElement>; openCompany(name: string): void }) {
-  const { m } = props;
-  const partners = COMPANIES.filter((c) => m.partners?.includes(c.name));
-  const ads = ADS.filter((a) => m.ads?.includes(a.file));
+export function MinistryPage({ m, headingRef }: { m: Ministry; headingRef: HeadingRef }) {
+  const prefix = `gww-${m.id}`;
   return (
-    <article className="gww-page gww-brand" style={{ "--site": m.color } as CSSProperties}>
-      <header className="gww-banner">
-        {iconUrl(m.icon) && <img src={iconUrl(m.icon)} alt="" width={72} height={72} />}
-        <div>
-          <p className="gww-kicker caps">Federation of Super Earth</p>
-          <h2 className="gww-title" ref={props.headingRef} tabIndex={-1}>
-            {m.name}
-          </h2>
-        </div>
-      </header>
+    <article className="gww-page" style={{ "--site": m.color } as CSSProperties}>
+      <Banner
+        icon={iconUrl(m.icon) && <img src={iconUrl(m.icon)} alt="" width={72} height={72} />}
+        crumbs={[{ label: "Super Earth", target: "dir:gov" }, { label: "Ministries" }]}
+        title={m.name}
+        lead={m.slogan ? <span className="gww-slogan">“{m.slogan}”</span> : m.summary}
+        headingRef={headingRef}
+      />
       <TrainingTip text={m.motto} />
-      <p>{m.text}</p>
-      {partners.length > 0 && (
-        <section>
-          <h3>Contractors</h3>
-          <div className="gww-partners">
-            {partners.map((c) => (
-              <button key={c.name} className="gww-partner" onClick={() => props.openCompany(c.name)}>
-                <CompanyMark c={c} />
-                <span>{c.name}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-      {ads.length > 0 && (
-        <div className="gww-ads-inline">
-          {ads.map((a) => (
-            <AdBox key={a.file} ad={a} />
-          ))}
-        </div>
-      )}
+      <Toc sections={m.sections} prefix={prefix} />
+      {m.sections.map((sec, i) => (
+        <SectionBlock key={sec.heading} sec={sec} id={`${prefix}-${i}`} />
+      ))}
+      {m.ties && <Ties ties={m.ties} title="Ties" />}
+      <Ads files={m.ads} here={`ministry:${m.id}`} />
+      <Related targets={m.related ?? []} />
+      <SourceLine sources={[m.source, WIKI.government]} quoted="Its tip and poster line are quoted from the game." />
+      <Pager list={MINISTRIES.map((x) => `ministry:${x.id}`)} at={MINISTRIES.indexOf(m)} noun="ministry" />
     </article>
   );
 }
 
-export function CompanyMark({ c }: { c: Company }) {
-  const url = c.logo && logoUrl(c.logo);
-  return url ? (
-    <img className="gww-logo" src={url} alt="" />
-  ) : (
-    <span className="gww-wordmark caps" aria-hidden>
-      {c.name}
-    </span>
-  );
-}
-
-export function CompanyPage({ c, headingRef }: { c: Company; headingRef: RefCallback<HTMLElement> }) {
-  const ads = ADS.filter((a) => c.ads?.includes(a.file));
+export function CompanyPage({ c, headingRef }: { c: Company; headingRef: HeadingRef }) {
+  const prefix = `gww-${c.id}`;
+  const showcase = c.showcase && logoUrl(c.showcase.image);
   return (
-    <article className="gww-page gww-brand" style={{ "--site": c.color } as CSSProperties}>
-      <header className="gww-banner corp">
-        <CompanyMark c={c} />
-        <div>
-          <p className="gww-kicker caps">{c.trade}</p>
-          <h2 className="gww-title" ref={headingRef} tabIndex={-1}>
-            {c.name}
-          </h2>
-          {c.slogan && <p className="gww-slogan">“{c.slogan}”</p>}
-        </div>
-      </header>
-      <p>{c.text}</p>
-      {c.quote && <TrainingTip text={c.quote} />}
-      {ads.length > 0 && (
-        <div className="gww-ads-inline">
-          {ads.map((a) => (
-            <AdBox key={a.file} ad={a} />
-          ))}
-        </div>
+    <article className="gww-page" style={{ "--site": c.color } as CSSProperties}>
+      <Banner
+        icon={<CompanyMark c={c} />}
+        corp
+        crumbs={[{ label: "Corporations", target: "dir:corps" }, { label: c.trade }]}
+        title={c.name}
+        lead={c.slogan ? <span className="gww-slogan">“{c.slogan}”</span> : c.summary}
+        headingRef={headingRef}
+      />
+      {c.broadcast && <Broadcast text={c.broadcast} />}
+      <Toc sections={c.sections} prefix={prefix} />
+      {c.sections.map((sec, i) => (
+        <SectionBlock key={sec.heading} sec={sec} id={`${prefix}-${i}`} />
+      ))}
+      {showcase && (
+        <figure className="gww-showcase">
+          <img src={showcase} alt={c.showcase!.alt} loading="lazy" />
+        </figure>
       )}
+      {c.quote && <TrainingTip text={c.quote} />}
+      {c.ties && <Ties ties={c.ties} title="Ties" />}
+      <Ads files={c.ads} here={`company:${c.id}`} />
+      <Related targets={c.related ?? []} />
+      <SourceLine sources={[c.source]} quoted="Slogans and broadcast lines are quoted from the game." />
+      <Pager list={COMPANIES.map((x) => `company:${x.id}`)} at={COMPANIES.indexOf(c)} noun="corporation" />
     </article>
   );
 }
+
+export function BrandPage({ b, headingRef }: { b: Brand; headingRef: HeadingRef }) {
+  const art = adUrl(b.ads[0]);
+  return (
+    <article className="gww-page" style={{ "--site": "var(--warn)" } as CSSProperties}>
+      <Banner
+        icon={art ? <img className="gww-banner-art" src={art} alt="" /> : <ShoppingBag size={40} strokeWidth={1.5} />}
+        crumbs={[{ label: "Marketplace", target: "dir:market" }, { label: b.trade }]}
+        title={b.name}
+        lead={b.slogan ? <span className="gww-slogan">“{b.slogan}”</span> : b.trade}
+        headingRef={headingRef}
+      />
+      <p>
+        <Rich text={b.text} />
+      </p>
+      <Ads files={b.ads} here={`brand:${b.id}`} />
+      <Related targets={b.related ?? ["dir:market"]} />
+      <SourceLine sources={[WIKI.minorCorporations]} quoted="Advert lines are quoted from the game." />
+      <Pager list={BRANDS.map((x) => `brand:${x.id}`)} at={BRANDS.indexOf(b)} noun="brand" />
+    </article>
+  );
+}
+
+export function GovPage({ headingRef }: { headingRef: HeadingRef }) {
+  const prefix = "gww-gov";
+  return (
+    <article className="gww-page" style={{ "--site": "var(--f-humans)" } as CSSProperties}>
+      <Banner
+        icon={<img src={iconUrl(GOV.icon)} alt="" width={72} height={72} />}
+        crumbs={[{ label: "Super Earth", target: "dir:gov" }]}
+        title={GOV.title}
+        lead={GOV.summary}
+        headingRef={headingRef}
+      />
+      <Toc sections={GOV.sections} prefix={prefix} />
+      {GOV.sections.map((sec, i) => (
+        <SectionBlock key={sec.heading} sec={sec} id={`${prefix}-${i}`} />
+      ))}
+      {GOV.quotes.map((q) => (
+        <TrainingTip key={q} text={q} />
+      ))}
+      <Related targets={GOV.related} />
+      <SourceLine sources={GOV.sources} quoted="Training manual tips are quoted from the game." />
+    </article>
+  );
+}
+
+export function WarLogPage({ headingRef }: { headingRef: HeadingRef }) {
+  const { changes, ready } = useHistory();
+  const openOptions = useUi((s) => s.openOptions);
+  const [show, setShow] = useState<"all" | "won" | "lost">("all");
+  const liberated = changes.filter((c) => c.to === "Humans").length;
+  const list = changes.filter((c) => show === "all" || (show === "won") === (c.to === "Humans"));
+  const days: { day: string; items: typeof list }[] = [];
+  for (const c of list) {
+    const day = fmtDate(c.at);
+    if (days[days.length - 1]?.day !== day) days.push({ day, items: [] });
+    days[days.length - 1].items.push(c);
+  }
+  return (
+    <article className="gww-page" style={{ "--site": "var(--f-humans)" } as CSSProperties}>
+      <Banner
+        icon={<History size={40} strokeWidth={1.5} />}
+        crumbs={[{ label: "Super Earth", target: "dir:gov" }]}
+        title="Galactic war log"
+        lead={
+          ready ? (
+            <span className="num">
+              <span style={{ color: "var(--f-humans)" }}>{liberated} liberated</span> ·{" "}
+              <span style={{ color: "var(--bad)" }}>{changes.length - liberated} lost</span> since tracking began
+            </span>
+          ) : (
+            "Every planet that changed hands since tracking began."
+          )
+        }
+        headingRef={headingRef}
+      />
+      <div className="gww-filter" role="group" aria-label="Show">
+        {(
+          [
+            ["all", "Everything"],
+            ["won", "Liberated"],
+            ["lost", "Lost"],
+          ] as const
+        ).map(([k, label]) => (
+          <button key={k} className={`gww-chip ${show === k ? "on" : ""}`} aria-pressed={show === k} onClick={() => setShow(k)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {!ready ? (
+        <Loading what="the war archive" rows={3} />
+      ) : list.length === 0 ? (
+        <Empty>
+          {show === "all"
+            ? "No planet has changed hands since tracking began."
+            : `No planet has been ${show === "won" ? "liberated" : "lost"} since tracking began.`}
+        </Empty>
+      ) : (
+        days.map((d) => (
+          <section key={d.day} className="gww-log-day">
+            <h3 className="caps num">{d.day}</h3>
+            <ol className="wl">
+              {d.items.map((c) => {
+                const won = c.to === "Humans";
+                const color = factionColor(won ? "Humans" : c.to);
+                return (
+                  <li key={c.id} className="wl-row">
+                    <span className="wl-mark" style={{ "--k": color } as CSSProperties}>
+                      <FactionEmblem faction={won ? "Humans" : c.to} size={14} />
+                    </span>
+                    <div>
+                      <div className="wl-title caps">
+                        <button
+                          className="link"
+                          style={{ color: "var(--text-hi)" }}
+                          onClick={(e) => openOptions({ planet: c.planet, x: e.clientX, y: e.clientY })}
+                        >
+                          {c.planetName}
+                        </button>{" "}
+                        <span style={{ color }}>
+                          {won ? `liberated from ${factionLabel(c.from)}` : `fell to ${factionLabel(c.to)}`}
+                        </span>
+                      </div>
+                      <div className="wl-sub">{fmtDateTime(c.at)}</div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        ))
+      )}
+      <Related targets={["manual:liberation", "manual:defense", "app:past"]} />
+    </article>
+  );
+}
+
+export function DirPage({ id, headingRef, logText }: { id: keyof typeof DIRS; headingRef: HeadingRef; logText: string }) {
+  const Icon = DIR_ICONS[id];
+  const lead: Record<keyof typeof DIRS, string> = {
+    manuals: "How the Second Galactic War works, in reading order.",
+    gov: "The Federation's own sites: its government, its ministries, its war log and its news.",
+    corps: "The mega-corporations that arm, feed, heal and bank the Federation.",
+    market: "The smaller brands on the city billboards. Every advert on the G.W.W. leads to its maker.",
+  };
+  return (
+    <article className="gww-page wide">
+      <Banner
+        icon={<Icon size={40} strokeWidth={1.5} />}
+        crumbs={[{ label: "G.W.W.", target: "home" }]}
+        title={DIRS[id]}
+        lead={lead[id]}
+        headingRef={headingRef}
+      />
+      {id === "manuals" && (
+        <>
+          <CourseProgress />
+          {CHAPTERS.map((ch, i) => (
+            <section key={ch.id} className="gww-chapter">
+              <h3>
+                <span className="caps num">Chapter {i + 1}</span> {ch.title}
+              </h3>
+              <p className="gww-chapter-sub">{ch.summary}</p>
+              <div className="gww-sites">
+                {MANUALS.filter((m) => m.chapter === ch.id).map((m) => (
+                  <ManualTile key={m.id} m={m} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </>
+      )}
+      {id === "gov" && (
+        <div className="gww-sites">
+          <OfficialTiles logText={logText} />
+          {MINISTRIES.map((m) => (
+            <MinistryTile key={m.id} m={m} />
+          ))}
+        </div>
+      )}
+      {id === "corps" && (
+        <div className="gww-sites">
+          {COMPANIES.map((c) => (
+            <CompanyTile key={c.id} c={c} />
+          ))}
+        </div>
+      )}
+      {id === "market" && (
+        <div className="gww-brands">
+          {BRANDS.map((b) => (
+            <BrandTile key={b.id} b={b} />
+          ))}
+        </div>
+      )}
+      <Related
+        title="Elsewhere on the G.W.W."
+        targets={(["dir:manuals", "dir:gov", "dir:corps", "dir:market"] as const).filter((t) => t !== `dir:${id}`)}
+      />
+    </article>
+  );
+}
+

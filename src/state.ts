@@ -5,6 +5,16 @@ export type View = "campaigns" | "map" | "hellpad" | "overview" | "news" | "sett
 export type HellpadModule = "planets" | "stations" | "gww" | "campaigns";
 export type InfoDialog = "about" | "legend";
 
+/** A page of the Galactic Wide Web. */
+export type GwwPage =
+  | { kind: "home" }
+  | { kind: "manual"; id: string }
+  | { kind: "ministry"; id: string }
+  | { kind: "company"; id: string }
+  | { kind: "brand"; id: string }
+  | { kind: "site"; id: "log" | "gov" }
+  | { kind: "dir"; id: "manuals" | "gov" | "corps" | "market" };
+
 /** Where the planet options popover is anchored, in viewport pixels. */
 export interface OptionsAnchor {
   planet: number;
@@ -25,6 +35,8 @@ interface UiState {
   dispatchOpen: boolean;
   /** The About or Icons legend dialog, when one is open. */
   dialog: InfoDialog | null;
+  /** The G.W.W.'s page history, kept while the app runs so leaving the module and coming back resumes it. */
+  gww: GwwPage[];
   setView(v: View): void;
   openModule(m: HellpadModule | null): void;
   select(planet: number | null): void;
@@ -34,6 +46,7 @@ interface UiState {
   openOptions(o: OptionsAnchor | null): void;
   toggleDispatch(open?: boolean): void;
   showDialog(d: InfoDialog | null): void;
+  setGww(stack: GwwPage[]): void;
 }
 
 export const useUi = create<UiState>((set) => ({
@@ -45,6 +58,7 @@ export const useUi = create<UiState>((set) => ({
   options: null,
   dispatchOpen: false,
   dialog: null,
+  gww: [{ kind: "home" }],
   setView: (view) => set({ view, options: null, module: null }),
   openModule: (module) => set({ view: "hellpad", module, options: null, detail: null }),
   select: (selectedPlanet) => set({ selectedPlanet }),
@@ -55,6 +69,7 @@ export const useUi = create<UiState>((set) => ({
   openOptions: (options) => set({ options }),
   toggleDispatch: (open) => set((s) => ({ dispatchOpen: open ?? !s.dispatchOpen })),
   showDialog: (dialog) => set({ dialog }),
+  setGww: (gww) => set({ gww }),
 }));
 
 export interface AlertSettings {
@@ -95,6 +110,8 @@ interface SettingsState {
   seenDispatch: number;
   /** App version whose changelog the user has opened. */
   seenChangelog: string;
+  /** G.W.W. training manuals read to the end, by id. */
+  gwwRead: string[];
   /** Time of the newest Strohmann News item on the last visit; 0 before the first. */
   newsSeenAt: number;
   setAlert(k: keyof AlertSettings, v: boolean): void;
@@ -119,6 +136,8 @@ interface SettingsState {
   resetUnread(): void;
   markSeen(assignments: number[], dispatch: number): void;
   markChangelog(version: string): void;
+  markRead(manual: string): void;
+  clearRead(): void;
   markNewsSeen(at: number): void;
 }
 
@@ -140,6 +159,7 @@ export const useSettings = create<SettingsState>()(
       seenAssignments: [],
       seenDispatch: 0,
       seenChangelog: "",
+      gwwRead: [],
       newsSeenAt: 0,
       setAlert: (k, v) => set((s) => ({ alerts: { ...s.alerts, [k]: v } })),
       set: (k, v) => set({ [k]: v } as Partial<SettingsState>),
@@ -152,6 +172,8 @@ export const useSettings = create<SettingsState>()(
       resetUnread: () => set({ seenChangelog: "", hintsSeen: [] }),
       markSeen: (seenAssignments, seenDispatch) => set({ seenAssignments, seenDispatch }),
       markChangelog: (seenChangelog) => set({ seenChangelog }),
+      markRead: (manual) => set((s) => (s.gwwRead.includes(manual) ? s : { gwwRead: [...s.gwwRead, manual] })),
+      clearRead: () => set({ gwwRead: [] }),
       markNewsSeen: (at) => set((s) => ({ newsSeenAt: Math.max(s.newsSeenAt, at) })),
     }),
     { name: "warcommand-settings" },
