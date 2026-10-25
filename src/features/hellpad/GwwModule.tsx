@@ -28,7 +28,7 @@ import { nextYearly, plainText } from "../../domain/gwwText";
 import { useHistory } from "../../history/useHistory";
 import { useUi, type GwwPage } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
-import { Empty, OutLink, Panel, useNow } from "../../ui/primitives";
+import { Empty, OutLink, Panel, useMedia, useNow } from "../../ui/primitives";
 import type { Faction } from "../../api/types";
 import { iconUrl } from "./gwwArt";
 import { GwwNavProvider, useGwwNav } from "./gwwNav";
@@ -45,6 +45,8 @@ import {
   ManualTile,
   MinistryPage,
   MinistryTile,
+  pickOne,
+  RAIL_QUERY,
   SiteTile,
   WarLogPage,
 } from "./GwwPages";
@@ -63,8 +65,6 @@ function addressOf(p: GwwPage): string {
 }
 
 const keyOf = (p: GwwPage) => ("id" in p ? `${p.kind}:${p.id}` : p.kind);
-
-const pickOne = <T,>(list: T[]): T => list[Math.floor(Math.random() * list.length)];
 
 function logLine(count: number): string {
   if (count === 1) return "1 planet has changed hands since tracking began.";
@@ -121,11 +121,11 @@ function HolidayChip() {
 
 function Home({ logText }: { logText: string }) {
   const [query, setQuery] = useState("");
-  const [ads] = useState(() => {
-    const wide = ADS.filter((a) => a.shape === "wide");
-    const first = pickOne(wide);
-    return { tall: pickOne(ADS.filter((a) => a.shape === "tall")), wide: first, banner: pickOne(wide.filter((a) => a !== first)) };
-  });
+  const [ads] = useState(() => ({
+    tall: pickOne(ADS.filter((a) => a.shape === "tall")),
+    banner: pickOne(ADS.filter((a) => a.shape === "wide")),
+  }));
+  const wide = useMedia(RAIL_QUERY);
   const q = query.trim().toLowerCase();
   const hit = (...text: string[]) => !q || text.some((t) => plainText(t).toLowerCase().includes(q));
   const official = [
@@ -244,11 +244,13 @@ function Home({ logText }: { logText: string }) {
               </div>
             </section>
           )}
+          {!q && !wide && ads.tall && <AdBox ad={ads.tall} />}
         </div>
-        <aside className="gww-rail" aria-label="Sponsored">
-          <AdBox ad={ads.tall} />
-          <AdBox ad={ads.wide} />
-        </aside>
+        {wide && ads.tall && (
+          <aside className="gww-rail" aria-label="Sponsored">
+            <AdBox ad={ads.tall} slot="rail" />
+          </aside>
+        )}
       </div>
     </div>
   );
