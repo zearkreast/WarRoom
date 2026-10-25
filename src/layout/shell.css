@@ -73,6 +73,24 @@
 .top-btn.on .top-btn-icon {
   background: var(--cta);
 }
+.top-btn {
+  position: relative;
+}
+.top-btn-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--s-2);
+  display: grid;
+  place-items: center;
+  background: var(--cta);
+  color: var(--ink-on-cta);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  box-shadow: 0 0 0 2px var(--void);
+}
 .top-btn-text {
   display: flex;
   flex-direction: column;

@@ -505,15 +505,49 @@
   color: var(--text-hi);
 }
 
-.map-controls-hint {
+.map-corner {
   position: absolute;
   top: var(--s-5);
   right: var(--s-5);
   display: flex;
+  align-items: flex-start;
+  gap: var(--s-4);
+  z-index: 3;
+}
+.map-controls-hint {
+  display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: var(--s-3);
-  z-index: 2;
+}
+.map-overlays {
+  display: flex;
+  background: color-mix(in srgb, var(--surface-1) 86%, transparent);
+  border: 1px solid var(--line-strong);
+}
+.map-overlays button {
+  height: 32px;
+  padding: 0 var(--s-5);
+  background: none;
+  border: 0;
+  color: var(--text-dim);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--t-state), background var(--t-state);
+}
+.map-overlays button + button {
+  border-left: 1px solid var(--line);
+}
+.map-overlays button:hover {
+  color: var(--text-hi);
+}
+.map-overlays button.on {
+  color: var(--text-hi);
+  background: color-mix(in srgb, var(--cta) var(--fill), transparent);
+  box-shadow: inset 0 -2px 0 var(--cta);
 }
 .map-keys {
   display: grid;
@@ -546,7 +580,7 @@
 
 .map-settings {
   position: absolute;
-  right: calc(var(--s-5) + 52px);
+  right: calc(var(--s-5) + 64px);
   top: 50%;
   transform: translateY(-50%);
   z-index: 4;
@@ -599,18 +633,194 @@
   gap: var(--s-3);
   z-index: 2;
 }
-.map-rail .hud-btn {
-  width: 36px;
-  height: 36px;
+.rail-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 54px;
+  height: 46px;
+  padding: 0;
   background: color-mix(in srgb, var(--surface-1) 82%, transparent);
   backdrop-filter: blur(6px);
+  border: 1px solid var(--line-strong);
+  color: var(--text-hi);
+  cursor: pointer;
+  transition: border-color var(--t-state), color var(--t-state);
+}
+.rail-btn span {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+.rail-btn:hover {
+  border-color: var(--text-dim);
+}
+.rail-btn.on {
+  border-color: var(--cta);
+  color: var(--cta);
+}
+.rail-btn.on span {
+  color: var(--cta);
 }
 /* A blur over a map that repaints every frame is costly on phones; a denser fill looks the same. */
 @media (pointer: coarse) {
-  .map-rail .hud-btn {
+  .rail-btn {
     background: color-mix(in srgb, var(--surface-1) 94%, transparent);
     backdrop-filter: none;
   }
+}
+
+/* ---------- Planet panel: docked left of the map, a sheet over it on phones ---------- */
+.planet-panel {
+  --tone: var(--f-humans);
+  position: absolute;
+  left: var(--s-6);
+  top: 96px;
+  z-index: 4;
+  width: 320px;
+  max-height: calc(100% - 96px - var(--s-6));
+  display: flex;
+  flex-direction: column;
+  border-color: color-mix(in srgb, var(--tone) var(--strong), var(--line-strong));
+  animation: toast-in var(--t-reveal) var(--ease);
+}
+.planet-panel > .panel-body {
+  display: contents;
+}
+.pp-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-bottom: var(--s-4);
+}
+.planet-panel .hc-art {
+  height: 104px;
+}
+.planet-panel .hc-desc {
+  -webkit-line-clamp: unset;
+}
+.pp-close {
+  position: absolute;
+  top: var(--s-3);
+  right: var(--s-3);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: color-mix(in srgb, var(--surface-0) 80%, transparent);
+  border: 1px solid var(--line-strong);
+  color: var(--text-hi);
+  cursor: pointer;
+}
+.pp-close:hover {
+  border-color: var(--text-dim);
+}
+.pp-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-4);
+  margin: var(--s-4) var(--s-5) 0;
+}
+.pp-stats div {
+  padding: var(--s-3) var(--s-4);
+  background: var(--surface-0);
+  border: 1px solid var(--line);
+}
+.pp-stats dt {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.14em;
+  color: var(--label);
+}
+.pp-stats dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+  color: var(--text-hi);
+}
+.pp-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--line);
+}
+.pp-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--s-4) 0;
+  background: none;
+  border: 0;
+  color: var(--text-hi);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.pp-action + .pp-action {
+  border-left: 1px solid var(--line);
+}
+.pp-action:hover:not(:disabled) {
+  color: var(--cta);
+}
+.pp-action:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ---------- Legend ---------- */
+.map-legend {
+  width: 320px;
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.ml-close {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: 0;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.ml-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin: 0;
+  padding: var(--s-4) var(--s-5) 0;
+}
+.ml-list div {
+  display: flex;
+  gap: var(--s-4);
+}
+.ml-list dt {
+  flex: none;
+}
+.ml-swatch {
+  display: block;
+  background: var(--surface-0);
+  border: 1px solid var(--line);
+}
+.ml-list dd {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--fs-body-s);
+  color: var(--text);
+  line-height: 1.4;
+}
+.ml-list dd b {
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  color: var(--text-hi);
 }
 
 .map-toggles {
@@ -771,6 +981,9 @@
   letter-spacing: 0.12em;
 }
 .hc-effects li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
   padding: 2px var(--s-3);
   border: 1px solid var(--line-strong);
   color: var(--text-hi);
@@ -851,6 +1064,33 @@
   /* Keyboard hints mean nothing on a touch screen. */
   .map-controls-hint {
     display: none;
+  }
+  .map-corner {
+    top: 62px;
+    left: var(--s-3);
+    right: auto;
+  }
+  .map-touch-hint {
+    top: 104px;
+  }
+  .planet-panel {
+    left: var(--s-3);
+    right: var(--s-3);
+    top: auto;
+    bottom: var(--s-3);
+    width: auto;
+    max-height: 56%;
+    z-index: 5;
+  }
+  .map-settings {
+    right: calc(var(--s-3) + 64px);
+    top: auto;
+    bottom: 120px;
+    transform: none;
+    width: min(300px, calc(100vw - 96px));
+  }
+  .map-legend {
+    max-height: 60vh;
   }
   .map-rail {
     top: auto;
