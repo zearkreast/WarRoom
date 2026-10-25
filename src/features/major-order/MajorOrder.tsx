@@ -3,7 +3,7 @@ import { useAssignments, useEpisodes, useFreshPlanets } from "../../api/queries"
 import type { Assignment, Planet } from "../../api/types";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtCompact, fmtPct } from "../../domain/format";
-import { describeAssignment, orderName, rewardLabel, type TaskView } from "../../domain/majorOrder";
+import { describeAssignment, orderName, rewardLabel, taskPercent, type TaskView } from "../../domain/majorOrder";
 import { liberationPercent, projectedAt, projectedCompletion, trackedPercent } from "../../domain/progress";
 import { useUi } from "../../state";
 import { Countdown, Empty, Loading, Meter, Panel } from "../../ui/primitives";
@@ -56,7 +56,7 @@ function PlanetTask({ t, expires }: { t: TaskView; expires: number }) {
 }
 
 function CountTask({ t }: { t: TaskView }) {
-  const pct = t.goal ? (t.current / t.goal) * 100 : 0;
+  const pct = taskPercent(t);
   const Check = t.done ? CheckSquare : Square;
   return (
     <li className={`mo-task ${t.done ? "done" : ""}`}>

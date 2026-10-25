@@ -1,10 +1,10 @@
 import { ChevronRight } from "lucide-react";
-import type { CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useAssignments, useFreshPlanets } from "../../api/queries";
 import type { Assignment, Planet } from "../../api/types";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtCompact, fmtPct } from "../../domain/format";
-import { deadlineOutlook, describeAssignment, type DeadlineOutlook } from "../../domain/majorOrder";
+import { deadlineOutlook, describeAssignment, taskPercent, type DeadlineOutlook, type TaskView } from "../../domain/majorOrder";
 import { useSettings, useUi } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
 import { Countdown, Meter, Panel, useNow } from "../../ui/primitives";
@@ -20,6 +20,84 @@ const VERDICT: Record<Verdict, { label: string; tone: string }> = {
   measuring: { label: "Measuring", tone: "var(--label)" },
   "no-front": { label: "No front", tone: "var(--label)" },
 };
+
+// Keep in sync with --ms-grow in campaigns.css.
+const GROW_MS = 1100;
+
+/** For screen readers: "21.2 million", not "21.2M". */
+const spoken = new Intl.NumberFormat("en-US", { notation: "compact", compactDisplay: "long", maximumFractionDigits: 1 });
+
+const reducedMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+/** Counts up to `to` from zero on first paint and glides to each new value. */
+function useCountUp(to: number): number {
+  const [shown, setShown] = useState(() => (reducedMotion() ? to : 0));
+  const at = useRef(shown);
+  useEffect(() => {
+    const from = at.current;
+    if (reducedMotion() || from === to) {
+      at.current = to;
+      setShown(to);
+      return;
+    }
+    const start = performance.now();
+    let raf = requestAnimationFrame(function tick(now) {
+      const k = Math.min(1, (now - start) / GROW_MS);
+      at.current = k < 1 ? from + (to - from) * (1 - (1 - k) ** 3) : to;
+      setShown(at.current);
+      if (k < 1) raf = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [to]);
+  return shown;
+}
+
+function CountRow({ t }: { t: TaskView }) {
+  const shown = useCountUp(t.current);
+  // The bar follows the count-up too, not a CSS transition, so it can't drift from the numbers.
+  const pct = taskPercent({ ...t, current: shown, done: shown >= t.goal });
+  const final = taskPercent(t);
+  const tone = t.faction ? factionColor(t.faction) : "var(--cta)";
+  const name = `${t.label}${t.faction ? ` ${factionLabel(t.faction)}` : ""}`;
+  return (
+    <li className={`ms-count ${t.done ? "done" : ""}`} style={{ "--k": tone } as CSSProperties}>
+      <div className="ms-count-head caps">
+        {t.faction && <FactionEmblem faction={t.faction} size={14} />}
+        <span className="ms-count-name">
+          {t.label}
+          {t.faction && <b> {factionLabel(t.faction)}</b>}
+        </span>
+        <span className="ms-count-pct num">{fmtPct(pct, 1)}</span>
+      </div>
+      <div
+        className="ms-bar"
+        role="progressbar"
+        aria-label={name}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.floor(final)}
+        aria-valuetext={`${spoken.format(t.current)} of ${spoken.format(t.goal)}, ${fmtPct(final, 1)}${t.done ? ", complete" : ""}`}
+      >
+        <div className="ms-bar-fill" style={{ width: `${pct}%` }}>
+          <i className="ms-bar-sheen" />
+        </div>
+        {!t.done && <i className="ms-bar-head" style={{ left: `${pct}%` }} />}
+      </div>
+      <div className="ms-count-foot caps">
+        <span className="num">
+          <b>{fmtCompact(Math.round(shown))}</b> / {fmtCompact(t.goal)}
+        </span>
+        {t.done ? (
+          <span className="ms-chip caps" style={{ "--tone": "var(--good)" } as CSSProperties}>
+            Complete
+          </span>
+        ) : (
+          <span className="num">{fmtCompact(Math.max(0, Math.round(t.goal - shown)))} to go</span>
+        )}
+      </div>
+    </li>
+  );
+}
 
 interface TargetRow {
   planet: Planet;
@@ -128,15 +206,9 @@ export function MoStrip({ fronts }: { fronts: Front[] }) {
               </ul>
             )}
             {open && counts.length > 0 && (
-              <ul className="ms-counts caps">
+              <ul className="ms-counts">
                 {counts.map((t, i) => (
-                  <li key={i}>
-                    {t.label}
-                    {t.faction && <span style={{ color: factionColor(t.faction) }}> {factionLabel(t.faction)}</span>}
-                    <span className="num">
-                      {fmtCompact(t.current)} / {fmtCompact(t.goal)}
-                    </span>
-                  </li>
+                  <CountRow key={i} t={t} />
                 ))}
               </ul>
             )}
