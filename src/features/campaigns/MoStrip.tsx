@@ -1,13 +1,14 @@
 import { ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import { useAssignments, useFreshPlanets } from "../../api/queries";
 import type { Assignment, Planet } from "../../api/types";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtCompact, fmtPct } from "../../domain/format";
-import { deadlineOutlook, describeAssignment, taskPercent, type DeadlineOutlook, type TaskView } from "../../domain/majorOrder";
+import { deadlineOutlook, describeAssignment, type DeadlineOutlook, type TaskView } from "../../domain/majorOrder";
 import { useSettings, useUi } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
-import { Countdown, Meter, Panel, useNow } from "../../ui/primitives";
+import { Countdown, Panel, useNow } from "../../ui/primitives";
+import { OrderBar, useCountTask, useCountUp } from "../major-order/OrderBar";
 import type { Front } from "../planets/useFronts";
 import "../major-order/majorOrder.css";
 
@@ -21,42 +22,8 @@ const VERDICT: Record<Verdict, { label: string; tone: string }> = {
   "no-front": { label: "No front", tone: "var(--label)" },
 };
 
-// Keep in sync with --ms-grow in campaigns.css.
-const GROW_MS = 1100;
-
-/** For screen readers: "21.2 million", not "21.2M". */
-const spoken = new Intl.NumberFormat("en-US", { notation: "compact", compactDisplay: "long", maximumFractionDigits: 1 });
-
-const reducedMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-/** Counts up to `to` from zero on first paint and glides to each new value. */
-function useCountUp(to: number): number {
-  const [shown, setShown] = useState(() => (reducedMotion() ? to : 0));
-  const at = useRef(shown);
-  useEffect(() => {
-    const from = at.current;
-    if (reducedMotion() || from === to) {
-      at.current = to;
-      setShown(to);
-      return;
-    }
-    const start = performance.now();
-    let raf = requestAnimationFrame(function tick(now) {
-      const k = Math.min(1, (now - start) / GROW_MS);
-      at.current = k < 1 ? from + (to - from) * (1 - (1 - k) ** 3) : to;
-      setShown(at.current);
-      if (k < 1) raf = requestAnimationFrame(tick);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [to]);
-  return shown;
-}
-
 function CountRow({ t }: { t: TaskView }) {
-  const shown = useCountUp(t.current);
-  // The bar follows the count-up too, not a CSS transition, so it can't drift from the numbers.
-  const pct = taskPercent({ ...t, current: shown, done: shown >= t.goal });
-  const final = taskPercent(t);
+  const { shown, pct, final, valueText } = useCountTask(t);
   const tone = t.faction ? factionColor(t.faction) : "var(--cta)";
   const name = `${t.label}${t.faction ? ` ${factionLabel(t.faction)}` : ""}`;
   return (
@@ -69,20 +36,7 @@ function CountRow({ t }: { t: TaskView }) {
         </span>
         <span className="ms-count-pct num">{fmtPct(pct, 1)}</span>
       </div>
-      <div
-        className="ms-bar"
-        role="progressbar"
-        aria-label={name}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.floor(final)}
-        aria-valuetext={`${spoken.format(t.current)} of ${spoken.format(t.goal)}, ${fmtPct(final, 1)}${t.done ? ", complete" : ""}`}
-      >
-        <div className="ms-bar-fill" style={{ width: `${pct}%` }}>
-          <i className="ms-bar-sheen" />
-        </div>
-        {!t.done && <i className="ms-bar-head" style={{ left: `${pct}%` }} />}
-      </div>
+      <OrderBar shown={pct} value={final} label={name} valueText={valueText} tone={tone} done={t.done} />
       <div className="ms-count-foot caps">
         <span className="num">
           <b>{fmtCompact(Math.round(shown))}</b> / {fmtCompact(t.goal)}
@@ -104,6 +58,39 @@ interface TargetRow {
   percent: number;
   end: number | null;
   verdict: Verdict;
+}
+
+function TargetItem({ r }: { r: TargetRow }) {
+  const openOptions = useUi((s) => s.openOptions);
+  const shown = useCountUp(r.percent);
+  const v = VERDICT[r.verdict];
+  const done = r.verdict === "done";
+  return (
+    <li style={{ "--k": factionColor(r.planet.currentOwner) } as CSSProperties}>
+      <button className="ms-name" onClick={(e) => openOptions({ planet: r.planet.index, x: e.clientX, y: e.clientY })}>
+        <FactionEmblem faction={r.planet.currentOwner} size={16} />
+        {r.planet.name}
+      </button>
+      <OrderBar
+        slim
+        shown={shown}
+        value={r.percent}
+        label={r.planet.name}
+        valueText={`${fmtPct(r.percent, 1)}${r.end != null && !done ? `, ${fmtPct(r.end, 1)} by the deadline` : ""}`}
+        tone="var(--f-humans)"
+        rest={factionColor(r.planet.currentOwner)}
+        marker={done ? null : r.end}
+        done={done}
+      />
+      <span className="ms-path num">
+        {fmtPct(shown, 1)}
+        {r.end != null && !done && <> → {fmtPct(r.end, 1)}</>}
+      </span>
+      <span className="ms-chip caps" style={{ "--tone": v.tone } as CSSProperties}>
+        {v.label}
+      </span>
+    </li>
+  );
 }
 
 function targets(a: Assignment, planets: Planet[] | undefined, fronts: Front[], now: number): TargetRow[] {
@@ -130,7 +117,6 @@ export function MoStrip({ fronts }: { fronts: Front[] }) {
   const open = useSettings((s) => s.moStripOpen);
   const setSetting = useSettings((s) => s.set);
   const planets = useFreshPlanets().data;
-  const openOptions = useUi((s) => s.openOptions);
   const now = useNow(60_000);
   if (!orders?.length) return null;
 
@@ -175,34 +161,9 @@ export function MoStrip({ fronts }: { fronts: Front[] }) {
             )}
             {open && rows.length > 0 && (
               <ul className="ms-rows">
-                {rows.map((r) => {
-                  const v = VERDICT[r.verdict];
-                  return (
-                    <li key={r.planet.index} style={{ "--k": factionColor(r.planet.currentOwner) } as CSSProperties}>
-                      <button
-                        className="ms-name"
-                        onClick={(e) => openOptions({ planet: r.planet.index, x: e.clientX, y: e.clientY })}
-                      >
-                        <FactionEmblem faction={r.planet.currentOwner} size={16} />
-                        {r.planet.name}
-                      </button>
-                      <Meter
-                        value={r.percent}
-                        color="var(--f-humans)"
-                        rest={factionColor(r.planet.currentOwner)}
-                        marker={r.verdict === "done" ? null : r.end}
-                        size="s"
-                      />
-                      <span className="ms-path num">
-                        {fmtPct(r.percent, 1)}
-                        {r.end != null && r.verdict !== "done" && <> → {fmtPct(r.end, 1)}</>}
-                      </span>
-                      <span className="ms-chip caps" style={{ "--tone": v.tone } as CSSProperties}>
-                        {v.label}
-                      </span>
-                    </li>
-                  );
-                })}
+                {rows.map((r) => (
+                  <TargetItem key={r.planet.index} r={r} />
+                ))}
               </ul>
             )}
             {open && counts.length > 0 && (

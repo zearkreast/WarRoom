@@ -95,7 +95,12 @@
   color: var(--good);
 }
 .mo-pct {
-  color: var(--text);
+  font-weight: 700;
+  color: var(--text-hi);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--k) 55%, transparent);
+}
+.mo-task.done .mo-pct {
+  color: var(--good);
 }
 .mo-task-foot {
   display: flex;
@@ -103,6 +108,10 @@
   gap: var(--s-4);
   font-size: var(--fs-body-s);
   color: var(--text-dim);
+}
+.mo-task-foot b {
+  color: var(--text-hi);
+  font-weight: 600;
 }
 .mo-reward {
   display: flex;
@@ -132,4 +141,120 @@
 .panel.mo,
 .panel.mo-strip {
   --tone: var(--cta);
+}
+
+/* ---------- Progress bar ---------- */
+.mo-bar {
+  /* Keep in sync with GROW_MS in OrderBar.tsx. */
+  --mo-grow: 1.1s;
+  --rest-mix: 18%;
+  position: relative;
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--k) 35%, var(--line));
+  /* Quarter marks over the hatched remainder. */
+  background:
+    linear-gradient(
+      90deg,
+      transparent calc(25% - 1px),
+      var(--line-strong) 0 25%,
+      transparent 0 calc(50% - 1px),
+      var(--line-strong) 0 50%,
+      transparent 0 calc(75% - 1px),
+      var(--line-strong) 0 75%,
+      transparent 0
+    ),
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--rest) var(--rest-mix), transparent) 0 3px, transparent 3px 6px),
+    var(--void);
+}
+/* The remainder is the enemy's share, so it shows more strongly. */
+.mo-bar.versus {
+  --rest-mix: 34%;
+}
+.mo-bar.slim {
+  height: 7px;
+}
+/* No width transition: OrderBar.tsx is given the width every frame of the count-up. */
+.mo-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  overflow: hidden;
+  /* Cut into 4px cells, brightening toward the leading edge; opaque, so the remainder's hatch stays out of it. */
+  background:
+    repeating-linear-gradient(90deg, transparent 0 4px, color-mix(in srgb, var(--void) 70%, transparent) 4px 5px),
+    linear-gradient(90deg, color-mix(in srgb, var(--k) 40%, var(--void)), var(--k));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--k) var(--strong), transparent);
+}
+.mo-bar-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.5) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: mo-sheen 2.8s var(--ease) var(--mo-grow) infinite;
+}
+.mo-bar-head {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: color-mix(in srgb, var(--k) 35%, #fff);
+  box-shadow:
+    0 0 4px 1px var(--k),
+    0 0 12px 2px color-mix(in srgb, var(--k) 60%, transparent);
+  animation: mo-pulse 1.6s ease-in-out var(--mo-grow) infinite;
+}
+/* Drawn only when the projection falls short, so it glows in the warning colour. */
+.mo-bar-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--text-hi);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--void) 60%, transparent),
+    0 0 6px 1px var(--bad);
+  animation: mo-mark-in 400ms var(--ease) var(--mo-grow) backwards;
+}
+/* Forced colours drop the gradients the bar is painted with. */
+@media (forced-colors: active) {
+  .mo-bar {
+    border-color: CanvasText;
+  }
+  .mo-bar-fill {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
+  .mo-bar-head {
+    display: none;
+  }
+  .mo-bar-mark {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+}
+/* The mark's delay would otherwise hold it hidden after the count-up has been skipped. */
+@media (prefers-reduced-motion: reduce) {
+  .mo-bar-mark {
+    animation: none;
+  }
+}
+/* Half the cycle sweeping, half resting. */
+@keyframes mo-sheen {
+  50%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+@keyframes mo-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes mo-mark-in {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+  }
 }
