@@ -111,6 +111,28 @@ body {
   overflow: hidden;
 }
 
+/* On touch screens a long press starts a text selection that fights held buttons and drags;
+   only prose stays selectable. */
+@media (pointer: coarse) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  input,
+  textarea,
+  .nc-body,
+  .mo-briefing,
+  .mo-desc,
+  .cmp-desc,
+  .cmp-text,
+  .bp-text,
+  .gww-page p {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
 button {
   font: inherit;
   color: inherit;
