@@ -1,19 +1,21 @@
 import { select } from "d3-selection";
+import { interrupt } from "d3-transition";
 import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from "d3-zoom";
 import {
   ArrowUpRight,
+  BookOpen,
   Compass,
   Landmark as PoiIcon,
-  Layers,
-  MousePointerClick,
   Rotate3d,
   Settings,
   Shield,
   TriangleAlert,
   ZoomIn,
   ZoomOut,
+  type LucideIcon,
 } from "lucide-react";
 import {
+  forwardRef,
   memo,
   useCallback,
   useEffect,
@@ -25,10 +27,9 @@ import {
 } from "react";
 import { useCampaigns, useEffects, useFreshPlanets, useSectorGeometry, useSpaceStations } from "../../api/queries";
 import type { Planet } from "../../api/types";
-import { biomeTint, planetTint, regenPctPerHour } from "../../domain/biomes";
+import { planetTint } from "../../domain/biomes";
 import { hasPawn, type PlanetEffect } from "../../domain/effects";
 import { FACTIONS, factionColor } from "../../domain/factions";
-import { fmtPct } from "../../domain/format";
 import {
   anomalyOf,
   GALAXY_SCALE,
@@ -38,29 +39,28 @@ import {
   sectorAt,
   supplyLines,
   type Anomaly,
-  type Landmark,
   type PolarSectors,
 } from "../../domain/galaxy";
 import { factionMarks } from "../../domain/factionMarks";
 import { byIndex, ownershipKey } from "../../domain/planets";
 import { buildRegions } from "../../domain/regions";
-import { liberationPercent, trackedPercent } from "../../domain/progress";
 import { useSettings, useUi, type MapOverlay, type MapPlanets, type MapQuality } from "../../state";
 import { EmblemArt, subfactionArt } from "../../ui/emblems";
-import { HudButton, Loading, Meter, Stepper } from "../../ui/primitives";
+import { Loading, Stepper } from "../../ui/primitives";
 import { useMajorOrderPlanets } from "../planets/useFronts";
 import { GloomLayer, SectorLayer } from "./layers";
 import { writeCamera } from "./cameraRules";
 import { OVERLAY_OPTIONS, PLANET_OPTIONS, QUALITY_OPTIONS } from "./mapOptions";
-import { PoiGlyph, poiImage, poiKind, poiOrigin, type PoiKind } from "./poi";
+import { PoiGlyph, poiKind, poiOrigin, type PoiKind } from "./poi";
 import { dssArt, dssInfo, PAWN_ART, pawnArt, type DssAction, type DssInfo, type DssState } from "./pawnArt";
+import { MapLegend } from "./MapLegend";
+import { HoverCard, PlanetPanel, type Hover } from "./planetCard";
 import "./map.css";
 
 const EXTENT = GALAXY_SCALE * 1.1;
 const STAR_COUNT: Record<MapQuality, number> = { max: 4200, normal: 2600, min: 1600 };
 /** Highest device pixel ratio the starfield canvas is drawn at; phones report up to 3 or 4. */
 const STAR_DPR: Record<MapQuality, number> = { max: 4, normal: 2, min: 1.5 };
-const OVERLAYS: MapOverlay[] = ["regions", "sectors", "galaxy"];
 
 type Pt = [number, number];
 
@@ -82,6 +82,11 @@ const TOUCH_SLOP = 6;
 /** Two fingers must twist this far (radians) before the map turns, so a pinch doesn't wobble it. */
 const TWIST_START = 0.2;
 const SCALE_EXTENT: [number, number] = [0.5, 14];
+/** How long the buttons and keys take to turn or tilt the map. */
+const CAMERA_MS = 320;
+
+/** An angle in (-π, π]. */
+const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
 const turn = ([x, y]: Pt, a: number): Pt => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
 /** Map units to the zoom layer's own units: rotated, then squashed by the tilt. */
@@ -703,129 +708,6 @@ function PlanetBody(props: {
   );
 }
 
-export type Hover = { x: number; y: number } & (
-  | { planet: Planet; landmark?: never }
-  | { landmark: Landmark; planet?: never }
-);
-
-function resistance(regen: number): { label: string; color: string } {
-  if (regen < 1) return { label: "Low", color: "var(--good)" };
-  if (regen < 2.5) return { label: "Average", color: "var(--warn)" };
-  return { label: "High", color: "var(--bad)" };
-}
-
-function HoverCard({ h, active, effects }: { h: Hover; active: boolean; effects?: PlanetEffect[] }) {
-  const place = { left: Math.min(h.x + 18, window.innerWidth - 300), top: Math.max(8, h.y - 40) };
-  if (h.landmark) {
-    const tint = biomeTint(h.landmark.biome);
-    const style = {
-      ...place,
-      "--sky": tint.sky,
-      "--ground": tint.ground,
-      "--tone": "var(--f-humans)",
-    } as CSSProperties;
-    return (
-      <div className="hover-card panel glass" style={style} aria-hidden>
-        <div className="hc-art" />
-        <div className="hc-head">
-          <span className="hc-kind caps">{h.landmark.biome}</span>
-          <b className="hc-name">{h.landmark.name}</b>
-          <span className="hc-sector caps">{h.landmark.sector} sector</span>
-        </div>
-        <p className="hc-desc">{h.landmark.note}</p>
-        <div className="hc-foot caps">No campaign data</div>
-      </div>
-    );
-  }
-  const p = h.planet;
-  const tint = planetTint(p, effects);
-  const enemy = p.event?.faction ?? (p.currentOwner === "Humans" ? undefined : p.currentOwner);
-  const anomaly = anomalyOf(p, effects);
-  const ANOMALY_KIND: Record<string, string> = {
-    wormhole: "Wormhole",
-    blackhole: "Black hole",
-    fractured: "Fractured planet",
-    scorched: "Scorched",
-  };
-  const kind = p.event
-    ? "Defense"
-    : active
-      ? "Liberation"
-      : anomaly
-        ? ANOMALY_KIND[anomaly]
-        : p.currentOwner === "Humans"
-          ? "Secured"
-          : "Enemy held";
-  const shown = (effects ?? []).filter(hasPawn);
-  const pois = shown.filter((e) => e.kind === "poi");
-  // Black holes and broken worlds list what they are too, as the game's tooltip does.
-  const rows = [...(effects ?? []).filter((e) => e.kind === "look" && poiKind(e.name) === "anomaly"), ...pois];
-  const chips = shown.filter((e) => e.kind !== "poi");
-  // As in the game, a point of interest's (or an anomaly's) picture replaces the biome's.
-  const poiArt = poiImage(pois, anomaly);
-  const pct = enemy ? trackedPercent(p) : 100;
-  const regen = regenPctPerHour(p);
-  const res = resistance(regen);
-  const style = {
-    ...place,
-    "--sky": tint.sky,
-    "--ground": tint.ground,
-    "--art": poiArt ? `url("${poiArt}")` : tint.art,
-    "--tone": factionColor(enemy ?? "Humans"),
-  } as CSSProperties;
-  return (
-    <div className="hover-card panel glass" style={style} aria-hidden>
-      <div className={`hc-art ${poiArt ? "poi" : ""}`} />
-      <div className="hc-head">
-        <span className="hc-kind caps">{kind}</span>
-        <b className="hc-name">{p.name}</b>
-        <span className="hc-sector caps">{p.sector} sector</span>
-      </div>
-      {rows.length > 0
-        ? rows.map((e) => (
-            <div key={e.id} className="hc-poi">
-              <div className="hc-poi-head caps">
-                <svg viewBox="-12 -12 24 24" width={16} height={16} aria-hidden>
-                  <PoiGlyph kind={poiKind(e.name)} faction={poiOrigin(poiKind(e.name), enemy)} size={24} />
-                </svg>
-                {e.name}
-              </div>
-              <p>{e.description}</p>
-            </div>
-          ))
-        : p.biome?.description && <p className="hc-desc">{p.biome.description}</p>}
-      {chips.length > 0 && (
-        <ul className="hc-effects caps">
-          {chips.map((e) => (
-            <li key={e.id} className={e.kind}>
-              {e.name}
-            </li>
-          ))}
-        </ul>
-      )}
-      {enemy && (
-        <div className="hc-progress">
-          <Meter value={pct} color="var(--f-humans)" rest={factionColor(enemy)} size="m" />
-          <span className="num caps">
-            {fmtPct(p.event ? pct : liberationPercent(p), 4)} {p.event ? "defended" : "liberated"}
-          </span>
-        </div>
-      )}
-      {enemy && (
-        <div className="hc-row caps">
-          <span>Resistance</span>
-          <b style={{ color: res.color }}>
-            {res.label} <span className="num">({regen.toFixed(2)}%)</span>
-          </b>
-        </div>
-      )}
-      <div className="hc-foot caps">
-        <MousePointerClick size={14} /> Click for options
-      </div>
-    </div>
-  );
-}
-
 function MapSettings({ onClose }: { onClose(): void }) {
   const overlay = useSettings((s) => s.mapOverlay);
   const planets = useSettings((s) => s.mapPlanets);
@@ -993,6 +875,35 @@ const PlanetLayer = memo(function PlanetLayer(props: {
   );
 });
 
+const RailButton = forwardRef<
+  HTMLButtonElement,
+  {
+    icon: LucideIcon;
+    label: string;
+    title?: string;
+    keyHint?: string;
+    active?: boolean;
+    className?: string;
+    iconStyle?: CSSProperties;
+    onClick(): void;
+  }
+>(function RailButton(props, ref) {
+  const title = props.title ?? props.label;
+  return (
+    <button
+      ref={ref}
+      className={`rail-btn ${props.active ? "on" : ""} ${props.className ?? ""}`}
+      onClick={props.onClick}
+      aria-label={title}
+      aria-pressed={props.active}
+      title={props.keyHint ? `${title} (${props.keyHint})` : title}
+    >
+      <props.icon size={18} strokeWidth={1.75} style={props.iconStyle} />
+      <span className="caps">{props.label}</span>
+    </button>
+  );
+});
+
 /** How long the camera must be still before the costly glow filters come back. */
 const SETTLE_MS = 180;
 
@@ -1006,12 +917,10 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   const mo = useMajorOrderPlanets();
   const selectedPlanet = useUi((s) => s.selectedPlanet);
   const focusSeq = useUi((s) => s.focusSeq);
-  const openOptions = useUi((s) => s.openOptions);
   const overlay = useSettings((s) => s.mapOverlay);
   const planetStyle = useSettings((s) => s.mapPlanets);
   const quality = useSettings((s) => s.mapQuality);
   const pinned = useSettings((s) => s.pinned);
-  const setSetting = useSettings((s) => s.set);
   const stageRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -1036,8 +945,8 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
     setSector(s);
     onHoverSector?.(s);
   };
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const closeSettings = useCallback(() => setSettingsOpen(false), []);
+  const [side, setSide] = useState<"settings" | "legend" | null>(null);
+  const closeSettings = useCallback(() => setSide(null), []);
 
   const stars = useMemo(() => backgroundStars(STAR_COUNT[quality]), [quality]);
   const active = useMemo(() => new Set((campaigns.data ?? []).map((c) => c.planet.index)), [campaigns.data]);
@@ -1046,7 +955,16 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
     () => new Map((stations ?? []).map((s) => [s.planetIndex, dssInfo(s.tacticalActions, Date.now())])),
     [stations],
   );
-  const onOpen = useCallback((planet: number, x: number, y: number) => openOptions({ planet, x, y }), [openOptions]);
+  const [panel, setPanel] = useState<number | null>(null);
+  const selectPlanet = useUi((s) => s.select);
+  const onOpen = useCallback(
+    (planet: number) => {
+      setPanel(planet);
+      selectPlanet(planet);
+    },
+    [selectPlanet],
+  );
+  const closePanel = useCallback(() => setPanel(null), []);
   const loaded = Boolean(fresh);
 
   const starsRef = useRef(stars);
@@ -1113,7 +1031,18 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
     zoomRef.current = z;
     select(stage).call(z).on("dblclick.zoom", null);
     fit();
-    const ro = new ResizeObserver(() => fit());
+    // A resize (a phone turned, a browser bar sliding away) keeps the middle in place instead of refitting.
+    let size: Pt | null = null;
+    const ro = new ResizeObserver(() => {
+      const { width, height } = stage.getBoundingClientRect();
+      const before = size;
+      size = [width, height];
+      if (!before) return fit();
+      if (!width || !height) return;
+      const t = transformRef.current;
+      const shifted = zoomIdentity.translate(t.x + (width - before[0]) / 2, t.y + (height - before[1]) / 2).scale(t.k);
+      select(stage).call(z.transform, shifted);
+    });
     ro.observe(stage);
     return () => {
       ro.disconnect();
@@ -1152,6 +1081,7 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
 
     const onDown = (e: PointerEvent) => {
       if (e.pointerType !== "touch") return;
+      settleCamera();
       if (!fingers.size) dragged = false;
       fingers.set(e.pointerId, local(e));
       restart();
@@ -1255,22 +1185,60 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   function setCamera(next: Partial<Camera>) {
     const stage = stageRef.current;
     if (!stage || !zoomRef.current) return;
+    // A zoom step or fly-to still running would keep pulling towards a spot worked out for the old camera.
+    interrupt(stage);
     const t = transformRef.current;
     const c = centre();
     const world = fromLayer(t.invert(c) as Pt, camRef.current);
     camRef.current = {
-      rot: next.rot ?? camRef.current.rot,
+      rot: wrap(next.rot ?? camRef.current.rot),
       tilt: Math.min(MAX_TILT, Math.max(0, next.tilt ?? camRef.current.tilt)),
     };
     const [x, y] = toLayer(world, camRef.current);
     select(stage).call(zoomRef.current.transform, zoomIdentity.translate(c[0] - t.k * x, c[1] - t.k * y).scale(t.k));
   }
 
+  const tween = useRef(0);
+  /** Where the buttons and keys are taking the camera, so a key pressed mid-turn adds to the turn. */
+  const goal = useRef<Camera | null>(null);
+
+  /** Stops a camera tween and any zoom transition, for a gesture that takes over. */
+  function settleCamera() {
+    cancelAnimationFrame(tween.current);
+    goal.current = null;
+    if (stageRef.current) interrupt(stageRef.current);
+  }
+
+  /** Turns and tilts to `next` over CAMERA_MS, the short way round. */
+  function animateCamera(next: Partial<Camera>) {
+    cancelAnimationFrame(tween.current);
+    const from = camRef.current;
+    const to = {
+      rot: next.rot ?? goal.current?.rot ?? from.rot,
+      tilt: Math.min(MAX_TILT, Math.max(0, next.tilt ?? goal.current?.tilt ?? from.tilt)),
+    };
+    goal.current = to;
+    const turnBy = wrap(to.rot - from.rot);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const start = performance.now();
+    const step = (now: number) => {
+      const p = reduced ? 1 : Math.min(1, (now - start) / CAMERA_MS);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setCamera({ rot: from.rot + turnBy * eased, tilt: from.tilt + (to.tilt - from.tilt) * eased });
+      if (p < 1) tween.current = requestAnimationFrame(step);
+      else goal.current = null;
+    };
+    tween.current = requestAnimationFrame(step);
+  }
+  useEffect(() => () => cancelAnimationFrame(tween.current), []);
+  const aim = () => goal.current ?? camRef.current;
+
   // Fly to a planet chosen elsewhere ("Show on map") or from the map's own options ("Focus").
   useEffect(() => {
     const stage = stageRef.current;
     const p = selectedPlanet != null && freshRef.current ? byIndex(freshRef.current).get(selectedPlanet) : undefined;
     if (!stage || !zoomRef.current || !p || focusSeq === 0) return;
+    setPanel(p.index);
     const { width, height } = stage.getBoundingClientRect();
     const [x, y] = toLayer(project(p.position), camRef.current);
     const k = Math.max(3, Math.min(width, height) / 280);
@@ -1289,10 +1257,10 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
       if (k === "+" || k === "=") zoomBy(1.5);
       if (k === "-") zoomBy(1 / 1.5);
       if (k === "0") fit();
-      if (k === "q") setCamera({ rot: camRef.current.rot - ROT_STEP });
-      if (k === "e") setCamera({ rot: camRef.current.rot + ROT_STEP });
-      if (k === "r") setCamera({ tilt: camRef.current.tilt + TILT_STEP });
-      if (k === "f") setCamera({ tilt: camRef.current.tilt - TILT_STEP });
+      if (k === "q") animateCamera({ rot: aim().rot - ROT_STEP });
+      if (k === "e") animateCamera({ rot: aim().rot + ROT_STEP });
+      if (k === "r") animateCamera({ tilt: aim().tilt + TILT_STEP });
+      if (k === "f") animateCamera({ tilt: aim().tilt - TILT_STEP });
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1302,6 +1270,7 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   const drag = useRef<{ x: number; y: number; cam: Camera } | null>(null);
   const onPointerDown = (e: ReactPointerEvent<SVGSVGElement>) => {
     if (e.button !== 2 && !(e.button === 0 && e.ctrlKey)) return;
+    settleCamera();
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = { x: e.clientX, y: e.clientY, cam: camRef.current };
   };
@@ -1321,7 +1290,7 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
 
   if (!fresh) return <Loading what="galactic war data" />;
 
-  const nextOverlay = OVERLAYS[(OVERLAYS.indexOf(overlay) + 1) % OVERLAYS.length];
+  const panelPlanet = panel == null ? undefined : byIndex(fresh).get(panel);
 
   return (
     <div className={`map-wrap q-${quality}`}>
@@ -1366,39 +1335,49 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
         </svg>
       </div>
       <div className="map-rail">
-        <HudButton icon={ZoomIn} label="Zoom in" keyHint="+" onClick={() => zoomBy(1.5)} />
-        <HudButton icon={ZoomOut} label="Zoom out" keyHint="-" onClick={() => zoomBy(1 / 1.5)} />
-        <button
+        <RailButton icon={ZoomIn} label="Zoom in" keyHint="+" onClick={() => zoomBy(1.5)} />
+        <RailButton icon={ZoomOut} label="Zoom out" keyHint="-" onClick={() => zoomBy(1 / 1.5)} />
+        <RailButton
           ref={compassRef}
-          className="hud-btn icon map-compass"
-          onClick={() => setCamera({ rot: 0, tilt: 0 })}
-          aria-label="Reset rotation and tilt"
-          title="Reset rotation and tilt"
-        >
-          <Compass size={18} strokeWidth={1.75} style={{ transform: `rotate(${-Math.PI / 4}rad)` }} />
-        </button>
-        <button
-          ref={tiltRef}
-          className="hud-btn icon"
-          onClick={() => setCamera({ tilt: camRef.current.tilt > 0 ? 0 : TILT_PRESET })}
-          aria-label="Tilt or flatten the map"
-          title="Tilt or flatten the map (R / F)"
-        >
-          <Rotate3d size={18} strokeWidth={1.75} />
-        </button>
-        <HudButton
-          icon={Layers}
-          label={`Map overlay: ${overlay} (next: ${nextOverlay})`}
-          onClick={() => setSetting("mapOverlay", nextOverlay)}
+          className="map-compass"
+          icon={Compass}
+          iconStyle={{ transform: `rotate(${-Math.PI / 4}rad)` }}
+          label="North"
+          title="Turn north up and flatten the map"
+          onClick={() => animateCamera({ rot: 0, tilt: 0 })}
         />
-        <HudButton
+        <RailButton
+          ref={tiltRef}
+          icon={Rotate3d}
+          label="Tilt"
+          keyHint="R / F"
+          title="Tilt or flatten the map"
+          onClick={() => animateCamera({ tilt: aim().tilt > 0 ? 0 : TILT_PRESET })}
+        />
+        <RailButton
+          icon={BookOpen}
+          label="Legend"
+          active={side === "legend"}
+          onClick={() => setSide((o) => (o === "legend" ? null : "legend"))}
+        />
+        <RailButton
           icon={Settings}
-          label="Map settings"
-          active={settingsOpen}
-          onClick={() => setSettingsOpen((o) => !o)}
+          label="Settings"
+          title="Map settings"
+          active={side === "settings"}
+          onClick={() => setSide((o) => (o === "settings" ? null : "settings"))}
         />
       </div>
-      {settingsOpen && <MapSettings onClose={closeSettings} />}
+      {side === "settings" && <MapSettings onClose={closeSettings} />}
+      {side === "legend" && <MapLegend onClose={closeSettings} />}
+      {panelPlanet && (
+        <PlanetPanel
+          p={panelPlanet}
+          active={active.has(panelPlanet.index)}
+          effects={effects?.planets.get(panelPlanet.index)}
+          onClose={closePanel}
+        />
+      )}
       {hover && (
         <HoverCard
           h={hover}
