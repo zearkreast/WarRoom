@@ -1,0 +1,118 @@
+# Builds the Android APK. The Release workflow calls it with publish: true to attach the APK to the
+# release; on its own it only uploads the APK as a run artifact.
+#
+# Signing: with the ANDROID_KEYSTORE (base64 of a .jks), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS
+# and ANDROID_KEY_PASSWORD secrets set, every build is signed with that key and installs over the last.
+# Without them a throwaway key is made per run, so a newer APK needs the old app uninstalled first.
+name: Android
+
+on:
+  workflow_call:
+    inputs:
+      publish:
+        type: boolean
+        default: false
+  workflow_dispatch:
+  push:
+    branches-ignore: [main]
+    paths:
+      - "src-tauri/**"
+      - ".github/workflows/android.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      NDK_VERSION: "27.0.12077973"
+      BUILD_TOOLS: "34.0.0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          # The default list still asks for "tools", which current SDK repositories no longer carry.
+          packages: platform-tools
+
+      - name: Install NDK and build tools
+        run: |
+          sdkmanager --install "ndk;$NDK_VERSION" "build-tools;$BUILD_TOOLS" "platforms;android-34"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      # The Android project isn't kept in the repo; it is generated fresh, then given the app's icons.
+      - name: Generate the Android project
+        run: |
+          npx tauri android init --ci
+          cp -r src-tauri/icons/android/. src-tauri/gen/android/app/src/main/res/
+
+      - name: Build APK
+        run: npx tauri android build --apk --target aarch64 --target armv7
+
+      - name: Sign APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          UNSIGNED=$(find src-tauri/gen/android/app/build/outputs/apk -name '*-unsigned.apk' | head -n 1)
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > release.jks
+          else
+            echo "::warning::No ANDROID_KEYSTORE secret, so this APK is signed with a throwaway key. Installing a later build will need this one uninstalled first."
+            KEYSTORE_PASSWORD=throwaway KEY_ALIAS=warcommand KEY_PASSWORD=throwaway
+            keytool -genkeypair -keystore release.jks -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" \
+              -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=WarCommand Tracker"
+          fi
+          TOOLS="$ANDROID_HOME/build-tools/$BUILD_TOOLS"
+          "$TOOLS/zipalign" -f -p 4 "$UNSIGNED" aligned.apk
+          "$TOOLS/apksigner" sign --ks release.jks --ks-pass "pass:$KEYSTORE_PASSWORD" \
+            --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" \
+            --out "WarCommand.Tracker_${VERSION}_android.apk" aligned.apk
+          "$TOOLS/apksigner" verify "WarCommand.Tracker_${VERSION}_android.apk"
+          rm release.jks
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WarCommand.Tracker_${{ env.VERSION }}_android
+          path: WarCommand.Tracker_*_android.apk
+
+      # The same tag the desktop job releases under (tauri-action's v__VERSION__).
+      - name: Attach to the release
+        if: inputs.publish
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          files: WarCommand.Tracker_*_android.apk
