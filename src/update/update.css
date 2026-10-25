@@ -1,0 +1,63 @@
+.update-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-4) var(--s-5) var(--s-5);
+  background: color-mix(in srgb, var(--surface-1) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cta) var(--strong), var(--line-strong));
+  box-shadow: var(--shadow-2);
+  animation: toast-in var(--t-reveal) var(--ease);
+}
+.uc-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+}
+.uc-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  color: var(--cta);
+  border: 1px solid color-mix(in srgb, var(--cta) var(--edge), transparent);
+}
+.uc-title {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.uc-title b {
+  font-size: var(--fs-body-s);
+  letter-spacing: 0.08em;
+  color: var(--cta);
+}
+.uc-title span {
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
+.uc-notes {
+  margin: 0;
+  font-size: var(--fs-body-s);
+  line-height: 1.45;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.uc-actions {
+  display: flex;
+}
+.uc-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.uc-progress span {
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
