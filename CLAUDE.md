@@ -1,5 +1,8 @@
 # WarRoom
 
+## Sub-agents
+- Never run more than one sub-agent at a time: no parallel agents, and no workflows that fan out to several agents at once. When a task splits into parts, run them one after another, or do them yourself.
+
 ## Commits and pull requests
 - Commit as the GitHub account of the person you work for, with its noreply address (`<id>+<login>@users.noreply.github.com`), never as Claude.
 - No `Co-Authored-By` or `Claude-Session` lines and no session links in commit messages or pull request text.
