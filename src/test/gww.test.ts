@@ -22,6 +22,7 @@ const allText = (): string[] => {
       ...(s.kinds ?? []).map((k) => k.text),
       ...(s.faq ?? []).map((f) => f.a),
       ...(s.timeline ?? []).map((d) => d.text),
+      ...("folds" in s ? (s.folds ?? []).flatMap((f) => f.points) : []),
     ]),
     ...MANUALS.flatMap((m) => m.tips),
   ];

@@ -682,6 +682,71 @@ button.gww-ad-open:focus-visible img {
   padding: var(--s-4) var(--s-5);
 }
 
+.gww-folds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.gww-fold {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--site);
+  transition: border-color var(--t-state);
+}
+.gww-fold[open] {
+  border-color: color-mix(in srgb, var(--site) 40%, var(--line));
+  border-left-color: var(--site);
+}
+.gww-fold summary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-5);
+  padding: var(--s-4) var(--s-5);
+  list-style: none;
+  color: var(--text-hi);
+  cursor: pointer;
+}
+.gww-fold summary::-webkit-details-marker {
+  display: none;
+}
+.gww-fold summary::before {
+  content: "+";
+  width: 1ch;
+  font-weight: 800;
+  color: var(--site);
+}
+.gww-fold[open] summary::before {
+  content: "−";
+}
+.gww-fold summary:hover b {
+  color: var(--site);
+}
+.gww-fold summary .caps {
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  color: var(--label);
+}
+.gww-fold[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+.gww-fold-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin: 0;
+  padding: var(--s-4) var(--s-5) var(--s-4) calc(var(--s-5) + 2.2ch);
+  font-size: var(--fs-body-s);
+  color: var(--text-dim);
+}
+.gww-fold-list li::marker {
+  font-weight: 700;
+  color: var(--site);
+}
+.gww-fold-list b {
+  color: var(--text-hi);
+}
+
 /* The game's own words, boxed like its Training Manual Tips. */
 .gww-quote {
   display: flex;
