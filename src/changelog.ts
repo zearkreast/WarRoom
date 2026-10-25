@@ -19,7 +19,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       "The campaign panel keeps a slot for each of a campaign's three Major Orders, filled as the game issues them.",
       "Strohmann News tells each Galactic Campaign as one card, with its orders, dispatches and outcome on a timeline and the right dates.",
       "Space stations: a picker that also shows the destroyed Automaton station, active tactical actions with their time left, cooldowns, station effects and an FTL jump history.",
-      "G.W.W. is now the Galactic War Web: the war log, training manuals on how the war works, and the Federation's corporations.",
+      "G.W.W. is now the Galactic Wide Web: the war log, training manuals on how the war works, and the Federation's corporations.",
       "Settings, About and the icons legend sit together at the bottom left; the map's Dispatches box lists the latest five by default (Settings changes it).",
       "The status strip no longer jumps, and the collector no longer stalls when the API stops answering.",
     ],
