@@ -19,7 +19,15 @@ export function PlanetOptions() {
   const first = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (options) first.current?.focus();
+    if (!options) return;
+    const from = document.activeElement as HTMLElement | null;
+    first.current?.focus();
+    // Back to what opened the menu, unless the choice replaced it or covered it with the planet page.
+    return () => {
+      requestAnimationFrame(() => {
+        if (from?.isConnected && !document.querySelector(".overlay")) from.focus({ preventScroll: true });
+      });
+    };
   }, [options]);
   useEscape(() => openOptions(null), !!options);
 
