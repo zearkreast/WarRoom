@@ -153,7 +153,7 @@ function ModuleTile(props: {
 
 function LockedTile({ icon: Icon, title, text }: { icon: LucideIcon; title: string; text: string }) {
   return (
-    <div className="hp-mod locked" aria-disabled="true">
+    <div className="hp-mod locked">
       <span className="hp-mod-icon">
         <Icon size={26} strokeWidth={1.5} />
       </span>
