@@ -40,6 +40,9 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The default list still asks for "tools", which current SDK repositories no longer carry.
+          packages: platform-tools
 
       - name: Install NDK and build tools
         run: |
