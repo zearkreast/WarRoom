@@ -5,7 +5,7 @@ export interface Stratagem {
   code: Arrow[];
 }
 
-export type Dialled = { kind: "partial" } | { kind: "match"; stratagem: Stratagem } | { kind: "miss" };
+type Dialled = { kind: "partial" } | { kind: "match"; stratagem: Stratagem } | { kind: "miss" };
 
 /** What a code dialled so far is: the start of some code, a whole one, or nothing on file. */
 export function dial(entered: Arrow[], list: Stratagem[]): Dialled {

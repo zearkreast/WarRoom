@@ -50,7 +50,11 @@ function PlanetText({ text }: { text: string }) {
         if (!("kind" in seg)) return <Fragment key={i}>{seg.text}</Fragment>;
         const p = seg.kind === "planet" ? planets?.find((x) => x.name.toLowerCase() === seg.target.toLowerCase()) : undefined;
         if (!p) return <Fragment key={i}>{seg.label}</Fragment>;
-        const open = (e: MouseEvent) => openOptions({ planet: p.index, x: e.clientX, y: e.clientY });
+        const open = (e: MouseEvent) => {
+          // A keyboard click has no pointer position; open beside the link instead.
+          const box = e.currentTarget.getBoundingClientRect();
+          openOptions({ planet: p.index, x: e.clientX || box.left, y: e.clientY || box.bottom });
+        };
         return (
           <button key={i} className="link st-planet-link" style={{ color: factionColor(p.currentOwner) }} onClick={open}>
             {seg.label}
@@ -326,7 +330,7 @@ function PastStation({ s }: { s: StationRecord }) {
         <section className="st-hero brackets st-past" style={{ "--tone": factionColor(s.faction) } as CSSProperties}>
           <div className="st-hero-text">
             <div className="st-planet">
-              <StationEmblem station="css" size={34} color={factionColor(s.faction)} />
+              <StationEmblem station={s.art} size={34} color={factionColor(s.faction)} />
               <span>
                 <b>{s.name}</b>
                 <span className="caps">{s.status}</span>
@@ -339,7 +343,7 @@ function PastStation({ s }: { s: StationRecord }) {
           </div>
         </section>
         <div className="st-cols">
-          <Panel title="Operation Lightning Intercept" icon={History} tone={factionColor(s.faction)}>
+          <Panel title={s.operation} icon={History} tone={factionColor(s.faction)}>
             <Timeline events={s.timeline} />
           </Panel>
           <Panel title="Dossier" icon={FileText} tone={factionColor(s.faction)}>
@@ -357,13 +361,7 @@ function PastStation({ s }: { s: StationRecord }) {
           </Panel>
         </div>
       </div>
-      <CssHolo
-        readout={[
-          ["Struck", "Varylia 5 · Yed Prior"],
-          ["Last seen", "Mort orbit"],
-          ["Destroyed", "27 Jul 2186"],
-        ]}
-      />
+      {s.art === "css" && <CssHolo readout={s.readout} />}
     </div>
   );
 }

@@ -28,11 +28,13 @@ function Keys({ code, lit = code.length }: { code: Arrow[]; lit?: number }) {
 
 /** Opens the G.W.W. on its Super Destroyer manual, in one step so Back returns here. */
 function openUplink() {
-  const s = useUi.getState();
+  const { gww } = useUi.getState();
+  const top = gww[gww.length - 1];
+  const there = top?.kind === "manual" && top.id === "super-destroyers";
   useUi.setState({
     view: "hellpad",
     module: "gww",
-    gww: [...s.gww, { kind: "manual", id: "super-destroyers" }],
+    gww: there ? gww : [...gww, { kind: "manual" as const, id: "super-destroyers" }].slice(-50),
     options: null,
     detail: null,
   });
