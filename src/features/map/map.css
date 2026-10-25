@@ -171,18 +171,21 @@
 .poi-marks {
   pointer-events: none;
 }
-/* Stroke widths are in the logo's 24-unit grid. */
-.poi-halo {
-  fill: none;
+/* Stroke widths are in a 24-unit grid; an emblem's --u converts them to its own units. Emblem shapes fill
+   inline, hence !important. */
+.poi-halo,
+.poi-halo :is(path, rect) {
+  fill: none !important;
   stroke: currentColor;
-  stroke-width: 5;
+  stroke-width: calc(5px * var(--u, 1));
   stroke-opacity: 0.3;
   stroke-linejoin: round;
 }
-.poi-shape {
-  fill: color-mix(in srgb, currentColor 55%, white);
+.poi-shape,
+.poi-shape :is(path, rect) {
+  fill: color-mix(in srgb, currentColor 55%, white) !important;
   stroke: var(--void);
-  stroke-width: 1.4;
+  stroke-width: calc(1.4px * var(--u, 1));
   stroke-linejoin: round;
   paint-order: stroke;
 }
