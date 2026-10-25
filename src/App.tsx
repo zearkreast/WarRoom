@@ -5,11 +5,13 @@ import { NewsPage } from "./features/news/NewsPage";
 import { OverviewPage } from "./features/overview/OverviewPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import { Shell } from "./layout/Shell";
+import { useNavHistory } from "./navHistory";
 import { useUi } from "./state";
 import { useDataSync } from "./sync";
 
 export default function App() {
   useDataSync();
+  useNavHistory();
   const view = useUi((s) => s.view);
   return (
     <Shell>
