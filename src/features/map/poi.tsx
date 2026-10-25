@@ -1,7 +1,7 @@
 import type { PlanetEffect } from "../../domain/effects";
 import { factionColor } from "../../domain/factions";
 import type { Anomaly } from "../../domain/galaxy";
-import { EMBLEM_PATHS } from "../../ui/emblems";
+import { EmblemArt, hasEmblem } from "../../ui/emblems";
 
 /** Which of the game's map logos a point of interest wears. */
 export type PoiKind =
@@ -112,13 +112,21 @@ export function PoiGlyph({ kind, faction, size }: { kind: PoiKind; faction: stri
     const s = size * 1.25;
     return <image className={`poi-mark ${kind}`} href={mark} x={-s / 2} y={-s / 2} width={s} height={s} />;
   }
-  const d = kind === "enemy" ? (EMBLEM_PATHS[faction] ?? EMBLEM_PATHS.Automaton) : GLYPHS[kind === "factory" ? "industry" : kind];
+  if (kind === "enemy") {
+    const art = hasEmblem(faction) ? faction : "Automaton";
+    return (
+      <g className={`poi-glyph ${kind}`} style={{ color: factionColor(faction) }}>
+        <EmblemArt art={art} size={size} color="currentColor" className="poi-halo" />
+        <EmblemArt art={art} size={size} color="currentColor" className="poi-shape" />
+      </g>
+    );
+  }
+  const d = GLYPHS[kind === "factory" ? "industry" : kind];
   const transform = `translate(${-size / 2},${-size / 2}) scale(${size / 24})`;
-  const fillRule = kind === "enemy" ? "evenodd" : "nonzero";
   return (
     <g className={`poi-glyph ${kind}`} style={{ color: factionColor(faction) }}>
-      <path className="poi-halo" d={d} transform={transform} fillRule={fillRule} />
-      <path className="poi-shape" d={d} transform={transform} fillRule={fillRule} />
+      <path className="poi-halo" d={d} transform={transform} />
+      <path className="poi-shape" d={d} transform={transform} />
     </g>
   );
 }
