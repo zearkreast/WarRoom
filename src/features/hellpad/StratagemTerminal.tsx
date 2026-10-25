@@ -14,7 +14,7 @@ const PAD: { arrow: Arrow; icon: typeof ArrowUp; label: string }[] = [
 ];
 
 type Status = { tone: "idle" | "dialling" | "match" | "miss"; text: string };
-const IDLE: Status = { tone: "idle", text: "Dial a code with W A S D or the pad; select the terminal to use the arrow keys." };
+const IDLE: Status = { tone: "idle", text: "Dial a code with the pad, or select the terminal and use W A S D or the arrow keys." };
 
 function Keys({ code, lit = code.length }: { code: Arrow[]; lit?: number }) {
   return (
@@ -65,7 +65,7 @@ export function StratagemTerminal() {
       code.current = next;
       setEntered(next);
       const r = dial(next, STRATAGEMS);
-      if (r.kind === "partial") return setStatus({ tone: "dialling", text: "Dialling…" });
+      if (r.kind === "partial") return setStatus({ tone: "dialling", text: `Dialling: ${next.join(", ")}…` });
       busy.current = true;
       let then = reset;
       if (r.kind === "miss") setStatus({ tone: "miss", text: "No stratagem on file with that code." });
@@ -81,29 +81,33 @@ export function StratagemTerminal() {
     [reset],
   );
 
-  // W A S D work anywhere on the hub; the arrow keys only with the terminal selected, so they still scroll.
+  // The terminal or anything in it takes every key. Elsewhere W A S D count only while nothing has focus,
+  // so keyboard users moving through the page don't dial by accident.
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || e.key.startsWith("Arrow")) return;
-      if ((e.target as HTMLElement)?.closest("input, textarea, select, [contenteditable]")) return;
+      if (document.activeElement && document.activeElement !== document.body) return;
       const a = arrowOf(e.key);
       if (a) press(a);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [press]);
-  const onArrowKey = (e: KeyboardEvent) => {
-    if (!e.key.startsWith("Arrow") || e.target !== e.currentTarget) return;
+  const onKey = (e: KeyboardEvent) => {
+    const a = !e.ctrlKey && !e.metaKey && !e.altKey ? arrowOf(e.key) : undefined;
+    if (!a) return;
     e.preventDefault();
-    press(arrowOf(e.key)!);
+    e.stopPropagation();
+    press(a);
   };
 
   return (
-    <section className={`hp-term ${status.tone}`} aria-label="Stratagem terminal" tabIndex={0} onKeyDown={onArrowKey}>
+    <section className={`hp-term ${status.tone}`} aria-label="Stratagem terminal" tabIndex={0} onKeyDown={onKey}>
       <header className="hp-term-head caps">
         <LiveDot ok={status.tone !== "miss"} /> Stratagem terminal
         <span className="hp-term-uplink">
           Uplink on file <Keys code={UPLINK.code} lit={0} />
+          <span className="sr-only">: {UPLINK.code.join(", ")}</span>
         </span>
       </header>
       <div className="hp-term-body">

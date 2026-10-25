@@ -14,7 +14,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { useCampaigns, useEpisodes, useFreshPlanets, useSpaceStations, useWar } from "../../api/queries";
 import { MANUALS } from "../../data/gww";
 import { factionColor, factionLabel } from "../../domain/factions";
@@ -106,7 +106,12 @@ function ModuleTile(props: {
   const openModule = useUi((s) => s.openModule);
   const m = MODULES[props.id];
   return (
-    <button className="hp-mod" style={{ "--mod": m.color } as CSSProperties} onClick={() => openModule(props.id)}>
+    <button
+      className="hp-mod"
+      data-module={props.id}
+      style={{ "--mod": m.color } as CSSProperties}
+      onClick={() => openModule(props.id)}
+    >
       <span className="hp-mod-icon">
         <props.icon size={26} strokeWidth={1.5} />
       </span>
@@ -330,9 +335,19 @@ function ModuleBar({ module }: { module: HellpadModule }) {
 
 export function HellpadPage() {
   const { module } = useUi();
+  const root = useRef<HTMLDivElement>(null);
+  const was = useRef(module);
+  // Into a module, focus its strip's Back; out of one, the tile it was opened from.
+  useEffect(() => {
+    const left = was.current;
+    was.current = module;
+    if (left === module) return;
+    const to = module ? ".hp-bar-back" : `.hp-mod[data-module="${left}"]`;
+    root.current?.querySelector<HTMLElement>(to)?.focus({ preventScroll: true });
+  }, [module]);
   return (
     <div className="page scroll starfield">
-      <div className="page-inner">
+      <div className="page-inner" ref={root}>
         {module && <ModuleBar module={module} />}
         {module === null && <Hub />}
         {module === "planets" && <PlanetsModule />}

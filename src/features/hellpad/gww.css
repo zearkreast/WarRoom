@@ -732,12 +732,14 @@ button.gww-ad-open:focus-visible img {
 }
 .gww-fold summary::before {
   content: "+";
+  content: "+" / "";
   width: 1ch;
   font-weight: 800;
   color: var(--site);
 }
 .gww-fold[open] summary::before {
   content: "−";
+  content: "−" / "";
 }
 .gww-fold summary:hover b {
   color: var(--site);

@@ -38,7 +38,7 @@
   margin: var(--s-3) 0 0;
   font-size: var(--fs-label);
   letter-spacing: 0.16em;
-  color: var(--cta-deep);
+  color: color-mix(in srgb, var(--cta-deep) 60%, var(--text-hi));
 }
 .hp-mast-chips {
   display: flex;
@@ -73,7 +73,7 @@
   transition: border-color var(--t-state);
 }
 .hp-term:focus-visible {
-  outline: none;
+  outline: 1px solid transparent;
   border-color: var(--cta);
 }
 .hp-term.match {
@@ -216,8 +216,10 @@
 .hp-key.left {
   transform: rotate(-90deg);
 }
+/* Keyed in once on arrival, then left lit; endless blinking would need a way to stop it. */
 .hp-term-uplink .hp-key {
-  animation: hp-key 3.2s steps(1) infinite;
+  background: var(--cta-deep);
+  animation: hp-key 3.2s steps(1);
   animation-delay: calc(var(--i) * 0.32s);
 }
 @keyframes hp-key {
@@ -227,6 +229,16 @@
   }
   90% {
     background: var(--line-strong);
+  }
+}
+@media (forced-colors: active) {
+  .hp-key {
+    forced-color-adjust: none;
+    background: GrayText;
+  }
+  .hp-key.on,
+  .hp-term-uplink .hp-key {
+    background: CanvasText;
   }
 }
 @keyframes hp-shake {
@@ -302,7 +314,7 @@
   color: var(--label);
 }
 .hp-group-title .num {
-  color: var(--faint);
+  color: var(--text-dim);
 }
 .hp-group-title::after {
   content: "";
@@ -438,14 +450,16 @@
   box-shadow: 0 0 6px color-mix(in srgb, var(--cta) 50%, transparent);
 }
 .hp-mod.locked {
-  --mod: var(--faint);
+  --mod: var(--label);
   cursor: default;
   background:
     repeating-linear-gradient(-45deg, color-mix(in srgb, var(--cta) 5%, transparent) 0 3px, transparent 3px 11px),
     var(--surface-0);
   border-style: dashed;
   border-top-style: solid;
-  opacity: 0.75;
+}
+.hp-mod.locked .hp-mod-title {
+  color: var(--text-dim);
 }
 .hp-mod.locked .hp-mod-go {
   color: var(--label);
@@ -1484,11 +1498,40 @@
     background-position: 0 -120%;
   }
 }
+.st-holo-still {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  padding: 0;
+  background: none;
+  border: 1px solid color-mix(in srgb, var(--holo) 35%, transparent);
+  color: var(--holo);
+  cursor: pointer;
+}
+.st-holo-still:hover,
+.st-holo-still:focus-visible {
+  border-color: var(--holo);
+}
+.st-holo.still .st-holo-art,
+.st-holo.still .st-holo-svg {
+  animation: none;
+}
+.st-holo.still .st-holo-sweep {
+  display: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .st-holo-art,
   .st-holo-svg,
   .st-holo-sweep {
     animation: none;
+  }
+}
+@media (forced-colors: active) {
+  .st-holo-art {
+    forced-color-adjust: none;
+    background: CanvasText;
   }
 }
 @media (max-width: 900px) {

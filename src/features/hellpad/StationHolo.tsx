@@ -1,13 +1,25 @@
-import { useId, type CSSProperties, type ReactNode } from "react";
+import { Pause, Play } from "lucide-react";
+import { useId, useState, type CSSProperties, type ReactNode } from "react";
 import dssHolo from "../../assets/stations/dss-holo.webp";
 import { StationEmblem } from "../../ui/emblems";
 import { DSS_TONE, type DssState } from "../map/pawnArt";
 
-
 function Holo(props: { tone: string; title: ReactNode; stamp?: string; children: ReactNode; readout: [string, ReactNode][] }) {
+  const [still, setStill] = useState(false);
   return (
-    <aside className="st-holo" style={{ "--holo": props.tone } as CSSProperties} aria-label="Station hologram">
-      <header className="st-holo-head caps">{props.title}</header>
+    <aside className={`st-holo ${still ? "still" : ""}`} style={{ "--holo": props.tone } as CSSProperties} aria-label="Station hologram">
+      <header className="st-holo-head caps">
+        {props.title}
+        <button
+          className="st-holo-still"
+          aria-pressed={still}
+          aria-label="Hold the hologram still"
+          title={still ? "Play" : "Hold still"}
+          onClick={() => setStill((s) => !s)}
+        >
+          {still ? <Play size={12} /> : <Pause size={12} />}
+        </button>
+      </header>
       <div className="st-holo-stage">
         {props.children}
         <i className="st-holo-sweep" aria-hidden />
