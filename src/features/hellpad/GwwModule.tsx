@@ -22,7 +22,7 @@ import {
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { APP_NAME, APP_VERSION } from "../../config";
 import { CHAPTERS, MANUALS, TIPS, WIKI, WIKI_LICENCE } from "../../data/gww";
-import { ADS, BRANDS, COMPANIES, GOV, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
+import { ADS, COMPANIES, GOV, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
 import { FACTIONS, factionColor } from "../../domain/factions";
 import { nextYearly, plainText } from "../../domain/gwwText";
 import { useHistory } from "../../history/useHistory";
@@ -34,8 +34,6 @@ import { iconUrl } from "./gwwArt";
 import { GwwNavProvider, useGwwNav } from "./gwwNav";
 import {
   AdBox,
-  BrandPage,
-  BrandTile,
   CompanyPage,
   CompanyTile,
   CourseProgress,
@@ -58,9 +56,8 @@ function addressOf(p: GwwPage): string {
   if (p.kind === "manual") return MANUALS.find((m) => m.id === p.id)?.address ?? HOME;
   if (p.kind === "ministry") return MINISTRIES.find((m) => m.id === p.id)?.address ?? HOME;
   if (p.kind === "company") return COMPANIES.find((c) => c.id === p.id)?.address ?? HOME;
-  if (p.kind === "brand") return `se://market/${p.id}`;
   if (p.kind === "site") return p.id === "gov" ? GOV.address : "se://hc/war-log";
-  if (p.kind === "dir") return { manuals: "se://hc/manuals", gov: "se://gov/directory", corps: "se://corp", market: "se://market" }[p.id];
+  if (p.kind === "dir") return { manuals: "se://hc/manuals", gov: "se://gov/directory", corps: "se://corp" }[p.id];
   return HOME;
 }
 
@@ -178,8 +175,7 @@ function Home({ logText }: { logText: string }) {
   const companies = COMPANIES.filter((c) =>
     hit(c.name, c.trade, c.summary, c.slogan ?? "", c.address, ...c.sections.map((s) => `${s.text ?? ""} ${(s.products ?? []).join(" ")}`)),
   );
-  const brands = BRANDS.filter((b) => hit(b.name, b.trade, b.text, b.slogan ?? ""));
-  const none = official.length + manuals.length + companies.length + brands.length === 0;
+  const none = official.length + manuals.length + companies.length === 0;
   return (
     <div className="gww-home">
       <header className="gww-mast">
@@ -232,18 +228,6 @@ function Home({ logText }: { logText: string }) {
               ))}
             </Group>
           )}
-          {brands.length > 0 && (
-            <section className="gww-group">
-              <h3 className="gww-group-title caps">
-                Marketplace <span className="num">{brands.length}</span>
-              </h3>
-              <div className="gww-brands">
-                {brands.map((b) => (
-                  <BrandTile key={b.id} b={b} />
-                ))}
-              </div>
-            </section>
-          )}
           {!q && !wide && ads.tall && <AdBox ad={ads.tall} />}
         </div>
         {wide && ads.tall && (
@@ -268,10 +252,6 @@ function View({ page, logText, headingRef }: { page: GwwPage; logText: string; h
   if (page.kind === "company") {
     const c = COMPANIES.find((x) => x.id === page.id);
     if (c) return <CompanyPage c={c} headingRef={headingRef} />;
-  }
-  if (page.kind === "brand") {
-    const b = BRANDS.find((x) => x.id === page.id);
-    if (b) return <BrandPage b={b} headingRef={headingRef} />;
   }
   if (page.kind === "site") return page.id === "gov" ? <GovPage headingRef={headingRef} /> : <WarLogPage headingRef={headingRef} />;
   if (page.kind === "dir") return <DirPage id={page.id} headingRef={headingRef} logText={logText} />;
@@ -374,7 +354,7 @@ export function AboutModule() {
         <p>
           The G.W.W.'s training manuals are adapted from the <OutLink href={WIKI.home.url}>{WIKI.home.title}</OutLink>,
           chiefly <OutLink href={WIKI.mechanics.url}>{WIKI.mechanics.title}</OutLink>. Its government, ministry,
-          corporation and marketplace sites draw on the wiki's{" "}
+          and corporation sites draw on the wiki's{" "}
           <OutLink href={WIKI.government.url}>{WIKI.government.title}</OutLink>, ministry,{" "}
           <OutLink href={WIKI.corporations.url}>{WIKI.corporations.title}</OutLink> and{" "}
           <OutLink href={WIKI.minorCorporations.url}>{WIKI.minorCorporations.title}</OutLink> pages; each page names its

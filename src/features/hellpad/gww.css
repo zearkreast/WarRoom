@@ -798,10 +798,6 @@ button.gww-ad-open:focus-visible img {
   height: 72px;
   object-fit: contain;
 }
-.gww-banner-icon > .gww-banner-art {
-  object-fit: cover;
-  border: 1px solid color-mix(in srgb, var(--site) 45%, var(--line));
-}
 .gww-banner-text {
   min-width: 0;
 }
@@ -1210,7 +1206,7 @@ button.gww-ad-open:focus-visible img {
   height: 1px;
 }
 
-/* ---------- Course, directories, marketplace ---------- */
+/* ---------- Course and directories ---------- */
 .gww-course {
   display: flex;
   flex-direction: column;
@@ -1380,51 +1376,6 @@ button.gww-ad-open:focus-visible img {
 }
 .gww-group-all:hover {
   color: var(--cta);
-}
-.gww-brands {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr));
-  gap: var(--s-4);
-}
-.gww-brand-tile {
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  overflow: hidden;
-  text-align: left;
-  color: var(--text-dim);
-  background: var(--surface-1);
-  border: 1px solid var(--line-strong);
-  cursor: pointer;
-  transition:
-    border-color var(--t-state),
-    transform var(--t-state) var(--ease);
-}
-.gww-brand-tile:hover,
-.gww-brand-tile:focus-visible {
-  border-color: var(--warn);
-  transform: translateY(-2px);
-}
-.gww-brand-tile img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  border-bottom: 1px solid var(--line);
-}
-.gww-brand-tile > span {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
-  padding: var(--s-3) var(--s-4);
-}
-.gww-brand-tile b {
-  font-size: var(--fs-body-s);
-  color: var(--text-hi);
-}
-.gww-brand-tile .caps {
-  font-size: var(--fs-micro);
-  letter-spacing: 0.14em;
 }
 .gww-holiday {
   display: inline-flex;

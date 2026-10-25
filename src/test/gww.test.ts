@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CHAPTERS, MANUALS, TIPS } from "../data/gww";
-import { ADS, BRANDS, COMPANIES, GOV, MINISTRIES, type SiteSection } from "../data/gwwSites";
+import { ADS, COMPANIES, GOV, MINISTRIES, type SiteSection } from "../data/gwwSites";
 import { linksIn, nextYearly, parseRich, plainText } from "../domain/gwwText";
 import { adUrl, iconUrl, logoUrl } from "../features/hellpad/gwwArt";
 import { APP_PAGES, pageOf } from "../features/hellpad/gwwNav";
@@ -23,7 +23,6 @@ const allText = (): string[] => {
       ...(s.timeline ?? []).map((d) => d.text),
     ]),
     ...MANUALS.flatMap((m) => m.tips),
-    ...BRANDS.map((b) => b.text),
   ];
 };
 
@@ -32,9 +31,8 @@ const targets = (): string[] => [
   ...MANUALS.flatMap((m) => m.related),
   ...MINISTRIES.flatMap((m) => [...(m.related ?? []), ...(m.ties ?? []).map((t) => t.to)]),
   ...COMPANIES.flatMap((c) => [...(c.related ?? []), ...(c.ties ?? []).map((t) => t.to)]),
-  ...BRANDS.flatMap((b) => b.related ?? []),
   ...GOV.related,
-  ...ADS.map((a) => a.by),
+  ...ADS.flatMap((a) => ("by" in a ? [a.by] : [])),
 ];
 
 describe("galactic wide web", () => {
@@ -49,15 +47,18 @@ describe("galactic wide web", () => {
     ];
     expect(icons.filter((i) => !iconUrl(i))).toEqual([]);
     expect(COMPANIES.flatMap((c) => [c.logo, c.showcase?.image].filter((l): l is string => !!l && !logoUrl(l)))).toEqual([]);
-    const ads = [...ADS.map((a) => a.file), ...MINISTRIES.flatMap((m) => m.ads ?? []), ...COMPANIES.flatMap((c) => c.ads ?? []), ...BRANDS.flatMap((b) => b.ads)];
-    expect(ads.filter((a) => !adUrl(a))).toEqual([]);
-    expect(ADS.filter((a) => !ads.slice(ADS.length).includes(a.file)).map((a) => a.file)).toEqual([]);
+    const placed = [...MINISTRIES.flatMap((m) => m.ads ?? []), ...COMPANIES.flatMap((c) => c.ads ?? [])];
+    expect([...ADS.map((a) => a.file), ...placed].filter((a) => !adUrl(a))).toEqual([]);
+    expect(placed.filter((f) => !ADS.some((a) => a.file === f))).toEqual([]);
+    // A site's own advert shows on its site, so it has to link there.
+    const site = (f: string) => [...MINISTRIES, ...COMPANIES].find((s) => s.ads?.includes(f));
+    expect(ADS.filter((a) => site(a.file) && !("by" in a && a.by.endsWith(`:${site(a.file)!.id}`))).map((a) => a.file)).toEqual([]);
   });
 
   it("gives every site its own address and id", () => {
     const addresses = [...MANUALS, ...MINISTRIES, ...COMPANIES, GOV].map((s) => s.address);
     expect(new Set(addresses).size).toBe(addresses.length);
-    for (const list of [MANUALS, MINISTRIES, COMPANIES, BRANDS]) expect(new Set(list.map((x) => x.id)).size).toBe(list.length);
+    for (const list of [MANUALS, MINISTRIES, COMPANIES]) expect(new Set(list.map((x) => x.id)).size).toBe(list.length);
   });
 
   it("links only to pages, tracker views and planets that exist", () => {

@@ -1,15 +1,15 @@
 /**
  * G.W.W. text links. Content writes `[[kind:target|label]]` inline:
- * - `manual:`, `ministry:`, `company:`, `brand:` an id; `site:log` or `site:gov`; `dir:` a directory id;
+ * - `manual:`, `ministry:`, `company:` an id; `site:log` or `site:gov`; `dir:` a directory id;
  * - `planet:` a planet's name;
  * - `app:` a page outside the G.W.W., one of `APP_PAGES` in gwwNav.tsx.
  */
 
-export type LinkKind = "manual" | "ministry" | "company" | "brand" | "site" | "dir" | "planet" | "app";
+export type LinkKind = "manual" | "ministry" | "company" | "site" | "dir" | "planet" | "app";
 
 export type Segment = { text: string } | { kind: LinkKind; target: string; label: string };
 
-const KINDS = new Set<string>(["manual", "ministry", "company", "brand", "site", "dir", "planet", "app"]);
+const KINDS = new Set<string>(["manual", "ministry", "company", "site", "dir", "planet", "app"]);
 const LINK = /\[\[([a-z]+):([^|\]]+)\|([^\]]+)\]\]/g;
 
 /** Splits text into plain runs and links; markup with an unknown kind stays as its label. */
