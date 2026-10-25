@@ -34,18 +34,55 @@ export function pawnArt(e: PlanetEffect): { key: string; href: string } | undefi
   return key && href ? { key, href } : undefined;
 }
 
-export type DssState = "active" | "cooldown" | "build" | "default";
+export type DssState = "active" | "cooldown" | "offline" | "default";
 
-/** The station's hologram: lit while an action is deployed, red while one cools down, building while one gathers. */
+/**
+ * The station's hologram: yellow while an action is deployed, red while one cools down, grey when none
+ * can be prepared, deployed or cooled down (the API has no offline flag of its own), blue otherwise.
+ */
 export function dssState(actions: TacticalAction[], now: number): DssState {
   const live = (a: TacticalAction) => Date.parse(a.statusExpire) > now;
   if (actions.some((a) => a.status === 2 && live(a))) return "active";
   if (actions.some((a) => a.status === 3 && live(a))) return "cooldown";
-  if (actions.some((a) => a.costs.some((c) => c.deltaPerSecond > 0 && c.currentValue < c.targetValue))) return "build";
+  if (!actions.some((a) => a.status >= 1 && a.status <= 3)) return "offline";
   return "default";
 }
 
 export function dssArt(state: DssState): { key: string; href: string } | undefined {
   const href = art(`dss_${state}`);
   return href ? { key: `dss_${state}`, href } : undefined;
+}
+
+const ACTION_ART = import.meta.glob<string>("../../assets/dss-actions/*.png", {
+  eager: true,
+  import: "default",
+  query: "?url",
+});
+
+/** Tactical action names, as the station spells them, to their icon. */
+const ACTIONS: [RegExp, string][] = [
+  [/eagle storm/i, "eagle_storm"],
+  [/orbital blockade/i, "orbital_blockade"],
+  [/heavy ordnance/i, "heavy_ordnance"],
+];
+
+export interface DssAction {
+  key: string;
+  href: string;
+}
+
+export interface DssInfo {
+  state: DssState;
+  /** Actions deployed right now that have an icon. */
+  active: DssAction[];
+}
+
+export function dssInfo(actions: TacticalAction[], now: number): DssInfo {
+  const active = actions.flatMap((a) => {
+    if (a.status !== 2 || Date.parse(a.statusExpire) <= now) return [];
+    const key = ACTIONS.find(([re]) => re.test(a.name))?.[1];
+    const href = key && ACTION_ART[`../../assets/dss-actions/${key}.png`];
+    return key && href ? [{ key, href }] : [];
+  });
+  return { state: dssState(actions, now), active };
 }
