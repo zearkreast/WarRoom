@@ -419,6 +419,8 @@ button.gww-ad-open:focus-visible img {
 }
 .gww-ad.billboard.tall {
   --ad-h: clamp(240px, 40vw, 320px);
+  align-self: center;
+  width: min(100%, 420px);
 }
 .gww-ad.billboard .gww-ad-open {
   height: var(--ad-h);

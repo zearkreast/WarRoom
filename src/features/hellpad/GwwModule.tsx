@@ -117,10 +117,15 @@ function HolidayChip() {
 
 function Home({ logText }: { logText: string }) {
   const [query, setQuery] = useState("");
-  const [ads] = useState(() => ({
-    tall: pickOne(ADS.filter((a) => a.shape === "tall")),
-    banner: pickOne(ADS.filter((a) => a.shape === "wide")),
-  }));
+  const [ads] = useState(() => {
+    const landscape = ADS.filter((a) => a.shape === "wide");
+    const banner = pickOne(landscape);
+    return {
+      tall: pickOne(ADS.filter((a) => a.shape === "tall")),
+      banner,
+      second: pickOne(landscape.filter((a) => a !== banner)),
+    };
+  });
   const wide = useMedia(RAIL_QUERY);
   const q = query.trim().toLowerCase();
   const hit = (...text: string[]) => !q || text.some((t) => plainText(t).toLowerCase().includes(q));
@@ -227,7 +232,7 @@ function Home({ logText }: { logText: string }) {
               ))}
             </Group>
           )}
-          {!q && !wide && ads.tall && <AdBox ad={ads.tall} />}
+          {!q && !wide && ads.second && <AdBox ad={ads.second} />}
         </div>
         {wide && ads.tall && (
           <aside className="gww-rail" aria-label="Sponsored">

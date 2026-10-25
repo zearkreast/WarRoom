@@ -106,7 +106,6 @@ export const MANUALS: Manual[] = [
     title: "How the Galactic War works",
     address: "se://hc/manuals/basics",
     summary: "The war on one page: impact, planet health, supply lines and campaigns.",
-    icon: "super-earth",
     sections: [
       {
         heading: "The short version",

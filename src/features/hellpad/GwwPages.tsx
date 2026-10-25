@@ -8,6 +8,7 @@ import {
   Check,
   CircleHelp,
   CloudFog,
+  Earth,
   Flag,
   Globe2,
   GraduationCap,
@@ -53,6 +54,7 @@ type HeadingRef = RefCallback<HTMLElement>;
 
 /** Drawn icons for manuals the game has no picture for. */
 const MANUAL_ICONS: Record<string, IconLike> = {
+  basics: Earth,
   resistance: Activity,
   regions: Building2,
   "supply-lines": Network,
