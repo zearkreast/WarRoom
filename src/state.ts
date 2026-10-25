@@ -95,6 +95,8 @@ interface SettingsState {
   seenDispatch: number;
   /** App version whose changelog the user has opened. */
   seenChangelog: string;
+  /** Time of the newest Strohmann News item on the last visit; 0 before the first. */
+  newsSeenAt: number;
   setAlert(k: keyof AlertSettings, v: boolean): void;
   set<
     K extends
@@ -117,6 +119,7 @@ interface SettingsState {
   resetUnread(): void;
   markSeen(assignments: number[], dispatch: number): void;
   markChangelog(version: string): void;
+  markNewsSeen(at: number): void;
 }
 
 export const useSettings = create<SettingsState>()(
@@ -137,6 +140,7 @@ export const useSettings = create<SettingsState>()(
       seenAssignments: [],
       seenDispatch: 0,
       seenChangelog: "",
+      newsSeenAt: 0,
       setAlert: (k, v) => set((s) => ({ alerts: { ...s.alerts, [k]: v } })),
       set: (k, v) => set({ [k]: v } as Partial<SettingsState>),
       togglePin: (planet) =>
@@ -148,6 +152,7 @@ export const useSettings = create<SettingsState>()(
       resetUnread: () => set({ seenChangelog: "", hintsSeen: [] }),
       markSeen: (seenAssignments, seenDispatch) => set({ seenAssignments, seenDispatch }),
       markChangelog: (seenChangelog) => set({ seenChangelog }),
+      markNewsSeen: (at) => set((s) => ({ newsSeenAt: Math.max(s.newsSeenAt, at) })),
     }),
     { name: "warcommand-settings" },
   ),

@@ -15,8 +15,14 @@ interface Art {
 const ART: Record<string, Art> = { "invasion-fleet": { box: [0, 0, 128, 128], mask: invasionFleet } };
 for (const [path, svg] of Object.entries(FILES)) {
   const slug = path.split("/").pop()!.replace(".svg", "");
-  const box = svg.match(/viewBox="([^"]+)"/)![1].split(/\s+/).map(Number) as Art["box"];
-  const body = svg.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "").replace(/<desc>[\s\S]*?<\/desc>/, "");
+  const box = svg
+    .match(/viewBox="([^"]+)"/)![1]
+    .split(/\s+/)
+    .map(Number) as Art["box"];
+  const body = svg
+    .replace(/^[\s\S]*?<svg[^>]*>/, "")
+    .replace(/<\/svg>\s*$/, "")
+    .replace(/<desc>[\s\S]*?<\/desc>/, "");
   ART[slug] = { box, body };
 }
 
@@ -80,10 +86,53 @@ export function EmblemArt({
         <mask id={maskId}>
           <image href={a.mask} x={x} y={y} width={w} height={h} />
         </mask>
-        <rect x={x} y={y} width={w} height={h} style={{ fill: "currentColor", stroke: "none" }} mask={`url(#${maskId})`} />
+        <rect
+          x={x}
+          y={y}
+          width={w}
+          height={h}
+          style={{ fill: "currentColor", stroke: "none" }}
+          mask={`url(#${maskId})`}
+        />
       </g>
     );
   return <g className={className} style={look} transform={transform} dangerouslySetInnerHTML={{ __html: a.body! }} />;
+}
+
+/** The game paints the Super Earth emblem cream over gold: the globe pale, the arcs beneath it gold. */
+export function SealGradient({ id }: { id: string }) {
+  return (
+    <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="#f4e4c1" />
+      <stop offset="58%" stopColor="#ead09a" />
+      <stop offset="100%" stopColor="#d9a521" />
+    </linearGradient>
+  );
+}
+
+/** The Super Earth emblem in the game's cream and gold, for use inside another SVG with a SealGradient. */
+export function SealArt({ size, gradient }: { size: number; gradient: string }) {
+  return (
+    <EmblemArt
+      art="Humans"
+      size={size}
+      className="emblem-seal"
+      style={{ "--seal": `url(#${gradient})` } as CSSProperties}
+    />
+  );
+}
+
+/** The Super Earth emblem as the game shows it, at least 36px so its globe and arcs stay apart. */
+export function SuperEarthSeal({ size = 40 }: { size?: number }) {
+  const id = useId();
+  return (
+    <svg className="emblem" width={size} height={size} viewBox="-12 -12 24 24" aria-hidden>
+      <defs>
+        <SealGradient id={id} />
+      </defs>
+      <SealArt size={24} gradient={id} />
+    </svg>
+  );
 }
 
 export function FactionEmblem({ faction, size = 16, color }: { faction: string; size?: number; color?: string }) {

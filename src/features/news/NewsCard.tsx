@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import { useFreshPlanets } from "../../api/queries";
-import type { Dispatch } from "../../api/types";
-import { dispatchBody, dispatchKind, type DispatchKind } from "../../domain/dispatch";
-import { dispatchTitle, fmtAgo, parseMarkup, sestClock, sestDate } from "../../domain/format";
+import { dispatchBody, type DispatchKind } from "../../domain/dispatch";
+import { parseMarkup } from "../../domain/format";
 import { useUi } from "../../state";
 import "./news.css";
 
@@ -21,7 +20,7 @@ export const KIND_LABEL: Record<DispatchKind, string> = {
  */
 export function MarkupText({
   message,
-  className = "nc-body",
+  className = "ni-body",
   whole = false,
 }: {
   message: string;
@@ -53,28 +52,5 @@ export function MarkupText({
         );
       })}
     </p>
-  );
-}
-
-export function NewsCard({ d, now }: { d: Dispatch; now: number }) {
-  const kind = dispatchKind(d.message);
-  const at = Date.parse(d.published);
-  return (
-    <article className={`nc nc-${kind}`}>
-      <div className="nc-banner" aria-hidden>
-        <span className="nc-word">{KIND_LABEL[kind]}</span>
-      </div>
-      <div className="nc-tagrow">
-        <span className="nc-age caps">{fmtAgo(at, now)}</span>
-      </div>
-      <h3 className="nc-title">{dispatchTitle(d.message)}</h3>
-      <MarkupText message={d.message} />
-      <footer className="nc-foot num caps">
-        <span>ID {d.id}</span>
-        <span>
-          SEST {sestClock(at).slice(0, 5)} · {sestDate(at)}
-        </span>
-      </footer>
-    </article>
   );
 }
