@@ -28,7 +28,7 @@ import { GwwModule } from "./GwwModule";
 import { PastCampaignsModule } from "./PastCampaignsModule";
 import { PlanetsModule } from "./PlanetsModule";
 import { StationsModule } from "./StationsModule";
-import { StratagemTerminal } from "./StratagemTerminal";
+import { CallInCode, CallInWait, MarkPad, useCallIn } from "./CallIn";
 import "./hellpad.css";
 
 const MODULES: Record<HellpadModule, { title: string; path: string; color: string }> = {
@@ -52,9 +52,13 @@ function Uplink() {
 function Mast() {
   const war = useWar().data;
   const fronts = useCampaigns().data?.length;
+  const callIn = useCallIn();
   return (
     <header className="hp-mast">
-      <HellpadMark size={64} className="hp-mark" />
+      <span className="hp-mark-box">
+        <HellpadMark size={64} className="hp-mark" />
+        <MarkPad press={callIn.press} />
+      </span>
       <div className="hp-mast-text">
         <h1 className="hp-mast-title">Hellpad</h1>
         <p className="caps">Field terminal · Super Destroyer uplink</p>
@@ -64,6 +68,8 @@ function Mast() {
           {war && <span>{fmtInt(war.statistics.playerCount)} Helldivers deployed</span>}
         </div>
       </div>
+      <CallInCode at={callIn.at} miss={callIn.miss} press={callIn.press} />
+      <CallInWait open={callIn.waiting} onCancel={callIn.reset} />
     </header>
   );
 }
@@ -260,7 +266,6 @@ function Hub() {
   return (
     <div className="hp-hub">
       <Mast />
-      <StratagemTerminal />
       <StationReport />
       <Group title="Field modules" count={4}>
         <PlanetsTile />

@@ -1,20 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { STRATAGEMS, UPLINK } from "../data/stratagems";
-import { arrowOf, dial } from "../domain/stratagems";
+import { CALL_IN } from "../data/stratagems";
+import { arrowOf, step } from "../domain/stratagems";
 
-describe("stratagem terminal", () => {
-  it("knows a code by its start, its whole, or not at all", () => {
-    expect(dial(["up", "down"], STRATAGEMS)).toEqual({ kind: "partial" });
-    expect(dial(["up", "down", "right", "left", "up"], STRATAGEMS)).toMatchObject({ kind: "match", stratagem: { name: "Reinforce" } });
-    expect(dial([...UPLINK.code], STRATAGEMS)).toEqual({ kind: "match", stratagem: UPLINK });
-    expect(dial(["left", "left"], STRATAGEMS)).toEqual({ kind: "miss" });
+describe("stratagem codes", () => {
+  const code = CALL_IN.code;
+
+  it("steps on with the next arrow and falls back on a wrong one", () => {
+    expect(code.reduce((at, a) => step(at, a, code), 0)).toBe(code.length);
+    expect(step(3, "right", code)).toBe(0);
+    expect(step(3, "up", code)).toBe(1);
   });
 
-  it("has no code that is the start of another, so every code can be dialled", () => {
-    const starts = STRATAGEMS.flatMap((a) =>
-      STRATAGEMS.filter((b) => a !== b && a.code.every((k, i) => b.code[i] === k)).map((b) => `${a.name} → ${b.name}`),
-    );
-    expect(starts).toEqual([]);
+  it("keeps the presses that still start the code", () => {
+    expect(step(2, "up", code)).toBe(2);
   });
 
   it("reads W A S D and the arrow keys", () => {
