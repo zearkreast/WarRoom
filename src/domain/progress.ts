@@ -41,10 +41,28 @@ const MIN_WINDOW_MS = 10 * 60_000;
 const RATE_WINDOW_MS = 60 * 60_000;
 
 /**
- * Percent-per-hour trend: the least-squares slope over the samples from the last hour.
- * The game updates progress in coarse steps, so a slope over every sample is far steadier
- * than comparing the first and last ones. Returns null until there's 10 minutes of
- * comparable data (same owner and defense state, so a capture doesn't produce a spike).
+ * Least-squares slope of `value` per hour. The game updates progress in coarse steps, so a slope over
+ * every reading is far steadier than comparing the first and last ones.
+ */
+export function slopePerHour(points: { at: number; value: number }[]): number | null {
+  const n = points.length;
+  if (n < 2) return null;
+  const t0 = points[0].at;
+  const meanT = points.reduce((s, x) => s + (x.at - t0), 0) / n;
+  const meanV = points.reduce((s, x) => s + x.value, 0) / n;
+  let num = 0;
+  let den = 0;
+  for (const x of points) {
+    const dt = x.at - t0 - meanT;
+    num += dt * (x.value - meanV);
+    den += dt * dt;
+  }
+  return den ? (num / den) * 3_600_000 : null;
+}
+
+/**
+ * Percent-per-hour trend over the samples from the last hour. Returns null until there's 10 minutes
+ * of comparable data (same owner and defense state, so a capture doesn't produce a spike).
  */
 export function ratePerHour(samples: Sample[]): number | null {
   if (samples.length < 2) return null;
@@ -54,19 +72,7 @@ export function ratePerHour(samples: Sample[]): number | null {
     (s) => s.at >= last.at - RATE_WINDOW_MS && s.owner === last.owner && s.defending === last.defending,
   );
   if (last.at - window[0].at < MIN_WINDOW_MS) return null;
-
-  const t0 = window[0].at;
-  const n = window.length;
-  const meanT = window.reduce((s, x) => s + (x.at - t0), 0) / n;
-  const meanP = window.reduce((s, x) => s + x.percent, 0) / n;
-  let num = 0;
-  let den = 0;
-  for (const x of window) {
-    const dt = x.at - t0 - meanT;
-    num += dt * (x.percent - meanP);
-    den += dt * dt;
-  }
-  return den ? (num / den) * 3_600_000 : null;
+  return slopePerHour(window.map((s) => ({ at: s.at, value: s.percent })));
 }
 
 /** Epoch ms when the planet reaches 100% at the current rate, or null if it isn't progressing. */

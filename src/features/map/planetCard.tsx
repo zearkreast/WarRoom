@@ -1,7 +1,7 @@
 import { Crosshair, FileText, MousePointerClick, Pin, PinOff, X } from "lucide-react";
 import { useEffect, type CSSProperties } from "react";
 import type { Planet } from "../../api/types";
-import { biomeTint, planetTint, regenPctPerHour } from "../../domain/biomes";
+import { biomeTint, planetTint, regenPctPerHour, resistanceLevel } from "../../domain/biomes";
 import { hasPawn, type PlanetEffect } from "../../domain/effects";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtInt, fmtPct } from "../../domain/format";
@@ -17,12 +17,6 @@ import { PoiGlyph, poiImage, poiKind, poiOrigin } from "./poi";
 export type Hover = { x: number; y: number } & (
   { planet: Planet; landmark?: never } | { landmark: Landmark; planet?: never }
 );
-
-function resistance(regen: number): { label: string; color: string } {
-  if (regen < 1) return { label: "Low", color: "var(--good)" };
-  if (regen < 2.5) return { label: "Average", color: "var(--warn)" };
-  return { label: "High", color: "var(--bad)" };
-}
 
 const ANOMALY_KIND: Record<string, string> = {
   wormhole: "Wormhole",
@@ -69,7 +63,7 @@ function PlanetSummary({ p, active, effects }: { p: Planet; active: boolean; eff
   const chips = shown.filter((e) => e.kind !== "poi");
   const pct = enemy ? trackedPercent(p) : 100;
   const regen = regenPctPerHour(p);
-  const res = resistance(regen);
+  const res = resistanceLevel(regen);
   return (
     <>
       <div className={`hc-art ${poiImage(pois, anomaly) ? "poi" : ""}`} />

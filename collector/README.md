@@ -11,16 +11,16 @@ Supabase; the app reads from Supabase and never calls the API itself.
   whole queue for its Retry-After; timeouts and server errors pause it for 30 s, doubling up to 5 min.
 - If no job has succeeded for 10 minutes it exits, and Docker or systemd starts it again clean.
 
-| Job         | Every  | Writes                                                                                   |
-| ----------- | ------ | ---------------------------------------------------------------------------------------- |
-| planets     | 5 min  | `planets` + `planets_static` snapshots, samples, ownership changes                       |
-| campaigns   | 1 min  | `campaigns` snapshot (with progress rates), samples, ownership changes                   |
-| war         | 2 min  | `war` snapshot, a `war_samples` row                                                      |
-| assignments | 5 min  | `assignments` snapshot                                                                   |
-| dispatches  | 5 min  | `dispatches` snapshot (newest 50), only when there's a new one                           |
-| stations    | 5 min  | `space_stations` snapshot, a `station_jumps` row when a station has moved                |
+| Job         | Every  | Writes                                                                                     |
+| ----------- | ------ | ------------------------------------------------------------------------------------------ |
+| planets     | 5 min  | `planets` + `planets_static` snapshots, samples, ownership changes                         |
+| campaigns   | 1 min  | `campaigns` snapshot (with planet and region progress rates), samples, ownership changes   |
+| war         | 2 min  | `war` snapshot, a `war_samples` row                                                        |
+| assignments | 5 min  | `assignments` and `order_samples` (the last day of Major Order progress) snapshots         |
+| dispatches  | 5 min  | `dispatches` snapshot (newest 50), only when there's a new one                             |
+| stations    | 5 min  | `space_stations` snapshot, a `station_jumps` row when a station has moved                  |
 | episodes    | 15 min | `episodes` (Galactic Campaigns) and `planet_effects` snapshots, from the official game API |
-| compact     | 1 hour | thins samples and war samples older than 48 h to one per 15 min                          |
+| compact     | 1 hour | thins samples and war samples older than 48 h to one per 15 min                            |
 
 ## Setup on a VDS (Docker)
 
@@ -60,6 +60,9 @@ journalctl -u warroom-collector -f
 
 The schema is in `supabase/migrations/`, applied in order. The secret key bypasses row-level security, so it
 only ever lives in `collector/.env` on the server. The app uses the publishable key, which can only read.
+
+Region rates are measured from readings kept in memory, so after a restart they read as measuring for about
+10 minutes. Major Order readings live in the `order_samples` snapshot and carry over a restart.
 
 The `episodes` snapshot keeps every campaign it has seen, so ended campaigns stay even if the game API stops
 listing them. A Major Order is dated when the collector first sees it on a running campaign; older ones take

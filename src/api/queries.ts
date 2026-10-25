@@ -6,6 +6,7 @@ import {
   type CampaignLive,
   type EffectsLive,
   type EpisodeLive,
+  type OrderSample,
   type PlanetLive,
   type PlanetStatic,
   type SnapshotKind,
@@ -153,12 +154,15 @@ const selectEpisodes = (s: Snapshots) => s.data.episodes as EpisodeLive[] | unde
 const selectWar = (s: Snapshots) => s.data.war as War | undefined;
 const selectAssignments = (s: Snapshots) => s.data.assignments as Assignment[] | undefined;
 const selectDispatches = (s: Snapshots) => s.data.dispatches as Dispatch[] | undefined;
+const selectOrderSamples = (s: Snapshots) => s.data.order_samples as OrderSample[] | undefined;
 
 export const usePlanets = () => useSnapshot(selectPlanets);
 export const useCampaigns = () => useSnapshot(selectCampaigns);
 export const useWar = () => useSnapshot(selectWar);
 export const useAssignments = () => useSnapshot(selectAssignments);
 export const useDispatches = () => useSnapshot(selectDispatches);
+/** The last day of Major Order readings; undefined until the collector has written them once. */
+export const useOrderSamples = () => useSnapshot(selectOrderSamples);
 /** Newest collector write seen, epoch ms; used to warn when the collector has stopped. */
 const selectLastUpdate = (s: Snapshots) => (s.since ? Date.parse(s.since) : undefined);
 export const useLastUpdate = () => useSnapshot(selectLastUpdate);

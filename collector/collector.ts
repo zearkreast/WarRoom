@@ -18,7 +18,9 @@ import {
   toEpisodes,
   toStationLive,
   toWarSample,
+  addOrderSamples,
   type EpisodeLive,
+  type OrderSample,
   type SnapshotKind,
   type StationLive,
 } from "../src/domain/snapshot.ts";
@@ -49,6 +51,8 @@ export function createTasks(
   let lastCampaigns: Campaign[] = [];
   /** Each station's planet as last seen; read back from the stored snapshot after a restart. */
   let stationAt: Map<number, number> | null = null;
+  /** The last day of Major Order readings; read back from the stored snapshot after a restart. */
+  let orderSamples: OrderSample[] | null = null;
 
   const snapshot = (kind: SnapshotKind, data: unknown) =>
     db.upsert("snapshots", [{ kind, data, fetched_at: new Date(now()).toISOString() }]);
@@ -86,7 +90,9 @@ export function createTasks(
         );
         await snapshot(
           "campaigns",
-          campaigns.map((c) => toCampaignLive(c, recorder.rate(c.planet.index))),
+          campaigns.map((c) =>
+            toCampaignLive(c, recorder.rate(c.planet.index), (region) => recorder.regionRate(c.planet.index, region)),
+          ),
         );
         return `${campaigns.length} fronts, ${samples} samples${changeNote(changes.length)}`;
       },
@@ -107,6 +113,12 @@ export function createTasks(
       async run() {
         const a = await hd2.get<Assignment[]>("/api/v1/assignments");
         await snapshot("assignments", a);
+        if (!orderSamples) {
+          const rows = await db.select<{ data: OrderSample[] }>("snapshots", "select=data&kind=eq.order_samples");
+          orderSamples = rows[0]?.data ?? [];
+        }
+        orderSamples = addOrderSamples(orderSamples, a, now());
+        await snapshot("order_samples", orderSamples);
         return `${a.length} orders`;
       },
     },

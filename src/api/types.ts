@@ -47,8 +47,12 @@ export interface Region {
   health: number | null;
   maxHealth: number;
   size: string;
+  /** Enemy regeneration in health per second, while the region is fought over. */
+  regenPerSecond: number | null;
   isAvailable: boolean;
   players: number;
+  /** Progress trend in %/h from the collector; only on campaign planets, null while measuring. */
+  rate?: number | null;
 }
 
 export interface Planet {

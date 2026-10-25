@@ -4,23 +4,28 @@ import { useAssignments, useEpisodes, useFreshPlanets } from "../../api/queries"
 import type { Assignment, Planet } from "../../api/types";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtCompact, fmtPct } from "../../domain/format";
-import { describeAssignment, orderName, rewardLabel, type TaskView } from "../../domain/majorOrder";
-import { liberationPercent, projectedAt, projectedCompletion, trackedPercent } from "../../domain/progress";
+import {
+  describeAssignment,
+  orderName,
+  orderVerdict,
+  rewardLabel,
+  type TaskOutlook,
+  type TaskView,
+} from "../../domain/majorOrder";
+import { trackedPercent } from "../../domain/progress";
 import { useUi } from "../../state";
 import { Countdown, Empty, Loading, Panel } from "../../ui/primitives";
-import { usePlanetRate } from "../planets/useFronts";
-import { OrderBar, useCountTask, useCountUp } from "./OrderBar";
+import { OrderBar, OutlookTag, useCountTask, useCountUp } from "./OrderBar";
+import { useOutlooks } from "./useOutlooks";
 import "./majorOrder.css";
 
-function PlanetTask({ t, expires }: { t: TaskView; expires: number }) {
+const signed = (n: number, text: string) => `${n >= 0 ? "+" : "−"}${text}`;
+
+function PlanetTask({ t, o }: { t: TaskView; o: TaskOutlook }) {
   const p = t.planet!;
-  const rate = usePlanetRate(p.index);
   const openOptions = useUi((s) => s.openOptions);
-  const owned = p.currentOwner === "Humans" && !p.event;
-  const done = t.done || owned;
-  const pct = owned ? 100 : trackedPercent(p);
-  const end = owned ? null : projectedAt(liberationPercent(p), rate, Date.now(), expires);
-  const completeAt = owned ? null : projectedCompletion(pct, rate, Date.now());
+  const done = o.outlook === "done";
+  const pct = done ? 100 : trackedPercent(p);
   const shown = useCountUp(pct);
   const Check = done ? CheckSquare : Square;
   return (
@@ -46,31 +51,30 @@ function PlanetTask({ t, expires }: { t: TaskView; expires: number }) {
         valueText={`${fmtPct(pct, 1)}${done ? ", complete" : ""}`}
         tone="var(--f-humans)"
         rest={factionColor(p.currentOwner)}
-        marker={end}
+        marker={done ? null : o.end}
         done={done}
       />
-      {!owned && (
-        <div className="mo-task-foot num">
-          {end != null ? (
-            <span style={{ color: end >= 100 ? "var(--good)" : "var(--bad)" }}>End result: {fmtPct(end, 2)}</span>
-          ) : (
-            <span className="muted">End result: measuring…</span>
+      <div className="mo-task-foot num">
+        <span>
+          {o.rate != null && !done && (
+            <>
+              <b>{signed(o.rate, `${fmtPct(Math.abs(o.rate), 2)}/h`)}</b>
+              {o.end != null && " · "}
+            </>
           )}
-          {completeAt && completeAt < expires && (
-            <span>
-              Complete in <Countdown to={completeAt} />
-            </span>
-          )}
-        </div>
-      )}
+          {o.end != null && !done && <>End result {fmtPct(o.end, 2)}</>}
+        </span>
+        <OutlookTag o={o} />
+      </div>
     </li>
   );
 }
 
-function CountTask({ t }: { t: TaskView }) {
+function CountTask({ t, o }: { t: TaskView; o: TaskOutlook }) {
   const { shown, pct, final, valueText } = useCountTask(t);
   const tone = t.faction ? factionColor(t.faction) : "var(--cta)";
   const Check = t.done ? CheckSquare : Square;
+  const perHour = o.rate != null ? (o.rate / 100) * t.goal : null;
   return (
     <li className={`mo-task ${t.done ? "done" : ""}`} style={{ "--k": tone } as CSSProperties}>
       <div className="mo-task-head">
@@ -87,17 +91,15 @@ function CountTask({ t }: { t: TaskView }) {
         label={`${t.label}${t.faction ? ` ${factionLabel(t.faction)}` : ""}`}
         valueText={valueText}
         tone={tone}
+        marker={t.done ? null : o.end}
         done={t.done}
       />
       <div className="mo-task-foot num">
         <span>
           <b>{fmtCompact(Math.round(shown))}</b> / {fmtCompact(t.goal)}
+          {perHour != null && !t.done && <> · {signed(perHour, `${fmtCompact(Math.abs(perHour))}/h`)}</>}
         </span>
-        {t.done ? (
-          <span style={{ color: "var(--good)" }}>Complete</span>
-        ) : (
-          <span>{fmtCompact(Math.max(0, Math.round(t.goal - shown)))} to go</span>
-        )}
+        <OutlookTag o={o} />
       </div>
     </li>
   );
@@ -115,6 +117,8 @@ export function OrderCard({
   compact?: boolean;
 }) {
   const tasks = describeAssignment(a, planets);
+  const outlooks = useOutlooks(a, tasks);
+  const verdict = orderVerdict(tasks, outlooks);
   const expires = Date.parse(a.expiration);
   const reward = a.rewards[0] ?? a.reward;
   return (
@@ -138,10 +142,15 @@ export function OrderCard({
     >
       {a.briefing && <p className="mo-briefing">{a.briefing}</p>}
       {!compact && a.description && <p className="mo-desc">{a.description}</p>}
+      {verdict && (
+        <p className="mo-verdict-line" style={{ color: verdict.tone }}>
+          {verdict.text}
+        </p>
+      )}
       <div className="mo-sub caps">Order overview</div>
       <ul className="mo-tasks">
         {tasks.map((t, i) =>
-          t.kind === "planet" ? <PlanetTask key={i} t={t} expires={expires} /> : <CountTask key={i} t={t} />,
+          t.kind === "planet" ? <PlanetTask key={i} t={t} o={outlooks[i]} /> : <CountTask key={i} t={t} o={outlooks[i]} />,
         )}
       </ul>
       {reward && (

@@ -41,13 +41,28 @@ export interface IngestResult {
   changes: OwnerChange[];
 }
 
+/** A region's liberation as a sample of its planet, so the planet's rate maths applies to it. */
+function regionSample(p: Planet, r: Planet["regions"][number], at: number): Sample | null {
+  if (r.health == null || !r.maxHealth) return null;
+  return {
+    planet: p.index,
+    at,
+    owner: p.currentOwner,
+    percent: 100 - (r.health / r.maxHealth) * 100,
+    players: r.players,
+    defending: p.event != null,
+  };
+}
+
 /**
  * Turns each API snapshot into stored samples and owner-change events, and keeps the
  * last hour of samples in memory so campaign rates survive between polls.
+ * Region readings are kept in memory only, so their rates start over after a restart.
  */
 export class Recorder {
   private owners = new Map<number, string>();
   private recent = new Map<number, Sample[]>();
+  private regions = new Map<string, Sample[]>();
   private db: Supabase;
 
   constructor(db: Supabase) {
@@ -77,6 +92,10 @@ export class Recorder {
     return ratePerHour(this.recent.get(planet) ?? []);
   }
 
+  regionRate(planet: number, region: number): number | null {
+    return ratePerHour(this.regions.get(`${planet}:${region}`) ?? []);
+  }
+
   async ingest(planets: Planet[], at: number): Promise<IngestResult> {
     const changes = detectOwnerChanges(this.owners, planets, at);
     const updated: { planet: number; owner: number }[] = [];
@@ -92,6 +111,12 @@ export class Recorder {
     const changed = new Set(changes.map((c) => c.planet));
     const samples = planets.filter((p) => isActive(p) || changed.has(p.index)).map((p) => toSample(p, at));
     for (const s of samples) this.remember(s);
+    for (const p of planets) {
+      for (const r of p.regions) {
+        const s = regionSample(p, r, at);
+        if (s) keep(this.regions, `${p.index}:${r.id}`, s);
+      }
+    }
 
     // Duplicates (same planet and time) are ignored, so two collectors can safely overlap.
     await this.db.upsert("samples", samples.map(toRow), { ignoreDuplicates: true });
@@ -110,10 +135,14 @@ export class Recorder {
   }
 
   private remember(s: Sample) {
-    const list = this.recent.get(s.planet) ?? [];
-    list.push(s);
-    const cutoff = s.at - RATE_WINDOW_MS;
-    while (list.length && list[0].at < cutoff) list.shift();
-    this.recent.set(s.planet, list);
+    keep(this.recent, s.planet, s);
   }
+}
+
+function keep<K>(map: Map<K, Sample[]>, key: K, s: Sample) {
+  const list = map.get(key) ?? [];
+  list.push(s);
+  const cutoff = s.at - RATE_WINDOW_MS;
+  while (list.length && list[0].at < cutoff) list.shift();
+  map.set(key, list);
 }

@@ -1,6 +1,7 @@
 // Snapshot shapes stored in Supabase: written by the collector, read by the app.
 // Only type imports here, so the collector can run this file directly under Node.
 import type {
+  Assignment,
   Campaign,
   EpisodeRaw,
   Dispatch,
@@ -24,7 +25,8 @@ export type SnapshotKind =
   | "dispatches"
   | "space_stations"
   | "episodes"
-  | "planet_effects";
+  | "planet_effects"
+  | "order_samples";
 
 /** Planet fields that rarely change: sent once per app launch. */
 export interface PlanetStatic {
@@ -66,6 +68,17 @@ function liveStats(s: Statistics): LiveStats {
   return out;
 }
 
+/** A region's changing fields. Snapshots from older collectors lack the optional ones. */
+export interface RegionLive {
+  id: number;
+  health: number | null;
+  isAvailable: boolean;
+  players: number;
+  regenPerSecond?: number | null;
+  /** Progress trend in %/h; only on campaign planets. */
+  rate?: number | null;
+}
+
 /** Planet fields that change every poll. */
 export interface PlanetLive {
   index: number;
@@ -76,7 +89,7 @@ export interface PlanetLive {
   event: PlanetEvent | null;
   attacking: number[];
   statistics: LiveStats;
-  regions: Pick<Region, "id" | "health" | "isAvailable" | "players">[];
+  regions: RegionLive[];
 }
 
 export interface CampaignLive {
@@ -124,12 +137,47 @@ export function toLive(p: Planet): PlanetLive {
     event: p.event,
     attacking: p.attacking,
     statistics: liveStats(p.statistics),
-    regions: p.regions.map((r) => ({ id: r.id, health: r.health, isAvailable: r.isAvailable, players: r.players })),
+    regions: p.regions.map((r) => ({
+      id: r.id,
+      health: r.health,
+      isAvailable: r.isAvailable,
+      players: r.players,
+      regenPerSecond: r.regenPerSecond ?? null,
+    })),
   };
 }
 
-export function toCampaignLive(c: Campaign, rate: number | null): CampaignLive {
-  return { id: c.id, type: c.type, count: c.count, faction: c.faction, planet: toLive(c.planet), rate };
+export function toCampaignLive(
+  c: Campaign,
+  rate: number | null,
+  regionRate: (region: number) => number | null = () => null,
+): CampaignLive {
+  const planet = toLive(c.planet);
+  planet.regions = planet.regions.map((r) => ({ ...r, rate: regionRate(r.id) }));
+  return { id: c.id, type: c.type, count: c.count, faction: c.faction, planet, rate };
+}
+
+/** One reading of a Major Order's progress, a count per task. */
+export interface OrderSample {
+  id: number;
+  at: number;
+  progress: number[];
+}
+
+/** How far back Major Order readings are kept: a day evens out the swing between busy and quiet hours. */
+export const ORDER_SAMPLE_WINDOW_MS = 24 * 60 * 60_000;
+
+/** Adds a reading of each running order; drops those older than the window and those of ended orders. */
+export function addOrderSamples(
+  kept: OrderSample[],
+  orders: Pick<Assignment, "id" | "progress">[],
+  at: number,
+): OrderSample[] {
+  const running = new Set(orders.map((o) => o.id));
+  return [
+    ...kept.filter((s) => running.has(s.id) && s.at > at - ORDER_SAMPLE_WINDOW_MS && s.at < at),
+    ...orders.map((o) => ({ id: o.id, at, progress: o.progress })),
+  ];
 }
 
 export function newestDispatches(d: Dispatch[]): Dispatch[] {
@@ -168,12 +216,17 @@ export function toPlanet(s: PlanetStatic, l: PlanetLive): Planet {
     event: l.event,
     attacking: l.attacking,
     statistics: { ...ZERO_STATS, ...l.statistics },
-    regions: s.regions.map((r) => ({
-      ...r,
-      health: live.get(r.id)?.health ?? null,
-      isAvailable: live.get(r.id)?.isAvailable ?? false,
-      players: live.get(r.id)?.players ?? 0,
-    })),
+    regions: s.regions.map((r) => {
+      const l = live.get(r.id);
+      return {
+        ...r,
+        health: l?.health ?? null,
+        isAvailable: l?.isAvailable ?? false,
+        players: l?.players ?? 0,
+        regenPerSecond: l?.regenPerSecond ?? null,
+        rate: l?.rate ?? null,
+      };
+    }),
   };
 }
 
