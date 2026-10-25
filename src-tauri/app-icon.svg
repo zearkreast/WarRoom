@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="75%">
+      <stop offset="0" stop-color="#172240" />
+      <stop offset="1" stop-color="#05080e" />
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)" />
+  <!-- The app mark from the top bar, kept inside Android's adaptive-icon safe circle. -->
+  <g transform="translate(512 512) scale(19) translate(-16 -16)">
+    <path d="M16 2 29 8v8c0 7-5.5 12-13 14C8.5 28 3 23 3 16V8z" fill="none" stroke="#ffff5a" stroke-width="2.2" stroke-linejoin="round" />
+    <path d="m16 9 2.2 4.6 5 .6-3.7 3.4 1 5-4.5-2.5-4.5 2.5 1-5-3.7-3.4 5-.6z" fill="#ffff5a" />
+  </g>
+</svg>

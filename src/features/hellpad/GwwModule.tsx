@@ -403,6 +403,12 @@ export function AboutModule() {
           arrived for ten minutes, and to <b style={{ color: "var(--bad)" }}>LINK LOST</b> when the database can't be
           reached. Either way the last known data stays on screen.
         </p>
+        <h3>Privacy</h3>
+        <p>
+          The app collects no personal data: no account, analytics, ads or tracking. Settings and pins stay on this
+          device, alerts are worked out here, and the only thing downloaded is war data from the project's read-only
+          database. The full policy is in PRIVACY.md at github.com/zearkreast/WarRoom.
+        </p>
         <h3>Not affiliated</h3>
         <p>
           A fan project, not affiliated with Arrowhead Game Studios or Sony Interactive Entertainment. Map artwork is
