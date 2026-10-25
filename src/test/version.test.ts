@@ -10,7 +10,20 @@ describe("versions", () => {
   it("compares by number, not text", () => {
     expect(isNewer("v0.2.10", "0.2.9")).toBe(true);
     expect(isNewer("v0.3.0", "0.2.9")).toBe(true);
-    expect(isNewer("v0.2.7-alpha", "0.2.7")).toBe(false);
     expect(isNewer("v0.2.6", "0.2.7")).toBe(false);
+    expect(isNewer("v0.3.0-beta", "0.2.7")).toBe(true);
+  });
+
+  it("puts a full release after its pre-releases", () => {
+    expect(isNewer("v0.3.0", "0.3.0-beta")).toBe(true);
+    expect(isNewer("v0.3.0-beta", "0.3.0")).toBe(false);
+    expect(isNewer("v0.2.7-alpha", "0.2.7")).toBe(false);
+    expect(isNewer("v0.3.0-beta", "0.3.0-beta")).toBe(false);
+  });
+
+  it("orders pre-releases by label", () => {
+    expect(isNewer("v0.3.0-rc", "0.3.0-beta")).toBe(true);
+    expect(isNewer("v0.3.0-beta.10", "0.3.0-beta.2")).toBe(true);
+    expect(isNewer("v0.3.0-alpha", "0.3.0-beta")).toBe(false);
   });
 });

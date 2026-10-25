@@ -9,12 +9,21 @@ collector (VDS) ──► api.helldivers2.dev                 the only API calle
       └──► Supabase ◄── app (desktop / mobile / web)     reads only
 ```
 
-- **App** (`src/`, `src-tauri/`): Tauri 2 + React + TypeScript, for Windows/macOS/Linux and Android/iOS.
+- **App** (`src/`, `src-tauri/`): Tauri 2 + React + TypeScript, for Windows, macOS, Linux, Android and the web.
 - **Collector** (`collector/`): a dependency-free Node service that polls the API and writes to Supabase.
   See [collector/README.md](collector/README.md) for VDS setup.
 - **Database** (`supabase/migrations/`): snapshots of the current war, planet progress samples, every
   ownership change, galaxy-wide war samples and the space station's FTL jumps. Shared by all users.
   Apply the migrations in order (`0001` to `0004`).
+
+## Download
+
+Installers are on the [Releases](https://github.com/zearkreast/WarRoom/releases) page: `.exe` or `.msi` for
+Windows, `.dmg` for macOS (Apple Silicon and Intel), `.AppImage`, `.deb` or `.rpm` for Linux, and `.apk` for
+Android. Once installed, the app offers each new release itself: on desktop it downloads, installs and restarts
+in one press; on Android it downloads the new APK for the system to install.
+
+The app collects no personal data; see [PRIVACY.md](PRIVACY.md).
 
 ## Run the app
 
@@ -32,7 +41,30 @@ Add `?fixtures` to the browser URL (`http://localhost:1420/?fixtures`) to use th
 `src/test/fixtures/` instead of Supabase. This only works in dev mode.
 
 Android: `npm run tauri android init`, then `npm run tauri android dev`. This needs Android Studio and the SDK.
-iOS builds need a Mac.
+The Android project (`src-tauri/gen/`) isn't kept in the repo; CI generates it for each build.
+
+## Release a new version
+
+1. Raise the version in all four places together: `src-tauri/tauri.conf.json`, `package.json`,
+   `src-tauri/Cargo.toml` and `src/config.ts`. A pre-release such as `0.3.0-beta` also needs a numbers-only
+   `bundle.windows.wix.version` in `tauri.conf.json`, since MSI installers can't carry the suffix.
+2. Add the version's entry to `src/changelog.ts`; Tracker Dispatch shows it.
+3. Push a tag such as `v0.3.0-beta`, or run Release from the Actions tab.
+
+The Release workflow builds every desktop installer, then the APK (`android.yml`), and publishes them as one
+GitHub Release with `latest.json`, which installed apps read to find the update. Keep the release a full one,
+not a GitHub pre-release: installed apps only look at the latest full release. It needs these repository secrets:
+
+| Secret                      | What it is                                                     |
+| --------------------------- | -------------------------------------------------------------- |
+| `TAURI_SIGNING_PRIVATE_KEY` | Signs desktop updates; its public half is the updater `pubkey` |
+| `ANDROID_KEYSTORE`          | The APK signing keystore, base64-encoded                       |
+| `ANDROID_KEYSTORE_PASSWORD` | The keystore's password                                        |
+| `ANDROID_KEY_ALIAS`         | The key's alias in the keystore                                |
+| `ANDROID_KEY_PASSWORD`      | The key's password                                             |
+
+Without the Android secrets each APK is signed with a throwaway key, and a newer APK won't install over an older
+one. Losing either signing key means installed apps can no longer take updates from new releases.
 
 ## Run the collector locally
 
@@ -52,10 +84,16 @@ npm run collect:once     # every job once, then exits
 - `src/data/`: hand-kept data the APIs don't carry: campaign rewards, effect names (from the community
   list at github.com/helldivers-2/json) and overrides, scorched planets, past space stations, and the
   G.W.W. manuals and corporations.
-- `src/assets/biomes/`: one landscape banner per biome, from the Helldivers Wiki.
+- `src/assets/`: biome landscapes, faction and sub-faction emblems, holograms, station and point-of-interest
+  pictures; the game's own come from the Helldivers Wiki and are credited in About.
 - `src/api/`: reads snapshots from Supabase and rebuilds them into the planet and campaign shapes the UI uses.
 - `src/history/`: reads the shared sample and ownership history.
 - `src/features/`: overview (High Command), map, campaigns (Active planets), galactic-campaigns, hellpad
   (planets, space stations, G.W.W., past campaigns), planet detail, news, settings.
 - `src/layout/`: the shell: top bar, status strip with the news ticker, the dock, the About and legend
-  dialogs, Tracker Dispatch.
+  dialogs, Tracker Dispatch, and the briefing popup alerts open into.
+- `src/update/`: looks for a newer release and installs it (the Tauri updater on desktop, the release's APK
+  on Android).
+- `src-tauri/app-icon.svg`: the source of every app icon; regenerate them with `npx tauri icon src-tauri/app-icon.svg`.
+- `.github/workflows/`: `release.yml` (installers, APK and update manifest), `android.yml` (the APK, also built
+  on pushes that touch `src-tauri/`) and `pages.yml` (the web version on GitHub Pages).

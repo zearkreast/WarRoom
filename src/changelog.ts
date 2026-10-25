@@ -7,6 +7,21 @@ export interface ChangelogEntry {
 /** Newest first. Shown in the Tracker Dispatch panel. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.3.0-beta",
+    date: "2026-10-26",
+    items: [
+      "The app updates itself: a card offers each new release, and on Windows, macOS and Linux one press downloads, installs and restarts. On Android it downloads the new APK for the system to install.",
+      "An Android app joins the Windows, macOS and Linux installers, with the top bar's shield as its icon everywhere. A privacy policy (no data is collected) shows in the Windows installer and in About.",
+      "Strohmann News reads as a timeline: grouped by day, newest first, with the latest item set apart, new items marked since your last visit, search, and the last message from Super Earth to read again.",
+      "Alerts open as the game shows them: please wait democratically, then the briefing under Super Earth's flag.",
+      "Galaxy map: click a planet for its panel beside the map; labelled controls, a one-click overlay switch and a legend; turn and tilt with two fingers on phones; sub-factions, SEAF, the DSS and points of interest stand beside planets as holograms.",
+      "Faction and sub-faction emblems are the game's own.",
+      "Hellpad: space stations with holograms and the Star of Peace, cities with rank stars and liberation, past campaigns with a service record, and the G.W.W. as a browser of Federation sites linked to the live war. Back and Forward step through the app.",
+      "Major Orders get animated progress bars and an outlook for each objective.",
+      "Phones: a Settings button in the top bar, bigger touch targets, and no text selection on a long press.",
+    ],
+  },
+  {
     version: "0.2.7",
     date: "2026-10-24",
     items: [
