@@ -23,7 +23,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { useCampaigns, useEffects, useFreshPlanets, useSectorGeometry } from "../../api/queries";
+import { useCampaigns, useEffects, useFreshPlanets, useSectorGeometry, useSpaceStations } from "../../api/queries";
 import type { Planet } from "../../api/types";
 import { biomeTint, planetTint, regenPctPerHour } from "../../domain/biomes";
 import { hasPawn, type PlanetEffect } from "../../domain/effects";
@@ -51,6 +51,7 @@ import { HudButton, Loading, Meter, Stepper } from "../../ui/primitives";
 import { useMajorOrderPlanets } from "../planets/useFronts";
 import { GloomLayer, SectorLayer } from "./layers";
 import { OVERLAY_OPTIONS, PLANET_OPTIONS, QUALITY_OPTIONS } from "./mapOptions";
+import { dssArt, dssState, PAWN_ART, pawnArt, type DssState } from "./pawnArt";
 import "./map.css";
 
 const EXTENT = GALAXY_SCALE * 1.1;
@@ -337,6 +338,52 @@ const HaloDefs = memo(function HaloDefs() {
         <stop offset="66%" stopColor="#7d93ad" stopOpacity={0.25} />
         <stop offset="100%" stopColor="#7d93ad" stopOpacity={0} />
       </radialGradient>
+      {/* Hologram light: the column fades as it rises, the pool on the table fades from its centre. */}
+      <linearGradient id="holo-fade-ramp" x1={0} y1={1} x2={0} y2={0}>
+        <stop offset="0%" stopColor="#fff" stopOpacity={0.85} />
+        <stop offset="100%" stopColor="#fff" stopOpacity={0.05} />
+      </linearGradient>
+      <mask id="holo-fade" maskContentUnits="objectBoundingBox">
+        <rect width={1} height={1} fill="url(#holo-fade-ramp)" />
+      </mask>
+      <radialGradient id="holo-pool-ramp">
+        <stop offset="0%" stopColor="#fff" stopOpacity={0.7} />
+        <stop offset="45%" stopColor="#fff" stopOpacity={0.25} />
+        <stop offset="100%" stopColor="#fff" stopOpacity={0} />
+      </radialGradient>
+      <mask id="holo-pool" maskContentUnits="objectBoundingBox">
+        <rect width={1} height={1} fill="url(#holo-pool-ramp)" />
+      </mask>
+      <linearGradient id="holo-mirror-ramp" x1={0} y1={0} x2={0} y2={1}>
+        <stop offset="0%" stopColor="#fff" stopOpacity={1} />
+        <stop offset="70%" stopColor="#fff" stopOpacity={0} />
+      </linearGradient>
+      <mask id="holo-mirror" maskContentUnits="objectBoundingBox">
+        <rect width={1} height={1} fill="url(#holo-mirror-ramp)" />
+      </mask>
+      <pattern id="holo-scan" width={HOLO_SIZE} height={0.9} patternUnits="userSpaceOnUse">
+        <rect width={HOLO_SIZE} height={0.35} fill="#fff" fillOpacity={0.28} />
+      </pattern>
+      <linearGradient id="holo-sweep-band" x1={0} y1={0} x2={0} y2={1}>
+        <stop offset="0%" stopColor="#fff" stopOpacity={0} />
+        <stop offset="50%" stopColor="#fff" stopOpacity={0.75} />
+        <stop offset="100%" stopColor="#fff" stopOpacity={0} />
+      </linearGradient>
+      {/* Each hologram's own outline, for its scanlines and sweep; every pawn draws its unit at the same spot. */}
+      {PAWN_ART.map(([key, href]) => (
+        <mask
+          key={key}
+          id={`holo-mask-${key}`}
+          maskUnits="userSpaceOnUse"
+          x={-HOLO_SIZE / 2}
+          y={-HOLO_SIZE}
+          width={HOLO_SIZE}
+          height={HOLO_SIZE}
+          style={{ maskType: "alpha" }}
+        >
+          <image href={href} x={-HOLO_SIZE / 2} y={-HOLO_SIZE} width={HOLO_SIZE} height={HOLO_SIZE} />
+        </mask>
+      ))}
     </defs>
   );
 });
@@ -374,10 +421,104 @@ function AnomalyMark({ kind }: { kind: Anomaly }) {
 
 const PAWN_ICON = { threat: TriangleAlert, seaf: Shield, poi: PoiIcon } as const;
 
-/** The planet's sub-factions, SEAF presence and points of interest, as the game shows them beside it. */
-function Pawns({ effects, faction }: { effects: PlanetEffect[]; faction: string }) {
+const DSS_TONE: Record<DssState, string> = {
+  active: "var(--cta)",
+  cooldown: "var(--bad)",
+  build: "var(--f-humans)",
+  default: "var(--f-humans)",
+};
+/** A unit's light follows its own faction, whoever holds the planet it is on. */
+const UNIT_TONE: Record<string, string> = {
+  bug: factionColor("Terminids"),
+  bot: factionColor("Automaton"),
+  ill: factionColor("Illuminate"),
+  seaf: factionColor("Humans"),
+};
+
+/**
+ * Hologram size and spacing in marker units. They stand in two staggered ranks on the table, the
+ * first clear of the planet's glow; the back rank sits further away, so it rises up the screen less
+ * the more the map is tilted.
+ */
+const HOLO_SIZE = 22;
+const HOLO_X = 15;
+const HOLO_STEP = 15;
+
+/**
+ * A unit as a hologram on the war table: a projector ring lying on the map, which turns and
+ * foreshortens with the camera, a column of light, and the unit on it. Seen from straight above the
+ * unit sits over its projector; tilting the map lifts it off and shows its reflection in the table.
+ */
+function HoloPawn(props: { art: { key: string; href: string }; tone: string; x: number; back: boolean; delay: number }) {
+  const { art } = props;
+  const s = HOLO_SIZE;
+  const unit = <image href={art.href} x={-s / 2} y={-s} width={s} height={s} />;
   return (
-    <g className="pawns" transform="translate(7,1)">
+    <g transform={`translate(${props.x},3)`}>
+      <g
+        className={`holo ${props.back ? "back" : ""}`}
+        style={{ color: props.tone, "--delay": `${-props.delay}s` } as CSSProperties}
+      >
+        <g className="holo-floor">
+          <circle r={8} className="holo-pool" mask="url(#holo-pool)" />
+          <circle r={5.4} className="holo-ring" />
+          <circle r={4.2} className="holo-ticks" />
+          <circle r={1.3} className="holo-emitter" />
+        </g>
+        <g className="holo-mirror" mask="url(#holo-mirror)">
+          <g className="holo-flip">{unit}</g>
+        </g>
+        <path className="holo-beam" d="M-1.6,0L-6,-1H6L1.6,0Z" mask="url(#holo-fade)" />
+        <g className="holo-lift">
+          <g className="holo-unit">
+            {unit}
+            <g className="holo-light" mask={`url(#holo-mask-${art.key})`}>
+              <rect x={-s / 2} y={-s} width={s} height={s} fill="url(#holo-scan)" />
+              <rect className="holo-sweep" x={-s / 2} y={-4} width={s} height={4} fill="url(#holo-sweep-band)" />
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  );
+}
+
+/**
+ * The planet's sub-factions, SEAF presence and the Democracy Space Station as holograms beside it,
+ * as the game's war table shows them; threats and points of interest, which have none, follow as tags.
+ */
+function Pawns({ effects, faction, dss, seed }: { effects: PlanetEffect[]; faction: string; dss?: DssState; seed: number }) {
+  const holos: { art: { key: string; href: string }; tone: string }[] = [];
+  const station = dss && dssArt(dss);
+  if (dss && station) holos.push({ art: station, tone: DSS_TONE[dss] });
+  const tags: PlanetEffect[] = [];
+  for (const e of effects) {
+    const art = pawnArt(e);
+    if (art) holos.push({ art, tone: UNIT_TONE[art.key.split("_")[0]] });
+    else tags.push(e);
+  }
+  const placed = holos.map((h, i) => ({ ...h, x: HOLO_X + i * HOLO_STEP, back: i % 2 === 1, delay: (seed * 0.73 + i * 1.3) % 6 }));
+  return (
+    <>
+      {holos.length > 0 && (
+        <g className={`holos ${station ? "dss" : ""}`}>
+          {/* The back rank first, so the front one stands before it. */}
+          {[...placed.filter((h) => h.back), ...placed.filter((h) => !h.back)].map((h) => (
+            <HoloPawn key={h.art.key} art={h.art} tone={h.tone} x={h.x} back={h.back} delay={h.delay} />
+          ))}
+        </g>
+      )}
+      {tags.length > 0 && (
+        <PawnTags effects={tags} faction={faction} x={holos.length ? HOLO_X + holos.length * HOLO_STEP + 4 : 7} />
+      )}
+    </>
+  );
+}
+
+/** Threats and points of interest, as tags in a row. */
+function PawnTags({ effects, faction, x: x0 }: { effects: PlanetEffect[]; faction: string; x: number }) {
+  return (
+    <g className="pawns" transform={`translate(${x0},1)`}>
       {effects.map((e, i) => {
         const x = i * 6.4;
         const tone = e.kind === "subfaction" ? factionColor(faction) : e.kind === "seaf" ? "var(--f-humans)" : "var(--cta)";
@@ -448,6 +589,8 @@ function PlanetBody(props: {
   enemy?: boolean;
   pinned?: boolean;
   pawns?: PlanetEffect[];
+  dss?: DssState;
+  seed?: number;
 }) {
   // Razed worlds keep a planet's size and shape; only their colour and glow turn to embers.
   const scorched = props.anomaly === "scorched";
@@ -486,7 +629,9 @@ function PlanetBody(props: {
         <ActiveTag defense={Boolean(props.defense)} mo={Boolean(props.mo)} color={props.color} />
       )}
       {props.pinned && <PinMark />}
-      {props.pawns && props.pawns.length > 0 && <Pawns effects={props.pawns} faction={props.faction} />}
+      {(props.dss || (props.pawns && props.pawns.length > 0)) && (
+        <Pawns effects={props.pawns ?? []} faction={props.faction} dss={props.dss} seed={props.seed ?? 0} />
+      )}
     </g>
   );
 }
@@ -666,6 +811,7 @@ const PlanetLayer = memo(function PlanetLayer(props: {
   active: Set<number>;
   mo: Set<number>;
   pinned: Set<number>;
+  dss: Map<number, DssState>;
   selected: number | null;
   style: MapPlanets;
   onOpen(planet: number, x: number, y: number): void;
@@ -716,6 +862,8 @@ const PlanetLayer = memo(function PlanetLayer(props: {
                 enemy={p.currentOwner !== "Humans" || Boolean(p.event)}
                 pinned={isPinned}
                 pawns={props.effects?.get(p.index)?.filter(hasPawn)}
+                dss={props.dss.get(p.index)}
+                seed={p.index}
               />
               <text className="planet-label">{p.name}</text>
               {isActive && (
@@ -769,6 +917,7 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   const geo = useSectorGeometry().data;
   const effects = useEffects().data;
   const campaigns = useCampaigns();
+  const stations = useSpaceStations().data;
   const mo = useMajorOrderPlanets();
   const selectedPlanet = useUi((s) => s.selectedPlanet);
   const focusSeq = useUi((s) => s.focusSeq);
@@ -808,6 +957,10 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
   const stars = useMemo(() => backgroundStars(STAR_COUNT[quality]), [quality]);
   const active = useMemo(() => new Set((campaigns.data ?? []).map((c) => c.planet.index)), [campaigns.data]);
   const pinnedSet = useMemo(() => new Set(pinned), [pinned]);
+  const dss = useMemo(
+    () => new Map((stations ?? []).map((s) => [s.planetIndex, dssState(s.tacticalActions, Date.now())])),
+    [stations],
+  );
   const onOpen = useCallback((planet: number, x: number, y: number) => openOptions({ planet, x, y }), [openOptions]);
   const loaded = Boolean(fresh);
 
@@ -1146,6 +1299,7 @@ export function GalaxyMap({ onHoverSector }: { onHoverSector?: (sector: string |
               active={active}
               mo={mo}
               pinned={pinnedSet}
+              dss={dss}
               selected={selectedPlanet}
               style={planetStyle}
               onOpen={onOpen}

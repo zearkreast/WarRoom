@@ -45,11 +45,15 @@
    Listed by name: a `*` here restyles every node in the map on each start and stop. */
 .galaxy.moving .faction-marks path,
 .galaxy.moving .anomaly.wormhole,
-.galaxy.moving .anomaly.fractured .ember {
+.galaxy.moving .anomaly.fractured .ember,
+.galaxy.moving .holo-unit image {
   filter: none !important;
 }
 .galaxy.moving .pulse,
-.galaxy.moving .swirl {
+.galaxy.moving .swirl,
+.galaxy.moving .holo-unit,
+.galaxy.moving .holo-ticks,
+.galaxy.moving .holo-sweep {
   animation-play-state: paused;
 }
 /* Planet markers and labels stay upright and round however the map is turned or tilted. */
@@ -273,6 +277,129 @@
 }
 .pawn svg {
   color: currentColor;
+}
+/* Unit holograms: always over the fronts and the DSS, over every planet once zoomed in. */
+.holos {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-reveal) var(--ease);
+}
+.planet.active .holos,
+.holos.dss,
+.z-labels .holos,
+.planet:hover .holos,
+.planet.selected .holos {
+  opacity: 1;
+}
+/* --rise is how far the camera has tilted off straight down (sine of the tilt). Seen from above, a unit
+   covers its projector; as the table tilts away it rises off it and its reflection shows. */
+.holo {
+  --rise: sqrt(1 - 1 / (var(--unsquash) * var(--unsquash)));
+  --lift: calc(15 * var(--rise) - 6);
+}
+.holo.back {
+  transform: translateY(calc(-9px / var(--unsquash)));
+}
+/* The projector lies on the map: flattened by the tilt like the planets' rings. */
+.holo-floor {
+  transform: scale(1, calc(1 / var(--unsquash)));
+}
+.holo-pool {
+  fill: currentColor;
+  opacity: 0.5;
+}
+.holo-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.35;
+  stroke-opacity: 0.6;
+}
+.holo-ticks {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.9;
+  stroke-dasharray: 0.5 1.7;
+  opacity: 0.75;
+  animation: spin 16s linear infinite;
+  animation-delay: var(--delay);
+}
+.holo-emitter {
+  fill: #fff;
+  fill-opacity: 0.55;
+}
+/* The column reaches up into the unit, which is drawn over it. */
+.holo-beam {
+  fill: currentColor;
+  opacity: 0.4;
+  transform: scale(1, calc(var(--lift) + 8));
+}
+.holo-lift {
+  transform: translateY(calc(var(--lift) * -1px));
+}
+.holo-mirror {
+  opacity: calc(clamp(0, var(--lift) / 3, 1) * 0.3);
+}
+.holo-flip {
+  transform: translateY(calc(var(--lift) * 1px)) scale(1, -1);
+}
+.holo-unit {
+  animation:
+    holo-bob 4s ease-in-out infinite,
+    holo-flicker 7s steps(1) infinite;
+  animation-delay: var(--delay);
+}
+.holo-unit image {
+  opacity: 0.94;
+}
+.galaxy:not(.q-min) .holo-unit image {
+  filter: drop-shadow(0 0 1.4px currentColor);
+}
+.holo-sweep {
+  animation: holo-sweep 3.6s linear infinite;
+  animation-delay: var(--delay);
+}
+.q-min .holo-light {
+  display: none;
+}
+.q-min .holo-unit,
+.q-min .holo-ticks {
+  animation: none;
+}
+@keyframes holo-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.4px);
+  }
+}
+@keyframes holo-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  61% {
+    opacity: 0.55;
+  }
+  62% {
+    opacity: 1;
+  }
+  64% {
+    opacity: 0.7;
+  }
+  65% {
+    opacity: 1;
+  }
+}
+@keyframes holo-sweep {
+  0% {
+    transform: translateY(0);
+  }
+  55%,
+  100% {
+    transform: translateY(-26px);
+  }
 }
 .anomaly.fractured .rock {
   fill: #a39b95;
