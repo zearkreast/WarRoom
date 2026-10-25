@@ -23,6 +23,7 @@ import { humanControl } from "../domain/galaxy";
 import { fmtDuration, fmtInt, fmtPct, sestClock, sestDate, warDay } from "../domain/format";
 import { liberationPercent } from "../domain/progress";
 import { NewsTicker } from "../features/news/NewsTicker";
+import { useUnreadNews } from "../features/news/useNewsItems";
 import { PlanetDetail } from "../features/planet/PlanetDetail";
 import { PlanetOptions } from "../features/planet/PlanetOptions";
 import { AboutDialog } from "./AboutDialog";
@@ -47,7 +48,14 @@ export function Logo() {
   );
 }
 
-function TopButton(props: { view: View; icon: LucideIcon; small: string; big: string; className?: string }) {
+function TopButton(props: {
+  view: View;
+  icon: LucideIcon;
+  small: string;
+  big: string;
+  className?: string;
+  badge?: number;
+}) {
   const { view, setView } = useUi();
   const on = view === props.view;
   return (
@@ -63,6 +71,11 @@ function TopButton(props: { view: View; icon: LucideIcon; small: string; big: st
         <span className="top-btn-small">{props.small}</span>
         <span className="top-btn-big">{props.big}</span>
       </span>
+      {props.badge ? (
+        <span className="top-btn-badge num" aria-label={`${props.badge} new`}>
+          {props.badge}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -256,12 +269,15 @@ function Toasts() {
 export function Shell({ children }: { children: ReactNode }) {
   const view = useUi((s) => s.view);
   const detail = useUi((s) => s.detail);
+  // On the page itself the items carry their own marks.
+  const unread = useUnreadNews();
+  const unreadNews = view === "news" ? 0 : unread;
   return (
     <div className="shell">
       <header className="topbar">
         <Logo />
         <div className="top-actions">
-          <TopButton view="news" icon={Newspaper} small="Strohmann" big="News" />
+          <TopButton view="news" icon={Newspaper} small="Strohmann" big="News" badge={unreadNews} />
           <TopButton view="overview" icon={ShieldHalf} small="High Command" big="Overview" />
           {/* The dock has no room for Settings on phones. */}
           <TopButton view="settings" icon={Settings} small="Tracker" big="Settings" className="narrow-only" />
