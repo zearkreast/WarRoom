@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { fmtPct } from "../../domain/format";
-import { taskPercent, type TaskView } from "../../domain/majorOrder";
+import { OUTLOOK, taskPercent, type TaskOutlook, type TaskView } from "../../domain/majorOrder";
+import { Countdown } from "../../ui/primitives";
 
 // Keep in sync with --mo-grow in majorOrder.css.
 const GROW_MS = 1100;
@@ -86,5 +87,24 @@ export function OrderBar(props: {
         <i className="mo-bar-mark" style={{ left: `${props.marker}%` }} />
       )}
     </div>
+  );
+}
+
+/** A task's outlook: when it completes, or where it stands at the deadline, then the verdict. */
+export function OutlookTag({ o }: { o: TaskOutlook }) {
+  const v = OUTLOOK[o.outlook];
+  return (
+    <span className="mo-outlook">
+      {o.eta != null ? (
+        <span>
+          Complete in <Countdown to={o.eta} />
+        </span>
+      ) : (
+        o.outlook === "behind" && o.end != null && <span>Ends at {fmtPct(o.end, 1)}</span>
+      )}
+      <span className="mo-verdict caps" style={{ "--tone": v.tone } as CSSProperties}>
+        {v.label}
+      </span>
+    </span>
   );
 }

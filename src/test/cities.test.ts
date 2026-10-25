@@ -13,6 +13,7 @@ const region = (id: number, name: string, size: string, more: Partial<Region> = 
   health: null,
   maxHealth: 400000,
   size,
+  regenPerSecond: null,
   isAvailable: false,
   players: 0,
   ...more,

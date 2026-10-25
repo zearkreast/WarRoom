@@ -398,10 +398,6 @@
   color: var(--text-hi);
   font-weight: 600;
 }
-.ms-count-foot .ms-chip {
-  padding-block: 0;
-  line-height: 1.2;
-}
 .ms-count.done .ms-count-pct {
   color: var(--good);
 }

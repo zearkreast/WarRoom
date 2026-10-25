@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Campaign, EpisodeRaw, Planet, SpaceStation } from "../src/api/types.ts";
 import {
+  addOrderSamples,
   campaignTally,
   mergeEpisodes,
   toCampaignLive,
@@ -104,6 +105,51 @@ describe("snapshot shapes", () => {
   });
 });
 
+describe("trend readings", () => {
+  it("puts each region's rate on its campaign planet", () => {
+    const c = campaigns.find((x) => x.planet.regions.length > 0)!;
+    const live = toCampaignLive(c, 1, (region) => region + 0.5);
+    expect(live.planet.regions.map((r) => r.rate)).toEqual(c.planet.regions.map((r) => r.id + 0.5));
+  });
+
+  it("measures a region's rate from the readings of its planet", async () => {
+    const { db } = fakeSupabase();
+    const recorder = new Recorder(db);
+    const p = structuredClone(planets.find((x) => x.regions.length > 0)!);
+    const r = p.regions[0];
+    r.maxHealth = 100_000;
+    for (let m = 0; m <= 20; m += 5) {
+      r.health = 100_000 - m * 1000;
+      await recorder.ingest([p], m * 60_000);
+    }
+    expect(recorder.regionRate(p.index, r.id)).toBeCloseTo(60, 5);
+    expect(recorder.regionRate(p.index, r.id + 99)).toBeNull();
+  });
+
+  it("keeps a day of Major Order readings, only for running orders", () => {
+    const day = 24 * 3_600_000;
+    const kept = [
+      { id: 1, at: 0, progress: [1] },
+      { id: 1, at: day / 2, progress: [5] },
+      { id: 2, at: day / 2, progress: [9] },
+    ];
+    expect(addOrderSamples(kept, [{ id: 1, progress: [8] }], day + 1)).toEqual([
+      { id: 1, at: day / 2, progress: [5] },
+      { id: 1, at: day + 1, progress: [8] },
+    ]);
+  });
+
+  it("carries on from the stored Major Order readings after a restart", async () => {
+    const stored = [{ id: (assignmentsJson as { id: number }[])[0].id, at: 999_000, progress: [0] }];
+    const { db, calls } = fakeSupabase({ snapshots: [{ data: stored }] });
+    const task = createTasks(fakeHd2(api), db, new Recorder(db), () => 1_000_000).find((t) => t.name === "assignments")!;
+    await runTask(task);
+    const write = calls.find((c) => c.path === "snapshots" && (c.body as { kind: string }[])[0].kind === "order_samples")!;
+    const data = (write.body as { data: { at: number }[] }[])[0].data;
+    expect(data.map((s) => s.at)).toEqual([999_000, ...((assignmentsJson as unknown[]).map(() => 1_000_000))]);
+  });
+});
+
 describe("collector cycle", () => {
   it("logs a station's FTL jump when its planet changes, starting from the stored snapshot", async () => {
     const [station] = stationsJson as unknown as SpaceStation[];
@@ -138,6 +184,7 @@ describe("collector cycle", () => {
       "campaigns",
       "war",
       "assignments",
+      "order_samples",
       "dispatches",
       "space_stations",
     ]);

@@ -1,8 +1,8 @@
 import type { Assignment, AssignmentTask, Faction, Planet } from "../api/types";
-import { phaseName, type EpisodeLive } from "./snapshot";
-import { FACTION_BY_ID } from "./factions";
+import { phaseName, type EpisodeLive, type OrderSample } from "./snapshot";
+import { FACTION_BY_ID, factionLabel } from "./factions";
 import { byIndex } from "./planets";
-import { projectedAt } from "./progress";
+import { projectedAt, projectedCompletion, slopePerHour } from "./progress";
 
 // valueTypes observed in assignment tasks.
 const VT_FACTION = 1;
@@ -71,7 +71,58 @@ export function orderName(episodes: EpisodeLive[] | undefined): string | undefin
   return running.length === 1 ? phaseName(running[0]) : undefined;
 }
 
-export type DeadlineOutlook = "done" | "on-track" | "behind" | "measuring";
+/** Less history than this and a count task's rate isn't trusted. */
+const MIN_ORDER_SPAN_MS = 30 * 60_000;
+
+/** Each task's count per hour, from the readings kept for order `id`; null while there's too little history. */
+export function orderTaskRates(samples: OrderSample[] | undefined, id: number, tasks: number): (number | null)[] {
+  const mine = (samples ?? []).filter((s) => s.id === id).sort((a, b) => a.at - b.at);
+  const enough = mine.length > 1 && mine[mine.length - 1].at - mine[0].at >= MIN_ORDER_SPAN_MS;
+  return Array.from({ length: tasks }, (_, i) =>
+    enough ? slopePerHour(mine.map((s) => ({ at: s.at, value: s.progress[i] ?? 0 }))) : null,
+  );
+}
+
+/** "no-front": a target planet nobody can deploy to, so it can't move. */
+export type DeadlineOutlook = "done" | "on-track" | "behind" | "measuring" | "no-front";
+
+export const OUTLOOK: Record<DeadlineOutlook, { label: string; tone: string }> = {
+  done: { label: "Complete", tone: "var(--good)" },
+  "on-track": { label: "Winning", tone: "var(--good)" },
+  behind: { label: "Losing", tone: "var(--bad)" },
+  measuring: { label: "Measuring", tone: "var(--label)" },
+  "no-front": { label: "No front", tone: "var(--bad)" },
+};
+
+export const taskName = (t: TaskView) =>
+  t.planet ? t.planet.name : `${t.label}${t.faction ? ` ${factionLabel(t.faction)}` : ""}`;
+
+/** The whole order at the current pace: it is won only if every objective makes the deadline. */
+export function orderVerdict(tasks: TaskView[], outlooks: TaskOutlook[]): { text: string; tone: string } | null {
+  const short = tasks.filter((_, i) => outlooks[i].outlook === "behind" || outlooks[i].outlook === "no-front");
+  if (short.length)
+    return { tone: "var(--bad)", text: `Losing: ${short.map(taskName).join(", ")} won't make the deadline at this pace` };
+  if (outlooks.every((o) => o.outlook === "done" || o.outlook === "on-track"))
+    return { tone: "var(--good)", text: "Winning: every objective makes the deadline at this pace" };
+  return outlooks.some((o) => o.outlook === "measuring") ? { tone: "var(--label)", text: "Measuring progress rates…" } : null;
+}
+
+export interface TaskOutlook {
+  outlook: DeadlineOutlook;
+  /** Percent it stands at when the order expires, 0-100. */
+  end: number | null;
+  /** When it reaches 100% at the current rate, if that's before the order expires. */
+  eta: number | null;
+  /** Trend in %/h. */
+  rate: number | null;
+}
+
+/** A task's outlook from its percent and its trend in %/h. */
+export function taskOutlook(percent: number, rate: number | null, now: number, deadline: number): TaskOutlook {
+  const { outlook, end } = deadlineOutlook(percent, rate, now, deadline);
+  const eta = outlook === "done" ? null : projectedCompletion(percent, rate, now);
+  return { outlook, end, eta: eta != null && eta < deadline ? eta : null, rate };
+}
 
 /** Where a target ends up when the order expires if the current rate holds; `end` is clamped to 0-100. */
 export function deadlineOutlook(
