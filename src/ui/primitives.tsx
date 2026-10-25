@@ -1,6 +1,6 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { factionColor, factionLabel } from "../domain/factions";
 import { fmtDuration } from "../domain/format";
 import { FactionEmblem } from "./emblems";
@@ -249,6 +249,23 @@ export function useNow(ms = 1000): number {
     return () => clearInterval(id);
   }, [ms]);
   return now;
+}
+
+/** Whether a media query matches, kept up to date. */
+export function useMedia(query: string): boolean {
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const list = window.matchMedia?.(query);
+      list?.addEventListener("change", onChange);
+      return () => list?.removeEventListener("change", onChange);
+    },
+    [query],
+  );
+  return useSyncExternalStore(
+    subscribe,
+    () => !!window.matchMedia?.(query).matches,
+    () => false,
+  );
 }
 
 export function Countdown({ to }: { to: number }) {
