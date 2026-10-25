@@ -4,11 +4,10 @@ import { dispatchKind, type DispatchKind } from "../domain/dispatch";
 import { dispatchTitle } from "../domain/format";
 import { MarkupText } from "../features/news/NewsCard";
 import { FactionEmblem, SealArt, SealGradient } from "../ui/emblems";
-import { HoloGlobe } from "../ui/HoloGlobe";
+import { PLEASE_WAIT_MS, PleaseWait } from "../ui/PleaseWait";
 import { KeyButton } from "../ui/primitives";
 import "../ui/neonRing.css";
 
-const WAIT_MS = 1600;
 
 const VERDICT: Record<DispatchKind, { word: string; tone: string }> = {
   victory: { word: "Victory", tone: "var(--good)" },
@@ -93,7 +92,7 @@ export function BriefingPopup() {
     if (!briefing && d.open) d.close();
     setReady(false);
     if (!briefing) return;
-    const id = setTimeout(() => setReady(true), WAIT_MS);
+    const id = setTimeout(() => setReady(true), PLEASE_WAIT_MS);
     return () => clearTimeout(id);
   }, [briefing]);
 
@@ -109,10 +108,7 @@ export function BriefingPopup() {
       style={verdict ? ({ "--bp-tone": verdict.tone } as React.CSSProperties) : undefined}
     >
       {briefing && verdict && !ready && (
-        <div className="bp-wait" role="status">
-          <HoloGlobe size={84} />
-          <span className="caps">Please wait democratically</span>
-        </div>
+        <PleaseWait />
       )}
       {briefing && verdict && ready && (
         <>

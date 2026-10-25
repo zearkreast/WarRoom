@@ -5,14 +5,13 @@ export interface Stratagem {
   code: Arrow[];
 }
 
-type Dialled = { kind: "partial" } | { kind: "match"; stratagem: Stratagem } | { kind: "miss" };
-
-/** What a code dialled so far is: the start of some code, a whole one, or nothing on file. */
-export function dial(entered: Arrow[], list: Stratagem[]): Dialled {
-  const fits = list.filter((s) => entered.every((a, i) => s.code[i] === a));
-  if (fits.length === 0) return { kind: "miss" };
-  const whole = fits.find((s) => s.code.length === entered.length);
-  return whole ? { kind: "match", stratagem: whole } : { kind: "partial" };
+/** How far a code is keyed in after one more arrow: the longest start of the code the last presses spell. */
+export function step(at: number, a: Arrow, code: Arrow[]): number {
+  const keyed = [...code.slice(0, at), a];
+  for (let n = Math.min(keyed.length, code.length); n > 0; n--) {
+    if (keyed.slice(-n).every((k, i) => k === code[i])) return n;
+  }
+  return 0;
 }
 
 const KEYS: Record<string, Arrow> = {
