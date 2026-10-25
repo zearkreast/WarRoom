@@ -344,6 +344,18 @@ export function campaignTally(e: EpisodeLive): { won: number; lost: number; runn
   return { won, lost, running: e.phases.length - won - lost };
 }
 
+/** The archive's service record: campaigns and Major Orders won, and the victories in a row since the last failure. */
+export function campaignRecord(past: EpisodeLive[]): { won: number; orders: number; ordersWon: number; streak: number } {
+  const newestFirst = [...past].sort((a, b) => b.start - a.start);
+  const streak = newestFirst.findIndex((e) => e.status !== "won");
+  return {
+    won: past.filter((e) => e.status === "won").length,
+    orders: past.reduce((n, e) => n + e.phases.length, 0),
+    ordersWon: past.reduce((n, e) => n + campaignTally(e).won, 0),
+    streak: streak < 0 ? past.length : streak,
+  };
+}
+
 /** Galactic effect ids active on each planet and space station, from the official war status. */
 export interface EffectsLive {
   planets: { index: number; ids: number[] }[];
