@@ -173,7 +173,13 @@ function Home({ logText }: { logText: string }) {
       m.title,
       m.summary,
       m.address,
-      ...m.sections.flatMap((s) => [s.heading, s.text ?? "", ...(s.points ?? []), ...(s.faq ?? []).map((f) => `${f.q} ${f.a}`)]),
+      ...m.sections.flatMap((s) => [
+        s.heading,
+        s.text ?? "",
+        ...(s.points ?? []),
+        ...(s.faq ?? []).map((f) => `${f.q} ${f.a}`),
+        ...(s.folds ?? []).flatMap((f) => [f.title, ...f.points]),
+      ]),
     ),
   );
   const companies = COMPANIES.filter((c) =>

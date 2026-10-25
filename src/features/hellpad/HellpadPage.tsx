@@ -2,12 +2,16 @@ import {
   Archive,
   ArrowLeft,
   ChevronRight,
+  Crosshair,
   Gift,
   Globe,
   Globe2,
+  Library,
   Lock,
   Radio,
   Rocket,
+  Skull,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
@@ -24,6 +28,7 @@ import { GwwModule } from "./GwwModule";
 import { PastCampaignsModule } from "./PastCampaignsModule";
 import { PlanetsModule } from "./PlanetsModule";
 import { StationsModule } from "./StationsModule";
+import { StratagemTerminal } from "./StratagemTerminal";
 import "./hellpad.css";
 
 const MODULES: Record<HellpadModule, { title: string; path: string; color: string }> = {
@@ -47,22 +52,6 @@ function HellpadMark({ size = 64 }: { size?: number }) {
       </g>
       <rect x="28" y="28" width="8" height="8" fill="none" stroke="currentColor" strokeWidth="2" />
     </svg>
-  );
-}
-
-const REINFORCE = ["up", "down", "right", "left", "up"] as const;
-
-/** The Reinforce stratagem's code, keyed in over and over. */
-function StratagemCode() {
-  return (
-    <div className="hp-code" aria-hidden>
-      <span className="caps">Reinforce</span>
-      <span className="hp-code-keys">
-        {REINFORCE.map((d, i) => (
-          <i key={i} className={`hp-key ${d}`} style={{ "--i": i } as CSSProperties} />
-        ))}
-      </span>
-    </div>
   );
 }
 
@@ -92,7 +81,6 @@ function Mast() {
           {war && <span>{fmtInt(war.statistics.playerCount)} Helldivers deployed</span>}
         </div>
       </div>
-      <StratagemCode />
     </header>
   );
 }
@@ -151,16 +139,16 @@ function ModuleTile(props: {
   );
 }
 
-function LockedTile({ icon: Icon, title, text }: { icon: LucideIcon; title: string; text: string }) {
+function LockedTile(props: { icon: LucideIcon; title: string; path: string; text: string }) {
   return (
     <div className="hp-mod locked">
       <span className="hp-mod-icon">
-        <Icon size={26} strokeWidth={1.5} />
+        <props.icon size={26} strokeWidth={1.5} />
       </span>
       <span className="hp-mod-body">
-        <span className="hp-mod-path num">hp://{title.toLowerCase()}</span>
-        <b className="hp-mod-title">{title}</b>
-        <span className="hp-mod-text">{text}</span>
+        <span className="hp-mod-path num">hp://{props.path}</span>
+        <b className="hp-mod-title">{props.title}</b>
+        <span className="hp-mod-text">{props.text}</span>
         <span className="hp-mod-go caps">
           <Lock size={12} aria-hidden /> Module building
           <span className="hp-segs" aria-hidden>
@@ -283,6 +271,7 @@ function Hub() {
   return (
     <div className="hp-hub">
       <Mast />
+      <StratagemTerminal />
       <StationReport />
       <Group title="Field modules" count={4}>
         <PlanetsTile />
@@ -290,9 +279,43 @@ function Hub() {
         <GwwTile />
         <PastTile />
       </Group>
-      <Group title="In development" count={2}>
-        <LockedTile icon={Rocket} title="Warbonds" text="Warbond pages, items and medal costs." />
-        <LockedTile icon={Gift} title="Boosters" text="Booster effects and where to find them." />
+      <Group title="In development" count={6}>
+        <LockedTile
+          icon={Skull}
+          title="Enemy encyclopedia"
+          path="enemies"
+          text="Every enemy by faction: its armour, weak spots and what brings it down."
+        />
+        <LockedTile
+          icon={Crosshair}
+          title="Weaponry"
+          path="weapons"
+          text="Primaries, secondaries, throwables and support weapons, with their stats."
+        />
+        <LockedTile
+          icon={Zap}
+          title="Stratagem collection"
+          path="stratagems"
+          text="Every stratagem with its code, cooldown and where it is unlocked."
+        />
+        <LockedTile
+          icon={Library}
+          title="Ship library"
+          path="library"
+          text="For the Super Destroyer library Arrowhead has promised, once it is in the game."
+        />
+        <LockedTile
+          icon={Rocket}
+          title="Warbonds"
+          path="warbonds"
+          text="Warbond pages, items and medal costs."
+        />
+        <LockedTile
+          icon={Gift}
+          title="Boosters"
+          path="boosters"
+          text="Booster effects and where to find them."
+        />
       </Group>
     </div>
   );

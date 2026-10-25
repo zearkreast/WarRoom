@@ -21,6 +21,7 @@ import {
   Orbit,
   Quote,
   Radio,
+  Rocket,
   Shield,
   type LucideIcon,
 } from "lucide-react";
@@ -59,6 +60,7 @@ const MANUAL_ICONS: Record<string, IconLike> = {
   regions: Building2,
   "supply-lines": Network,
   dss: DssIcon,
+  "super-destroyers": Rocket,
   campaigns: Flag,
   gloom: CloudFog,
   misconceptions: CircleHelp,
@@ -342,6 +344,25 @@ function SectionBlock({ sec, id }: { sec: SiteSection; id: string }) {
               <p>
                 <Rich text={f.a} />
               </p>
+            </details>
+          ))}
+        </div>
+      )}
+      {sec.folds && (
+        <div className="gww-folds">
+          {sec.folds.map((f) => (
+            <details key={f.title} className="gww-fold">
+              <summary>
+                <b>{f.title}</b>
+                <span className="caps">{f.note}</span>
+              </summary>
+              <ol className="gww-fold-list">
+                {f.points.map((p) => (
+                  <li key={p}>
+                    <Point text={p} />
+                  </li>
+                ))}
+              </ol>
             </details>
           ))}
         </div>
