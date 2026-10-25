@@ -21,7 +21,7 @@ const KINDS: [RegExp, PoiKind][] = [
   [/factory hub/i, "factory"],
   [/jet brigade factor|communications array/i, "enemy"],
   [/science|xenoentomology|research|laborator/i, "science"],
-  [/factory|forge|mine\b|extraction|refinery|e-?711/i, "industry"],
+  [/factory|forge|armou?ry|mine\b|extraction|refinery|e-?711/i, "industry"],
   [/training|pandora|outpost|garrison|base\b/i, "military"],
   [/city|surveillance/i, "city"],
 ];

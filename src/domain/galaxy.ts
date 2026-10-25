@@ -13,6 +13,7 @@ export interface Landmark {
   note: string;
   biome: string;
   position: { x: number; y: number };
+  pois?: { name: string; description: string }[];
 }
 
 /** Worlds the game's galaxy map shows but the war API leaves out; positions measured off the map. */
@@ -23,6 +24,18 @@ export const LANDMARKS: Landmark[] = [
     note: "Glassed by the Illuminate. No war data is published for Mars.",
     biome: "Scorched",
     position: { x: 0.043, y: 0.035 },
+    pois: [
+      {
+        name: "Helldiver Training Facility",
+        description:
+          "Where recruits earned their capes until the Illuminate razed Mars in May 2185. Training has moved to Zegema Paradise.",
+      },
+      {
+        name: "Martian Armory",
+        description:
+          "Arms maker of the MA5C assault rifle, M7S SMG, M90A shotgun and M6C/SOCOM pistol. Named for Mars; the game never says its works stood there.",
+      },
+    ],
   },
 ];
 
