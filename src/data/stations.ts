@@ -128,7 +128,7 @@ export const STAR_OF_PEACE = {
     },
     {
       when: "3 Feb 2186",
-      text: "The blueprints are found in an Automaton database on [[planet:Clasa|Clasa]]. Fearing a socialist Star of Peace, Super Earth marches on [[planet:Cyberstan|Cyberstan]]; Operation Valid Pretext fails on 21 February. The Cyborgs later claim the theft.",
+      text: "The blueprints are found in an Automaton database on [[planet:Clasa|Clasa]]. Fearing a socialist Star of Peace, Super Earth marches on [[planet:Cyberstan|Cyberstan]]; Operation Valid Pretext fails on 21 February. High Command later names the Cyborgs as the thieves.",
     },
     {
       when: "9 Jun 2186",
