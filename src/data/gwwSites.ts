@@ -1,8 +1,6 @@
 /**
- * The Galactic Wide Web's sites: Super Earth's government and ministries, the mega-corporations, the
- * smaller brands on the city billboards, and the adverts that link to them. Written for this app in its
- * own words from the Helldivers Wiki; slogans, poster lines and broadcast lines are the game's, quoted.
- * Text may link with `[[kind:target|label]]`; see `domain/gwwText.ts`.
+ * Site text is adapted from the Helldivers Wiki in this app's words; slogans, poster lines and broadcast
+ * lines are the game's, word for word. Text links are written `[[kind:target|label]]` (domain/gwwText.ts).
  */
 import { WIKI, type Section, type Source } from "./gww";
 
@@ -11,7 +9,6 @@ const wiki = (title: string, page = title.replace(/ /g, "_")): Source => ({
   url: `https://helldivers.wiki.gg/wiki/${encodeURI(page)}`,
 });
 
-/** A dated line in a site's history. */
 export interface Dated {
   when: string;
   text: string;
@@ -19,7 +16,7 @@ export interface Dated {
 
 export interface SiteSection extends Section {
   timeline?: Dated[];
-  /** What the company makes, named as the game names it. */
+  /** Named as the game names them. */
   products?: string[];
 }
 
@@ -229,11 +226,11 @@ export const MINISTRIES: Ministry[] = [
       },
       {
         heading: "A shared logo",
-        text: "Its logo is the same as [[company:trustor|Trustor]]'s; how far the two are tied isn't known. The brands it keeps flowing fill the [[dir:market|Marketplace]].",
+        text: "Its logo is the same as [[company:trustor|Trustor]]'s; how far the two are tied isn't known.",
       },
     ],
     ties: [{ to: "company:trustor", how: "Same logo; ties unknown" }],
-    related: ["dir:market", "company:trustor"],
+    related: ["company:trustor", "dir:corps"],
     source: wiki("Ministry of Prosperity"),
   },
 ];
@@ -245,7 +242,6 @@ export interface Company {
   trade: string;
   /** One line for its tile. */
   summary: string;
-  /** Brand colour, for the site's banner. */
   color: string;
   logo?: string;
   /** The company's slogan as the game gives it. */
@@ -254,7 +250,6 @@ export interface Company {
   broadcast?: string;
   /** A Training Manual Tip about the company, quoted. */
   quote?: string;
-  /** A product picture shown beside its text. */
   showcase?: { image: string; alt: string };
   sections: SiteSection[];
   ties?: Tie[];
@@ -412,7 +407,7 @@ export const COMPANIES: Company[] = [
       },
     ],
     ties: [{ to: "ministry:prosperity", how: "Same logo; ties unknown" }],
-    related: ["ministry:prosperity", "dir:market"],
+    related: ["ministry:prosperity", "dir:corps"],
     ads: ["trustor-bug-insurance", "trustor-invasion-insurance"],
     source: wiki("Trustor"),
   },
@@ -519,143 +514,14 @@ export const COMPANIES: Company[] = [
   },
 ];
 
-/** A smaller brand from the city billboards. */
-export interface Brand {
-  id: string;
-  name: string;
-  trade: string;
-  text: string;
-  /** Its line from its own adverts, quoted. */
-  slogan?: string;
-  ads: string[];
-  related?: string[];
-}
-
-export const BRANDS: Brand[] = [
-  {
-    id: "libertea",
-    name: "LiberTea",
-    trade: "Tea",
-    text: "A chain of tea stores in Super Earth's colony cities. On 12 October 2186, as Liberty Day drew near, High Command had Helldivers choose between LiberTea and [[brand:democroffee|Democroffee]].",
-    slogan: "Tea flavoured tea.",
-    ads: ["libertea", "libertea-tea"],
-    related: ["brand:democroffee", "site:gov"],
-  },
-  {
-    id: "democroffee",
-    name: "Democroffee",
-    trade: "Coffee",
-    text: "A café chain advertised across the colony cities, established in 2184. It went head to head with [[brand:libertea|LiberTea]] in the run-up to Liberty Day 2186.",
-    slogan: "Wake up and smell the freedom.",
-    ads: ["democroffee-coffee-time", "democroffee-drink-now"],
-    related: ["brand:libertea", "site:gov"],
-  },
-  {
-    id: "patriot-hut",
-    name: "Patriot Hut",
-    trade: "Fast food",
-    text: "A food chain advertised in the Super Earth metropolis: burgers with over four kinds of meat, and Helldawgs on an all-beef bun.",
-    slogan: "Flame-grilled Helldawgs. Comin' in hot!",
-    ads: ["patriot-hut-helldawgs", "patriot-hut-burger"],
-  },
-  {
-    id: "juicetice",
-    name: "Juicetice",
-    trade: "Soft drinks",
-    text: "Soft drinks made with real synthetic fruit juice: Lemonizer, Liberty Lime and Berry Barrage.",
-    slogan: "Liberate your thirst.",
-    ads: ["juicetice-lemon-lime", "juicetice-berry-barrage"],
-  },
-  {
-    id: "freegum",
-    name: "Freegum",
-    trade: "Chewing gum",
-    text: "Chewing gum in strawberry flavour, advertised in the Super Earth metropolis.",
-    slogan: "You can't get enough!",
-    ads: ["freegum", "freegum-strawberry"],
-  },
-  {
-    id: "cornstitution",
-    name: "Cornstitution",
-    trade: "Cereal",
-    text: "A breakfast cereal advertised in the Super Earth metropolis.",
-    slogan: "It's got corn!",
-    ads: ["cornstitution"],
-  },
-  {
-    id: "acar",
-    name: "ACAR",
-    trade: "Cars",
-    text: "A car maker advertised in the Super Earth metropolis.",
-    slogan: "Drive anywhere.",
-    ads: ["acar-drive-anywhere"],
-  },
-  {
-    id: "justos",
-    name: "JustOS",
-    trade: "Smartphones",
-    text: "Maker of the Rectangle 8 smartphone, advertised in the Super Earth metropolis.",
-    ads: ["justos-rectangle-8"],
-  },
-  {
-    id: "inka",
-    name: "INKA Interior",
-    trade: "Furniture",
-    text: "Sells furniture to citizens across Super Earth's cities.",
-    slogan: "Rebuilding your world one piece at a time.",
-    ads: ["inka-rebuilding"],
-  },
-  {
-    id: "seafood",
-    name: "SEAFood",
-    trade: "Seafood",
-    text: "A seafood chain in the colony cities whose adverts suggest the catch is landed with large amounts of high explosives.",
-    slogan: "Caught fresh.",
-    ads: ["seafood-caught-fresh", "seafood-whale"],
-  },
-  {
-    id: "spearhead",
-    name: "Spearhead Real Estate",
-    trade: "Real estate",
-    text: "Offers viewings of its new shield apartment complexes on Super Earth.",
-    slogan: "Views to die for!",
-    ads: ["spearhead-real-estate"],
-  },
-  {
-    id: "super-clean",
-    name: "Super Clean",
-    trade: "Cleaning",
-    text: "Laundry and a stain remover for oil, spores, bile and blood. Used on human skin, the stain remover melts it.",
-    ads: ["super-clean", "super-clean-stain-remover"],
-  },
-  {
-    id: "truth-cram-school",
-    name: "T. Ruth's Cram School",
-    trade: "Education",
-    text: "A cram school franchise in the colony cities offering sustainable re-education. Admissions are open.",
-    slogan: "Dare to dream.",
-    ads: ["truth-cram-school"],
-  },
-  {
-    id: "voting-voyager",
-    name: "Voting Voyager",
-    trade: "Interstellar travel",
-    text: "Self-described interstellar travel experts, advertised in the colony cities and the Super Earth metropolis.",
-    slogan: "Believe the unbelievable.",
-    ads: ["voting-voyager"],
-  },
-];
-
-export interface Ad {
+/** `by` is the advertiser's site, as a link target; `brand` names an advertiser without one. */
+export type Ad = {
   file: string;
   /** What the advert shows and says, for screen readers. */
   alt: string;
   shape: "wide" | "tall";
-  /** The advertiser's site, as a link target. */
-  by: string;
-}
+} & ({ by: string } | { brand: string });
 
-/** Adverts seen on the game's city billboards; each opens its advertiser's site. */
 export const ADS: Ad[] = [
   { file: "trustor-bug-insurance", alt: "Trustor Bank: put your foot down with bug insurance.", shape: "wide", by: "company:trustor" },
   { file: "trustor-invasion-insurance", alt: "Trustor Bank: hold your ground with invasion insurance.", shape: "tall", by: "company:trustor" },
@@ -663,27 +529,27 @@ export const ADS: Ad[] = [
   { file: "humanity-franchisement", alt: "Ministry of Humanity: franchisement is freedom.", shape: "tall", by: "ministry:humanity" },
   { file: "expansion-work-songs", alt: "Ministry of Expansion: democratic work songs encouraged.", shape: "tall", by: "ministry:expansion" },
   { file: "helldivers-take-a-life", alt: "Join the Helldivers today: take a life, save a life.", shape: "wide", by: "ministry:defense" },
-  { file: "patriot-hut-helldawgs", alt: "Patriot Hut: flame-grilled Helldawgs, comin' in hot.", shape: "wide", by: "brand:patriot-hut" },
-  { file: "patriot-hut-burger", alt: "Patriot Hut: free your mouth.", shape: "tall", by: "brand:patriot-hut" },
-  { file: "libertea", alt: "LiberTea: a voter's paradise, a herbal tea for calming, patriotic thoughts.", shape: "tall", by: "brand:libertea" },
-  { file: "libertea-tea", alt: "LiberTea: tea flavoured tea.", shape: "wide", by: "brand:libertea" },
-  { file: "cornstitution", alt: "Cornstitution cereal: it's got corn!", shape: "wide", by: "brand:cornstitution" },
-  { file: "freegum", alt: "Freegum: you can't get enough!", shape: "tall", by: "brand:freegum" },
-  { file: "freegum-strawberry", alt: "Freegum strawberry flavour: you need it right now!", shape: "wide", by: "brand:freegum" },
-  { file: "democroffee-coffee-time", alt: "Democroffee: it's coffee time.", shape: "tall", by: "brand:democroffee" },
-  { file: "democroffee-drink-now", alt: "Democroffee: drink coffee now, wake up and smell the freedom.", shape: "tall", by: "brand:democroffee" },
-  { file: "voting-voyager", alt: "Voting Voyager: believe the unbelievable.", shape: "wide", by: "brand:voting-voyager" },
-  { file: "super-clean", alt: "Super Clean nuclear detergent.", shape: "tall", by: "brand:super-clean" },
-  { file: "super-clean-stain-remover", alt: "Super Clean stain remover, for oil stains, spores, bile and blood.", shape: "wide", by: "brand:super-clean" },
-  { file: "truth-cram-school", alt: "T. Ruth's Cram School: dare to dream.", shape: "tall", by: "brand:truth-cram-school" },
-  { file: "juicetice-lemon-lime", alt: "Juicetice Lemonizer and Liberty Lime: hurts so good.", shape: "wide", by: "brand:juicetice" },
-  { file: "juicetice-berry-barrage", alt: "Juicetice Berry Barrage: coming in thirst place.", shape: "tall", by: "brand:juicetice" },
-  { file: "acar-drive-anywhere", alt: "ACAR: drive anywhere.", shape: "wide", by: "brand:acar" },
-  { file: "seafood-caught-fresh", alt: "SEAFood: caught fresh.", shape: "tall", by: "brand:seafood" },
-  { file: "seafood-whale", alt: "SEAFood: where there's a will, there's a whale.", shape: "wide", by: "brand:seafood" },
-  { file: "inka-rebuilding", alt: "INKA Interior: rebuilding your world one piece at a time.", shape: "wide", by: "brand:inka" },
-  { file: "spearhead-real-estate", alt: "Spearhead Real Estate: views to die for. Putting you first.", shape: "tall", by: "brand:spearhead" },
-  { file: "justos-rectangle-8", alt: "JustOS: introducing the Rectangle 8.", shape: "wide", by: "brand:justos" },
+  { file: "patriot-hut-helldawgs", alt: "Patriot Hut: flame-grilled Helldawgs, comin' in hot.", shape: "wide", brand: "Patriot Hut" },
+  { file: "patriot-hut-burger", alt: "Patriot Hut: free your mouth.", shape: "tall", brand: "Patriot Hut" },
+  { file: "libertea", alt: "LiberTea: a voter's paradise, a herbal tea for calming, patriotic thoughts.", shape: "tall", brand: "LiberTea" },
+  { file: "libertea-tea", alt: "LiberTea: tea flavoured tea.", shape: "wide", brand: "LiberTea" },
+  { file: "cornstitution", alt: "Cornstitution cereal: it's got corn!", shape: "wide", brand: "Cornstitution" },
+  { file: "freegum", alt: "Freegum: you can't get enough!", shape: "tall", brand: "Freegum" },
+  { file: "freegum-strawberry", alt: "Freegum strawberry flavour: you need it right now!", shape: "wide", brand: "Freegum" },
+  { file: "democroffee-coffee-time", alt: "Democroffee: it's coffee time.", shape: "tall", brand: "Democroffee" },
+  { file: "democroffee-drink-now", alt: "Democroffee: drink coffee now, wake up and smell the freedom.", shape: "tall", brand: "Democroffee" },
+  { file: "voting-voyager", alt: "Voting Voyager: believe the unbelievable.", shape: "wide", brand: "Voting Voyager" },
+  { file: "super-clean", alt: "Super Clean nuclear detergent.", shape: "tall", brand: "Super Clean" },
+  { file: "super-clean-stain-remover", alt: "Super Clean stain remover, for oil stains, spores, bile and blood.", shape: "wide", brand: "Super Clean" },
+  { file: "truth-cram-school", alt: "T. Ruth's Cram School: dare to dream.", shape: "tall", brand: "T. Ruth's Cram School" },
+  { file: "juicetice-lemon-lime", alt: "Juicetice Lemonizer and Liberty Lime: hurts so good.", shape: "wide", brand: "Juicetice" },
+  { file: "juicetice-berry-barrage", alt: "Juicetice Berry Barrage: coming in thirst place.", shape: "tall", brand: "Juicetice" },
+  { file: "acar-drive-anywhere", alt: "ACAR: drive anywhere.", shape: "wide", brand: "ACAR" },
+  { file: "seafood-caught-fresh", alt: "SEAFood: caught fresh.", shape: "tall", brand: "SEAFood" },
+  { file: "seafood-whale", alt: "SEAFood: where there's a will, there's a whale.", shape: "wide", brand: "SEAFood" },
+  { file: "inka-rebuilding", alt: "INKA Interior: rebuilding your world one piece at a time.", shape: "wide", brand: "INKA Interior" },
+  { file: "spearhead-real-estate", alt: "Spearhead Real Estate: views to die for. Putting you first.", shape: "tall", brand: "Spearhead Real Estate" },
+  { file: "justos-rectangle-8", alt: "JustOS: introducing the Rectangle 8.", shape: "wide", brand: "JustOS" },
 ];
 
 export interface Holiday {
@@ -698,7 +564,6 @@ export const HOLIDAYS: Holiday[] = [
   { name: "Malevelon Creek Memorial Day", month: 4, day: 3 },
 ];
 
-/** Super Earth's own site on how it governs. */
 export const GOV = {
   title: "Managed Democracy",
   address: "se://gov",

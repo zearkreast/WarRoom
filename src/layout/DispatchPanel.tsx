@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { APP_VERSION } from "../config";
 import { CHANGELOG } from "../changelog";
 import { useSettings, useUi } from "../state";
+import { useEscape } from "../ui/primitives";
 
 /** Tracker Dispatch: what's new in the app. */
 export function DispatchPanel() {
@@ -11,12 +12,7 @@ export function DispatchPanel() {
   useEffect(() => {
     if (dispatchOpen) markChangelog(APP_VERSION);
   }, [dispatchOpen, markChangelog]);
-  useEffect(() => {
-    if (!dispatchOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && toggleDispatch(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [dispatchOpen, toggleDispatch]);
+  useEscape(() => toggleDispatch(false), dispatchOpen);
   if (!dispatchOpen) return null;
   return (
     <aside className="dispatch-panel panel glass" aria-label="Tracker dispatch">

@@ -1,4 +1,4 @@
-import { useId, type CSSProperties } from "react";
+import { useId, type ComponentType, type CSSProperties } from "react";
 import { factionColor } from "../domain/factions";
 import invasionFleet from "../assets/emblems/invasion-fleet.png";
 
@@ -159,6 +159,27 @@ export function SubfactionEmblem({
   return (
     <svg className="emblem" width={size} height={size} viewBox="-12 -12 24 24" aria-hidden>
       <EmblemArt art={subfactionArt(name) ?? faction} size={24} color={color ?? factionColor(faction)} />
+    </svg>
+  );
+}
+
+/** Anything drawn like a Lucide icon. */
+export type IconLike = ComponentType<{ size?: number | string; strokeWidth?: number | string; className?: string }>;
+
+/** The game's own DSS glyph, drawn like a Lucide icon in the current colour. */
+export function DssIcon({ size = 24, className, color }: { size?: number | string; className?: string; color?: string }) {
+  return (
+    <svg className={`emblem ${className ?? ""}`} width={size} height={size} viewBox="-12 -12 24 24" style={{ color }} aria-hidden>
+      <EmblemArt art="dss" size={24} />
+    </svg>
+  );
+}
+
+/** A space station's emblem: the DSS glyph, or the Automaton cog and star the enemy station wore. */
+export function StationEmblem({ station, size = 16, color }: { station: "dss" | "css"; size?: number; color?: string }) {
+  return (
+    <svg className="emblem" width={size} height={size} viewBox="-12 -12 24 24" aria-hidden>
+      <EmblemArt art={station === "dss" ? "dss" : "automaton-station"} size={24} color={color} />
     </svg>
   );
 }

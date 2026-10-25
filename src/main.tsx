@@ -10,6 +10,7 @@ import "@fontsource-variable/archivo/wdth.css";
 import "./ui/theme.css";
 import "./ui/ui.css";
 import App from "./App";
+import { resumePlace } from "./navHistory";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,6 +22,8 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+resumePlace();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

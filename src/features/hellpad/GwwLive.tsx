@@ -13,7 +13,7 @@ import { Countdown, LiveDot, useNow } from "../../ui/primitives";
 import { useFronts, type Front } from "../planets/useFronts";
 import { titleOf, useGwwNav } from "./gwwNav";
 
-/** The box a manual's live panel sits in: what the tracker sees right now, with ways into the app. */
+/** `actions` are link targets. */
 function Live(props: { title: string; actions?: string[]; children: ReactNode }) {
   const { follow } = useGwwNav();
   return (
@@ -39,7 +39,6 @@ function Waiting({ what }: { what: string }) {
   return <p className="gww-live-empty">{what}</p>;
 }
 
-/** A planet name that opens the app's planet options, coloured by who holds it. */
 function PlanetName({ p }: { p: Planet }) {
   const openOptions = useUi((s) => s.openOptions);
   return (
@@ -105,7 +104,6 @@ function LiveBasics() {
   );
 }
 
-/** Every enemy attack along a supply line, attacker first. */
 function useAttacks(): { from: Planet; to: Planet }[] | undefined {
   const planets = useFreshPlanets().data;
   return useMemo(() => {
@@ -422,7 +420,6 @@ const PANELS: Record<string, () => ReactNode> = {
   gloom: LiveGloom,
 };
 
-/** What the tracker sees right now on the subject of a manual; nothing for manuals without one. */
 export function LivePanel({ manual }: { manual: string }) {
   const Panel = PANELS[manual];
   return Panel ? <Panel /> : null;
