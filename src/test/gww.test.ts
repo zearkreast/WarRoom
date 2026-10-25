@@ -1,6 +1,42 @@
 import { describe, expect, it } from "vitest";
-import { ADS, COMPANIES, MANUALS, MINISTRIES, TIPS } from "../data/gww";
+import { CHAPTERS, MANUALS, TIPS } from "../data/gww";
+import { ADS, BRANDS, COMPANIES, GOV, MINISTRIES, type SiteSection } from "../data/gwwSites";
+import { linksIn, nextYearly, parseRich, plainText } from "../domain/gwwText";
 import { adUrl, iconUrl, logoUrl } from "../features/hellpad/gwwArt";
+import { APP_PAGES, pageOf } from "../features/hellpad/gwwNav";
+import planetsJson from "./fixtures/planets.json";
+
+/** Every piece of text on the G.W.W., for link checks. */
+const allText = (): string[] => {
+  const sections: SiteSection[] = [
+    ...MANUALS.flatMap((m) => m.sections),
+    ...MINISTRIES.flatMap((m) => m.sections),
+    ...COMPANIES.flatMap((c) => c.sections),
+    ...GOV.sections,
+  ];
+  return [
+    ...sections.flatMap((s) => [
+      s.text ?? "",
+      ...(s.points ?? []),
+      ...(s.table?.rows ?? []).flatMap((r) => r.cells),
+      ...(s.kinds ?? []).map((k) => k.text),
+      ...(s.faq ?? []).map((f) => f.a),
+      ...(s.timeline ?? []).map((d) => d.text),
+    ]),
+    ...MANUALS.flatMap((m) => m.tips),
+    ...BRANDS.map((b) => b.text),
+  ];
+};
+
+const targets = (): string[] => [
+  ...allText().flatMap(linksIn),
+  ...MANUALS.flatMap((m) => m.related),
+  ...MINISTRIES.flatMap((m) => [...(m.related ?? []), ...(m.ties ?? []).map((t) => t.to)]),
+  ...COMPANIES.flatMap((c) => [...(c.related ?? []), ...(c.ties ?? []).map((t) => t.to)]),
+  ...BRANDS.flatMap((b) => b.related ?? []),
+  ...GOV.related,
+  ...ADS.map((a) => a.by),
+];
 
 describe("galactic wide web", () => {
   it("finds every picture its pages name", () => {
@@ -10,23 +46,61 @@ describe("galactic wide web", () => {
         ...m.sections.flatMap((s) => [...(s.kinds ?? []).map((k) => k.icon), ...(s.table?.rows ?? []).flatMap((r) => (r.icon ? [r.icon] : []))]),
       ]),
       ...MINISTRIES.map((m) => m.icon),
-      "super-earth",
+      GOV.icon,
     ];
     expect(icons.filter((i) => !iconUrl(i))).toEqual([]);
-    expect(COMPANIES.flatMap((c) => (c.logo && !logoUrl(c.logo) ? [c.logo] : []))).toEqual([]);
-    const ads = [...ADS.map((a) => a.file), ...MINISTRIES.flatMap((m) => m.ads ?? []), ...COMPANIES.flatMap((c) => c.ads ?? [])];
+    expect(COMPANIES.flatMap((c) => [c.logo, c.showcase?.image].filter((l): l is string => !!l && !logoUrl(l)))).toEqual([]);
+    const ads = [...ADS.map((a) => a.file), ...MINISTRIES.flatMap((m) => m.ads ?? []), ...COMPANIES.flatMap((c) => c.ads ?? []), ...BRANDS.flatMap((b) => b.ads)];
     expect(ads.filter((a) => !adUrl(a))).toEqual([]);
+    expect(ADS.filter((a) => !ads.slice(ADS.length).includes(a.file)).map((a) => a.file)).toEqual([]);
   });
 
-  it("gives every site its own address", () => {
-    const addresses = [...MANUALS, ...MINISTRIES, ...COMPANIES].map((s) => s.address);
+  it("gives every site its own address and id", () => {
+    const addresses = [...MANUALS, ...MINISTRIES, ...COMPANIES, GOV].map((s) => s.address);
     expect(new Set(addresses).size).toBe(addresses.length);
-    expect(new Set(MANUALS.map((m) => m.id)).size).toBe(MANUALS.length);
+    for (const list of [MANUALS, MINISTRIES, COMPANIES, BRANDS]) expect(new Set(list.map((x) => x.id)).size).toBe(list.length);
   });
 
-  it("links ministries only to corporations it lists", () => {
-    const names = new Set(COMPANIES.map((c) => c.name));
-    expect(MINISTRIES.flatMap((m) => (m.partners ?? []).filter((p) => !names.has(p)))).toEqual([]);
+  it("links only to pages, tracker views and planets that exist", () => {
+    const planets = new Set((planetsJson as { name: string }[]).map((p) => p.name.toLowerCase()));
+    const broken = targets().filter((t) => {
+      const id = t.slice(t.indexOf(":") + 1);
+      if (t.startsWith("planet:")) return !planets.has(id.toLowerCase());
+      if (t.startsWith("app:")) return !(id in APP_PAGES);
+      return !pageOf(t);
+    });
+    expect(broken).toEqual([]);
+  });
+
+  it("puts every manual in a chapter, and the chapters in reading order", () => {
+    const order = CHAPTERS.map((c) => c.id);
+    const seq = MANUALS.map((m) => order.indexOf(m.chapter));
+    expect(seq.every((c) => c >= 0)).toBe(true);
+    expect([...seq].sort((a, b) => a - b)).toEqual(seq);
     expect(TIPS.length).toBeGreaterThan(0);
+  });
+});
+
+describe("g.w.w. text", () => {
+  it("splits links out of text", () => {
+    expect(parseRich("See [[manual:defense|gambits]] and [[app:map|the map]].")).toEqual([
+      { text: "See " },
+      { kind: "manual", target: "defense", label: "gambits" },
+      { text: " and " },
+      { kind: "app", target: "map", label: "the map" },
+      { text: "." },
+    ]);
+    expect(parseRich("[[nope:x|plain]] stays")).toEqual([{ text: "plain" }, { text: " stays" }]);
+    expect(plainText("On [[planet:Tien Kwan|Tien Kwan]].")).toBe("On Tien Kwan.");
+  });
+
+  it("counts down to the next yearly day", () => {
+    const days = [
+      { name: "Liberty Day", month: 10, day: 26 },
+      { name: "Memorial", month: 4, day: 3 },
+    ];
+    expect(nextYearly(days, new Date(2026, 9, 25, 23, 0))).toMatchObject({ name: "Liberty Day", in: 1 });
+    expect(nextYearly(days, new Date(2026, 9, 26, 8, 0))).toMatchObject({ name: "Liberty Day", in: 0 });
+    expect(nextYearly(days, new Date(2026, 9, 27))).toMatchObject({ name: "Memorial", in: 158 });
   });
 });
