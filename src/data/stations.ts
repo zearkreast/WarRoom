@@ -52,7 +52,7 @@ export const PAST_STATIONS: StationRecord[] = [
       },
       {
         heading: "What it looked like",
-        text: "A near-spherical dark hull, ribbed from pole to pole and pricked with red lights, with a collar on top and a short barrel on one flank. Super Earth's posters painted the Automaton cog and star on its face. It had no galaxy-map icon of its own.",
+        text: "A near-spherical dark hull, ribbed from pole to pole and pricked with red lights, with a collar on top and a short barrel on one flank. A Super Earth propaganda poster painted the Automaton cog and star on its face.",
       },
       {
         heading: "Afterwards",
@@ -84,7 +84,7 @@ export const PAST_STATIONS: StationRecord[] = [
       },
       {
         when: "27 Jul 2186",
-        text: "X-45 is liberated at 05:20; a minute later High Command reports the weapon intercepted before it could strike Mort, then fully destroyed. Its debris rains onto Mort. Helldivers earn the KDM-500 Outrider helmet.",
+        text: "X-45 is liberated; a minute later High Command reports the weapon intercepted before it could strike Mort, then fully destroyed. Its debris rains onto Mort. Helldivers earn the KDM-500 Outrider helmet.",
       },
       { when: "9 Oct 2186", text: "The Automatons retake [[planet:X-45|X-45]]." },
     ],
@@ -96,10 +96,10 @@ export const PAST_STATIONS: StationRecord[] = [
 export const STAR_OF_PEACE = {
   status: "Unarmed",
   summary:
-    "The Democracy Space Station's planet-collapsing weapon: a beam of ionized Dark Fluid fired from the station's barrel. Its one shot turned [[planet:Penta|Penta]] into a black hole and spent every drop of Dark Fluid Super Earth had made; it has been unarmed since.",
+    "The Democracy Space Station's planet-collapsing weapon: a beam of ionized Dark Fluid. Its one shot turned [[planet:Penta|Penta]] into a black hole and spent every drop of Dark Fluid Super Earth had made; it has been unarmed since.",
   points: [
-    "Weapon: a macro-scale laser whose gain medium is synthesized Dark Fluid. Heatsinks of iridium-infused superalloy, taken from the Automatons on the magma planets, keep its heat from melting the station.",
-    "Fuel: Dark Fluid is made, very inefficiently, from E-711, which only Terminid Hive Worlds yield. Firing uses all of it and damages the DSS.",
+    "Weapon: a macro-scale laser whose gain medium is synthesized Dark Fluid. Heatsinks of iridium-infused superalloy, taken from the Automatons on the magma planets, shield the station from its own heat.",
+    "Fuel: Dark Fluid is made, very inefficiently, from E-711, which only Terminid Hive Worlds yield. Its one firing used all of it and damaged the DSS.",
     "Built: at Pandora Base, a secret Ministry of Expansion foundry on [[planet:Afoyay Bay|Afoyay Bay]], by dissidents from the Center for the Confinement of Dissidence.",
     "Targets: Helldivers voted between [[planet:Penta|Penta]] (Automatons), [[planet:Valmox|Valmox]] (Illuminate) and [[planet:Zagon Prime|Zagon Prime]] (Terminids). The planet next to the target had to be Super Earth's when it fired.",
   ],
@@ -108,10 +108,10 @@ export const STAR_OF_PEACE = {
       when: "11 Dec 2185",
       text: "Operation Free Space begins: Helldivers hold [[planet:Afoyay Bay|Afoyay Bay]], [[planet:Fury|Fury]], [[planet:K|K]] and [[planet:Mox|Mox]] so Pandora Base can be built.",
     },
-    { when: "18 Dec 2185", text: "Pandora Base goes up, and High Command reveals what it is for: the Star of Peace." },
+    { when: "18 Dec 2185", text: "Construction of Pandora Base begins, and High Command reveals what it is for: the Star of Peace." },
     {
       when: "2 Jan 2186",
-      text: "Helldivers gather E-711 on [[planet:Omicron|Omicron]]. The order fails: there is Dark Fluid for one shot only.",
+      text: "Helldivers gather E-711 on [[planet:Omicron|Omicron]]. The order fails on 8 January: too little to fire. By 14 January there is barely enough Dark Fluid for one shot.",
     },
     {
       when: "8 Jan 2186",
@@ -124,11 +124,11 @@ export const STAR_OF_PEACE = {
     },
     {
       when: "21 Jan 2186",
-      text: "The DSS is repaired at Pandora Base while Helldivers hold Afoyay Bay against the Illuminate. An inquiry finds the full blueprints were downloaded when it fired.",
+      text: "A data breach at the firing is suspected, and the DSS is locked down for a Ministry of Truth inquiry while Helldivers hold Afoyay Bay and clear a way out through [[planet:Valmox|Valmox]] and [[planet:Myrium|Myrium]]. On 27 January the inquiry confirms the full blueprints were downloaded, and repairs resume.",
     },
     {
       when: "3 Feb 2186",
-      text: "The blueprints are found in an Automaton database on [[planet:Clasa|Clasa]]. Fearing a socialist Star of Peace, Super Earth marches on [[planet:Cyberstan|Cyberstan]]; Operation Valid Pretext fails on 21 February. High Command later names the Cyborgs as the thieves.",
+      text: "The blueprints are found on a terminal on [[planet:Clasa|Clasa]]. Fearing a socialist Star of Peace, Super Earth marches on [[planet:Cyberstan|Cyberstan]]. On 10 February High Command names the Cyborgs as the thieves; Operation Valid Pretext fails on 21 February.",
     },
     {
       when: "9 Jun 2186",
