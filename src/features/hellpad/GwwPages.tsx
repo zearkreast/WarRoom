@@ -101,7 +101,7 @@ export function CompanyMark({ c }: { c: Company }) {
   );
 }
 
-/** A small picture for any link target, for chips and lists. */
+/** A small picture for any link target. */
 export function TargetIcon({ target, size = 20 }: { target: string; size?: number }) {
   const [kind, id] = [target.slice(0, target.indexOf(":")), target.slice(target.indexOf(":") + 1)];
   const img = (src: string | undefined) => (src ? <img src={src} alt="" width={size} height={size} /> : null);
@@ -130,7 +130,7 @@ const KIND_LABEL: Record<string, string> = {
   app: "In the tracker",
 };
 
-/** An advert from the city billboards; it opens its advertiser's site, unless that is the page it is on. */
+/** `here` is the link target of the page it's shown on; an advert for that page doesn't link to it. */
 export function AdBox({ ad, here }: { ad: Ad; here?: string }) {
   const { follow } = useGwwNav();
   const url = adUrl(ad.file);
@@ -190,7 +190,7 @@ function FieldTip({ text }: { text: string }) {
   );
 }
 
-/** "Term: text" points get their term in bold; the colon must come after any link in the term. */
+/** The term ends at the first ": ", so a link label before it mustn't contain one. */
 function Point({ text }: { text: string }) {
   const at = text.indexOf(": ");
   if (at < 0 || at > 80) return <Rich text={text} />;
@@ -354,7 +354,6 @@ function Banner(props: {
 
 const reducedMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-/** Jump links to a long page's sections. */
 function Toc({ sections, prefix }: { sections: Section[]; prefix: string }) {
   if (sections.length < 3) return null;
   return (
@@ -443,7 +442,6 @@ function SourceLine({ sources, quoted }: { sources?: Source[]; quoted?: string }
   );
 }
 
-/** Previous and next pages in the same series. */
 function Pager({ list, at, noun }: { list: string[]; at: number; noun: string }) {
   const { follow } = useGwwNav();
   const prev = list[at - 1];
@@ -587,7 +585,6 @@ export function MinistryTile({ m }: { m: Ministry }) {
   );
 }
 
-/** The war log, the government site and the news, ahead of the ministries. */
 export function OfficialTiles({ logText }: { logText: string }) {
   return (
     <>
@@ -620,7 +617,6 @@ export function OfficialTiles({ logText }: { logText: string }) {
   );
 }
 
-/** How far through the recruit's course this browser is, and the next manual to read. */
 export function CourseProgress({ compact }: { compact?: boolean }) {
   const read = useSettings((s) => s.gwwRead);
   const clearRead = useSettings((s) => s.clearRead);

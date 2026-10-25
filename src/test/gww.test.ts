@@ -6,7 +6,6 @@ import { adUrl, iconUrl, logoUrl } from "../features/hellpad/gwwArt";
 import { APP_PAGES, pageOf } from "../features/hellpad/gwwNav";
 import planetsJson from "./fixtures/planets.json";
 
-/** Every piece of text on the G.W.W., for link checks. */
 const allText = (): string[] => {
   const sections: SiteSection[] = [
     ...MANUALS.flatMap((m) => m.sections),

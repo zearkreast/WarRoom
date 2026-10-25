@@ -1,8 +1,7 @@
 /**
- * Galactic Wide Web training manuals, in reading order, and the game's Training Manual Tips. The manuals
- * are written for this app in its own words from the Helldivers Wiki (see each manual's `sources`);
- * quotes marked as the game's are its Training Manual Tips, word for word. Text may link with
- * `[[kind:target|label]]`; see `domain/gwwText.ts`.
+ * Training manuals in reading order, and the game's Training Manual Tips. Manual text is adapted from the
+ * Helldivers Wiki in this app's words (credited in `sources`); the game's quotes are word for word. Text
+ * links are written `[[kind:target|label]]` (domain/gwwText.ts).
  */
 
 export interface Source {
@@ -10,7 +9,7 @@ export interface Source {
   url: string;
 }
 
-/** The licence of the Helldivers Wiki's text, which the pages adapted from it share. */
+/** Pages adapted from the wiki share its licence. */
 export const WIKI_LICENCE: Source = {
   title: "CC BY-NC-SA 4.0",
   url: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
@@ -55,7 +54,7 @@ export interface Chapter {
   summary: string;
 }
 
-/** The recruit's course: the manuals read in this order make one story. */
+/** In course order; MANUALS are listed chapter by chapter in the same order. */
 export const CHAPTERS: Chapter[] = [
   { id: "war", title: "The war", summary: "What a campaign is, and where one can open." },
   { id: "fronts", title: "Fronts", summary: "Liberating planets, holding them, and losing them." },
