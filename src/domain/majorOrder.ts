@@ -55,6 +55,10 @@ export function describeAssignment(a: Assignment, planets: Planet[] | undefined)
   return a.tasks.map((t, i) => describeTask(t, a.progress[i] ?? 0, planets));
 }
 
+/** A count task's progress as 0-100, held at 99.9 until done so it never reads 100% early. */
+export const taskPercent = (t: TaskView) =>
+  t.done ? 100 : t.goal > 0 ? Math.min(99.9, Math.max(0, (t.current / t.goal) * 100)) : 0;
+
 const REWARD_LABELS: Record<number, string> = { 1: "Warbond Medals", 2: "Requisition Slips", 3: "Super Credits" };
 export const rewardLabel = (type: number) => REWARD_LABELS[type] ?? "Reward";
 
