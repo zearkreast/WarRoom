@@ -234,6 +234,17 @@ describe("collector cycle", () => {
     expect(calls).toHaveLength(0);
   });
 
+  it("rewrites the dispatches when the newest one's text changes under the same id", async () => {
+    const { db, calls } = fakeSupabase();
+    const data: Record<string, unknown> = { ...api };
+    const task = createTasks(fakeHd2(data), db, new Recorder(db), () => 1_000_000).find((t) => t.name === "dispatches")!;
+    await runTask(task);
+    data.dispatches = dispatchesJson.map((d) => ({ ...d, message: `${d.message} (corrected)` }));
+    calls.length = 0;
+    await runTask(task);
+    expect(calls.filter((c) => c.path.startsWith("snapshots"))).toHaveLength(1);
+  });
+
   it("restores owners after a restart so it doesn't invent captures", async () => {
     const owners = planets.map((p) => ({
       planet: p.index,

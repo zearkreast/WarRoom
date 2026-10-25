@@ -1,6 +1,7 @@
 // Rate-limited client for api.helldivers2.dev and the official game API. The collector is its only caller.
 
 import { request } from "node:https";
+import { notEnglish } from "./language.ts";
 
 export class RateLimitError extends Error {
   retryAfterMs: number;
@@ -18,6 +19,14 @@ export class ApiError extends Error {
     super(`API ${status} for ${path}`);
     this.status = status;
     this.retryAfterMs = retryAfterMs;
+  }
+}
+
+/** The answer came in another language; the cache holds it for 30 s, so the job tries again a minute later. */
+export class LanguageError extends Error {
+  retryAfterMs = LANGUAGE_RETRY_MS;
+  constructor(path: string) {
+    super(`Not in English: ${path}`);
   }
 }
 
@@ -40,6 +49,7 @@ export interface ClientOptions {
 const DEFAULT_RETRY_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 25_000;
 const MAX_BACKOFF_MS = 300_000;
+const LANGUAGE_RETRY_MS = 60_000;
 /** Wait once X-RateLimit-Remaining reaches 0. */
 const WINDOW_MS = 10_000;
 
@@ -134,7 +144,9 @@ export function createHd2Client(opts: ClientOptions) {
     }
     backoff = 0;
     if (res.headers.get("X-RateLimit-Remaining") === "0") pause(WINDOW_MS);
-    return (await res.json()) as T;
+    const body = (await res.json()) as T;
+    if (notEnglish(body)) throw new LanguageError(path);
+    return body;
   }
 
   return {

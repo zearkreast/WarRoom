@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createHd2Client, RateLimitError, type ClientOptions } from "./hd2.ts";
+import { createHd2Client, LanguageError, RateLimitError, type ClientOptions } from "./hd2.ts";
 
 const createClient = (o: Omit<ClientOptions, "client" | "contact">) =>
   createHd2Client({ client: "warcommand-tracker", contact: "test", ...o });
@@ -65,6 +65,28 @@ describe("api client", () => {
     });
     await expect(c.get("/hang")).rejects.toThrow(/timed out/);
     await expect(c.get("/next")).resolves.toEqual({ ok: 1 });
+  });
+
+  it("rejects an answer in another language without pausing the queue", async () => {
+    const clock = fakeClock();
+    const times: number[] = [];
+    let calls = 0;
+    const c = createClient({
+      baseUrl: "",
+      minGapMs: 0,
+      ...clock,
+      fetchFn: async () => {
+        times.push(clock.now());
+        return calls++ === 0
+          ? json([{ message: "Los Helldivers defienden la colonia de los ataques del enemigo." }])
+          : json([]);
+      },
+    });
+    const err = (await c.get("/api/v1/dispatches").catch((e) => e)) as LanguageError;
+    expect(err).toBeInstanceOf(LanguageError);
+    expect(err.retryAfterMs).toBe(60_000);
+    await c.get("/api/v1/war");
+    expect(times).toEqual([0, 0]);
   });
 
   it("pauses the whole queue after a 429 using Retry-After", async () => {

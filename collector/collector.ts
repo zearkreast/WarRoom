@@ -46,7 +46,7 @@ export function createTasks(
   game?: Hd2Client,
 ): Task[] {
   let lastStatic = "";
-  let lastDispatch = 0;
+  let lastDispatches = "";
   /** Latest campaigns, so each war sample can split players by front. */
   let lastCampaigns: Campaign[] = [];
   /** Each station's planet as last seen; read back from the stored snapshot after a restart. */
@@ -127,11 +127,12 @@ export function createTasks(
       everyMs: 300_000,
       async run() {
         const d = newestDispatches(await hd2.get<Dispatch[]>("/api/v1/dispatches"));
-        const top = d[0]?.id ?? 0;
-        if (top === lastDispatch) return "unchanged";
+        // Compared by text, not id: a dispatch stored in the wrong language is replaced once it comes in English.
+        const json = JSON.stringify(d);
+        if (json === lastDispatches) return "unchanged";
         await snapshot("dispatches", d);
-        lastDispatch = top;
-        return `newest #${top}`;
+        lastDispatches = json;
+        return `newest #${d[0]?.id ?? 0}`;
       },
     },
     {
