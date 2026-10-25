@@ -1,20 +1,24 @@
-import { History, Satellite, Timer, Vote, Zap } from "lucide-react";
-import { useState, type CSSProperties } from "react";
+import { FileText, History, Sparkle, Timer, Vote, Zap } from "lucide-react";
+import { Fragment, useState, type CSSProperties, type MouseEvent } from "react";
 import { useCampaigns, useEffects, useFreshPlanets, useSpaceStations } from "../../api/queries";
 import { useStationJumps } from "../../api/stations";
 import type { TacticalAction } from "../../api/types";
-import { PAST_STATIONS, type StationRecord } from "../../data/stations";
+import { WIKI_LICENCE, type Source } from "../../data/gww";
+import { PAST_STATIONS, STAR_OF_PEACE, type StationEvent, type StationRecord } from "../../data/stations";
 import { regenPctPerHour } from "../../domain/biomes";
 import { factionColor } from "../../domain/factions";
 import { fmtDateTime, fmtPct } from "../../domain/format";
+import { parseRich } from "../../domain/gwwText";
 import { trackedPercent } from "../../domain/progress";
 import type { StationLive } from "../../domain/snapshot";
 import { fmtLongDuration } from "../../domain/warHistory";
 import { useUi } from "../../state";
-import { FactionEmblem } from "../../ui/emblems";
-import { Countdown, Empty, Loading, Meter, Panel, useNow } from "../../ui/primitives";
+import { DssIcon, FactionEmblem, StationEmblem } from "../../ui/emblems";
+import { Countdown, Empty, Loading, Meter, OutLink, Panel, StatusChip, useNow } from "../../ui/primitives";
+import { dssState } from "../map/pawnArt";
 import { usePlanetRate } from "../planets/useFronts";
 import { PlanetSphere } from "../planet/PlanetDetail";
+import { CssHolo, DssHolo } from "./StationHolo";
 
 /** Splits the API's `<span data-ah="1">…</span>` highlights into plain and emphasised runs. */
 function Highlighted({ text }: { text: string }) {
@@ -35,6 +39,97 @@ function Highlighted({ text }: { text: string }) {
     </>
   );
 }
+
+/** Text with its `[[planet:Name|label]]` links opening the planet's options, in its owner's colour. */
+function PlanetText({ text }: { text: string }) {
+  const planets = useFreshPlanets().data;
+  const openOptions = useUi((s) => s.openOptions);
+  return (
+    <>
+      {parseRich(text).map((seg, i) => {
+        if (!("kind" in seg)) return <Fragment key={i}>{seg.text}</Fragment>;
+        const p = seg.kind === "planet" ? planets?.find((x) => x.name.toLowerCase() === seg.target.toLowerCase()) : undefined;
+        if (!p) return <Fragment key={i}>{seg.label}</Fragment>;
+        const open = (e: MouseEvent) => openOptions({ planet: p.index, x: e.clientX, y: e.clientY });
+        return (
+          <button key={i} className="link st-planet-link" style={{ color: factionColor(p.currentOwner) }} onClick={open}>
+            {seg.label}
+          </button>
+        );
+      })}
+    </>
+  );
+}
+
+/** A bold term before the first ": ", when there is one. */
+function Point({ text }: { text: string }) {
+  const at = text.indexOf(": ");
+  if (at < 0) return <PlanetText text={text} />;
+  return (
+    <>
+      <b>{text.slice(0, at)}</b>: <PlanetText text={text.slice(at + 2)} />
+    </>
+  );
+}
+
+function Timeline({ events }: { events: StationEvent[] }) {
+  return (
+    <ol className="st-timeline">
+      {events.map((e) => (
+        <li key={e.when + e.text}>
+          <span className="st-timeline-when caps num">{e.when}</span>
+          <p>
+            <PlanetText text={e.text} />
+          </p>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function Sources({ sources }: { sources: Source[] }) {
+  return (
+    <p className="st-source">
+      Adapted from the Helldivers Wiki:{" "}
+      {sources.map((s, i) => (
+        <Fragment key={s.url}>
+          {i > 0 && ", "}
+          <OutLink href={s.url}>{s.title}</OutLink>
+        </Fragment>
+      ))}
+      , under <OutLink href={WIKI_LICENCE.url}>{WIKI_LICENCE.title}</OutLink>.
+    </p>
+  );
+}
+
+function StarOfPeace() {
+  return (
+    <Panel
+      title="Star of Peace"
+      icon={Sparkle}
+      tone="var(--warn)"
+      right={<StatusChip tone="var(--warn)">{STAR_OF_PEACE.status}</StatusChip>}
+    >
+      <div className="st-sop">
+        <p className="st-lead">
+          <PlanetText text={STAR_OF_PEACE.summary} />
+        </p>
+        <ul className="st-points">
+          {STAR_OF_PEACE.points.map((p) => (
+            <li key={p}>
+              <Point text={p} />
+            </li>
+          ))}
+        </ul>
+        <h3 className="st-sub caps">Operation Free Space and after</h3>
+        <Timeline events={STAR_OF_PEACE.timeline} />
+        <Sources sources={STAR_OF_PEACE.sources} />
+      </div>
+    </Panel>
+  );
+}
+
+const DSS_STATE_LABEL = { active: "Action deployed", cooldown: "Cooling down", offline: "Offline", default: "Gathering" };
 
 const isActive = (a: TacticalAction, now: number) => a.status === 2 && Date.parse(a.statusExpire) > now;
 const isCooling = (a: TacticalAction, now: number) => a.status === 3 && Date.parse(a.statusExpire) > now;
@@ -136,96 +231,140 @@ function StationPanel({ station }: { station: StationLive }) {
   const pct = enemy ? trackedPercent(p) : 100;
   const jump = Date.parse(electionEnd);
   const live = actions.filter((a) => isActive(a, now));
+  const state = dssState(actions, now);
   return (
-    <div className="st">
-      <section className="st-hero brackets" style={{ "--tone": factionColor(enemy ?? "Humans") } as CSSProperties}>
-        <div className="st-hero-text">
-          <button className="st-planet" onClick={() => openDetail(p.index)}>
-            <FactionEmblem faction={enemy ?? p.currentOwner} size={30} />
-            <span>
-              <b>{p.name}</b>
-              <span className="caps">{p.sector} sector</span>
-            </span>
-          </button>
-          <div className="st-stats">
-            <span className="num">
-              <FactionEmblem faction="Humans" size={14} /> {fmtPct(pct, 2)}{" "}
-              {front ? (p.event ? "defended" : "liberated") : "held"}
-            </span>
-            {front && (
-              <span className="num" style={{ color: rate != null && rate > 0 ? "var(--good)" : "var(--text-dim)" }}>
-                {rate == null ? "Rate measuring…" : `${rate > 0 ? "+" : ""}${rate.toFixed(2)}% / h`}
+    <div className="st-layout">
+      <div className="st">
+        <section className="st-hero brackets" style={{ "--tone": factionColor(enemy ?? "Humans") } as CSSProperties}>
+          <div className="st-hero-text">
+            <button className="st-planet" onClick={() => openDetail(p.index)}>
+              <FactionEmblem faction={enemy ?? p.currentOwner} size={30} />
+              <span>
+                <b>{p.name}</b>
+                <span className="caps">{p.sector} sector</span>
               </span>
+            </button>
+            <div className="st-stats">
+              <span className="num">
+                <FactionEmblem faction="Humans" size={14} /> {fmtPct(pct, 2)}{" "}
+                {front ? (p.event ? "defended" : "liberated") : "held"}
+              </span>
+              {front && (
+                <span className="num" style={{ color: rate != null && rate > 0 ? "var(--good)" : "var(--text-dim)" }}>
+                  {rate == null ? "Rate measuring…" : `${rate > 0 ? "+" : ""}${rate.toFixed(2)}% / h`}
+                </span>
+              )}
+              {enemy && (
+                <span className="num" style={{ color: factionColor(enemy) }}>
+                  <FactionEmblem faction={enemy} size={14} /> -{regenPctPerHour(p).toFixed(2)}% / h regen
+                </span>
+              )}
+            </div>
+            <div className="st-jump">
+              <Timer size={16} />
+              <span className="caps">Next FTL jump</span>
+              <b className="num">{jump > now ? <Countdown to={jump} /> : "Vote closing"}</b>
+            </div>
+            {live.length > 0 && (
+              <ul className="st-live" aria-label="Active tactical actions">
+                {live.map((a) => (
+                  <li key={a.id32}>
+                    <Zap size={14} aria-hidden />
+                    <b className="caps">{a.name}</b>
+                    <span className="caps">over {p.name}</span>
+                    <span className="num">
+                      ends in <Countdown to={Date.parse(a.statusExpire)} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
-            {enemy && (
-              <span className="num" style={{ color: factionColor(enemy) }}>
-                <FactionEmblem faction={enemy} size={14} /> -{regenPctPerHour(p).toFixed(2)}% / h regen
-              </span>
+            {effects.length > 0 && (
+              <ul className="st-effects" aria-label="Station effects">
+                {effects.map((e) => (
+                  <li key={e.id} className="caps" title={e.description}>
+                    {e.name}
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
-          <div className="st-jump">
-            <Timer size={16} />
-            <span className="caps">Next FTL jump</span>
-            <b className="num">{jump > now ? <Countdown to={jump} /> : "Vote closing"}</b>
-          </div>
-          {live.length > 0 && (
-            <ul className="st-live" aria-label="Active tactical actions">
-              {live.map((a) => (
-                <li key={a.id32}>
-                  <Zap size={14} aria-hidden />
-                  <b className="caps">{a.name}</b>
-                  <span className="caps">over {p.name}</span>
-                  <span className="num">
-                    ends in <Countdown to={Date.parse(a.statusExpire)} />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {effects.length > 0 && (
-            <ul className="st-effects" aria-label="Station effects">
-              {effects.map((e) => (
-                <li key={e.id} className="caps" title={e.description}>
-                  {e.name}
-                </li>
-              ))}
-            </ul>
-          )}
+          <PlanetSphere planet={p} percent={pct} enemy={factionColor(enemy ?? "Humans")} size={200} />
+        </section>
+        <div className="st-actions">
+          {actions.map((a) => (
+            <ActionCard key={a.id32} a={a} now={now} />
+          ))}
         </div>
-        <PlanetSphere planet={p} percent={pct} enemy={factionColor(enemy ?? "Humans")} size={200} />
-      </section>
-      <div className="st-actions">
-        {actions.map((a) => (
-          <ActionCard key={a.id32} a={a} now={now} />
-        ))}
+        <div className="st-cols">
+          <Panel title="Destination vote" icon={Vote}>
+            <p className="st-note">
+              Helldivers vote in game on where the station jumps next, and the vote closes when the countdown above
+              runs out. The game publishes when it closes but not the votes, so the tally can only be seen in game.
+            </p>
+          </Panel>
+          <JumpHistory station={station.id32} />
+        </div>
+        <StarOfPeace />
       </div>
-      <div className="st-cols">
-        <Panel title="Destination vote" icon={Vote}>
-          <p className="st-note">
-            Helldivers vote in game on where the station jumps next, and the vote closes when the countdown above
-            runs out. The game publishes when it closes but not the votes, so the tally can only be seen in game.
-          </p>
-        </Panel>
-        <JumpHistory station={station.id32} />
-      </div>
+      <DssHolo
+        state={state}
+        readout={[
+          ["Orbit", p.name],
+          ["Station", DSS_STATE_LABEL[state]],
+          ["Next jump", jump > now ? <Countdown to={jump} /> : "Vote closing"],
+        ]}
+      />
     </div>
   );
 }
 
 function PastStation({ s }: { s: StationRecord }) {
   return (
-    <section className="st-hero brackets st-past" style={{ "--tone": factionColor(s.faction) } as CSSProperties}>
-      <div className="st-hero-text">
-        <div className="st-planet">
-          <FactionEmblem faction={s.faction} size={30} />
-          <span>
-            <b>{s.name}</b>
-            <span className="caps">{s.status}</span>
-          </span>
+    <div className="st-layout">
+      <div className="st">
+        <section className="st-hero brackets st-past" style={{ "--tone": factionColor(s.faction) } as CSSProperties}>
+          <div className="st-hero-text">
+            <div className="st-planet">
+              <StationEmblem station="css" size={34} color={factionColor(s.faction)} />
+              <span>
+                <b>{s.name}</b>
+                <span className="caps">{s.status}</span>
+              </span>
+            </div>
+            <p className="st-aka">Also called the {s.aka.join("; the ")}.</p>
+            <p className="st-note">
+              <PlanetText text={s.note} />
+            </p>
+          </div>
+        </section>
+        <div className="st-cols">
+          <Panel title="Operation Lightning Intercept" icon={History} tone={factionColor(s.faction)}>
+            <Timeline events={s.timeline} />
+          </Panel>
+          <Panel title="Dossier" icon={FileText} tone={factionColor(s.faction)}>
+            <div className="st-dossier">
+              {s.sections.map((sec) => (
+                <section key={sec.heading}>
+                  <h3 className="st-sub caps">{sec.heading}</h3>
+                  <p>
+                    <PlanetText text={sec.text} />
+                  </p>
+                </section>
+              ))}
+              <Sources sources={s.sources} />
+            </div>
+          </Panel>
         </div>
-        <p className="st-note">{s.note}</p>
       </div>
-    </section>
+      <CssHolo
+        readout={[
+          ["Struck", "Varylia 5 · Yed Prior"],
+          ["Last seen", "Mort orbit"],
+          ["Destroyed", "27 Jul 2186"],
+        ]}
+      />
+    </div>
   );
 }
 
@@ -266,7 +405,7 @@ export function StationsModule() {
             style={{ "--tone": factionColor(o.faction) } as CSSProperties}
             onClick={() => setChosen(o.key)}
           >
-            <Satellite size={16} aria-hidden />
+            <StationEmblem station={o.past ? "css" : "dss"} size={18} />
             <b className="caps">{o.short}</b>
             <span
               className="status-chip"
@@ -278,7 +417,7 @@ export function StationsModule() {
         ))}
       </div>
       {!data?.length && (
-        <Panel title="Democracy Space Station" icon={Satellite}>
+        <Panel title="Democracy Space Station" icon={DssIcon}>
           <Empty>No station telemetry yet. It arrives with the next collector update.</Empty>
         </Panel>
       )}

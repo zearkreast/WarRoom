@@ -1,10 +1,10 @@
-import { Crosshair, Pin, Satellite, ShieldAlert, Target, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { Crosshair, Pin, ShieldAlert, Target, TrendingDown, TrendingUp, Users } from "lucide-react";
 import type { CSSProperties } from "react";
 import { planetTint, regenPctPerHour } from "../../domain/biomes";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtInt, fmtPct } from "../../domain/format";
 import { useUi } from "../../state";
-import { FactionEmblem } from "../../ui/emblems";
+import { DssIcon, FactionEmblem } from "../../ui/emblems";
 import { hazardIcon } from "../../ui/hazardIcons";
 import { Countdown, Meter } from "../../ui/primitives";
 import type { Front } from "../planets/useFronts";
@@ -112,7 +112,7 @@ export function CampaignCard({ f, totalPlayers, deadline }: { f: Front; totalPla
             )}
             {f.station && (
               <span className="cc-badge dss" title="Democracy Space Station in orbit">
-                <Satellite size={15} />
+                <DssIcon size={15} />
               </span>
             )}
           </div>

@@ -14,7 +14,6 @@ import {
   Newspaper,
   Radio,
   RefreshCw,
-  Satellite,
   Search,
   Shield,
   Target,
@@ -22,20 +21,18 @@ import {
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { APP_NAME, APP_VERSION } from "../../config";
 import { CHAPTERS, MANUALS, TIPS, WIKI, WIKI_LICENCE } from "../../data/gww";
-import { ADS, BRANDS, COMPANIES, GOV, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
+import { ADS, COMPANIES, GOV, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
 import { FACTIONS, factionColor } from "../../domain/factions";
 import { nextYearly, plainText } from "../../domain/gwwText";
 import { useHistory } from "../../history/useHistory";
 import { useUi, type GwwPage } from "../../state";
-import { FactionEmblem } from "../../ui/emblems";
-import { Empty, OutLink, Panel, useNow } from "../../ui/primitives";
+import { DssIcon, FactionEmblem } from "../../ui/emblems";
+import { Empty, OutLink, Panel, useMedia, useNow } from "../../ui/primitives";
 import type { Faction } from "../../api/types";
 import { iconUrl } from "./gwwArt";
 import { GwwNavProvider, useGwwNav } from "./gwwNav";
 import {
   AdBox,
-  BrandPage,
-  BrandTile,
   CompanyPage,
   CompanyTile,
   CourseProgress,
@@ -45,6 +42,8 @@ import {
   ManualTile,
   MinistryPage,
   MinistryTile,
+  pickOne,
+  RAIL_QUERY,
   SiteTile,
   WarLogPage,
 } from "./GwwPages";
@@ -56,15 +55,12 @@ function addressOf(p: GwwPage): string {
   if (p.kind === "manual") return MANUALS.find((m) => m.id === p.id)?.address ?? HOME;
   if (p.kind === "ministry") return MINISTRIES.find((m) => m.id === p.id)?.address ?? HOME;
   if (p.kind === "company") return COMPANIES.find((c) => c.id === p.id)?.address ?? HOME;
-  if (p.kind === "brand") return `se://market/${p.id}`;
   if (p.kind === "site") return p.id === "gov" ? GOV.address : "se://hc/war-log";
-  if (p.kind === "dir") return { manuals: "se://hc/manuals", gov: "se://gov/directory", corps: "se://corp", market: "se://market" }[p.id];
+  if (p.kind === "dir") return { manuals: "se://hc/manuals", gov: "se://gov/directory", corps: "se://corp" }[p.id];
   return HOME;
 }
 
 const keyOf = (p: GwwPage) => ("id" in p ? `${p.kind}:${p.id}` : p.kind);
-
-const pickOne = <T,>(list: T[]): T => list[Math.floor(Math.random() * list.length)];
 
 function logLine(count: number): string {
   if (count === 1) return "1 planet has changed hands since tracking began.";
@@ -106,7 +102,6 @@ function TipTicker() {
   );
 }
 
-/** The next Super Earth holiday, counted down by date. */
 function HolidayChip() {
   const { follow } = useGwwNav();
   const now = useNow(60 * 60_000);
@@ -122,11 +117,11 @@ function HolidayChip() {
 
 function Home({ logText }: { logText: string }) {
   const [query, setQuery] = useState("");
-  const [ads] = useState(() => {
-    const wide = ADS.filter((a) => a.shape === "wide");
-    const first = pickOne(wide);
-    return { tall: pickOne(ADS.filter((a) => a.shape === "tall")), wide: first, banner: pickOne(wide.filter((a) => a !== first)) };
-  });
+  const [ads] = useState(() => ({
+    tall: pickOne(ADS.filter((a) => a.shape === "tall")),
+    banner: pickOne(ADS.filter((a) => a.shape === "wide")),
+  }));
+  const wide = useMedia(RAIL_QUERY);
   const q = query.trim().toLowerCase();
   const hit = (...text: string[]) => !q || text.some((t) => plainText(t).toLowerCase().includes(q));
   const official = [
@@ -179,8 +174,7 @@ function Home({ logText }: { logText: string }) {
   const companies = COMPANIES.filter((c) =>
     hit(c.name, c.trade, c.summary, c.slogan ?? "", c.address, ...c.sections.map((s) => `${s.text ?? ""} ${(s.products ?? []).join(" ")}`)),
   );
-  const brands = BRANDS.filter((b) => hit(b.name, b.trade, b.text, b.slogan ?? ""));
-  const none = official.length + manuals.length + companies.length + brands.length === 0;
+  const none = official.length + manuals.length + companies.length === 0;
   return (
     <div className="gww-home">
       <header className="gww-mast">
@@ -233,23 +227,13 @@ function Home({ logText }: { logText: string }) {
               ))}
             </Group>
           )}
-          {brands.length > 0 && (
-            <section className="gww-group">
-              <h3 className="gww-group-title caps">
-                Marketplace <span className="num">{brands.length}</span>
-              </h3>
-              <div className="gww-brands">
-                {brands.map((b) => (
-                  <BrandTile key={b.id} b={b} />
-                ))}
-              </div>
-            </section>
-          )}
+          {!q && !wide && ads.tall && <AdBox ad={ads.tall} />}
         </div>
-        <aside className="gww-rail" aria-label="Sponsored">
-          <AdBox ad={ads.tall} />
-          <AdBox ad={ads.wide} />
-        </aside>
+        {wide && ads.tall && (
+          <aside className="gww-rail" aria-label="Sponsored">
+            <AdBox ad={ads.tall} slot="rail" />
+          </aside>
+        )}
       </div>
     </div>
   );
@@ -268,19 +252,11 @@ function View({ page, logText, headingRef }: { page: GwwPage; logText: string; h
     const c = COMPANIES.find((x) => x.id === page.id);
     if (c) return <CompanyPage c={c} headingRef={headingRef} />;
   }
-  if (page.kind === "brand") {
-    const b = BRANDS.find((x) => x.id === page.id);
-    if (b) return <BrandPage b={b} headingRef={headingRef} />;
-  }
   if (page.kind === "site") return page.id === "gov" ? <GovPage headingRef={headingRef} /> : <WarLogPage headingRef={headingRef} />;
   if (page.kind === "dir") return <DirPage id={page.id} headingRef={headingRef} logText={logText} />;
   return <Home logText={logText} />;
 }
 
-/**
- * The Galactic Wide Web: the Federation's net in a browser frame. Its history lives in the UI store, so
- * leaving for another page of the tracker and coming back picks up where the reader was.
- */
 export function GwwModule() {
   const stack = useUi((s) => s.gww);
   const setStack = useUi((s) => s.setGww);
@@ -289,8 +265,8 @@ export function GwwModule() {
   const root = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLElement | null>(null);
   const shown = useRef(stack);
-  // Where each page in the history was scrolled to, so going back returns there.
-  const scrolls = useRef<number[]>([]);
+  // Where each history entry was scrolled to when left, restored on coming back to the same page.
+  const scrolls = useRef<{ key: string; top: number }[]>([]);
   const scroller = () => root.current?.closest<HTMLElement>(".scroll") ?? null;
   const setHeading = useCallback((el: HTMLElement | null) => {
     heading.current = el;
@@ -298,20 +274,31 @@ export function GwwModule() {
   const go = useCallback(
     (p: GwwPage) => {
       const now = useUi.getState().gww;
-      scrolls.current[now.length - 1] = scroller()?.scrollTop ?? 0;
+      scrolls.current.length = now.length;
       setStack([...now, p].slice(-50));
     },
     [setStack],
   );
+  // Read before the page changes, whether by a link here or the browser's Back and Forward.
+  useEffect(
+    () =>
+      useUi.subscribe((s, was) => {
+        const at = was.gww.length - 1;
+        if (s.gww === was.gww || at < 0) return;
+        scrolls.current[at] = { key: keyOf(was.gww[at]), top: scroller()?.scrollTop ?? 0 };
+      }),
+    [],
+  );
   const back = () => stack.length > 1 && setStack(stack.slice(0, -1));
   const home = () => page.kind !== "home" && go({ kind: "home" });
-  // On each navigation, not on opening: going back restores the old scroll, going on shows the new page's top.
+  // Not on opening: only navigation scrolls and moves focus.
   useEffect(() => {
     const before = shown.current;
     if (before === stack) return;
     shown.current = stack;
     const box = scroller();
-    if (stack.length < before.length && box) box.scrollTop = scrolls.current[stack.length - 1] ?? 0;
+    const saved = scrolls.current[stack.length - 1];
+    if (box && saved?.key === keyOf(page)) box.scrollTop = saved.top;
     else root.current?.scrollIntoView({ block: "start" });
     (heading.current ?? root.current?.querySelector<HTMLElement>(".gww-mast-title"))?.focus({ preventScroll: true });
   }, [stack]);
@@ -368,16 +355,16 @@ export function AboutModule() {
         <h3>Not affiliated</h3>
         <p>
           A fan project, not affiliated with Arrowhead Game Studios or Sony Interactive Entertainment. Map artwork is
-          drawn for the app. The faction and sub-faction emblems (as traced by Helldivers Wiki editors), the biome
-          landscapes and the black hole and fractured planet pictures are the game's, taken from the Helldivers Wiki
-          (helldivers.wiki.gg), and belong to their owners. Effect names come from the Helldivers 2 community's
+          drawn for the app. The faction and sub-faction emblems and the DSS glyph (as traced by Helldivers Wiki
+          editors), the DSS's summary hologram, the biome landscapes and the black hole and fractured planet pictures
+          are the game's, taken from the Helldivers Wiki (helldivers.wiki.gg), and belong to their owners. Effect names come from the Helldivers 2 community's
           data set (github.com/helldivers-2/json, MIT licence).
         </p>
         <h3>Credits</h3>
         <p>
           The G.W.W.'s training manuals are adapted from the <OutLink href={WIKI.home.url}>{WIKI.home.title}</OutLink>,
           chiefly <OutLink href={WIKI.mechanics.url}>{WIKI.mechanics.title}</OutLink>. Its government, ministry,
-          corporation and marketplace sites draw on the wiki's{" "}
+          and corporation sites draw on the wiki's{" "}
           <OutLink href={WIKI.government.url}>{WIKI.government.title}</OutLink>, ministry,{" "}
           <OutLink href={WIKI.corporations.url}>{WIKI.corporations.title}</OutLink> and{" "}
           <OutLink href={WIKI.minorCorporations.url}>{WIKI.minorCorporations.title}</OutLink> pages; each page names its
@@ -466,7 +453,7 @@ const MARKS: { icon: React.ReactNode; name: string; text: string }[] = [
     text: "The planet is an objective of the current Major Order.",
   },
   {
-    icon: <Satellite size={20} color="var(--f-humans)" />,
+    icon: <DssIcon size={20} color="var(--f-humans)" />,
     name: "Democracy Space Station",
     text: "The DSS is in orbit; see Hellpad › Space Stations for its tactical actions.",
   },

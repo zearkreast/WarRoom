@@ -5,15 +5,13 @@ export type View = "campaigns" | "map" | "hellpad" | "overview" | "news" | "sett
 export type HellpadModule = "planets" | "stations" | "gww" | "campaigns";
 export type InfoDialog = "about" | "legend";
 
-/** A page of the Galactic Wide Web. */
 export type GwwPage =
   | { kind: "home" }
   | { kind: "manual"; id: string }
   | { kind: "ministry"; id: string }
   | { kind: "company"; id: string }
-  | { kind: "brand"; id: string }
   | { kind: "site"; id: "log" | "gov" }
-  | { kind: "dir"; id: "manuals" | "gov" | "corps" | "market" };
+  | { kind: "dir"; id: "manuals" | "gov" | "corps" };
 
 /** Where the planet options popover is anchored, in viewport pixels. */
 export interface OptionsAnchor {

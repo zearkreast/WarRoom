@@ -3,12 +3,12 @@ import { createContext, Fragment, useContext, useMemo, type MouseEvent, type Rea
 import { useFreshPlanets } from "../../api/queries";
 import type { Planet } from "../../api/types";
 import { MANUALS } from "../../data/gww";
-import { BRANDS, COMPANIES, GOV, MINISTRIES } from "../../data/gwwSites";
+import { COMPANIES, GOV, MINISTRIES } from "../../data/gwwSites";
 import { factionColor } from "../../domain/factions";
 import { parseRich } from "../../domain/gwwText";
 import { useUi, type GwwPage } from "../../state";
 
-/** Pages outside the G.W.W. that its text links to. */
+/** `app:` link targets and their titles. */
 export const APP_PAGES: Record<string, string> = {
   news: "Strohmann News",
   overview: "High Command overview",
@@ -23,7 +23,6 @@ export const DIRS: Record<Extract<GwwPage, { kind: "dir" }>["id"], string> = {
   manuals: "Training manuals",
   gov: "Super Earth",
   corps: "Corporations",
-  market: "Marketplace",
 };
 
 /** The G.W.W. page a link target opens, or null for targets outside it. */
@@ -33,13 +32,11 @@ export function pageOf(target: string): GwwPage | null {
   if (kind === "manual" && MANUALS.some((m) => m.id === id)) return { kind, id };
   if (kind === "ministry" && MINISTRIES.some((m) => m.id === id)) return { kind, id };
   if (kind === "company" && COMPANIES.some((c) => c.id === id)) return { kind, id };
-  if (kind === "brand" && BRANDS.some((b) => b.id === id)) return { kind, id };
   if (kind === "site" && (id === "log" || id === "gov")) return { kind, id };
   if (kind === "dir" && id in DIRS) return { kind, id: id as keyof typeof DIRS };
   return null;
 }
 
-/** A link target's name, as a heading or chip shows it. */
 export function titleOf(target: string): string {
   if (target === "home") return "G.W.W. home";
   const id = target.slice(target.indexOf(":") + 1);
@@ -47,7 +44,6 @@ export function titleOf(target: string): string {
   if (page?.kind === "manual") return MANUALS.find((m) => m.id === id)!.title;
   if (page?.kind === "ministry") return MINISTRIES.find((m) => m.id === id)!.name;
   if (page?.kind === "company") return COMPANIES.find((c) => c.id === id)!.name;
-  if (page?.kind === "brand") return BRANDS.find((b) => b.id === id)!.name;
   if (page?.kind === "site") return id === "gov" ? GOV.title : "Galactic war log";
   if (page?.kind === "dir") return DIRS[page.id];
   if (target.startsWith("app:")) return APP_PAGES[id] ?? id;
@@ -56,7 +52,7 @@ export function titleOf(target: string): string {
 
 interface Nav {
   go(page: GwwPage): void;
-  /** Opens any link target: a G.W.W. page, a page of the app, or a planet. */
+  /** Opens any link target: a G.W.W. page, a page of the app, or a planet (its options placed at `e`). */
   follow(target: string, e?: MouseEvent): void;
   planet(name: string): Planet | undefined;
 }
@@ -100,10 +96,10 @@ export function GwwNavProvider({ go, children }: { go(page: GwwPage): void; chil
   return <NavContext.Provider value={nav}>{children}</NavContext.Provider>;
 }
 
-/** A link's href: never followed (clicks are handled), but it makes the link a real one for keyboards and readers. */
+/** Never followed (clicks are handled); it makes the anchor a real link for keyboards and screen readers. */
 const hrefOf = (target: string) => `#gww/${target}`;
 
-/** Text with its `[[kind:target|label]]` links made live; a planet link wears its current owner's colour. */
+/** Text with its `[[kind:target|label]]` links made live. */
 export function Rich({ text }: { text: string }) {
   const nav = useGwwNav();
   const open = (target: string) => (e: MouseEvent) => {
