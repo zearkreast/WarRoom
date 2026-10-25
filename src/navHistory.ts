@@ -66,6 +66,13 @@ export function syncHistory(h: HistoryLike, get: () => Place, set: (p: Place) =>
       h.back();
       return;
     }
+    // One planet page opened from another takes its entry, so closing it steps back past both.
+    const swapped = now.detail != null && entry.place.detail != null;
+    if (swapped && samePlace({ ...now, detail: entry.place.detail }, entry.place)) {
+      entry = { ...entry, place: now };
+      h.replaceState(entry, "");
+      return;
+    }
     entry = { warroom: 1, place: now, prev: entry.place };
     h.pushState(entry, "");
   };
@@ -80,13 +87,23 @@ export function syncHistory(h: HistoryLike, get: () => Place, set: (p: Place) =>
   return { onChange, onPop };
 }
 
+/** Puts back the place a reload left; called before the first render so the default screen never shows. */
+export function resumePlace() {
+  const s = window.history.state;
+  if (isEntry(s)) useUi.setState(s.place);
+}
+
 /** Makes the browser's and the phone's Back button step back through the app. */
 export function useNavHistory() {
   useEffect(() => {
     const sync = syncHistory(
       window.history,
       () => placeOf(useUi.getState()),
-      (p) => useUi.setState({ ...p, options: null }),
+      (p) => {
+        // An unchanged G.W.W. page list keeps its identity, or the G.W.W. would take it for navigation.
+        const { gww } = useUi.getState();
+        useUi.setState({ ...p, gww: JSON.stringify(gww) === JSON.stringify(p.gww) ? gww : p.gww, options: null });
+      },
     );
     const stop = useUi.subscribe(sync.onChange);
     const onPop = (e: PopStateEvent) => sync.onPop(e.state);

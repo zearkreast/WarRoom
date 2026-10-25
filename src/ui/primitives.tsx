@@ -1,6 +1,6 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
-import { useCallback, useEffect, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { factionColor, factionLabel } from "../domain/factions";
 import { fmtDuration } from "../domain/format";
 import { FactionEmblem, type IconLike } from "./emblems";
@@ -221,13 +221,36 @@ export function FactionTag({ faction }: { faction: string }) {
   );
 }
 
+const layers: { close(): void }[] = [];
+const onEscape = (e: KeyboardEvent) => {
+  // A modal <dialog> on top closes itself.
+  if (e.key === "Escape" && !document.querySelector("dialog[open]")) layers[layers.length - 1]?.close();
+};
+
+/**
+ * Escape closes only the layer opened last, so one press is one step back through the history. Layers stack
+ * in the order they open; keep that the order they are drawn in.
+ */
+export function useEscape(close: () => void, open = true) {
+  const latest = useRef(close);
+  useEffect(() => {
+    latest.current = close;
+  });
+  useEffect(() => {
+    if (!open) return;
+    const layer = { close: () => latest.current() };
+    layers.push(layer);
+    if (layers.length === 1) window.addEventListener("keydown", onEscape);
+    return () => {
+      layers.splice(layers.indexOf(layer), 1);
+      if (layers.length === 0) window.removeEventListener("keydown", onEscape);
+    };
+  }, [open]);
+}
+
 /** Full-viewport overlay on grid paper, closed with ESC or the corner button. */
 export function Overlay(props: { onClose(): void; children: ReactNode; label: string; footer?: ReactNode }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && props.onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [props]);
+  useEscape(props.onClose);
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-label={props.label}>
       <div className="overlay-scroll scroll">{props.children}</div>

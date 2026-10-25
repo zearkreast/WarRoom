@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { usePlanet } from "../../api/queries";
 import { useSettings, useUi } from "../../state";
 import { DssIcon } from "../../ui/emblems";
+import { useEscape } from "../../ui/primitives";
 import { useStationPlanets } from "../planets/useFronts";
 import "./planet.css";
 
@@ -18,12 +19,9 @@ export function PlanetOptions() {
   const first = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (!options) return;
-    first.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && openOptions(null);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [options, openOptions]);
+    if (options) first.current?.focus();
+  }, [options]);
+  useEscape(() => openOptions(null), !!options);
 
   if (!options || !planet) return null;
   const close = () => openOptions(null);

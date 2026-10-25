@@ -265,8 +265,8 @@ export function GwwModule() {
   const root = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLElement | null>(null);
   const shown = useRef(stack);
-  // Scroll position of each history entry, restored on going back.
-  const scrolls = useRef<number[]>([]);
+  // Where each history entry was scrolled to when left, restored on coming back to the same page.
+  const scrolls = useRef<{ key: string; top: number }[]>([]);
   const scroller = () => root.current?.closest<HTMLElement>(".scroll") ?? null;
   const setHeading = useCallback((el: HTMLElement | null) => {
     heading.current = el;
@@ -274,10 +274,20 @@ export function GwwModule() {
   const go = useCallback(
     (p: GwwPage) => {
       const now = useUi.getState().gww;
-      scrolls.current[now.length - 1] = scroller()?.scrollTop ?? 0;
+      scrolls.current.length = now.length;
       setStack([...now, p].slice(-50));
     },
     [setStack],
+  );
+  // Read before the page changes, whether by a link here or the browser's Back and Forward.
+  useEffect(
+    () =>
+      useUi.subscribe((s, was) => {
+        const at = was.gww.length - 1;
+        if (s.gww === was.gww || at < 0) return;
+        scrolls.current[at] = { key: keyOf(was.gww[at]), top: scroller()?.scrollTop ?? 0 };
+      }),
+    [],
   );
   const back = () => stack.length > 1 && setStack(stack.slice(0, -1));
   const home = () => page.kind !== "home" && go({ kind: "home" });
@@ -287,7 +297,8 @@ export function GwwModule() {
     if (before === stack) return;
     shown.current = stack;
     const box = scroller();
-    if (stack.length < before.length && box) box.scrollTop = scrolls.current[stack.length - 1] ?? 0;
+    const saved = scrolls.current[stack.length - 1];
+    if (box && saved?.key === keyOf(page)) box.scrollTop = saved.top;
     else root.current?.scrollIntoView({ block: "start" });
     (heading.current ?? root.current?.querySelector<HTMLElement>(".gww-mast-title"))?.focus({ preventScroll: true });
   }, [stack]);

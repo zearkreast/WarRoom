@@ -103,6 +103,18 @@ describe("nav history", () => {
     expect(a.place).toEqual(at({ view: "hellpad", module: "gww" }));
   });
 
+  it("lets one planet page opened from another take its entry", () => {
+    const h = fakeHistory();
+    const a = app(h);
+    a.go(at({ detail: 261 }));
+    a.go(at({ detail: 154 }));
+    expect(h.index()).toBe(1);
+    a.go(at());
+    h.land();
+    expect(h.index()).toBe(0);
+    expect(a.place).toEqual(at());
+  });
+
   it("catches up on a change made while its step back is in flight", () => {
     const h = fakeHistory();
     const a = app(h);
