@@ -20,6 +20,8 @@ interface ToastState {
   dismiss(id: number): void;
   /** Swaps the toast for its briefing popup. */
   open(id: number): void;
+  /** Opens a briefing popup without a toast. */
+  show(t: Omit<Toast, "id">): void;
   closeBriefing(): void;
 }
 
@@ -33,6 +35,7 @@ export const useToasts = create<ToastState>((set) => ({
   dismiss: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
   open: (id) =>
     set((s) => ({ briefing: s.toasts.find((t) => t.id === id) ?? s.briefing, toasts: s.toasts.filter((t) => t.id !== id) })),
+  show: (t) => set({ briefing: { ...t, id: nextId++ } }),
   closeBriefing: () => set({ briefing: null }),
 }));
 

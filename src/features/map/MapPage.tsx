@@ -10,6 +10,7 @@ import { Hint } from "../../ui/Hint";
 import { Keycap, KeyButton, useNow } from "../../ui/primitives";
 import { MajorOrderList } from "../major-order/MajorOrder";
 import { GalaxyMap } from "./GalaxyMap";
+import { OVERLAY_OPTIONS } from "./mapOptions";
 
 type Drawer = "dispatches" | "orders" | null;
 
@@ -67,6 +68,27 @@ const CONTROLS: [ReactNode, string][] = [
   [<Keycap k="C" />, "Orders"],
   [<Keycap k="H" />, "Hide controls"],
 ];
+
+/** The three map overlays side by side, one click each. */
+function OverlaySwitch() {
+  const overlay = useSettings((s) => s.mapOverlay);
+  const set = useSettings((s) => s.set);
+  return (
+    <div className="map-overlays" role="radiogroup" aria-label="Map overlay">
+      {OVERLAY_OPTIONS.map((o) => (
+        <button
+          key={o.value}
+          role="radio"
+          aria-checked={overlay === o.value}
+          className={overlay === o.value ? "on" : ""}
+          onClick={() => set("mapOverlay", o.value)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function ControlsPanel() {
   return (
@@ -144,11 +166,14 @@ export function MapPage() {
           One finger pans. Two fingers pinch to zoom, twist to turn, or slide up and down together to tilt.
         </Hint>
       </div>
-      <div className="map-controls-hint">
-        <KeyButton k="H" active={controls} onClick={() => setControls((c) => !c)}>
-          Controls
-        </KeyButton>
-        {controls && <ControlsPanel />}
+      <div className="map-corner">
+        <OverlaySwitch />
+        <div className="map-controls-hint">
+          <KeyButton k="H" active={controls} onClick={() => setControls((c) => !c)}>
+            Controls
+          </KeyButton>
+          {controls && <ControlsPanel />}
+        </div>
       </div>
       <div className="map-toggles">
         {drawer === "dispatches" && <DispatchDrawer now={now} />}
