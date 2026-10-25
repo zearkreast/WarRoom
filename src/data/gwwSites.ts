@@ -1,8 +1,6 @@
 /**
- * The Galactic Wide Web's sites: Super Earth's government and ministries, the mega-corporations, the
- * smaller brands on the city billboards, and the adverts that link to them. Written for this app in its
- * own words from the Helldivers Wiki; slogans, poster lines and broadcast lines are the game's, quoted.
- * Text may link with `[[kind:target|label]]`; see `domain/gwwText.ts`.
+ * Site text is adapted from the Helldivers Wiki in this app's words; slogans, poster lines and broadcast
+ * lines are the game's, word for word. Text links are written `[[kind:target|label]]` (domain/gwwText.ts).
  */
 import { WIKI, type Section, type Source } from "./gww";
 
@@ -11,7 +9,6 @@ const wiki = (title: string, page = title.replace(/ /g, "_")): Source => ({
   url: `https://helldivers.wiki.gg/wiki/${encodeURI(page)}`,
 });
 
-/** A dated line in a site's history. */
 export interface Dated {
   when: string;
   text: string;
@@ -19,7 +16,7 @@ export interface Dated {
 
 export interface SiteSection extends Section {
   timeline?: Dated[];
-  /** What the company makes, named as the game names it. */
+  /** Named as the game names them. */
   products?: string[];
 }
 
@@ -245,7 +242,6 @@ export interface Company {
   trade: string;
   /** One line for its tile. */
   summary: string;
-  /** Brand colour, for the site's banner. */
   color: string;
   logo?: string;
   /** The company's slogan as the game gives it. */
@@ -254,7 +250,6 @@ export interface Company {
   broadcast?: string;
   /** A Training Manual Tip about the company, quoted. */
   quote?: string;
-  /** A product picture shown beside its text. */
   showcase?: { image: string; alt: string };
   sections: SiteSection[];
   ties?: Tie[];
@@ -655,7 +650,6 @@ export interface Ad {
   by: string;
 }
 
-/** Adverts seen on the game's city billboards; each opens its advertiser's site. */
 export const ADS: Ad[] = [
   { file: "trustor-bug-insurance", alt: "Trustor Bank: put your foot down with bug insurance.", shape: "wide", by: "company:trustor" },
   { file: "trustor-invasion-insurance", alt: "Trustor Bank: hold your ground with invasion insurance.", shape: "tall", by: "company:trustor" },
@@ -698,7 +692,6 @@ export const HOLIDAYS: Holiday[] = [
   { name: "Malevelon Creek Memorial Day", month: 4, day: 3 },
 ];
 
-/** Super Earth's own site on how it governs. */
 export const GOV = {
   title: "Managed Democracy",
   address: "se://gov",

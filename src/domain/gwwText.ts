@@ -1,8 +1,8 @@
 /**
  * G.W.W. text links. Content writes `[[kind:target|label]]` inline:
  * - `manual:`, `ministry:`, `company:`, `brand:` an id; `site:log` or `site:gov`; `dir:` a directory id;
- * - `planet:` a planet's name, opened like a planet name anywhere else in the app;
- * - `app:` a page outside the G.W.W.: news, overview, map, campaigns, stations, past or planets.
+ * - `planet:` a planet's name;
+ * - `app:` a page outside the G.W.W., one of `APP_PAGES` in gwwNav.tsx.
  */
 
 export type LinkKind = "manual" | "ministry" | "company" | "brand" | "site" | "dir" | "planet" | "app";
@@ -26,7 +26,7 @@ export function parseRich(text: string): Segment[] {
   return out;
 }
 
-/** The text as read, links reduced to their labels: for search and screen-reader labels. */
+/** The text as read, links reduced to their labels. */
 export const plainText = (text: string): string => text.replace(LINK, "$3");
 
 /** Every link in the text, as `kind:target`. */

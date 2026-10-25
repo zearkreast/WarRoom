@@ -8,7 +8,7 @@ import { factionColor } from "../../domain/factions";
 import { parseRich } from "../../domain/gwwText";
 import { useUi, type GwwPage } from "../../state";
 
-/** Pages outside the G.W.W. that its text links to. */
+/** `app:` link targets and their titles. */
 export const APP_PAGES: Record<string, string> = {
   news: "Strohmann News",
   overview: "High Command overview",
@@ -39,7 +39,6 @@ export function pageOf(target: string): GwwPage | null {
   return null;
 }
 
-/** A link target's name, as a heading or chip shows it. */
 export function titleOf(target: string): string {
   if (target === "home") return "G.W.W. home";
   const id = target.slice(target.indexOf(":") + 1);
@@ -56,7 +55,7 @@ export function titleOf(target: string): string {
 
 interface Nav {
   go(page: GwwPage): void;
-  /** Opens any link target: a G.W.W. page, a page of the app, or a planet. */
+  /** Opens any link target: a G.W.W. page, a page of the app, or a planet (its options placed at `e`). */
   follow(target: string, e?: MouseEvent): void;
   planet(name: string): Planet | undefined;
 }
@@ -100,10 +99,10 @@ export function GwwNavProvider({ go, children }: { go(page: GwwPage): void; chil
   return <NavContext.Provider value={nav}>{children}</NavContext.Provider>;
 }
 
-/** A link's href: never followed (clicks are handled), but it makes the link a real one for keyboards and readers. */
+/** Never followed (clicks are handled); it makes the anchor a real link for keyboards and screen readers. */
 const hrefOf = (target: string) => `#gww/${target}`;
 
-/** Text with its `[[kind:target|label]]` links made live; a planet link wears its current owner's colour. */
+/** Text with its `[[kind:target|label]]` links made live. */
 export function Rich({ text }: { text: string }) {
   const nav = useGwwNav();
   const open = (target: string) => (e: MouseEvent) => {

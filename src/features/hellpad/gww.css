@@ -783,7 +783,6 @@
 }
 
 /* ---------- Links between pages ---------- */
-/* Inline links read as text with a coloured underline; app links carry an arrow, planet links their owner's colour. */
 .gww-link {
   display: inline;
   padding: 0;
@@ -853,7 +852,6 @@
   scroll-margin-top: var(--s-6);
 }
 
-/* What the tracker sees right now, beside the theory. */
 .gww-live {
   display: flex;
   flex-direction: column;

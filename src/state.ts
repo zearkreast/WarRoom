@@ -5,7 +5,6 @@ export type View = "campaigns" | "map" | "hellpad" | "overview" | "news" | "sett
 export type HellpadModule = "planets" | "stations" | "gww" | "campaigns";
 export type InfoDialog = "about" | "legend";
 
-/** A page of the Galactic Wide Web. */
 export type GwwPage =
   | { kind: "home" }
   | { kind: "manual"; id: string }

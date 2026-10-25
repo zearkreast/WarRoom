@@ -106,7 +106,6 @@ function TipTicker() {
   );
 }
 
-/** The next Super Earth holiday, counted down by date. */
 function HolidayChip() {
   const { follow } = useGwwNav();
   const now = useNow(60 * 60_000);
@@ -277,10 +276,6 @@ function View({ page, logText, headingRef }: { page: GwwPage; logText: string; h
   return <Home logText={logText} />;
 }
 
-/**
- * The Galactic Wide Web: the Federation's net in a browser frame. Its history lives in the UI store, so
- * leaving for another page of the tracker and coming back picks up where the reader was.
- */
 export function GwwModule() {
   const stack = useUi((s) => s.gww);
   const setStack = useUi((s) => s.setGww);
@@ -289,7 +284,7 @@ export function GwwModule() {
   const root = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLElement | null>(null);
   const shown = useRef(stack);
-  // Where each page in the history was scrolled to, so going back returns there.
+  // Scroll position of each history entry, restored on going back.
   const scrolls = useRef<number[]>([]);
   const scroller = () => root.current?.closest<HTMLElement>(".scroll") ?? null;
   const setHeading = useCallback((el: HTMLElement | null) => {
@@ -305,7 +300,7 @@ export function GwwModule() {
   );
   const back = () => stack.length > 1 && setStack(stack.slice(0, -1));
   const home = () => page.kind !== "home" && go({ kind: "home" });
-  // On each navigation, not on opening: going back restores the old scroll, going on shows the new page's top.
+  // Not on opening: only navigation scrolls and moves focus.
   useEffect(() => {
     const before = shown.current;
     if (before === stack) return;
