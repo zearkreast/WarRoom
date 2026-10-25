@@ -29,6 +29,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type R
 import { CHAPTERS, MANUALS, WIKI, WIKI_LICENCE, type Manual, type Section, type Source } from "../../data/gww";
 import {
   ADS,
+  CITIZENS,
   COMPANIES,
   GOV,
   MINISTRIES,
@@ -119,7 +120,10 @@ export function TargetIcon({ target, size = 20 }: { target: string; size?: numbe
     const src = c?.logo && logoUrl(c.logo);
     return src ? img(src) : <Building2 size={size} strokeWidth={1.5} aria-hidden />;
   }
-  if (kind === "site") return id === "gov" ? img(iconUrl("super-earth")) : <History size={size} strokeWidth={1.5} aria-hidden />;
+  if (kind === "site") {
+    if (id === "log") return <History size={size} strokeWidth={1.5} aria-hidden />;
+    return img(iconUrl(id === "citizens" ? CITIZENS.icon : GOV.icon));
+  }
   const Icon = kind === "dir" ? DIR_ICONS[id] : kind === "app" ? APP_ICONS[id] : undefined;
   return Icon ? <Icon size={size} strokeWidth={1.5} aria-hidden /> : null;
 }
@@ -633,6 +637,21 @@ export function MinistryTile({ m }: { m: Ministry }) {
   );
 }
 
+const HUMANITY = MINISTRIES.find((m) => m.id === "humanity")!.color;
+
+export function CitizensTile() {
+  return (
+    <SiteTile
+      target="site:citizens"
+      address={CITIZENS.address}
+      title={CITIZENS.title}
+      text={CITIZENS.summary}
+      icon={<img src={iconUrl(CITIZENS.icon)} alt="" />}
+      color={HUMANITY}
+    />
+  );
+}
+
 export function OfficialTiles({ logText }: { logText: string }) {
   return (
     <>
@@ -644,6 +663,7 @@ export function OfficialTiles({ logText }: { logText: string }) {
         icon={<img src={iconUrl(GOV.icon)} alt="" />}
         color="var(--f-humans)"
       />
+      <CitizensTile />
       <SiteTile
         target="site:log"
         address="se://hc/war-log"
@@ -824,26 +844,32 @@ export function CompanyPage({ c, headingRef }: { c: Company; headingRef: Heading
   );
 }
 
-export function GovPage({ headingRef }: { headingRef: HeadingRef }) {
-  const prefix = "gww-gov";
+/** Super Earth's own sites: Managed Democracy, and the Citizenship Classification Structure under it. */
+export function GovPage({ site, headingRef }: { site: "gov" | "citizens"; headingRef: HeadingRef }) {
+  const prefix = `gww-${site}`;
+  const s = site === "gov" ? GOV : CITIZENS;
+  const crumbs: Crumb[] = [{ label: "Super Earth", target: "dir:gov" }];
+  if (site === "citizens") crumbs.push({ label: GOV.title, target: "site:gov" });
   return (
-    <article className="gww-page" style={{ "--site": "var(--f-humans)" } as CSSProperties}>
+    <article className="gww-page" style={{ "--site": site === "gov" ? "var(--f-humans)" : HUMANITY } as CSSProperties}>
       <Banner
-        icon={<img src={iconUrl(GOV.icon)} alt="" width={72} height={72} />}
-        crumbs={[{ label: "Super Earth", target: "dir:gov" }]}
-        title={GOV.title}
-        lead={GOV.summary}
+        icon={<img src={iconUrl(s.icon)} alt="" width={72} height={72} />}
+        crumbs={crumbs}
+        title={s.title}
+        lead={s.summary}
         headingRef={headingRef}
       />
-      <Toc sections={GOV.sections} prefix={prefix} />
-      {GOV.sections.map((sec, i) => (
+      {site === "citizens" && CITIZENS.broadcasts.map((b) => <Broadcast key={b} text={b} />)}
+      <Toc sections={s.sections} prefix={prefix} />
+      {s.sections.map((sec, i) => (
         <SectionBlock key={sec.heading} sec={sec} id={`${prefix}-${i}`} />
       ))}
-      {GOV.quotes.map((q) => (
-        <TrainingTip key={q} text={q} />
-      ))}
-      <Related targets={GOV.related} />
-      <SourceLine sources={GOV.sources} quoted="Training manual tips are quoted from the game." />
+      {site === "gov" && GOV.quotes.map((q) => <TrainingTip key={q} text={q} />)}
+      <Related targets={s.related} />
+      <SourceLine
+        sources={s.sources}
+        quoted={site === "gov" ? "Training manual tips are quoted from the game." : "Ship broadcasts are quoted from the game."}
+      />
     </article>
   );
 }

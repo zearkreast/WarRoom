@@ -1,6 +1,6 @@
 /**
  * G.W.W. text links. Content writes `[[kind:target|label]]` inline:
- * - `manual:`, `ministry:`, `company:` an id; `site:log` or `site:gov`; `dir:` a directory id;
+ * - `manual:`, `ministry:`, `company:` an id; `site:log`, `site:gov` or `site:citizens`; `dir:` a directory id;
  * - `planet:` a planet's name;
  * - `app:` a page outside the G.W.W., one of `APP_PAGES` in gwwNav.tsx.
  */

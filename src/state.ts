@@ -10,7 +10,7 @@ export type GwwPage =
   | { kind: "manual"; id: string }
   | { kind: "ministry"; id: string }
   | { kind: "company"; id: string }
-  | { kind: "site"; id: "log" | "gov" }
+  | { kind: "site"; id: "log" | "gov" | "citizens" }
   | { kind: "dir"; id: "manuals" | "gov" | "corps" };
 
 /** Where the planet options popover is anchored, in viewport pixels. */
