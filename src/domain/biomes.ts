@@ -89,3 +89,10 @@ export function planetTint(p: Pick<Planet, "name" | "biome">, effects?: { id: nu
 export function regenPctPerHour(p: Pick<Planet, "regenPerSecond" | "maxHealth">): number {
   return p.maxHealth ? (p.regenPerSecond / p.maxHealth) * 360_000 : 0;
 }
+
+/** Enemy resistance as the game grades it, from its regeneration in %/h. */
+export function resistanceLevel(pctPerHour: number): { label: string; color: string } {
+  if (pctPerHour < 1) return { label: "Low", color: "var(--good)" };
+  if (pctPerHour < 2.5) return { label: "Average", color: "var(--warn)" };
+  return { label: "High", color: "var(--bad)" };
+}

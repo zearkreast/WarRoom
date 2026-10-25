@@ -113,6 +113,29 @@
   color: var(--text-hi);
   font-weight: 600;
 }
+.mo-outlook {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-left: auto;
+  white-space: nowrap;
+}
+.mo-verdict {
+  padding: 0 var(--s-3);
+  border: 1px solid color-mix(in srgb, var(--tone) var(--edge), transparent);
+  background: color-mix(in srgb, var(--tone) var(--wash), transparent);
+  color: var(--tone);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
+}
+.mo-verdict-line {
+  margin: 0;
+  font-size: var(--fs-body-s);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
 .mo-reward {
   display: flex;
   align-items: center;

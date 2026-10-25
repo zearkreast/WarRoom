@@ -63,7 +63,7 @@ export function CampaignsPage() {
           </div>
         </div>
         <FeedNote />
-        <MoStrip fronts={fronts} />
+        <MoStrip />
         <Hint id="campaigns">
           Click a card for its options: pin it to the top, show it on the map, or open the planet's full record.
         </Hint>

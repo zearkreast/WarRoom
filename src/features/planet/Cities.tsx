@@ -1,9 +1,11 @@
-import { Users } from "lucide-react";
-import type { Planet } from "../../api/types";
-import { citiesOf, sizeLabel, type CityState } from "../../domain/cities";
+import { TrendingUp, Users } from "lucide-react";
+import type { Faction, Planet } from "../../api/types";
+import { resistanceLevel } from "../../domain/biomes";
+import { cityHoursLeft, citiesOf, sizeLabel, type City, type CityState } from "../../domain/cities";
 import { factionColor } from "../../domain/factions";
-import { fmtInt, fmtPct } from "../../domain/format";
-import { Meter } from "../../ui/primitives";
+import { fmtDuration, fmtInt, fmtPct } from "../../domain/format";
+import { OrderBar, useCountUp } from "../major-order/OrderBar";
+import "../major-order/majorOrder.css";
 import "./cities.css";
 
 const STATE_LABEL: Record<CityState, string> = {
@@ -39,51 +41,114 @@ export function CityMark({ stars, state, size = 32 }: { stars: number; state: Ci
   );
 }
 
-/** A planet's cities: size class, standing, and how far each is liberated while it is fought over. */
+const signed = (n: number) => `${n >= 0 ? "+" : "−"}${fmtPct(Math.abs(n), 2)}/h`;
+
+function Eta({ c }: { c: City }) {
+  const hours = cityHoursLeft(c);
+  if (hours != null) return <>{fmtDuration(hours * 3_600_000)}</>;
+  if (c.rate != null && c.rate < 0) return <span className="bad">Losing ground</span>;
+  return <span className="muted">Measuring…</span>;
+}
+
+function CityRow({ c, enemy, full }: { c: City; enemy: Faction | undefined; full?: boolean }) {
+  const fought = !!enemy && c.percent != null && (c.state === "liberating" || c.percent > 0);
+  const contested = !!enemy && (c.state === "liberating" || c.state === "locked" || c.state === "held");
+  const shown = useCountUp(fought ? c.percent! : 0);
+  const res = c.resistance != null ? resistanceLevel(c.resistance) : null;
+  return (
+    <li className={`city ${c.state}`}>
+      <CityMark stars={c.stars} state={c.state} />
+      <div className="city-main">
+        <div className="city-head">
+          <b className="caps">{c.name}</b>
+          <span className="city-state caps">{STATE_LABEL[c.state]}</span>
+        </div>
+        <span className="city-size caps">
+          {sizeLabel(c.size)}
+          {c.formerly && <> · formerly {c.formerly}</>}
+          {c.players > 0 && (
+            <>
+              {" · "}
+              <Users size={11} aria-hidden /> <span className="num">{fmtInt(c.players)}</span>
+            </>
+          )}
+        </span>
+        {fought && (
+          <OrderBar
+            slim={!full}
+            shown={shown}
+            value={c.percent!}
+            label={`${c.name} liberated`}
+            valueText={fmtPct(c.percent!, 1)}
+            tone="var(--f-humans)"
+            rest={factionColor(enemy)}
+          />
+        )}
+        {fought && full && (
+          <dl className="city-stats">
+            <div>
+              <dt className="caps">Liberated</dt>
+              <dd className="num">{fmtPct(c.percent!, 2)}</dd>
+            </div>
+            <div>
+              <dt className="caps">Resistance</dt>
+              <dd className="num">
+                {res ? (
+                  <>
+                    {fmtPct(c.resistance!, 2)}/h <span style={{ color: res.color }}>{res.label}</span>
+                  </>
+                ) : (
+                  <span className="muted">—</span>
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className="caps">Progress</dt>
+              <dd className={`num ${c.rate == null ? "muted" : c.rate >= 0 ? "good" : "bad"}`}>
+                {c.rate == null ? "Measuring…" : signed(c.rate)}
+              </dd>
+            </div>
+            <div>
+              <dt className="caps">Liberated in</dt>
+              <dd className="num">
+                <Eta c={c} />
+              </dd>
+            </div>
+          </dl>
+        )}
+        {fought && !full && (
+          <span className="city-line num caps">
+            {fmtPct(c.percent!, 1)}
+            {c.rate != null && <> · {signed(c.rate)}</>}
+            {cityHoursLeft(c) != null && (
+              <>
+                {" · "}
+                <Eta c={c} />
+              </>
+            )}
+          </span>
+        )}
+        {contested && c.boost != null && (
+          <span className="city-boost caps">
+            <TrendingUp size={12} aria-hidden />
+            <b className="num">+{fmtPct(c.boost, 1)}</b> {full ? "planet liberation when freed" : "boost"}
+          </span>
+        )}
+        {full && c.note && <p className="city-note">{c.note}</p>}
+        {full && c.description && <p>{c.description}</p>}
+      </div>
+    </li>
+  );
+}
+
+/** A planet's cities: size class, standing, and while one is fought over its progress, pace and payoff. */
 export function CityList({ p, full }: { p: Planet; full?: boolean }) {
-  const cities = citiesOf(p);
   const enemy = p.event?.faction ?? (p.currentOwner === "Humans" ? undefined : p.currentOwner);
   return (
     <ul className={`cities ${full ? "full" : ""}`}>
-      {cities.map((c) => {
-        const fought = enemy && c.percent != null && (c.state === "liberating" || c.percent > 0);
-        return (
-          <li key={c.id} className={`city ${c.state}`}>
-            <CityMark stars={c.stars} state={c.state} />
-            <div className="city-main">
-              <div className="city-head">
-                <b className="caps">{c.name}</b>
-                <span className="city-state caps">{STATE_LABEL[c.state]}</span>
-              </div>
-              <span className="city-size caps">
-                {sizeLabel(c.size)}
-                {c.formerly && <> · formerly {c.formerly}</>}
-              </span>
-              {fought && (
-                <div className="city-progress">
-                  <Meter
-                    value={c.percent!}
-                    color="var(--f-humans)"
-                    rest={factionColor(enemy)}
-                    label={`${c.name} liberated`}
-                  />
-                  <span className="num caps">
-                    {fmtPct(c.percent!, 1)} liberated
-                    {c.players > 0 && (
-                      <>
-                        {" · "}
-                        <Users size={11} aria-hidden /> {fmtInt(c.players)}
-                      </>
-                    )}
-                  </span>
-                </div>
-              )}
-              {full && c.note && <p className="city-note">{c.note}</p>}
-              {full && c.description && <p>{c.description}</p>}
-            </div>
-          </li>
-        );
-      })}
+      {citiesOf(p).map((c) => (
+        <CityRow key={c.id} c={c} enemy={enemy} full={full} />
+      ))}
     </ul>
   );
 }

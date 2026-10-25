@@ -19,6 +19,18 @@ export interface City {
   /** Liberated share, while the enemy's hold on it is being counted down. */
   percent: number | null;
   players: number;
+  /** Planet liberation, in points, that freeing it deals: 1.5 times its health. */
+  boost: number | null;
+  /** Enemy regeneration in %/h of the city's health. */
+  resistance: number | null;
+  /** Net progress in %/h, measured by the collector. */
+  rate: number | null;
+}
+
+/** Hours until a city is liberated at its current net rate, or null if it isn't gaining. */
+export function cityHoursLeft(c: Pick<City, "percent" | "rate">): number | null {
+  if (c.percent == null || c.rate == null || c.rate <= 0) return null;
+  return (100 - c.percent) / c.rate;
 }
 
 export const cityStars = (size: string) => STARS[size] ?? 0;
@@ -50,6 +62,9 @@ export function citiesOf(p: Planet): City[] {
       state: live === "liberating" ? live : (fate?.state ?? live),
       percent,
       players: r.players,
+      boost: p.maxHealth ? ((1.5 * r.maxHealth) / p.maxHealth) * 100 : null,
+      resistance: r.regenPerSecond != null && r.maxHealth ? ((r.regenPerSecond * 3600) / r.maxHealth) * 100 : null,
+      rate: r.rate ?? null,
     };
   });
 }
