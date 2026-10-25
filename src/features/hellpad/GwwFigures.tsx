@@ -131,13 +131,13 @@ function Siege() {
           </g>
         ))}
         <text className="gf-label good" x="120" y="196" textAnchor="middle">
-          Alone: siege, about −1% an hour
+          Alone: SEAF siege, −0.5 to −1% an hour
         </text>
         <text className="gf-label" x="380" y="196" textAnchor="middle">
           Cut off as a pair: no siege
         </text>
       </svg>
-      <figcaption>Only a planet with no neighbour of its own side left falls under siege.</figcaption>
+      <figcaption>Only a planet with no neighbour of its own side left falls under a SEAF siege.</figcaption>
     </figure>
   );
 }

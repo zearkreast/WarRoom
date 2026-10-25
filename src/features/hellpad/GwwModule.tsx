@@ -18,10 +18,10 @@ import {
   Shield,
   Target,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { APP_NAME, APP_VERSION } from "../../config";
 import { CHAPTERS, MANUALS, TIPS, WIKI, WIKI_LICENCE } from "../../data/gww";
-import { ADS, COMPANIES, GOV, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
+import { ADS, CITIZENS, COMPANIES, GOV, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
 import { FACTIONS, factionColor } from "../../domain/factions";
 import { nextYearly, plainText } from "../../domain/gwwText";
 import { useHistory } from "../../history/useHistory";
@@ -30,9 +30,10 @@ import { DssIcon, FactionEmblem } from "../../ui/emblems";
 import { Empty, OutLink, Panel, useMedia, useNow } from "../../ui/primitives";
 import type { Faction } from "../../api/types";
 import { iconUrl } from "./gwwArt";
-import { GwwNavProvider, useGwwNav } from "./gwwNav";
+import { ADDRESS_LIST, addressOf, GwwNavProvider, normalize, targetAt, useGwwNav } from "./gwwNav";
 import {
   AdBox,
+  CitizensTile,
   CompanyPage,
   CompanyTile,
   CourseProgress,
@@ -42,6 +43,7 @@ import {
   ManualTile,
   MinistryPage,
   MinistryTile,
+  MissingPage,
   pickOne,
   RAIL_QUERY,
   SiteTile,
@@ -49,18 +51,54 @@ import {
 } from "./GwwPages";
 import "./gww.css";
 
-const HOME = "se://gww";
+const keyOf = (p: GwwPage) => ("id" in p ? `${p.kind}:${p.id}` : p.kind === "missing" ? `missing:${p.address}` : p.kind);
 
-function addressOf(p: GwwPage): string {
-  if (p.kind === "manual") return MANUALS.find((m) => m.id === p.id)?.address ?? HOME;
-  if (p.kind === "ministry") return MINISTRIES.find((m) => m.id === p.id)?.address ?? HOME;
-  if (p.kind === "company") return COMPANIES.find((c) => c.id === p.id)?.address ?? HOME;
-  if (p.kind === "site") return p.id === "gov" ? GOV.address : "se://hc/war-log";
-  if (p.kind === "dir") return { manuals: "se://hc/manuals", gov: "se://gov/directory", corps: "se://corp" }[p.id];
-  return HOME;
+/** The address bar: shows where the reader is, and takes any address typed into it. */
+function AddressBar({ page }: { page: GwwPage }) {
+  const { follow, go } = useGwwNav();
+  const [draft, setDraft] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const listId = useId();
+  const open = (e: FormEvent) => {
+    e.preventDefault();
+    const typed = draft ?? "";
+    const target = targetAt(typed);
+    if (target) follow(target);
+    else go({ kind: "missing", address: normalize(typed) });
+    input.current?.blur();
+  };
+  return (
+    <form className="gww-url num" onSubmit={open}>
+      <Lock size={12} aria-hidden />
+      <input
+        ref={input}
+        aria-label="Address"
+        value={draft ?? addressOf(page)}
+        list={listId}
+        spellCheck={false}
+        autoComplete="off"
+        autoCapitalize="off"
+        enterKeyHint="go"
+        onFocus={(e) => {
+          setDraft(addressOf(page));
+          e.currentTarget.select();
+        }}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => setDraft(null)}
+        onKeyDown={(e) => {
+          if (e.key !== "Escape") return;
+          e.stopPropagation();
+          e.currentTarget.blur();
+        }}
+      />
+      <datalist id={listId}>
+        {ADDRESS_LIST.map((a) => (
+          <option key={a} value={a} />
+        ))}
+      </datalist>
+    </form>
+  );
 }
-
-const keyOf = (p: GwwPage) => ("id" in p ? `${p.kind}:${p.id}` : p.kind);
 
 function logLine(count: number): string {
   if (count === 1) return "1 planet has changed hands since tracking began.";
@@ -117,10 +155,15 @@ function HolidayChip() {
 
 function Home({ logText }: { logText: string }) {
   const [query, setQuery] = useState("");
-  const [ads] = useState(() => ({
-    tall: pickOne(ADS.filter((a) => a.shape === "tall")),
-    banner: pickOne(ADS.filter((a) => a.shape === "wide")),
-  }));
+  const [ads] = useState(() => {
+    const landscape = ADS.filter((a) => a.shape === "wide");
+    const banner = pickOne(landscape);
+    return {
+      tall: pickOne(ADS.filter((a) => a.shape === "tall")),
+      banner,
+      second: pickOne(landscape.filter((a) => a !== banner)),
+    };
+  });
   const wide = useMedia(RAIL_QUERY);
   const q = query.trim().toLowerCase();
   const hit = (...text: string[]) => !q || text.some((t) => plainText(t).toLowerCase().includes(q));
@@ -135,6 +178,9 @@ function Home({ logText }: { logText: string }) {
         icon={<img src={iconUrl(GOV.icon)} alt="" />}
         color="var(--f-humans)"
       />
+    ),
+    hit(CITIZENS.title, CITIZENS.summary, CITIZENS.address, ...CITIZENS.sections.map((s) => `${s.heading} ${s.text ?? ""}`)) && (
+      <CitizensTile key="citizens" />
     ),
     hit("Galactic war log", logText, "se://hc/war-log") && (
       <SiteTile
@@ -168,7 +214,13 @@ function Home({ logText }: { logText: string }) {
       m.title,
       m.summary,
       m.address,
-      ...m.sections.flatMap((s) => [s.heading, s.text ?? "", ...(s.points ?? []), ...(s.faq ?? []).map((f) => `${f.q} ${f.a}`)]),
+      ...m.sections.flatMap((s) => [
+        s.heading,
+        s.text ?? "",
+        ...(s.points ?? []),
+        ...(s.faq ?? []).map((f) => `${f.q} ${f.a}`),
+        ...(s.folds ?? []).flatMap((f) => [f.title, ...f.points]),
+      ]),
     ),
   );
   const companies = COMPANIES.filter((c) =>
@@ -227,7 +279,7 @@ function Home({ logText }: { logText: string }) {
               ))}
             </Group>
           )}
-          {!q && !wide && ads.tall && <AdBox ad={ads.tall} />}
+          {!q && !wide && ads.second && <AdBox ad={ads.second} />}
         </div>
         {wide && ads.tall && (
           <aside className="gww-rail" aria-label="Sponsored">
@@ -252,8 +304,10 @@ function View({ page, logText, headingRef }: { page: GwwPage; logText: string; h
     const c = COMPANIES.find((x) => x.id === page.id);
     if (c) return <CompanyPage c={c} headingRef={headingRef} />;
   }
-  if (page.kind === "site") return page.id === "gov" ? <GovPage headingRef={headingRef} /> : <WarLogPage headingRef={headingRef} />;
+  if (page.kind === "site")
+    return page.id === "log" ? <WarLogPage headingRef={headingRef} /> : <GovPage site={page.id} headingRef={headingRef} />;
   if (page.kind === "dir") return <DirPage id={page.id} headingRef={headingRef} logText={logText} />;
+  if (page.kind === "missing") return <MissingPage address={page.address} headingRef={headingRef} />;
   return <Home logText={logText} />;
 }
 
@@ -313,10 +367,7 @@ export function GwwModule() {
           <button className="gww-nav" aria-label="G.W.W. home" title="Home" disabled={page.kind === "home"} onClick={home}>
             <House size={16} />
           </button>
-          <div className="gww-url num" aria-label="Address">
-            <Lock size={12} aria-hidden />
-            <span>{addressOf(page)}</span>
-          </div>
+          <AddressBar page={page} />
           <span className="gww-brand-tag caps" aria-hidden>
             G.W.W.
           </span>
@@ -357,8 +408,8 @@ export function AboutModule() {
           A fan project, not affiliated with Arrowhead Game Studios or Sony Interactive Entertainment. Map artwork is
           drawn for the app. The faction and sub-faction emblems and the DSS glyph (as traced by Helldivers Wiki
           editors), the DSS's summary hologram, the biome landscapes and the black hole and fractured planet pictures
-          are the game's, taken from the Helldivers Wiki (helldivers.wiki.gg), and belong to their owners. Effect names come from the Helldivers 2 community's
-          data set (github.com/helldivers-2/json, MIT licence).
+          are the game's, taken from the Helldivers Wiki (helldivers.wiki.gg), and belong to their owners. Effect names
+          come from the Helldivers 2 community's data set (github.com/helldivers-2/json, MIT licence).
         </p>
         <h3>Credits</h3>
         <p>

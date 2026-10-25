@@ -2,12 +2,16 @@ import {
   Archive,
   ArrowLeft,
   ChevronRight,
+  Crosshair,
   Gift,
   Globe,
   Globe2,
+  Library,
   Lock,
   Radio,
   Rocket,
+  Skull,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
@@ -17,13 +21,14 @@ import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtInt } from "../../domain/format";
 import { controlShares } from "../../domain/planetIndex";
 import { useSettings, useUi, type HellpadModule } from "../../state";
-import { DssIcon, FactionEmblem, type IconLike } from "../../ui/emblems";
+import { DssIcon, FactionEmblem, HellpadMark, type IconLike } from "../../ui/emblems";
 import { useFeedStatus } from "../../ui/feed";
-import { Countdown, LiveDot, StatusChip } from "../../ui/primitives";
+import { Countdown, LiveDot, StatusChip, useNow } from "../../ui/primitives";
 import { GwwModule } from "./GwwModule";
 import { PastCampaignsModule } from "./PastCampaignsModule";
 import { PlanetsModule } from "./PlanetsModule";
 import { StationsModule } from "./StationsModule";
+import { StratagemTerminal } from "./StratagemTerminal";
 import "./hellpad.css";
 
 const MODULES: Record<HellpadModule, { title: string; path: string; color: string }> = {
@@ -32,39 +37,6 @@ const MODULES: Record<HellpadModule, { title: string; path: string; color: strin
   gww: { title: "G.W.W.", path: "hp://gww", color: "var(--cta)" },
   campaigns: { title: "Past campaigns", path: "hp://archive", color: "var(--warn)" },
 };
-
-/** The Hellpad's mark: the four stratagem arrows a Helldiver keys in on it. */
-function HellpadMark({ size = 64 }: { size?: number }) {
-  return (
-    <svg className="hp-mark" width={size} height={size} viewBox="0 0 64 64" aria-hidden>
-      <path d="M14 4h36l10 10v36L50 60H14L4 50V14Z" fill="none" stroke="currentColor" strokeWidth="2.5" />
-      <path d="M18 9h28l9 9v28l-9 9H18l-9-9V18Z" fill="currentColor" opacity="0.08" />
-      <g fill="currentColor">
-        <path d="M32 12l8 9h-16Z" />
-        <path d="M52 32l-9 8v-16Z" />
-        <path d="M32 52l-8-9h16Z" />
-        <path d="M12 32l9-8v16Z" />
-      </g>
-      <rect x="28" y="28" width="8" height="8" fill="none" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  );
-}
-
-const REINFORCE = ["up", "down", "right", "left", "up"] as const;
-
-/** The Reinforce stratagem's code, keyed in over and over. */
-function StratagemCode() {
-  return (
-    <div className="hp-code" aria-hidden>
-      <span className="caps">Reinforce</span>
-      <span className="hp-code-keys">
-        {REINFORCE.map((d, i) => (
-          <i key={i} className={`hp-key ${d}`} style={{ "--i": i } as CSSProperties} />
-        ))}
-      </span>
-    </div>
-  );
-}
 
 function Uplink() {
   const { state } = useFeedStatus(15_000);
@@ -82,7 +54,7 @@ function Mast() {
   const fronts = useCampaigns().data?.length;
   return (
     <header className="hp-mast">
-      <HellpadMark />
+      <HellpadMark size={64} className="hp-mark" />
       <div className="hp-mast-text">
         <h1 className="hp-mast-title">Hellpad</h1>
         <p className="caps">Field terminal · Super Destroyer uplink</p>
@@ -92,7 +64,6 @@ function Mast() {
           {war && <span>{fmtInt(war.statistics.playerCount)} Helldivers deployed</span>}
         </div>
       </div>
-      <StratagemCode />
     </header>
   );
 }
@@ -102,6 +73,7 @@ function StationReport() {
   const openModule = useUi((s) => s.openModule);
   const station = useSpaceStations().data?.[0];
   const planet = useFreshPlanets().data?.find((p) => p.index === station?.planetIndex);
+  const now = useNow(30_000);
   if (!station || !planet) return null;
   const jump = Date.parse(station.electionEnd);
   return (
@@ -111,7 +83,7 @@ function StationReport() {
       </span>
       <span className="hp-report-text">
         The DSS holds orbit over <b>{planet.name}</b>, {planet.sector} sector.{" "}
-        {jump > Date.now() ? (
+        {jump > now ? (
           <>
             Next FTL jump in <b className="num"><Countdown to={jump} /></b>.
           </>
@@ -151,16 +123,16 @@ function ModuleTile(props: {
   );
 }
 
-function LockedTile({ icon: Icon, title, text }: { icon: LucideIcon; title: string; text: string }) {
+function LockedTile(props: { icon: LucideIcon; title: string; path: string; text: string }) {
   return (
     <div className="hp-mod locked">
       <span className="hp-mod-icon">
-        <Icon size={26} strokeWidth={1.5} />
+        <props.icon size={26} strokeWidth={1.5} />
       </span>
       <span className="hp-mod-body">
-        <span className="hp-mod-path num">hp://{title.toLowerCase()}</span>
-        <b className="hp-mod-title">{title}</b>
-        <span className="hp-mod-text">{text}</span>
+        <span className="hp-mod-path num">hp://{props.path}</span>
+        <b className="hp-mod-title">{props.title}</b>
+        <span className="hp-mod-text">{props.text}</span>
         <span className="hp-mod-go caps">
           <Lock size={12} aria-hidden /> Module building
           <span className="hp-segs" aria-hidden>
@@ -283,6 +255,7 @@ function Hub() {
   return (
     <div className="hp-hub">
       <Mast />
+      <StratagemTerminal />
       <StationReport />
       <Group title="Field modules" count={4}>
         <PlanetsTile />
@@ -290,9 +263,43 @@ function Hub() {
         <GwwTile />
         <PastTile />
       </Group>
-      <Group title="In development" count={2}>
-        <LockedTile icon={Rocket} title="Warbonds" text="Warbond pages, items and medal costs." />
-        <LockedTile icon={Gift} title="Boosters" text="Booster effects and where to find them." />
+      <Group title="In development" count={6}>
+        <LockedTile
+          icon={Skull}
+          title="Enemy encyclopedia"
+          path="enemies"
+          text="Every enemy by faction: its armour, weak spots and what brings it down."
+        />
+        <LockedTile
+          icon={Crosshair}
+          title="Weaponry"
+          path="weapons"
+          text="Primaries, secondaries, throwables and support weapons, with their stats."
+        />
+        <LockedTile
+          icon={Zap}
+          title="Stratagem collection"
+          path="stratagems"
+          text="Every stratagem with its code, cooldown and where it is unlocked."
+        />
+        <LockedTile
+          icon={Library}
+          title="Ship library"
+          path="library"
+          text="For the Super Destroyer library Arrowhead has promised, once it is in the game."
+        />
+        <LockedTile
+          icon={Rocket}
+          title="Warbonds"
+          path="warbonds"
+          text="Warbond pages, items and medal costs."
+        />
+        <LockedTile
+          icon={Gift}
+          title="Boosters"
+          path="boosters"
+          text="Booster effects and where to find them."
+        />
       </Group>
     </div>
   );

@@ -36,6 +36,14 @@ export function pawnArt(e: PlanetEffect): { key: string; href: string } | undefi
 
 export type DssState = "active" | "cooldown" | "offline" | "default";
 
+/** The station's light in each state, on the map and in its hologram on the station page. */
+export const DSS_TONE: Record<DssState, string> = {
+  active: "var(--cta)",
+  cooldown: "var(--bad)",
+  offline: "#8d949b",
+  default: "var(--f-humans)",
+};
+
 /**
  * The station's hologram: yellow while an action is deployed, red while one cools down, grey when none
  * can be prepared, deployed or cooled down (the API has no offline flag of its own), blue otherwise.
