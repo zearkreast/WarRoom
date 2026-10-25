@@ -10,7 +10,7 @@ import { Empty, Panel, StatusChip } from "../../ui/primitives";
 import { MarkupText } from "../news/NewsCard";
 import "./campaign.css";
 
-const OUTCOME: Record<EpisodeStatus, { label: string; tone: string }> = {
+export const OUTCOME: Record<EpisodeStatus, { label: string; tone: string }> = {
   active: { label: "In progress", tone: "var(--info)" },
   won: { label: "Victory", tone: "var(--good)" },
   lost: { label: "Failed", tone: "var(--bad)" },

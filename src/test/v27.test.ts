@@ -5,7 +5,7 @@ import { latestDispatches } from "../domain/dispatch";
 import { averageReadings, plotActivity, type ActivityPoint } from "../domain/frontActivity";
 import { planetEffects } from "../domain/effects";
 import { orderName, taskPercent, type TaskView } from "../domain/majorOrder";
-import { toEffectsLive, type EpisodeLive, type EpisodeStatus } from "../domain/snapshot";
+import { campaignRecord, toEffectsLive, type EpisodeLive, type EpisodeStatus } from "../domain/snapshot";
 import statusJson from "./fixtures/status-effects.json";
 
 const live = toEffectsLive(statusJson as unknown as WarStatusRaw);
@@ -153,5 +153,33 @@ describe("major order progress", () => {
   it("reads 100% only once the task is done", () => {
     expect(taskPercent(task(299_900_000, 300_000_000))).toBe(99.9);
     expect(taskPercent(task(5, 0))).toBe(100);
+  });
+});
+
+describe("campaign record", () => {
+  const phase = (status: EpisodeStatus) => ({ title: "MO", briefing: "", outro: "", status, medals: null, issued: null });
+  const episode = (start: number, status: EpisodeStatus, orders: EpisodeStatus[]): EpisodeLive => ({
+    id: start,
+    title: "CAMPAIGN",
+    description: "",
+    faction: "Humans",
+    status,
+    start,
+    end: start + 1,
+    reward: null,
+    phases: orders.map(phase),
+  });
+
+  it("counts campaigns and Major Orders won", () => {
+    const past = [episode(1, "won", ["won", "lost", "won"]), episode(2, "lost", ["lost", "won", "lost"])];
+    expect(campaignRecord(past)).toMatchObject({ won: 1, orders: 6, ordersWon: 3 });
+  });
+
+  it("streaks the victories since the newest failure, in any order", () => {
+    const past = [episode(3, "won", []), episode(1, "won", []), episode(4, "won", []), episode(2, "lost", [])];
+    expect(campaignRecord(past).streak).toBe(2);
+    expect(campaignRecord([episode(1, "won", []), episode(2, "won", [])]).streak).toBe(2);
+    expect(campaignRecord([episode(1, "won", []), episode(2, "lost", [])]).streak).toBe(0);
+    expect(campaignRecord([]).streak).toBe(0);
   });
 });
