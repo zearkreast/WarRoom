@@ -182,6 +182,8 @@ Everything since v0.2.7-alpha, which is the same code as v0.2.7 (commit `c5ca962
 
 - The legend and About dialogs open scrolled to the top.
 - The API's literal "null" region descriptions are no longer shown.
+- Dispatches and briefings no longer turn up in another language when the game's API serves a copy made for
+  another player.
 
 ### Collector
 
@@ -190,6 +192,8 @@ Everything since v0.2.7-alpha, which is the same code as v0.2.7 (commit `c5ca962
 - Live snapshots carry each region's regeneration, and campaign planets their regions' progress rates. Region
   readings are kept in memory, so region rates read as measuring for about 10 minutes after a restart.
 - The app still loads older snapshots without these fields.
+- API answers that aren't in English are rejected, and the job tries again a minute later. Dispatches are
+  compared by text, so one stored in the wrong language is replaced once it comes in English.
 
 ### Build and release
 

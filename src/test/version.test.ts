@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { isNewer, versionParts } from "../domain/version";
+import { isNewer, releaseNumber, versionParts } from "../domain/version";
 
 describe("versions", () => {
   it("reads release tags", () => {
     expect(versionParts("v0.2.8-alpha")).toEqual([0, 2, 8]);
     expect(versionParts("1.10")).toEqual([1, 10]);
+  });
+
+  it("drops the pre-release label", () => {
+    expect(releaseNumber("0.3.0-beta")).toBe("0.3.0");
+    expect(releaseNumber("v0.3.0-beta.2+build.5")).toBe("0.3.0");
+    expect(releaseNumber("0.2.7")).toBe("0.2.7");
   });
 
   it("compares by number, not text", () => {

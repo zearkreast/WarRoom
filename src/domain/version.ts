@@ -1,6 +1,9 @@
+/** A version or release tag without its pre-release or build label: "v0.3.0-beta" → "0.3.0". */
+export const releaseNumber = (v: string) => v.replace(/^v/i, "").split(/[-+]/)[0] ?? "";
+
 /** The numeric parts of a version or release tag: "v0.2.8-alpha" → [0, 2, 8]. */
 export function versionParts(v: string): number[] {
-  return (v.replace(/^v/i, "").split(/[-+]/)[0] ?? "").split(".").map((n) => Number.parseInt(n, 10) || 0);
+  return releaseNumber(v).split(".").map((n) => Number.parseInt(n, 10) || 0);
 }
 
 /** The pre-release label after the dash ("beta.2" in "0.3.0-beta.2"), or "" for a full release. */

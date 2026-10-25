@@ -19,6 +19,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       "Hellpad: space stations with holograms and the Star of Peace, cities with rank stars and liberation, past campaigns with a service record, and the G.W.W. as a browser of Federation sites linked to the live war. Back and Forward step through the app.",
       "Major Orders get animated progress bars and an outlook for each objective.",
       "Phones: a Settings button in the top bar, bigger touch targets, and no text selection on a long press.",
+      "Dispatches and briefings no longer turn up in another language when the game's API serves a copy made for another player.",
     ],
   },
   {
