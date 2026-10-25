@@ -1,4 +1,5 @@
-import { BellRing, ClipboardCopy, PinOff, RotateCcw, Settings } from "lucide-react";
+import { isTauri } from "@tauri-apps/api/core";
+import { BellRing, ClipboardCopy, Download, PinOff, RefreshCw, RotateCcw, Settings } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useLastUpdate } from "../../api/queries";
 import { notify } from "../../alerts/notify";
@@ -16,6 +17,7 @@ import {
 } from "../../state";
 import { Panel, Stepper } from "../../ui/primitives";
 import { DISPATCH_OPTIONS, OVERLAY_OPTIONS, PLANET_OPTIONS, QUALITY_OPTIONS } from "../map/mapOptions";
+import { checkForUpdate, useUpdate } from "../../update/appUpdate";
 import "./settings.css";
 
 const ON_OFF = [
@@ -32,6 +34,34 @@ function Row(props: { title: string; text: string; tone?: string; children: Reac
       </div>
       {props.children}
     </div>
+  );
+}
+
+const UPDATE_TEXT: Record<string, string> = {
+  idle: "The app looks for a new release a few seconds after it starts, then every six hours.",
+  checking: "Checking for a new release…",
+  current: "You have the latest release.",
+  available: "A new release is ready: see the card at the top right.",
+  downloading: "Downloading the new release…",
+  installing: "Installing; the app restarts when it is done.",
+  "handed-off": "The APK is downloading; open it from your notifications to install.",
+  error: "The last check failed.",
+};
+
+function UpdateRow() {
+  const state = useUpdate((s) => s.state);
+  if (!isTauri())
+    return (
+      <Row title={`Version ${APP_VERSION}`} text="The web version is always the latest; there is nothing to install.">
+        {null}
+      </Row>
+    );
+  return (
+    <Row title={`Version ${APP_VERSION}`} text={UPDATE_TEXT[state.phase]}>
+      <button className="hud-btn" onClick={() => void checkForUpdate(true)} disabled={state.phase === "checking"}>
+        <RefreshCw size={14} /> Check now
+      </button>
+    </Row>
   );
 }
 
@@ -168,6 +198,9 @@ export function SettingsPage() {
               <BellRing size={14} /> Send test alert
             </button>
           </div>
+        </Panel>
+        <Panel title="Updates" icon={Download}>
+          <UpdateRow />
         </Panel>
         <div className="set-footer">
           <button className="hud-btn" onClick={copyDiagnostics}>

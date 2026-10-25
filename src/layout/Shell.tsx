@@ -23,6 +23,8 @@ import { fmtDuration, fmtInt, fmtPct, sestClock, sestDate, warDay } from "../dom
 import { liberationPercent } from "../domain/progress";
 import { NewsTicker } from "../features/news/NewsTicker";
 import { useUnreadNews } from "../features/news/useNewsItems";
+import { startUpdateChecks } from "../update/appUpdate";
+import { UpdateCard } from "../update/UpdateCard";
 import { PlanetDetail } from "../features/planet/PlanetDetail";
 import { PlanetOptions } from "../features/planet/PlanetOptions";
 import { AboutDialog } from "./AboutDialog";
@@ -243,6 +245,7 @@ function Toasts() {
   const shown = popups === "none" ? [] : popups === "priority" ? toasts.filter((t) => t.kind !== "dispatch") : toasts;
   return (
     <div className="toasts" aria-live="polite">
+      <UpdateCard />
       {shown.map((t) => {
         const look = TOAST_LOOK[t.kind];
         return (
@@ -271,6 +274,7 @@ export function Shell({ children }: { children: ReactNode }) {
   // On the page itself the items carry their own marks.
   const unread = useUnreadNews();
   const unreadNews = view === "news" ? 0 : unread;
+  useEffect(() => startUpdateChecks(), []);
   return (
     <div className="shell">
       <header className="topbar">

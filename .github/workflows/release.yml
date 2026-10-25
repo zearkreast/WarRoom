@@ -73,6 +73,9 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the in-app update bundles; its public half is the updater pubkey in tauri.conf.json.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
           releaseName: "WarRoom v__VERSION__"
@@ -80,6 +83,8 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+          # latest.json, which installed apps read to find and verify a new release.
+          includeUpdaterJson: true
 
   # Runs after the desktop builds so the release they create is there to attach the APK to.
   android:
