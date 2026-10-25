@@ -69,10 +69,30 @@
   flex: none;
   color: var(--good);
 }
-.gww-url span {
-  overflow: hidden;
+.gww-url:focus-within {
+  border-color: var(--cta);
+}
+.gww-url input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
   text-overflow: ellipsis;
-  white-space: nowrap;
+}
+.gww-url input:focus {
+  color: var(--text-hi);
+}
+/* Below 16px, phones zoom the page in on focus. */
+@media (pointer: coarse) {
+  .gww-url input {
+    font-size: 16px;
+  }
 }
 .gww-brand-tag {
   padding: 0 var(--s-3);
