@@ -121,7 +121,7 @@ export function SettingsPage() {
           </Row>
           <Row
             title="Render quality"
-            text="Minimal keeps the look but stops the pulsing markers and draws fewer, softer stars. Maximum resizes planet markers live while zooming."
+            text="Minimal keeps the look but stops the pulsing markers and draws fewer, softer stars. Maximum draws the most stars at full sharpness."
           >
             <Stepper<MapQuality>
               label="Render quality"

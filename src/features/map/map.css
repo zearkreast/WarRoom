@@ -28,34 +28,34 @@
   height: 100%;
   display: block;
   cursor: grab;
-  transform-origin: 0 0;
-  will-change: transform;
-  --k: 1;
 }
 .galaxy:active {
   cursor: grabbing;
 }
 
 /* ---------- Overlays ---------- */
-.galaxy {
-  --unrot: 0deg;
-  --unsquash: 1;
-}
 /* While the camera moves, drop-shadow filters (the costliest paint here) are skipped; they return once it settles.
    Listed by name: a `*` here restyles every node in the map on each start and stop. */
 .galaxy.moving .faction-marks path,
 .galaxy.moving .anomaly.wormhole,
-.galaxy.moving .anomaly.fractured .ember {
+.galaxy.moving .anomaly.blackhole,
+.galaxy.moving .anomaly.fractured .ember,
+.galaxy.moving .holo-badges image {
   filter: none !important;
 }
+/* Holograms keep their tint while moving, only the glow goes. */
+.galaxy.moving .holo-unit image {
+  filter: var(--tint) !important;
+}
 .galaxy.moving .pulse,
-.galaxy.moving .swirl {
+.galaxy.moving .swirl,
+.galaxy.moving .bh-flow,
+.galaxy.moving .holo-unit,
+.galaxy.moving .holo-ticks,
+.galaxy.moving .holo-sweep {
   animation-play-state: paused;
 }
-/* Planet markers and labels stay upright and round however the map is turned or tilted. */
-.upright {
-  transform: rotate(var(--unrot)) scale(1, var(--unsquash));
-}
+/* cameraRules.ts sets the transforms and sizes of .upright, .pbody and the labels each frame. */
 .region-line {
   fill: none;
   stroke-width: 2.4;
@@ -109,10 +109,6 @@
 /* ---------- Planets ---------- */
 .planet {
   cursor: pointer;
-}
-/* Markers grow slower than the map when zooming in. */
-.pbody {
-  transform: scale(calc(1.4 / pow(var(--k), 0.55)));
 }
 .planet .hit {
   fill: transparent;
@@ -171,6 +167,29 @@
 .planet.landmark {
   cursor: default;
 }
+/* Points of interest, as the game's logos over the planet. */
+.poi-marks {
+  pointer-events: none;
+}
+/* Stroke widths are in the logo's 24-unit grid. */
+.poi-halo {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 5;
+  stroke-opacity: 0.3;
+  stroke-linejoin: round;
+}
+.poi-shape {
+  fill: color-mix(in srgb, currentColor 55%, white);
+  stroke: var(--void);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+/* Spheres carry the active-planet tag on top; the logo goes over it (replacing the -10 offset). */
+.pl-spheres .planet.active .poi-marks {
+  transform: translateY(-20px);
+}
 .pin-mark path {
   fill: var(--cta);
   stroke: #0b0f16;
@@ -191,15 +210,42 @@
 }
 .anomaly .horizon {
   fill: #000;
-  stroke: rgba(234, 244, 250, 0.7);
-  stroke-width: 0.5;
+}
+.anomaly .photon {
+  fill: none;
+  stroke: #ffe3d2;
+  stroke-width: 0.8;
+}
+.anomaly .lens {
+  fill: none;
+  stroke: #ff9a6a;
+  stroke-width: 1.5;
+  stroke-opacity: 0.55;
+}
+/* Matter streaming round the disk. */
+.anomaly .bh-flow {
+  fill: none;
+  stroke: #fff4ea;
+  stroke-width: 0.45;
+  stroke-opacity: 0.8;
+  stroke-dasharray: 2.4 3.6;
+  animation: bh-flow 2.6s linear infinite;
+}
+@keyframes bh-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+.galaxy:not(.pl-spheres) .anomaly.blackhole {
+  filter: drop-shadow(0 0 3px #ff8a4a);
 }
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
-.q-min .anomaly .swirl {
+.q-min .anomaly .swirl,
+.q-min .anomaly .bh-flow {
   animation: none;
 }
 .planet.selected .core {
@@ -209,9 +255,11 @@
 .planet:hover .core {
   stroke: var(--cta);
 }
+/* Hidden labels are display: none, not transparent: the browser re-lays out every SVG text on each
+   zoom step, and most labels are hidden. */
 .planet-label,
 .planet-tag {
-  font-size: calc(10px / var(--k));
+  display: none;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -219,26 +267,12 @@
   pointer-events: none;
   paint-order: stroke;
   stroke: var(--void);
-  stroke-width: calc(3px / var(--k));
-  opacity: 0;
-  transition: opacity var(--t-state);
 }
 .planet-label {
   fill: var(--text-hi);
-  /* Sits just above the marker, which grows slower than the map. */
-  transform: translateY(calc(-8px * 1.4 / pow(var(--k), 0.55) - 3px / var(--k)));
 }
 .planet-tag {
-  transform: translateY(calc(8px * 1.4 / pow(var(--k), 0.55) + 9px / var(--k)));
-  font-size: calc(8px / var(--k));
   letter-spacing: 0.2em;
-}
-/* Spheres carry the active-planet tag on top, so their names go underneath, as on the in-game map. */
-.pl-spheres .planet-label {
-  transform: translateY(calc(8px * 1.4 / pow(var(--k), 0.55) + 9px / var(--k)));
-}
-.pl-spheres .planet-tag {
-  transform: translateY(calc(8px * 1.4 / pow(var(--k), 0.55) + 19px / var(--k)));
 }
 .planet.selected .planet-label,
 .planet:hover .planet-label,
@@ -247,20 +281,34 @@
 .z-labels .planet.pinned .planet-label,
 .z-sectors .planet-label,
 .z-sectors .planet-tag {
-  opacity: 1;
+  display: inline;
 }
 .planet:hover .planet-label {
   fill: var(--cta);
 }
-/* Sub-faction, SEAF and point-of-interest pawns: shown with the names, once zoomed in or on hover. */
+/* Sub-faction, SEAF and point-of-interest pawns: tags with the names, once zoomed in or on hover.
+   Closer in, units with a hologram stand beside the planet instead and the rest keep their tags. */
 .pawns {
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--t-reveal) var(--ease);
 }
-.z-sectors .pawns,
-.planet:hover .pawns,
-.planet.selected .pawns {
+.z-sectors .pawns-all,
+.planet:hover .pawns-all,
+.planet.selected .pawns-all {
+  opacity: 1;
+}
+/* display, not opacity, so hidden holograms don't animate or paint. */
+.holos,
+.pawns-rest,
+.z-units .pawns-all {
+  display: none;
+}
+.z-units .holos,
+.z-units .pawns-rest {
+  display: inline;
+}
+.z-units .pawns-rest {
   opacity: 1;
 }
 .pawn rect {
@@ -273,6 +321,118 @@
 }
 .pawn svg {
   color: currentColor;
+}
+.holos {
+  pointer-events: none;
+}
+/* The projector's foreshortening, the beam's height and the unit's lift follow the tilt: see
+   cameraRules.ts. */
+.holo.back {
+  transform: translateY(-7px);
+}
+.holo-pool {
+  fill: currentColor;
+  opacity: 0.5;
+}
+.holo-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.35;
+  stroke-opacity: 0.6;
+}
+.holo-ticks {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.9;
+  stroke-dasharray: 0.5 1.7;
+  opacity: 0.75;
+}
+/* Animated only while shown: hidden holograms would otherwise keep ticking. */
+.z-units .holo-ticks {
+  animation: spin 16s linear infinite;
+  animation-delay: var(--delay);
+}
+.holo-emitter {
+  fill: #fff;
+  fill-opacity: 0.9;
+}
+.holo-beam {
+  fill: currentColor;
+  opacity: 0.6;
+}
+.holo-edge {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.7;
+}
+.z-units .holo-unit {
+  animation:
+    holo-bob 4s ease-in-out infinite,
+    holo-flicker 16s linear infinite;
+  animation-delay: var(--delay);
+}
+.holo-unit image {
+  opacity: 0.94;
+  filter: var(--tint);
+}
+.galaxy:not(.q-min) .holo-unit image {
+  filter: var(--tint) drop-shadow(0 0 1.4px currentColor);
+}
+.z-units .holo-sweep {
+  animation: holo-sweep 3.6s linear infinite;
+  animation-delay: var(--delay);
+}
+/* The DSS's deployed tactical actions, floating over the station. */
+.holo-badges image {
+  filter: drop-shadow(0 0 1.5px var(--cta));
+}
+.q-min .holo-badges image {
+  filter: none;
+}
+.q-min .holo-light {
+  display: none;
+}
+.q-min .holo-unit,
+.q-min .holo-ticks {
+  animation: none;
+}
+@keyframes holo-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.4px);
+  }
+}
+/* A slow, rare double dip rather than a sharp flicker. */
+@keyframes holo-flicker {
+  0%,
+  58%,
+  66%,
+  100% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.6;
+  }
+  62% {
+    opacity: 1;
+  }
+  64% {
+    opacity: 0.75;
+  }
+}
+@keyframes holo-sweep {
+  0% {
+    transform: translateY(0);
+  }
+  55%,
+  100% {
+    transform: translateY(-26px);
+  }
 }
 .anomaly.fractured .rock {
   fill: #a39b95;
@@ -633,6 +793,30 @@
   font-size: var(--fs-label);
   letter-spacing: 0.1em;
   color: var(--text-dim);
+}
+/* Points of interest: their logo and name, then what they are, as the game's tooltip lists them. */
+.hc-art.poi {
+  height: 92px;
+}
+.hc-poi {
+  margin: var(--s-3) var(--s-5) 0;
+}
+.hc-poi-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface-2);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--info);
+}
+.hc-poi p {
+  margin: var(--s-2) 0 0;
+  font-size: var(--fs-body-s);
+  line-height: 1.45;
+  color: var(--text);
 }
 .hc-row {
   display: flex;
