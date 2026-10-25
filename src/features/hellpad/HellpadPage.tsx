@@ -23,7 +23,7 @@ import { controlShares } from "../../domain/planetIndex";
 import { useSettings, useUi, type HellpadModule } from "../../state";
 import { DssIcon, FactionEmblem, HellpadMark, type IconLike } from "../../ui/emblems";
 import { useFeedStatus } from "../../ui/feed";
-import { Countdown, LiveDot, StatusChip } from "../../ui/primitives";
+import { Countdown, LiveDot, StatusChip, useNow } from "../../ui/primitives";
 import { GwwModule } from "./GwwModule";
 import { PastCampaignsModule } from "./PastCampaignsModule";
 import { PlanetsModule } from "./PlanetsModule";
@@ -73,6 +73,7 @@ function StationReport() {
   const openModule = useUi((s) => s.openModule);
   const station = useSpaceStations().data?.[0];
   const planet = useFreshPlanets().data?.find((p) => p.index === station?.planetIndex);
+  const now = useNow(30_000);
   if (!station || !planet) return null;
   const jump = Date.parse(station.electionEnd);
   return (
@@ -82,7 +83,7 @@ function StationReport() {
       </span>
       <span className="hp-report-text">
         The DSS holds orbit over <b>{planet.name}</b>, {planet.sector} sector.{" "}
-        {jump > Date.now() ? (
+        {jump > now ? (
           <>
             Next FTL jump in <b className="num"><Countdown to={jump} /></b>.
           </>

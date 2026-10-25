@@ -25,6 +25,12 @@ export interface StationRecord {
   aka: string[];
   status: "Destroyed" | "Offline" | "Retired";
   faction: "Automaton" | "Humans" | "Terminids" | "Illuminate";
+  /** Its emblem and hologram; one drawn for each station. */
+  art: "css";
+  /** The operation fought over it, which titles its timeline. */
+  operation: string;
+  /** Lines under its hologram. */
+  readout: [string, string][];
   note: string;
   sections: { heading: string; text: string }[];
   timeline: StationEvent[];
@@ -43,6 +49,13 @@ export const PAST_STATIONS: StationRecord[] = [
     ],
     status: "Destroyed",
     faction: "Automaton",
+    art: "css",
+    operation: "Operation Lightning Intercept",
+    readout: [
+      ["Struck", "Varylia 5 · Yed Prior"],
+      ["Last seen", "Mort orbit"],
+      ["Destroyed", "27 Jul 2186"],
+    ],
     note:
       "A prototype orbital platform the Cyborgs deployed in July 2186. It struck Varylia 5 on 14 July and Yed Prior on 20 July; the DSS heavily damaged it over Mort on 26 July, and it was destroyed in Mort's orbit on 27 July 2186, minutes after the Helldivers liberated X-45, the hub of its facilities.",
     sections: [
