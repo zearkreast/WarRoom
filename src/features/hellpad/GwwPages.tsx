@@ -22,19 +22,16 @@ import {
   Radio,
   Satellite,
   Shield,
-  ShoppingBag,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefCallback } from "react";
 import { CHAPTERS, MANUALS, WIKI, WIKI_LICENCE, type Manual, type Section, type Source } from "../../data/gww";
 import {
   ADS,
-  BRANDS,
   COMPANIES,
   GOV,
   MINISTRIES,
   type Ad,
-  type Brand,
   type Company,
   type Ministry,
   type SiteSection,
@@ -80,7 +77,6 @@ const DIR_ICONS: Record<string, LucideIcon> = {
   manuals: GraduationCap,
   gov: Landmark,
   corps: Building2,
-  market: ShoppingBag,
 };
 
 /** Every manual's icon as a ring around a glyph, as the game draws its campaign icons (which bring their own ring). */
@@ -121,7 +117,7 @@ export function TargetIcon({ target, size = 20 }: { target: string; size?: numbe
     return src ? img(src) : <Building2 size={size} strokeWidth={1.5} aria-hidden />;
   }
   if (kind === "site") return id === "gov" ? img(iconUrl("super-earth")) : <History size={size} strokeWidth={1.5} aria-hidden />;
-  const Icon = kind === "dir" ? DIR_ICONS[id] : kind === "app" ? APP_ICONS[id] : ShoppingBag;
+  const Icon = kind === "dir" ? DIR_ICONS[id] : kind === "app" ? APP_ICONS[id] : undefined;
   return Icon ? <Icon size={size} strokeWidth={1.5} aria-hidden /> : null;
 }
 
@@ -129,7 +125,6 @@ const KIND_LABEL: Record<string, string> = {
   manual: "Training manual",
   ministry: "Ministry",
   company: "Corporation",
-  brand: "Marketplace",
   site: "Super Earth",
   dir: "Directory",
   app: "In the tracker",
@@ -140,6 +135,8 @@ export const RAIL_QUERY = "(min-width: 1101px)";
 
 export const pickOne = <T,>(list: T[]): T | undefined => list[Math.floor(Math.random() * list.length)];
 
+const linkOf = (ad: Ad): string | undefined => ("by" in ad ? ad.by : undefined);
+
 /**
  * A rail advert keeps its shape; a billboard fills the width at a fixed height. `here` is the link target of the
  * page it's shown on; an advert for that page doesn't link to it.
@@ -149,9 +146,10 @@ export function AdBox({ ad, here, slot = "billboard" }: { ad: Ad; here?: string;
   const url = adUrl(ad.file);
   if (!url) return null;
   const art = { "--ad": `url("${url}")` } as CSSProperties;
+  const to = linkOf(ad);
   return (
     <figure className={`gww-ad ${ad.shape} ${slot}`}>
-      {ad.by === here ? (
+      {!to || to === here ? (
         <div className="gww-ad-open" style={art}>
           <img src={url} alt={ad.alt} loading="lazy" />
         </div>
@@ -159,15 +157,15 @@ export function AdBox({ ad, here, slot = "billboard" }: { ad: Ad; here?: string;
         <button
           className="gww-ad-open"
           style={art}
-          onClick={(e) => follow(ad.by, e)}
-          aria-label={`${ad.alt} Open ${titleOf(ad.by)}.`}
+          onClick={(e) => follow(to, e)}
+          aria-label={`${ad.alt} Open ${titleOf(to)}.`}
         >
           <img src={url} alt="" loading="lazy" />
         </button>
       )}
       <figcaption className="caps">
         <span>Sponsored</span>
-        <span className="gww-ad-by">{titleOf(ad.by)}</span>
+        <span className="gww-ad-by">{"brand" in ad ? ad.brand : titleOf(ad.by)}</span>
       </figcaption>
     </figure>
   );
@@ -177,7 +175,7 @@ export function AdBox({ ad, here, slot = "billboard" }: { ad: Ad; here?: string;
 function useSiteAds(files: string[] | undefined, here: string): { rail?: Ad; inline: Ad[] } {
   const wide = useMedia(RAIL_QUERY);
   const own = ADS.filter((a) => files?.includes(a.file));
-  const [filler] = useState(() => pickOne(ADS.filter((a) => a.shape === "tall" && a.by !== here)));
+  const [filler] = useState(() => pickOne(ADS.filter((a) => a.shape === "tall" && linkOf(a) !== here)));
   if (!wide) return { inline: own };
   const rail = own.find((a) => a.shape === "tall") ?? filler;
   return { rail, inline: own.filter((a) => a !== rail) };
@@ -583,20 +581,6 @@ export function CompanyTile({ c }: { c: Company }) {
   );
 }
 
-export function BrandTile({ b }: { b: Brand }) {
-  const { follow } = useGwwNav();
-  const thumb = adUrl(b.ads[0]);
-  return (
-    <button className="gww-brand-tile" onClick={(e) => follow(`brand:${b.id}`, e)}>
-      {thumb && <img src={thumb} alt="" loading="lazy" />}
-      <span>
-        <b>{b.name}</b>
-        <span className="caps">{b.trade}</span>
-      </span>
-    </button>
-  );
-}
-
 export const manualTarget = (m: Manual) => `manual:${m.id}`;
 
 export function ManualTile({ m }: { m: Manual }) {
@@ -818,32 +802,6 @@ export function CompanyPage({ c, headingRef }: { c: Company; headingRef: Heading
   );
 }
 
-export function BrandPage({ b, headingRef }: { b: Brand; headingRef: HeadingRef }) {
-  const art = adUrl(b.ads[0]);
-  const here = `brand:${b.id}`;
-  const ads = useSiteAds(b.ads, here);
-  return (
-    <WithRail rail={ads.rail} here={here}>
-      <article className="gww-page" style={{ "--site": "var(--warn)" } as CSSProperties}>
-        <Banner
-          icon={art ? <img className="gww-banner-art" src={art} alt="" /> : <ShoppingBag size={40} strokeWidth={1.5} />}
-          crumbs={[{ label: "Marketplace", target: "dir:market" }, { label: b.trade }]}
-          title={b.name}
-          lead={b.slogan ? <span className="gww-slogan">“{b.slogan}”</span> : b.trade}
-          headingRef={headingRef}
-        />
-        <p>
-          <Rich text={b.text} />
-        </p>
-        <Ads ads={ads.inline} here={here} />
-        <Related targets={b.related ?? ["dir:market"]} />
-        <SourceLine sources={[WIKI.minorCorporations]} quoted="Advert lines are quoted from the game." />
-        <Pager list={BRANDS.map((x) => `brand:${x.id}`)} at={BRANDS.indexOf(b)} noun="brand" />
-      </article>
-    </WithRail>
-  );
-}
-
 export function GovPage({ headingRef }: { headingRef: HeadingRef }) {
   const prefix = "gww-gov";
   return (
@@ -965,7 +923,6 @@ export function DirPage({ id, headingRef, logText }: { id: keyof typeof DIRS; he
     manuals: "How the Second Galactic War works, in reading order.",
     gov: "The Federation's own sites: its government, its ministries, its war log and its news.",
     corps: "The mega-corporations that arm, feed, heal and bank the Federation.",
-    market: "The smaller brands on the city billboards. Every advert on the G.W.W. leads to its maker.",
   };
   return (
     <article className="gww-page wide">
@@ -1009,16 +966,9 @@ export function DirPage({ id, headingRef, logText }: { id: keyof typeof DIRS; he
           ))}
         </div>
       )}
-      {id === "market" && (
-        <div className="gww-brands">
-          {BRANDS.map((b) => (
-            <BrandTile key={b.id} b={b} />
-          ))}
-        </div>
-      )}
       <Related
         title="Elsewhere on the G.W.W."
-        targets={(["dir:manuals", "dir:gov", "dir:corps", "dir:market"] as const).filter((t) => t !== `dir:${id}`)}
+        targets={(["dir:manuals", "dir:gov", "dir:corps"] as const).filter((t) => t !== `dir:${id}`)}
       />
     </article>
   );
