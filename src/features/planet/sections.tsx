@@ -18,7 +18,6 @@ import {
   TriangleAlert,
   Users,
   CloudSun,
-  Building2,
   CloudFog,
   CloudLightning,
   Landmark,
@@ -50,6 +49,8 @@ import { DssIcon, FactionEmblem, type IconLike, SubfactionEmblem } from "../../u
 import { hazardIcon } from "../../ui/hazardIcons";
 import { Countdown, Empty, Meter, Panel, Tile } from "../../ui/primitives";
 import type { Front } from "../planets/useFronts";
+import { PoiGlyph, poiKind, poiOrigin } from "../map/poi";
+import { CityList } from "./Cities";
 import type { PlanetRecord } from "./usePlanetRecord";
 
 export function LiberationSection({ p, front }: { p: Planet; front: Front }) {
@@ -591,10 +592,10 @@ const EFFECT_ICON: Record<EffectKind, IconLike> = {
 
 /**
  * The planet's operational parameters in the game's order: the enemy units and allied forces on it,
- * its points of interest and standing effects, then the environment and its cities.
+ * its standing effects, then the environment.
  */
 export function OperationsSection({ p }: { p: Planet }) {
-  const effects = useEffects().data?.planets.get(p.index) ?? [];
+  const effects = (useEffects().data?.planets.get(p.index) ?? []).filter((e) => e.kind !== "poi");
   const enemy = p.event?.faction ?? (p.currentOwner === "Humans" ? undefined : p.currentOwner);
   const row = (key: string, icon: ReactNode, name: string, text: string, tone?: string) => (
     <div key={key} className="pd-env-row" style={tone ? ({ "--k": tone } as CSSProperties) : undefined}>
@@ -626,18 +627,38 @@ export function OperationsSection({ p }: { p: Planet }) {
         {p.biome?.name && row("biome", <CloudSun size={16} />, p.biome.name, p.biome.description)}
         {!p.biome?.name && p.hazards.length === 0 && effects.length === 0 && <Empty>No environmental data.</Empty>}
       </div>
+    </Panel>
+  );
+}
+
+/** What stands on the planet: its points of interest, then its cities. */
+export function PoisSection({ p }: { p: Planet }) {
+  const pois = (useEffects().data?.planets.get(p.index) ?? []).filter((e) => e.kind === "poi");
+  if (!pois.length && !p.regions.length) return null;
+  const enemy = p.event?.faction ?? (p.currentOwner === "Humans" ? undefined : p.currentOwner);
+  return (
+    <Panel title="Points of interest" icon={Landmark} right={<span className="num">{pois.length + p.regions.length}</span>}>
+      {pois.length > 0 && (
+        <div className="pd-env">
+          {pois.map((e) => (
+            <div key={e.id} className="pd-env-row">
+              <span className="pd-env-icon poi">
+                <svg viewBox="-12 -12 24 24" width={18} height={18} aria-hidden>
+                  <PoiGlyph kind={poiKind(e.name)} faction={poiOrigin(poiKind(e.name), enemy)} size={24} />
+                </svg>
+              </span>
+              <div>
+                <b className="caps">{e.name}</b>
+                {e.description && <p>{e.description}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {p.regions.length > 0 && (
         <>
-          <div className="pd-chart-label caps pd-cities-head">Cities</div>
-          <ul className="pd-cities">
-            {p.regions.map((r) => (
-              <li key={r.id}>
-                <Building2 size={14} aria-hidden />
-                <b className="caps">{r.name}</b>
-                <span className="caps">{r.size.replace(/([a-z])([A-Z])/g, "$1 $2")}</span>
-              </li>
-            ))}
-          </ul>
+          <div className={`pd-chart-label caps ${pois.length ? "pd-cities-head" : ""}`}>Cities</div>
+          <CityList p={p} full />
         </>
       )}
     </Panel>
