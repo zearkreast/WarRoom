@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CHAPTERS, MANUALS, TIPS } from "../data/gww";
-import { ADS, COMPANIES, GOV, MINISTRIES, type SiteSection } from "../data/gwwSites";
+import { ADS, CITIZENS, COMPANIES, GOV, MINISTRIES, type SiteSection } from "../data/gwwSites";
 import { PAST_STATIONS, STAR_OF_PEACE } from "../data/stations";
 import { linksIn, nextYearly, parseRich, plainText } from "../domain/gwwText";
 import { adUrl, iconUrl, logoUrl } from "../features/hellpad/gwwArt";
@@ -13,6 +13,7 @@ const allText = (): string[] => {
     ...MINISTRIES.flatMap((m) => m.sections),
     ...COMPANIES.flatMap((c) => c.sections),
     ...GOV.sections,
+    ...CITIZENS.sections,
   ];
   return [
     ...sections.flatMap((s) => [
@@ -34,6 +35,7 @@ const targets = (): string[] => [
   ...MINISTRIES.flatMap((m) => [...(m.related ?? []), ...(m.ties ?? []).map((t) => t.to)]),
   ...COMPANIES.flatMap((c) => [...(c.related ?? []), ...(c.ties ?? []).map((t) => t.to)]),
   ...GOV.related,
+  ...CITIZENS.related,
   ...ADS.flatMap((a) => ("by" in a ? [a.by] : [])),
 ];
 
@@ -46,6 +48,7 @@ describe("galactic wide web", () => {
       ]),
       ...MINISTRIES.map((m) => m.icon),
       GOV.icon,
+      CITIZENS.icon,
     ];
     expect(icons.filter((i) => !iconUrl(i))).toEqual([]);
     expect(COMPANIES.flatMap((c) => [c.logo, c.showcase?.image].filter((l): l is string => !!l && !logoUrl(l)))).toEqual([]);
@@ -58,7 +61,7 @@ describe("galactic wide web", () => {
   });
 
   it("gives every site its own address and id", () => {
-    const addresses = [...MANUALS, ...MINISTRIES, ...COMPANIES, GOV].map((s) => s.address);
+    const addresses = [...MANUALS, ...MINISTRIES, ...COMPANIES, GOV, CITIZENS].map((s) => s.address);
     expect(new Set(addresses).size).toBe(addresses.length);
     for (const list of [MANUALS, MINISTRIES, COMPANIES]) expect(new Set(list.map((x) => x.id)).size).toBe(list.length);
   });

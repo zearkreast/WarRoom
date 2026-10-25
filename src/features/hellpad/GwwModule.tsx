@@ -21,7 +21,7 @@ import {
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { APP_NAME, APP_VERSION } from "../../config";
 import { CHAPTERS, MANUALS, TIPS, WIKI, WIKI_LICENCE } from "../../data/gww";
-import { ADS, COMPANIES, GOV, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
+import { ADS, CITIZENS, COMPANIES, GOV, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
 import { FACTIONS, factionColor } from "../../domain/factions";
 import { nextYearly, plainText } from "../../domain/gwwText";
 import { useHistory } from "../../history/useHistory";
@@ -33,6 +33,7 @@ import { iconUrl } from "./gwwArt";
 import { GwwNavProvider, useGwwNav } from "./gwwNav";
 import {
   AdBox,
+  CitizensTile,
   CompanyPage,
   CompanyTile,
   CourseProgress,
@@ -55,7 +56,7 @@ function addressOf(p: GwwPage): string {
   if (p.kind === "manual") return MANUALS.find((m) => m.id === p.id)?.address ?? HOME;
   if (p.kind === "ministry") return MINISTRIES.find((m) => m.id === p.id)?.address ?? HOME;
   if (p.kind === "company") return COMPANIES.find((c) => c.id === p.id)?.address ?? HOME;
-  if (p.kind === "site") return p.id === "gov" ? GOV.address : "se://hc/war-log";
+  if (p.kind === "site") return { gov: GOV.address, citizens: CITIZENS.address, log: "se://hc/war-log" }[p.id];
   if (p.kind === "dir") return { manuals: "se://hc/manuals", gov: "se://gov/directory", corps: "se://corp" }[p.id];
   return HOME;
 }
@@ -140,6 +141,9 @@ function Home({ logText }: { logText: string }) {
         icon={<img src={iconUrl(GOV.icon)} alt="" />}
         color="var(--f-humans)"
       />
+    ),
+    hit(CITIZENS.title, CITIZENS.summary, CITIZENS.address, ...CITIZENS.sections.map((s) => `${s.heading} ${s.text ?? ""}`)) && (
+      <CitizensTile key="citizens" />
     ),
     hit("Galactic war log", logText, "se://hc/war-log") && (
       <SiteTile
@@ -263,7 +267,8 @@ function View({ page, logText, headingRef }: { page: GwwPage; logText: string; h
     const c = COMPANIES.find((x) => x.id === page.id);
     if (c) return <CompanyPage c={c} headingRef={headingRef} />;
   }
-  if (page.kind === "site") return page.id === "gov" ? <GovPage headingRef={headingRef} /> : <WarLogPage headingRef={headingRef} />;
+  if (page.kind === "site")
+    return page.id === "log" ? <WarLogPage headingRef={headingRef} /> : <GovPage site={page.id} headingRef={headingRef} />;
   if (page.kind === "dir") return <DirPage id={page.id} headingRef={headingRef} logText={logText} />;
   return <Home logText={logText} />;
 }
@@ -368,8 +373,8 @@ export function AboutModule() {
           A fan project, not affiliated with Arrowhead Game Studios or Sony Interactive Entertainment. Map artwork is
           drawn for the app. The faction and sub-faction emblems and the DSS glyph (as traced by Helldivers Wiki
           editors), the DSS's summary hologram, the biome landscapes and the black hole and fractured planet pictures
-          are the game's, taken from the Helldivers Wiki (helldivers.wiki.gg), and belong to their owners. Effect names come from the Helldivers 2 community's
-          data set (github.com/helldivers-2/json, MIT licence).
+          are the game's, taken from the Helldivers Wiki (helldivers.wiki.gg), and belong to their owners. Effect names
+          come from the Helldivers 2 community's data set (github.com/helldivers-2/json, MIT licence).
         </p>
         <h3>Credits</h3>
         <p>

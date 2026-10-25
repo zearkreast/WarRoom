@@ -560,8 +560,10 @@ export interface Holiday {
 }
 
 export const HOLIDAYS: Holiday[] = [
-  { name: "Liberty Day", month: 10, day: 26 },
   { name: "Malevelon Creek Memorial Day", month: 4, day: 3 },
+  { name: "Avengement Day", month: 10, day: 14 },
+  { name: "Liberty Day", month: 10, day: 26 },
+  { name: "Festival of Reckoning", month: 12, day: 25 },
 ];
 
 export const GOV = {
@@ -588,27 +590,30 @@ export const GOV = {
     },
     {
       heading: "Citizen classes",
-      text: "The Citizenship Classification Structure, kept by the [[ministry:humanity|Ministry of Humanity]], decides which citizens are the most equal.",
-      points: [
-        "Super-Class: the highest known class.",
-        "Class A: the citizens Helldivers rescue in Emergency Evacuation missions.",
-        "Class B: priority emergency bunkers when colonists are evacuated.",
-        "Class C: earned by SEAF soldiers posted in hazardous conditions, or by their families if they die; priority evacuation from doomed planets.",
-        "Class D: no priority when a planet is evacuated.",
-        "Class E: the lowest class that may enlist as a Helldiver.",
-        "Class F: the lowest known class.",
-      ],
+      text: "The Citizenship Classification Structure, kept by the [[ministry:humanity|Ministry of Humanity]], decides which citizens are the most equal: from the Super Citizens down through Classes A to F. What each class is owed, and how a citizen climbs, is on the [[site:citizens|Citizenship Classification Structure]] site.",
     },
     {
       heading: "Holidays",
       table: {
         head: ["Day", "Holiday"],
         rows: [
-          { cells: ["26 October", "Liberty Day: the Federation's most important holiday, for the day Managed Democracy was presented."] },
           {
             cells: [
               "3 April",
               "Malevelon Creek Memorial Day: three minutes of the lunch break in remembrance of those who died freeing [[planet:Malevelon Creek|Malevelon Creek]].",
+            ],
+          },
+          {
+            cells: [
+              "14 October",
+              "Avengement Day, on [[planet:Seyshel Beach|Seyshel Beach]] only: its citizens made the day of its liberation in 2185, after six weeks of fighting by a small cohort of Helldivers, a planetary holiday to remember the planets lost to humanity's foes.",
+            ],
+          },
+          { cells: ["26 October", "Liberty Day: the Federation's most important holiday, for the day Managed Democracy was presented."] },
+          {
+            cells: [
+              "25 to 28 December",
+              "Festival of Reckoning: the winter holiday of “love, family, and the pursuit of peace”, with deep discounts, televised Helldiver victories, a Reckoning Fund for extra ordnance and a dissident execution parade. Its last day is the Feast of the Electorate, for the first free and managed election.",
             ],
           },
         ],
@@ -625,5 +630,88 @@ export const GOV = {
     "Super Earth has many holidays, but the most important is October 26th-Liberty Day!",
   ],
   related: ["dir:gov", "ministry:defense", "ministry:truth", "site:log"],
-  sources: [WIKI.government, WIKI.libertyDay, WIKI.malevelonDay, WIKI.wallOfMartyrs],
+  sources: [WIKI.government, WIKI.libertyDay, WIKI.malevelonDay, wiki("Festival of Reckoning"), wiki("Seyshel Beach"), WIKI.wallOfMartyrs],
+};
+
+export const CITIZENS = {
+  title: "Citizenship Classification Structure",
+  address: "se://gov/citizens",
+  icon: "ministry-humanity",
+  summary: "Every citizen is equal; the CCS says exactly which are the most equal. The classes, what each is owed, and how a citizen climbs.",
+  broadcasts: [
+    "It doesn't matter who you are or where you were born- all citizens are equal in the eyes of freedom. Which is why Super Earth's most patriotic minds instituted the Citizenship Classification Structure. Thanks to the CCS, we can determine exactly which citizens are the most equal. Continue your war efforts, and one day you too could reach Class A citizenship. The CCS: Liberty Optimized.",
+    "Keep working to get your Citizen Score up. A higher Citizen Score means a better you!",
+  ],
+  sections: [
+    {
+      heading: "The classes",
+      text: "Seven classes are known, each from a briefing, a mission or a contract.",
+      table: {
+        head: ["Class", "What is known"],
+        rows: [
+          {
+            cells: [
+              "Super",
+              "The highest known class, the Super Citizens. Super Citizen Anne, whose name is on a hospital for very sick children, may hold it, and the Democracy Officer may have meant it by “A+” during the Battle for Super Earth.",
+            ],
+          },
+          {
+            cells: [
+              "A",
+              "The top 1% of patriots, a 2186 briefing says. Helldivers rescue them in Emergency Evacuation missions; they retire to orbital stations, buy luxury curios and get the invitations.",
+            ],
+          },
+          { cells: ["B", "A place in the Priority Emergency Bunkers when colonists are evacuated."] },
+          {
+            cells: [
+              "C",
+              "Granted to SEAF soldiers posted in exceptional hazard, and their approved families, when the mission ends or they die. Evacuated first when a planet is about to be destroyed.",
+            ],
+          },
+          { cells: ["D", "No priority when a planet under immediate threat of destruction is evacuated."] },
+          { cells: ["E", "The lowest grade that may enlist: the Helldiver contract asks for Citizenship Grade E or above."] },
+          { cells: ["F", "The lowest known class, known only because it falls below the Helldivers' minimum."] },
+        ],
+      },
+    },
+    {
+      heading: "Climbing the structure",
+      points: [
+        "Citizen Score: presumably tied to the class, and it counts in the vote: a higher score weighs more in an election.",
+        "Service: when a Helldiver enlists, their immediate family receive 4.5 citizenship points, theirs to allocate and not to be exchanged for cash.",
+        "Sacrifice: a SEAF posting of exceptional hazard earns the soldier and their family Class C.",
+      ],
+    },
+    {
+      heading: "Class in the war",
+      timeline: [
+        {
+          when: "Apr 2185",
+          text: "A party at the Free Springs Retreat on [[planet:Widow's Harbor|Widow's Harbor]], once the Meridian Singularity is halted, is by invitation to select Class A citizens.",
+        },
+        {
+          when: "Feb 2186",
+          text: "During Operation Valid Pretext, disaster relief funds for Class C citizens and below are redirected to give every Helldiver the Orbital Railcannon Strike for a time.",
+        },
+        {
+          when: "Feb 2186",
+          text: "Titan-class Terminid eggs, sold as patriotic curios to Class A citizens, hatch in their homes. Helldivers clear Class A zones on [[planet:Polaris Prime|Polaris Prime]] while some of their own cryo-pods carry displaced Class A citizens and their luxury goods to safety.",
+        },
+        {
+          when: "Apr 2186",
+          text: "Helldivers secure Terminid-held natural parks so homes can be built there for high-classification citizens.",
+        },
+        {
+          when: "Sep 2186",
+          text: "To hunt the network that sabotaged the TCS+, citizens of Class B and above are fully deputized: trained to spot traitors, issued printable badges and allowed necessary force.",
+        },
+        {
+          when: "Oct 2186",
+          text: "Gas residue drifting from [[planet:Senge 23|Senge 23]] clouds the Class A retirement stations in its orbit; the Helldivers' kills fund their new respiratory protection.",
+        },
+      ],
+    },
+  ] satisfies SiteSection[],
+  related: ["site:gov", "ministry:humanity", "ministry:defense"],
+  sources: [WIKI.government, wiki("Helldiver Contract of Employment"), wiki("SEAF Communications Device"), wiki("Major Orders")],
 };

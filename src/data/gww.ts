@@ -295,7 +295,7 @@ export const MANUALS: Manual[] = [
       },
       {
         heading: "Sieges",
-        text: "An enemy planet completely surrounded by Super Earth planets is put under siege by the SEAF: its decay turns negative and it starts liberating itself, usually about 0.5% an hour. Only a planet entirely on its own counts: cutting off a group of two or more planets does not start a siege. Sieges have been automatic since around 16 June 2025; before that Arrowhead set them by hand.",
+        text: "An enemy planet completely surrounded by Super Earth planets is put under siege by the SEAF: its decay turns negative and it starts liberating itself, at between 0.5% and 1% an hour depending on the planet's health. Only a planet entirely on its own counts: cutting off a group of two or more planets does not start a siege. Sieges have been automatic since around 16 June 2025; before that Arrowhead set them by hand.",
         figure: "siege",
       },
       {

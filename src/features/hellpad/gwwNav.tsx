@@ -3,7 +3,7 @@ import { createContext, Fragment, useContext, useMemo, type MouseEvent, type Rea
 import { useFreshPlanets } from "../../api/queries";
 import type { Planet } from "../../api/types";
 import { MANUALS } from "../../data/gww";
-import { COMPANIES, GOV, MINISTRIES } from "../../data/gwwSites";
+import { CITIZENS, COMPANIES, GOV, MINISTRIES } from "../../data/gwwSites";
 import { factionColor } from "../../domain/factions";
 import { parseRich } from "../../domain/gwwText";
 import { useUi, type GwwPage } from "../../state";
@@ -32,7 +32,7 @@ export function pageOf(target: string): GwwPage | null {
   if (kind === "manual" && MANUALS.some((m) => m.id === id)) return { kind, id };
   if (kind === "ministry" && MINISTRIES.some((m) => m.id === id)) return { kind, id };
   if (kind === "company" && COMPANIES.some((c) => c.id === id)) return { kind, id };
-  if (kind === "site" && (id === "log" || id === "gov")) return { kind, id };
+  if (kind === "site" && (id === "log" || id === "gov" || id === "citizens")) return { kind, id };
   if (kind === "dir" && id in DIRS) return { kind, id: id as keyof typeof DIRS };
   return null;
 }
@@ -44,7 +44,7 @@ export function titleOf(target: string): string {
   if (page?.kind === "manual") return MANUALS.find((m) => m.id === id)!.title;
   if (page?.kind === "ministry") return MINISTRIES.find((m) => m.id === id)!.name;
   if (page?.kind === "company") return COMPANIES.find((c) => c.id === id)!.name;
-  if (page?.kind === "site") return id === "gov" ? GOV.title : "Galactic war log";
+  if (page?.kind === "site") return { gov: GOV.title, citizens: CITIZENS.title, log: "Galactic war log" }[page.id];
   if (page?.kind === "dir") return DIRS[page.id];
   if (target.startsWith("app:")) return APP_PAGES[id] ?? id;
   return id;
