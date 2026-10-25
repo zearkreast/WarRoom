@@ -3,7 +3,7 @@ import { useToasts, type Toast } from "../alerts/notify";
 import { dispatchKind, type DispatchKind } from "../domain/dispatch";
 import { dispatchTitle } from "../domain/format";
 import { MarkupText } from "../features/news/NewsCard";
-import { FactionEmblem } from "../ui/emblems";
+import { FactionEmblem, SealArt, SealGradient } from "../ui/emblems";
 import { HoloGlobe } from "../ui/HoloGlobe";
 import { KeyButton } from "../ui/primitives";
 import "../ui/neonRing.css";
@@ -27,11 +27,10 @@ function verdictOf(t: Toast): DispatchKind {
   return dispatchKind(t.message ?? t.body);
 }
 
-const STARS = [0, 1, 2, 3, 4, 5].map((i) => 268 + i * 22);
 const EMBERS = Array.from({ length: 14 }, (_, i) => ({ x: (i * 47 + 13) % 640, d: 3 + (i % 5), r: 1 + (i % 3) * 0.6 }));
 const CLOTH = "M74 14C210 -4 330 40 470 22s130 6 150 14V206c-40-14-90-24-160-8S200 214 74 196Z";
 
-/** Authored banner art, not the game's flag. */
+/** A flag on a pole against a smoky sky, drawn for the app, bearing the game's Super Earth emblem. */
 function Banner() {
   return (
     <svg className="bp-banner" viewBox="0 0 640 240" preserveAspectRatio="xMidYMid slice" aria-hidden>
@@ -49,6 +48,7 @@ function Banner() {
           <stop offset="82%" stopColor="#111a3a" />
           <stop offset="100%" stopColor="#1b2c5a" />
         </linearGradient>
+        <SealGradient id="bp-seal" />
         <filter id="bp-smoke" x="-20%" y="-50%" width="140%" height="200%">
           <feGaussianBlur stdDeviation="18" />
         </filter>
@@ -62,30 +62,9 @@ function Banner() {
       <rect x="66" y="0" width="8" height="240" fill="#c9c2b4" />
       <g className="bp-flag">
         <path d={CLOTH} fill="url(#bp-cloth)" />
-        <g transform="translate(345 92)">
-          <circle r="36" fill="#e6cfa6" />
-          <g fill="none" stroke="#1b2a52" strokeOpacity="0.35" strokeWidth="2">
-            <ellipse rx="14" ry="36" />
-            <ellipse rx="30" ry="36" />
-            <path d="M-36 0H36M-31 -18H31M-31 18H31" />
-          </g>
-          <rect x="-7" y="-50" width="3" height="14" fill="#e6cfa6" />
-          <rect x="-1.5" y="-54" width="3" height="18" fill="#e6cfa6" />
-          <rect x="4" y="-50" width="3" height="14" fill="#e6cfa6" />
-          <g fill="none" stroke="#d9a521" strokeWidth="4" strokeLinecap="round">
-            <path d="M-46 -6C-46 30 -22 50 6 50" />
-            <path d="M-38 -4C-36 24 -16 40 8 41" />
-            <path d="M46 -6C46 30 22 50 -6 50" />
-          </g>
+        <g transform="translate(345 113)">
+          <SealArt size={158} gradient="bp-seal" />
         </g>
-        {STARS.map((x) => (
-          <path
-            key={x}
-            transform={`translate(${x} 158) scale(0.5)`}
-            d="M12 1.5 14.7 8.6 22.5 8.9 16.4 13.7 18.6 21.2 12 16.9 5.4 21.2 7.6 13.7 1.5 8.9 9.3 8.6Z"
-            fill="#e6cfa6"
-          />
-        ))}
       </g>
       {EMBERS.map((e, i) => (
         <circle

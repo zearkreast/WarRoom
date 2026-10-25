@@ -290,6 +290,10 @@
   flex: none;
   display: block;
 }
+/* Emblem shapes fill with currentColor inline; the seal paints them with a gradient instead. */
+.emblem-seal path {
+  fill: var(--seal) !important;
+}
 
 .dot {
   display: inline-block;

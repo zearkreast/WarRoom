@@ -112,6 +112,8 @@ interface SettingsState {
   seenChangelog: string;
   /** G.W.W. training manuals read to the end, by id. */
   gwwRead: string[];
+  /** Time of the newest Strohmann News item on the last visit; 0 before the first. */
+  newsSeenAt: number;
   setAlert(k: keyof AlertSettings, v: boolean): void;
   set<
     K extends
@@ -136,6 +138,7 @@ interface SettingsState {
   markChangelog(version: string): void;
   markRead(manual: string): void;
   clearRead(): void;
+  markNewsSeen(at: number): void;
 }
 
 export const useSettings = create<SettingsState>()(
@@ -157,6 +160,7 @@ export const useSettings = create<SettingsState>()(
       seenDispatch: 0,
       seenChangelog: "",
       gwwRead: [],
+      newsSeenAt: 0,
       setAlert: (k, v) => set((s) => ({ alerts: { ...s.alerts, [k]: v } })),
       set: (k, v) => set({ [k]: v } as Partial<SettingsState>),
       togglePin: (planet) =>
@@ -170,6 +174,7 @@ export const useSettings = create<SettingsState>()(
       markChangelog: (seenChangelog) => set({ seenChangelog }),
       markRead: (manual) => set((s) => (s.gwwRead.includes(manual) ? s : { gwwRead: [...s.gwwRead, manual] })),
       clearRead: () => set({ gwwRead: [] }),
+      markNewsSeen: (at) => set((s) => ({ newsSeenAt: Math.max(s.newsSeenAt, at) })),
     }),
     { name: "warcommand-settings" },
   ),
