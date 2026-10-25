@@ -45,9 +45,12 @@
    Listed by name: a `*` here restyles every node in the map on each start and stop. */
 .galaxy.moving .faction-marks path,
 .galaxy.moving .anomaly.wormhole,
-.galaxy.moving .anomaly.fractured .ember,
-.galaxy.moving .holo-unit image {
+.galaxy.moving .anomaly.fractured .ember {
   filter: none !important;
+}
+/* Holograms keep their tint while moving, only the glow goes. */
+.galaxy.moving .holo-unit image {
+  filter: var(--tint) !important;
 }
 .galaxy.moving .pulse,
 .galaxy.moving .swirl,
@@ -291,18 +294,18 @@
 .planet.selected .holos {
   opacity: 1;
 }
-/* --rise is how far the camera has tilted off straight down (sine of the tilt). Seen from above, a unit
-   covers its projector; as the table tilts away it rises off it and its reflection shows. */
+/* --rise is how far the camera has tilted off straight down (sine of the tilt); the unit floats higher
+   as the table tilts away. */
 .holo {
   --rise: sqrt(1 - 1 / (var(--unsquash) * var(--unsquash)));
-  --lift: calc(15 * var(--rise) - 6);
+  --lift: calc(4 + 6 * var(--rise));
 }
 .holo.back {
-  transform: translateY(calc(-9px / var(--unsquash)));
+  transform: translateY(-7px);
 }
-/* The projector lies on the map: flattened by the tilt like the planets' rings. */
+/* The projector lies on the table: seen at an angle even from straight above, flatter as the map tilts. */
 .holo-floor {
-  transform: scale(1, calc(1 / var(--unsquash)));
+  transform: scale(1, min(0.5, calc(1 / var(--unsquash))));
 }
 .holo-pool {
   fill: currentColor;
@@ -325,22 +328,26 @@
 }
 .holo-emitter {
   fill: #fff;
-  fill-opacity: 0.55;
+  fill-opacity: 0.9;
 }
 /* The column reaches up into the unit, which is drawn over it. */
+.holo-beam,
+.holo-edge {
+  transform: scale(1, calc(var(--lift) + 6));
+}
 .holo-beam {
   fill: currentColor;
-  opacity: 0.4;
-  transform: scale(1, calc(var(--lift) + 8));
+  opacity: 0.6;
+}
+.holo-edge {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.7;
 }
 .holo-lift {
   transform: translateY(calc(var(--lift) * -1px));
-}
-.holo-mirror {
-  opacity: calc(clamp(0, var(--lift) / 3, 1) * 0.3);
-}
-.holo-flip {
-  transform: translateY(calc(var(--lift) * 1px)) scale(1, -1);
 }
 .holo-unit {
   animation:
@@ -350,9 +357,10 @@
 }
 .holo-unit image {
   opacity: 0.94;
+  filter: var(--tint);
 }
 .galaxy:not(.q-min) .holo-unit image {
-  filter: drop-shadow(0 0 1.4px currentColor);
+  filter: var(--tint) drop-shadow(0 0 1.4px currentColor);
 }
 .holo-sweep {
   animation: holo-sweep 3.6s linear infinite;

@@ -354,13 +354,20 @@ const HaloDefs = memo(function HaloDefs() {
       <mask id="holo-pool" maskContentUnits="objectBoundingBox">
         <rect width={1} height={1} fill="url(#holo-pool-ramp)" />
       </mask>
-      <linearGradient id="holo-mirror-ramp" x1={0} y1={0} x2={0} y2={1}>
-        <stop offset="0%" stopColor="#fff" stopOpacity={1} />
-        <stop offset="70%" stopColor="#fff" stopOpacity={0} />
-      </linearGradient>
-      <mask id="holo-mirror" maskContentUnits="objectBoundingBox">
-        <rect width={1} height={1} fill="url(#holo-mirror-ramp)" />
-      </mask>
+      {/* Each hologram recoloured in its light's colour from its own brightness, so off-colour renders match. */}
+      {Object.entries(HOLO_TINT).map(([name, rgb]) => (
+        <filter key={name} id={`holo-tint-${name}`} colorInterpolationFilters="sRGB">
+          <feColorMatrix
+            type="matrix"
+            values={`${rgb
+              .map((c) => {
+                const m = c * 1.6 + (1 - c) * 0.5;
+                return `${(0.3 * m).toFixed(3)} ${(0.59 * m).toFixed(3)} ${(0.11 * m).toFixed(3)} 0 0`;
+              })
+              .join(" ")} 0 0 0 1 0`}
+          />
+        </filter>
+      ))}
       <pattern id="holo-scan" width={HOLO_SIZE} height={0.9} patternUnits="userSpaceOnUse">
         <rect width={HOLO_SIZE} height={0.35} fill="#fff" fillOpacity={0.28} />
       </pattern>
@@ -421,60 +428,76 @@ function AnomalyMark({ kind }: { kind: Anomaly }) {
 
 const PAWN_ICON = { threat: TriangleAlert, seaf: Shield, poi: PoiIcon } as const;
 
-const DSS_TONE: Record<DssState, string> = {
-  active: "var(--cta)",
-  cooldown: "var(--bad)",
-  build: "var(--f-humans)",
-  default: "var(--f-humans)",
+/** Each hologram's light: its colour on the map, and the tint its render is recoloured with. */
+const DSS_LIGHT: Record<DssState, [string, string]> = {
+  active: ["var(--cta)", "cta"],
+  cooldown: ["var(--bad)", "bad"],
+  build: ["var(--f-humans)", "humans"],
+  default: ["var(--f-humans)", "humans"],
 };
 /** A unit's light follows its own faction, whoever holds the planet it is on. */
-const UNIT_TONE: Record<string, string> = {
-  bug: factionColor("Terminids"),
-  bot: factionColor("Automaton"),
-  ill: factionColor("Illuminate"),
-  seaf: factionColor("Humans"),
+const UNIT_LIGHT: Record<string, [string, string]> = {
+  bug: [factionColor("Terminids"), "bug"],
+  bot: [factionColor("Automaton"), "bot"],
+  ill: [factionColor("Illuminate"), "ill"],
+  seaf: [factionColor("Humans"), "humans"],
+};
+/** The tints as linear RGB weights, close to the faction colours. */
+const HOLO_TINT: Record<string, [number, number, number]> = {
+  bug: [1, 0.58, 0.2],
+  bot: [1, 0.44, 0.44],
+  ill: [0.8, 0.54, 0.91],
+  humans: [0.27, 0.64, 1],
+  cta: [1, 1, 0.35],
+  bad: [1, 0.35, 0.35],
+};
+/** Renders that fill more of their frame than the rest, shrunk to match. */
+const UNIT_SCALE: Record<string, number> = {
+  bug_dragonroach: 0.8,
+  ill_greathost: 0.85,
+  bot_cyborgs: 0.85,
+  bot_incincorp: 0.85,
+  bot_jetbrigade: 0.85,
 };
 
 /**
  * Hologram size and spacing in marker units. They stand in two staggered ranks on the table, the
- * first clear of the planet's glow; the back rank sits further away, so it rises up the screen less
- * the more the map is tilted.
+ * first clear of the planet's glow and label.
  */
 const HOLO_SIZE = 22;
-const HOLO_X = 15;
-const HOLO_STEP = 15;
+const HOLO_X = 20;
+const HOLO_STEP = 18;
+
+type Light = { art: { key: string; href: string }; tone: string; tint: string };
 
 /**
- * A unit as a hologram on the war table: a projector ring lying on the map, which turns and
- * foreshortens with the camera, a column of light, and the unit on it. Seen from straight above the
- * unit sits over its projector; tilting the map lifts it off and shows its reflection in the table.
+ * A unit as a hologram on the war table: a projector lying on the map, a column of light, and the
+ * unit floating on it. The projector is always seen at an angle, like the renders; tilting the map
+ * flattens it further and lifts the unit higher.
  */
-function HoloPawn(props: { art: { key: string; href: string }; tone: string; x: number; back: boolean; delay: number }) {
-  const { art } = props;
+function HoloPawn({ light, x, back, delay }: { light: Light; x: number; back: boolean; delay: number }) {
+  const { art } = light;
   const s = HOLO_SIZE;
-  const unit = <image href={art.href} x={-s / 2} y={-s} width={s} height={s} />;
+  const style = { color: light.tone, "--tint": `url(#holo-tint-${light.tint})`, "--delay": `${-delay}s` };
   return (
-    <g transform={`translate(${props.x},3)`}>
-      <g
-        className={`holo ${props.back ? "back" : ""}`}
-        style={{ color: props.tone, "--delay": `${-props.delay}s` } as CSSProperties}
-      >
+    <g transform={`translate(${x},3)`}>
+      <g className={`holo ${back ? "back" : ""}`} style={style as CSSProperties}>
         <g className="holo-floor">
           <circle r={8} className="holo-pool" mask="url(#holo-pool)" />
           <circle r={5.4} className="holo-ring" />
           <circle r={4.2} className="holo-ticks" />
           <circle r={1.3} className="holo-emitter" />
         </g>
-        <g className="holo-mirror" mask="url(#holo-mirror)">
-          <g className="holo-flip">{unit}</g>
-        </g>
         <path className="holo-beam" d="M-1.6,0L-6,-1H6L1.6,0Z" mask="url(#holo-fade)" />
+        <path className="holo-edge" d="M-1.5,0L-6,-1M1.5,0L6,-1" mask="url(#holo-fade)" />
         <g className="holo-lift">
           <g className="holo-unit">
-            {unit}
-            <g className="holo-light" mask={`url(#holo-mask-${art.key})`}>
-              <rect x={-s / 2} y={-s} width={s} height={s} fill="url(#holo-scan)" />
-              <rect className="holo-sweep" x={-s / 2} y={-4} width={s} height={4} fill="url(#holo-sweep-band)" />
+            <g transform={`scale(${UNIT_SCALE[art.key] ?? 1})`}>
+              <image href={art.href} x={-s / 2} y={-s} width={s} height={s} />
+              <g className="holo-light" mask={`url(#holo-mask-${art.key})`}>
+                <rect x={-s / 2} y={-s} width={s} height={s} fill="url(#holo-scan)" />
+                <rect className="holo-sweep" x={-s / 2} y={-4} width={s} height={4} fill="url(#holo-sweep-band)" />
+              </g>
             </g>
           </g>
         </g>
@@ -488,23 +511,29 @@ function HoloPawn(props: { art: { key: string; href: string }; tone: string; x: 
  * as the game's war table shows them; threats and points of interest, which have none, follow as tags.
  */
 function Pawns({ effects, faction, dss, seed }: { effects: PlanetEffect[]; faction: string; dss?: DssState; seed: number }) {
-  const holos: { art: { key: string; href: string }; tone: string }[] = [];
+  const holos: Light[] = [];
   const station = dss && dssArt(dss);
-  if (dss && station) holos.push({ art: station, tone: DSS_TONE[dss] });
+  if (dss && station) holos.push({ art: station, tone: DSS_LIGHT[dss][0], tint: DSS_LIGHT[dss][1] });
   const tags: PlanetEffect[] = [];
   for (const e of effects) {
     const art = pawnArt(e);
-    if (art) holos.push({ art, tone: UNIT_TONE[art.key.split("_")[0]] });
+    const [tone, tint] = art ? UNIT_LIGHT[art.key.split("_")[0]] : [];
+    if (art && tone && tint) holos.push({ art, tone, tint });
     else tags.push(e);
   }
-  const placed = holos.map((h, i) => ({ ...h, x: HOLO_X + i * HOLO_STEP, back: i % 2 === 1, delay: (seed * 0.73 + i * 1.3) % 6 }));
+  const placed = holos.map((light, i) => ({
+    light,
+    x: HOLO_X + i * HOLO_STEP,
+    back: i % 2 === 1,
+    delay: (seed * 0.73 + i * 1.3) % 6,
+  }));
   return (
     <>
       {holos.length > 0 && (
         <g className={`holos ${station ? "dss" : ""}`}>
           {/* The back rank first, so the front one stands before it. */}
           {[...placed.filter((h) => h.back), ...placed.filter((h) => !h.back)].map((h) => (
-            <HoloPawn key={h.art.key} art={h.art} tone={h.tone} x={h.x} back={h.back} delay={h.delay} />
+            <HoloPawn key={h.light.art.key} light={h.light} x={h.x} back={h.back} delay={h.delay} />
           ))}
         </g>
       )}
