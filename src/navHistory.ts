@@ -25,7 +25,7 @@ export interface HistoryLike {
   back(): void;
 }
 
-export const placeOf = ({ view, module, gww, detail, dialog, dispatchOpen }: Place): Place => ({
+const placeOf = ({ view, module, gww, detail, dialog, dispatchOpen }: Place): Place => ({
   view,
   module,
   gww,
@@ -34,7 +34,7 @@ export const placeOf = ({ view, module, gww, detail, dialog, dispatchOpen }: Pla
   dispatchOpen,
 });
 
-export const samePlace = (a: Place, b: Place): boolean => JSON.stringify(placeOf(a)) === JSON.stringify(placeOf(b));
+const samePlace = (a: Place, b: Place): boolean => JSON.stringify(placeOf(a)) === JSON.stringify(placeOf(b));
 
 const isEntry = (s: unknown): s is Entry => {
   const e = s as Entry | null;

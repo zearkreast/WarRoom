@@ -10,7 +10,6 @@ import {
   Settings,
   ShieldAlert,
   ShieldHalf,
-  TabletSmartphone,
   Target,
   X,
   type LucideIcon,
@@ -30,7 +29,7 @@ import { AboutDialog } from "./AboutDialog";
 import { BriefingPopup } from "./BriefingPopup";
 import { DispatchPanel } from "./DispatchPanel";
 import { useSettings, useUi, type View } from "../state";
-import { AppMark } from "../ui/emblems";
+import { AppMark, HellpadMark, type IconLike } from "../ui/emblems";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
 import { useFeedStatus } from "../ui/feed";
 import { Keycap, StatusChip } from "../ui/primitives";
@@ -156,10 +155,10 @@ function StatusStrip() {
   );
 }
 
-const TABS: { view: View; label: string; icon: LucideIcon; key: string }[] = [
+const TABS: { view: View; label: string; icon: IconLike; key: string }[] = [
   { view: "map", label: "Galaxy map", icon: Orbit, key: "1" },
   { view: "campaigns", label: "Active planets", icon: LayoutGrid, key: "2" },
-  { view: "hellpad", label: "Hellpad", icon: TabletSmartphone, key: "3" },
+  { view: "hellpad", label: "Hellpad", icon: HellpadMark, key: "3" },
 ];
 
 function Dock() {

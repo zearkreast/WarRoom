@@ -33,6 +33,8 @@ export const WIKI = {
   ministryOfScience: wiki("Ministry of Science"),
   admiralDefense: wiki("Admiral Defense"),
   dss: wiki("Democracy Space Station"),
+  superDestroyer: wiki("Super Destroyer"),
+  shipModules: wiki("Ship Modules"),
 } satisfies Record<string, Source>;
 
 export interface Section {
@@ -47,6 +49,8 @@ export interface Section {
   /** Named kinds of something, each with its picture. */
   kinds?: { icon: string; name: string; text: string }[];
   faq?: { q: string; a: string }[];
+  /** Groups shown folded, each a titled list of "Term: text" points. */
+  folds?: { title: string; note: string; points: string[] }[];
 }
 
 export interface Chapter {
@@ -106,7 +110,6 @@ export const MANUALS: Manual[] = [
     title: "How the Galactic War works",
     address: "se://hc/manuals/basics",
     summary: "The war on one page: impact, planet health, supply lines and campaigns.",
-    icon: "super-earth",
     sections: [
       {
         heading: "The short version",
@@ -160,7 +163,7 @@ export const MANUALS: Manual[] = [
       },
       {
         heading: "Cut off",
-        text: "Lose every Super Earth planet linked to a campaign and it stops: no new operations, while decay eats the progress made. Surround an enemy planet completely and it falls under siege instead; see [[manual:resistance|Enemy resistance and sieges]].",
+        text: "Lose every Super Earth planet linked to a campaign and it stops: no new operations, while decay eats the progress made. Surround an enemy planet completely and the SEAF lays siege to it instead; see [[manual:resistance|Enemy resistance and sieges]].",
       },
       {
         heading: "Reading the map",
@@ -292,7 +295,7 @@ export const MANUALS: Manual[] = [
       },
       {
         heading: "Sieges",
-        text: "An enemy planet completely surrounded by Super Earth planets gets a negative decay and starts liberating itself, usually about 1% an hour. Only a planet entirely on its own counts: cutting off a group of two or more planets does not start a siege. Sieges have been automatic since around 16 June 2025; before that Arrowhead set them by hand.",
+        text: "An enemy planet completely surrounded by Super Earth planets is put under siege by the SEAF: its decay turns negative and it starts liberating itself, at between 0.5% and 1% an hour depending on the planet's health. Only a planet entirely on its own counts: cutting off a group of two or more planets does not start a siege. Sieges have been automatic since around 16 June 2025; before that Arrowhead set them by hand.",
         figure: "siege",
       },
       {
@@ -475,6 +478,115 @@ export const MANUALS: Manual[] = [
     tips: ["The [[app:stations|space station page]] shows which actions are running now and when the others are ready again."],
     related: ["app:stations", "manual:defense", "company:cob-genetics"],
     sources: [WIKI.mechanics, WIKI.dss],
+  },
+  {
+    id: "super-destroyers",
+    chapter: "tide",
+    title: "Super Destroyers",
+    address: "se://hc/manuals/super-destroyers",
+    summary: "The Helldivers' own warships: what they do in a mission, what is on board, and the modules you can upgrade.",
+    sections: [
+      {
+        heading: "The ship",
+        text: "A Super Destroyer is the Helldivers' warship and their base between missions. It keeps its Helldivers in cryonic storage, and each one thawed is given full command of the ship. An Alcubierre drive fuelled by Element-710 takes it between star systems in seconds, and about fifty crew are aboard at any time.",
+      },
+      {
+        heading: "In a mission",
+        points: [
+          "Stratagems: strikes from its orbital cannons, Eagles from its hangar, and the supplies and weapons it drops.",
+          "The mission timer: when it runs out the ship leaves low orbit and sends only the extraction shuttle, with no more stratagems or reinforcements. Blitz missions get 12 minutes, eradication 15, defense 25 and the rest 40.",
+          "Commando missions: enemy anti-air allows it two minutes in low orbit in all, one at the drop and one more if a Helldiver calls it back with the Call In Super Destroyer stratagem.",
+          "Traitors: a Helldiver branded a traitor, for leaving the mission area or killing too many citizens, is shelled with 380mm rounds until dead.",
+        ],
+      },
+      {
+        heading: "On board",
+        points: [
+          "Bridge: the Galactic War Table, where missions are chosen, with the Democracy Officer beside it; the hellpods wait past a short stair.",
+          "Armory hallway: the Armory for loadouts, and the Control Center terminal with past and current campaigns and Major Orders.",
+          "Main hall: the ship module terminal, the Ship Master and the Service Technician.",
+          "Hangar: the Eagle-1 and the Pelican-1 extraction shuttle.",
+        ],
+      },
+      {
+        heading: "Ship modules",
+        text: "Six parts of the ship can be upgraded, five tiers each, paid for in samples and, from the fourth tier, Requisition Slips. An upgrade only helps the Helldiver who buys it, and it changes how the ship looks inside and out. The fourth tier arrived in April 2024 and the fifth in July 2024.",
+        folds: [
+          {
+            title: "Patriotic Administration Center",
+            note: "Support weapons and backpacks",
+            points: [
+              "Donation Access License: support weapons arrive with as many magazines as can be carried.",
+              "Streamlined Request Process: support weapon cooldowns 10% shorter.",
+              "Hand Carts: backpack cooldowns 10% shorter.",
+              "Superior Packing Methodology: resupply boxes refill support weapons to every magazine they can carry.",
+              "Payroll Management System: support weapons reload 10% faster.",
+            ],
+          },
+          {
+            title: "Orbital Cannons",
+            note: "Orbital strikes",
+            points: [
+              "Exploding Shrapnel: less damage falloff away from the centre of orbital explosions.",
+              "More Guns: barrages fire one more salvo.",
+              "Zero-G Breech Loading: orbital cooldowns 10% shorter.",
+              "Atmospheric Monitoring: the orbital HE barrage spreads 15% less.",
+              "High-Density Explosives: orbital explosions reach 10% wider.",
+            ],
+          },
+          {
+            title: "Hangar",
+            note: "Eagles",
+            points: [
+              "Liquid-Ventilated Cockpit: Eagle cooldowns 50% shorter.",
+              "Pit Crew Hazard Pay: Eagle Rearm 20% faster.",
+              "Expanded Weapons Bay: one more use of each Eagle between rearms.",
+              "XXL Weapons Bay: Eagles that drop several bombs drop one more.",
+              "Advanced Crew Training: Eagle Rearm a further 10% faster when called with uses left.",
+            ],
+          },
+          {
+            title: "Bridge",
+            note: "Every stratagem, the hellpod and the radar",
+            points: [
+              "Targeting Software Upgrade: orbital call-ins one second faster.",
+              "Nuclear Radar: the minimap picks up enemies 50% farther out.",
+              "Power Steering: better hellpod steering on the way down.",
+              "Enhanced Combustion: fire damage from stratagems 25% higher.",
+              "Morale Augmentation: every stratagem cooldown 5% shorter.",
+            ],
+          },
+          {
+            title: "Engineering Bay",
+            note: "Sentries, emplacements and support weapons",
+            points: [
+              "Synthetic Supplementation: sentry, emplacement and resupply cooldowns 10% shorter.",
+              "Advanced Construction: sentries have 50% more health.",
+              "Rapid Launch System: emplacements launch the moment they are called in.",
+              "Circuit Expansion: lightning arcs from weapons and turrets jump to one more enemy.",
+              "Streamlined Launch Process: support weapons launch the moment they are called in.",
+            ],
+          },
+          {
+            title: "Robotics Workshop",
+            note: "Sentries",
+            points: [
+              "Dynamic Tracking: sentries launch the moment they are called in.",
+              "Shock Absorption Gel: sentries carry 50% more ammunition.",
+              "High-Quality Lubricant: sentries turn to new targets faster.",
+              "Blast Absorption: sentries take 50% less damage from explosions.",
+              "Cross-Platform Compatibility: mortar sentries fire at marked targets first.",
+            ],
+          },
+        ],
+      },
+    ],
+    tips: [
+      "Each Helldiver's stratagems follow their own ship's modules, so in a squad the same orbital can come down faster for one player than another.",
+      "The Hellpad's stratagem terminal knows a code for this page: the Super Destroyer Uplink.",
+    ],
+    related: ["manual:dss", "manual:campaigns", "app:stations"],
+    sources: [WIKI.superDestroyer, WIKI.shipModules],
   },
   {
     id: "campaigns",

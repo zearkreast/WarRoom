@@ -3,10 +3,46 @@ import { createContext, Fragment, useContext, useMemo, type MouseEvent, type Rea
 import { useFreshPlanets } from "../../api/queries";
 import type { Planet } from "../../api/types";
 import { MANUALS } from "../../data/gww";
-import { COMPANIES, GOV, MINISTRIES } from "../../data/gwwSites";
+import { CITIZENS, COMPANIES, GOV, MINISTRIES } from "../../data/gwwSites";
 import { factionColor } from "../../domain/factions";
 import { parseRich } from "../../domain/gwwText";
 import { useUi, type GwwPage } from "../../state";
+
+const HOME = "se://gww";
+const SITE_ADDRESS = { gov: GOV.address, citizens: CITIZENS.address, log: "se://hc/war-log" };
+const DIR_ADDRESS = { manuals: "se://hc/manuals", gov: "se://gov/directory", corps: "se://corp" };
+
+export function addressOf(p: GwwPage): string {
+  if (p.kind === "manual") return MANUALS.find((m) => m.id === p.id)?.address ?? HOME;
+  if (p.kind === "ministry") return MINISTRIES.find((m) => m.id === p.id)?.address ?? HOME;
+  if (p.kind === "company") return COMPANIES.find((c) => c.id === p.id)?.address ?? HOME;
+  if (p.kind === "site") return SITE_ADDRESS[p.id];
+  if (p.kind === "dir") return DIR_ADDRESS[p.id];
+  if (p.kind === "missing") return p.address;
+  return HOME;
+}
+
+/** Every address on the G.W.W., to the link target it opens. */
+const ADDRESSES = new Map<string, string>([
+  [HOME, "home"],
+  ...Object.entries(SITE_ADDRESS).map(([id, a]): [string, string] => [a, `site:${id}`]),
+  ...Object.entries(DIR_ADDRESS).map(([id, a]): [string, string] => [a, `dir:${id}`]),
+  ...MANUALS.map((m): [string, string] => [m.address, `manual:${m.id}`]),
+  ...MINISTRIES.map((m): [string, string] => [m.address, `ministry:${m.id}`]),
+  ...COMPANIES.map((c): [string, string] => [c.address, `company:${c.id}`]),
+  ["se://strohmann.news", "app:news"],
+]);
+
+/** Typed addresses may skip the scheme or end in a slash. */
+export function normalize(typed: string): string {
+  const a = typed.trim().toLowerCase().replace(/\/+$/, "");
+  return a.startsWith("se://") ? a : `se://${a.replace(/^\/+/, "")}`;
+}
+
+export const ADDRESS_LIST = [...ADDRESSES.keys()];
+
+/** The link target a typed address opens, if any site answers at it. */
+export const targetAt = (typed: string): string | undefined => ADDRESSES.get(normalize(typed));
 
 /** `app:` link targets and their titles. */
 export const APP_PAGES: Record<string, string> = {
@@ -32,7 +68,7 @@ export function pageOf(target: string): GwwPage | null {
   if (kind === "manual" && MANUALS.some((m) => m.id === id)) return { kind, id };
   if (kind === "ministry" && MINISTRIES.some((m) => m.id === id)) return { kind, id };
   if (kind === "company" && COMPANIES.some((c) => c.id === id)) return { kind, id };
-  if (kind === "site" && (id === "log" || id === "gov")) return { kind, id };
+  if (kind === "site" && (id === "log" || id === "gov" || id === "citizens")) return { kind, id };
   if (kind === "dir" && id in DIRS) return { kind, id: id as keyof typeof DIRS };
   return null;
 }
@@ -44,7 +80,7 @@ export function titleOf(target: string): string {
   if (page?.kind === "manual") return MANUALS.find((m) => m.id === id)!.title;
   if (page?.kind === "ministry") return MINISTRIES.find((m) => m.id === id)!.name;
   if (page?.kind === "company") return COMPANIES.find((c) => c.id === id)!.name;
-  if (page?.kind === "site") return id === "gov" ? GOV.title : "Galactic war log";
+  if (page?.kind === "site") return { gov: GOV.title, citizens: CITIZENS.title, log: "Galactic war log" }[page.id];
   if (page?.kind === "dir") return DIRS[page.id];
   if (target.startsWith("app:")) return APP_PAGES[id] ?? id;
   return id;

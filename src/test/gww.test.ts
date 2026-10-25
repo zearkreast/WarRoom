@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CHAPTERS, MANUALS, TIPS } from "../data/gww";
-import { ADS, COMPANIES, GOV, MINISTRIES, type SiteSection } from "../data/gwwSites";
+import { ADS, CITIZENS, COMPANIES, GOV, MINISTRIES, type SiteSection } from "../data/gwwSites";
 import { PAST_STATIONS, STAR_OF_PEACE } from "../data/stations";
 import { linksIn, nextYearly, parseRich, plainText } from "../domain/gwwText";
 import { adUrl, iconUrl, logoUrl } from "../features/hellpad/gwwArt";
-import { APP_PAGES, pageOf } from "../features/hellpad/gwwNav";
+import { ADDRESS_LIST, APP_PAGES, pageOf, targetAt } from "../features/hellpad/gwwNav";
 import planetsJson from "./fixtures/planets.json";
 
 const allText = (): string[] => {
@@ -13,6 +13,7 @@ const allText = (): string[] => {
     ...MINISTRIES.flatMap((m) => m.sections),
     ...COMPANIES.flatMap((c) => c.sections),
     ...GOV.sections,
+    ...CITIZENS.sections,
   ];
   return [
     ...sections.flatMap((s) => [
@@ -22,6 +23,7 @@ const allText = (): string[] => {
       ...(s.kinds ?? []).map((k) => k.text),
       ...(s.faq ?? []).map((f) => f.a),
       ...(s.timeline ?? []).map((d) => d.text),
+      ...("folds" in s ? (s.folds ?? []).flatMap((f) => f.points) : []),
     ]),
     ...MANUALS.flatMap((m) => m.tips),
   ];
@@ -33,6 +35,7 @@ const targets = (): string[] => [
   ...MINISTRIES.flatMap((m) => [...(m.related ?? []), ...(m.ties ?? []).map((t) => t.to)]),
   ...COMPANIES.flatMap((c) => [...(c.related ?? []), ...(c.ties ?? []).map((t) => t.to)]),
   ...GOV.related,
+  ...CITIZENS.related,
   ...ADS.flatMap((a) => ("by" in a ? [a.by] : [])),
 ];
 
@@ -45,6 +48,7 @@ describe("galactic wide web", () => {
       ]),
       ...MINISTRIES.map((m) => m.icon),
       GOV.icon,
+      CITIZENS.icon,
     ];
     expect(icons.filter((i) => !iconUrl(i))).toEqual([]);
     expect(COMPANIES.flatMap((c) => [c.logo, c.showcase?.image].filter((l): l is string => !!l && !logoUrl(l)))).toEqual([]);
@@ -57,7 +61,7 @@ describe("galactic wide web", () => {
   });
 
   it("gives every site its own address and id", () => {
-    const addresses = [...MANUALS, ...MINISTRIES, ...COMPANIES, GOV].map((s) => s.address);
+    const addresses = [...MANUALS, ...MINISTRIES, ...COMPANIES, GOV, CITIZENS].map((s) => s.address);
     expect(new Set(addresses).size).toBe(addresses.length);
     for (const list of [MANUALS, MINISTRIES, COMPANIES]) expect(new Set(list.map((x) => x.id)).size).toBe(list.length);
   });
@@ -83,6 +87,17 @@ describe("galactic wide web", () => {
     ];
     const links = text.flatMap(linksIn);
     expect(links.filter((t) => !t.startsWith("planet:") || !planets.has(t.slice(7).toLowerCase()))).toEqual([]);
+  });
+
+  it("opens a typed address with or without its scheme, and every address opens a page", () => {
+    expect(targetAt("se://gov/truth")).toBe("ministry:truth");
+    expect(targetAt("  GOV/Truth/ ")).toBe("ministry:truth");
+    expect(targetAt("se://gww")).toBe("home");
+    expect(targetAt("se://nowhere")).toBeUndefined();
+    expect(ADDRESS_LIST.filter((a) => {
+      const t = targetAt(a)!;
+      return t !== "home" && !t.startsWith("app:") && !pageOf(t);
+    })).toEqual([]);
   });
 
   it("puts every manual in a chapter, and the chapters in reading order", () => {

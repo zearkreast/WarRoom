@@ -1,15 +1,8 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
 import dssHolo from "../../assets/stations/dss-holo.webp";
 import { StationEmblem } from "../../ui/emblems";
-import type { DssState } from "../map/pawnArt";
+import { DSS_TONE, type DssState } from "../map/pawnArt";
 
-/** Keep in sync with DSS_LIGHT in GalaxyMap.tsx, so the station wears the same light on the map. */
-const DSS_TONE: Record<DssState, string> = {
-  active: "var(--cta)",
-  cooldown: "var(--bad)",
-  offline: "#8d949b",
-  default: "var(--f-humans)",
-};
 
 function Holo(props: { tone: string; title: ReactNode; stamp?: string; children: ReactNode; readout: [string, ReactNode][] }) {
   return (

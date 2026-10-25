@@ -184,6 +184,25 @@ export function StationEmblem({ station, size = 16, color }: { station: "dss" | 
   );
 }
 
+/** The Hellpad's mark, the four stratagem arrows a Helldiver keys in on it; drawn like a Lucide icon. */
+export function HellpadMark({ size = 24, className }: { size?: number | string; className?: string }) {
+  // Heavier lines at dock size, where the mast's would thin out to a hairline.
+  const small = Number(size) < 40;
+  return (
+    <svg className={className} width={size} height={size} viewBox="0 0 64 64" aria-hidden>
+      <path d="M14 4h36l10 10v36L50 60H14L4 50V14Z" fill="none" stroke="currentColor" strokeWidth={small ? 5 : 2.5} />
+      <path d="M18 9h28l9 9v28l-9 9H18l-9-9V18Z" fill="currentColor" opacity="0.08" />
+      <g fill="currentColor">
+        <path d="M32 12l8 9h-16Z" />
+        <path d="M52 32l-9 8v-16Z" />
+        <path d="M32 52l-8-9h16Z" />
+        <path d="M12 32l9-8v16Z" />
+      </g>
+      <rect x="28" y="28" width="8" height="8" fill="none" stroke="currentColor" strokeWidth={small ? 4 : 2} />
+    </svg>
+  );
+}
+
 /** App mark: a shield with a star, drawn in the CTA colour. */
 export function AppMark({ size = 26 }: { size?: number }) {
   return (

@@ -52,7 +52,7 @@ import { GloomLayer, SectorLayer } from "./layers";
 import { writeCamera } from "./cameraRules";
 import { OVERLAY_OPTIONS, PLANET_OPTIONS, QUALITY_OPTIONS } from "./mapOptions";
 import { PoiGlyph, poiKind, poiOrigin, type PoiKind } from "./poi";
-import { dssArt, dssInfo, PAWN_ART, pawnArt, type DssAction, type DssInfo, type DssState } from "./pawnArt";
+import { DSS_TONE, dssArt, dssInfo, PAWN_ART, pawnArt, type DssAction, type DssInfo, type DssState } from "./pawnArt";
 import { MapLegend } from "./MapLegend";
 import { HoverCard, PlanetPanel, type Hover } from "./planetCard";
 import "./map.css";
@@ -419,10 +419,10 @@ const PAWN_ICON = { threat: TriangleAlert, seaf: Shield, poi: PoiIcon } as const
 
 /** Each hologram's light: its colour on the map, and the tint its render is recoloured with. */
 const DSS_LIGHT: Record<DssState, [string, string]> = {
-  active: ["var(--cta)", "cta"],
-  cooldown: ["var(--bad)", "bad"],
-  offline: ["#8d949b", "off"],
-  default: ["var(--f-humans)", "humans"],
+  active: [DSS_TONE.active, "cta"],
+  cooldown: [DSS_TONE.cooldown, "bad"],
+  offline: [DSS_TONE.offline, "off"],
+  default: [DSS_TONE.default, "humans"],
 };
 /** A unit's light follows its own faction, whoever holds the planet it is on. */
 const UNIT_LIGHT: Record<string, [string, string]> = {
