@@ -95,7 +95,7 @@ function Hub() {
         <Tile
           icon={History}
           title="G.W.W."
-          text="Galactic War Web: the war log, training manuals and the Federation's corporations."
+          text="Galactic Wide Web: the war log, Super Earth's ministries, training manuals on how the war works and the corporations."
           meta={changes.length ? `${changes.length} records` : "Open"}
           onClick={() => openModule("gww")}
         />

@@ -1,0 +1,1005 @@
+/* ---------- Galactic Wide Web ---------- */
+/* The Federation's net in a browser frame: an address bar over a portal of sites, each in its own colour. */
+.gww {
+  --site: var(--info);
+  display: flex;
+  flex-direction: column;
+  scroll-margin-top: var(--s-6);
+  background: var(--surface-0);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--lip), var(--shadow-2);
+}
+.gww a {
+  color: var(--info);
+  text-decoration-color: color-mix(in srgb, var(--info) 45%, transparent);
+  text-underline-offset: 2px;
+}
+.gww a:hover {
+  color: var(--text-hi);
+}
+
+.gww-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border-bottom: 1px solid var(--line);
+}
+.gww-nav,
+.gww-ticker-next {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: var(--surface-0);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition:
+    color var(--t-state),
+    border-color var(--t-state);
+}
+.gww-nav:hover:not(:disabled),
+.gww-ticker-next:hover {
+  color: var(--cta);
+  border-color: var(--cta);
+}
+.gww-nav:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.gww-url {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: 30px;
+  padding: 0 var(--s-4);
+  background: var(--void);
+  border: 1px solid var(--line);
+  color: var(--info);
+  font-size: var(--fs-body-s);
+  letter-spacing: 0.04em;
+}
+.gww-url svg {
+  flex: none;
+  color: var(--good);
+}
+.gww-url span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gww-brand-tag {
+  padding: 0 var(--s-3);
+  font-family: var(--font-head);
+  font-stretch: 125%;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--cta);
+}
+/* Replayed on every navigation, like a page loading. */
+.gww-load {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cta) 70%, transparent);
+  transform-origin: left;
+  animation: gww-load 650ms var(--ease) both;
+}
+.gww-view {
+  padding: var(--s-6);
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 3px), var(--surface-0);
+}
+.gww-view > * {
+  animation: gww-in 320ms var(--ease);
+}
+
+/* ---------- Portal ---------- */
+.gww-home {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+.gww-mast {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(200px, 300px);
+  align-items: center;
+  gap: var(--s-5) var(--s-6);
+  padding: var(--s-6) var(--s-7);
+  background:
+    radial-gradient(circle at 0% 50%, color-mix(in srgb, var(--f-humans) 20%, transparent), transparent 55%),
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--f-humans) 6%, transparent) 0 2px, transparent 2px 9px),
+    var(--surface-1);
+  border: 1px solid var(--line-strong);
+  border-top: 3px solid var(--f-humans);
+}
+.gww-mast-mark {
+  width: 64px;
+  height: 64px;
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--f-humans) 60%, transparent));
+}
+.gww-mast-title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-stretch: 125%;
+  font-weight: 800;
+  font-size: clamp(1.3rem, 2.6vw, var(--fs-hero));
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-hi);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--f-humans) 45%, transparent);
+}
+.gww-mast-text p {
+  margin: var(--s-3) 0 0;
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+  color: var(--info);
+}
+.gww-search {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: 36px;
+  padding: 0 var(--s-4);
+  background: var(--void);
+  border: 1px solid var(--line-strong);
+  color: var(--label);
+  transition: border-color var(--t-state);
+}
+.gww-search:focus-within {
+  border-color: var(--cta);
+}
+.gww-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  color: var(--text-hi);
+  font: inherit;
+  letter-spacing: 0.04em;
+}
+
+.gww-ticker {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-5);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cta) 9%, transparent), transparent 60%), var(--surface-1);
+  border: 1px solid color-mix(in srgb, var(--cta) 30%, var(--line));
+  border-left: 3px solid var(--cta);
+}
+.gww-ticker-label {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--cta);
+}
+.gww-ticker-text {
+  flex: 1;
+  margin: 0;
+  color: var(--text-hi);
+  animation: gww-in 420ms var(--ease);
+}
+
+.gww-home-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 232px;
+  align-items: start;
+  gap: var(--s-6);
+}
+.gww-dir {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-7);
+  min-width: 0;
+}
+.gww-rail {
+  position: sticky;
+  top: var(--s-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+.gww-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.gww-group-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin: 0;
+  font-size: var(--fs-label);
+  letter-spacing: 0.18em;
+  color: var(--label);
+}
+.gww-group-title .num {
+  color: var(--faint);
+}
+.gww-group-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.gww-sites {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: var(--s-4);
+}
+.gww-site {
+  --site: var(--info);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  overflow: hidden;
+  text-align: left;
+  color: var(--text-dim);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--site) 9%, transparent), transparent 55%),
+    var(--surface-1);
+  border: 1px solid var(--line-strong);
+  border-top: 2px solid var(--site);
+  box-shadow: var(--lip), var(--shadow-1);
+  cursor: pointer;
+  transition:
+    border-color var(--t-state),
+    color var(--t-state),
+    transform var(--t-state) var(--ease),
+    box-shadow var(--t-reveal) var(--ease);
+}
+.gww-site:hover,
+.gww-site:focus-visible {
+  border-color: var(--site);
+  color: var(--text);
+  transform: translateY(-2px);
+  box-shadow:
+    var(--lip),
+    0 8px 22px color-mix(in srgb, var(--site) 16%, transparent);
+}
+.gww-site-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--site);
+}
+.gww-site-icon img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.gww-site-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.gww-address {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-label);
+  letter-spacing: 0.06em;
+  color: var(--site);
+}
+.gww-site-title {
+  font-size: var(--fs-body);
+  color: var(--text-hi);
+}
+.gww-site-text {
+  font-size: var(--fs-body-s);
+  line-height: 1.45;
+}
+.gww-site.corp {
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+.gww-corp-logo {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 96px;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--site) 22%, transparent), transparent 70%),
+    var(--void);
+  border-bottom: 1px solid var(--line);
+}
+.gww-corp-logo .gww-logo {
+  max-width: 70%;
+  max-height: 66px;
+  object-fit: contain;
+  transition: transform var(--t-reveal) var(--ease);
+}
+.gww-site.corp:hover .gww-logo {
+  transform: scale(1.06);
+}
+.gww-site.corp .gww-site-body {
+  padding: var(--s-4) var(--s-5) var(--s-5);
+}
+.gww-wordmark {
+  font-family: var(--font-head);
+  font-stretch: 125%;
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: 0.12em;
+  color: var(--site);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--site) 45%, transparent);
+}
+
+/* ---------- Adverts ---------- */
+.gww-ad {
+  margin: 0;
+  overflow: hidden;
+  background: var(--void);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-1);
+}
+.gww-ad img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+}
+.gww-ad.tall img {
+  aspect-ratio: 1 / 2;
+}
+.gww-ad figcaption {
+  padding: var(--s-1) var(--s-3);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.18em;
+  color: var(--faint);
+}
+.gww-dir > .gww-ad {
+  align-self: center;
+  width: min(100%, 520px);
+}
+
+/* ---------- Pages ---------- */
+.gww-page {
+  --site: var(--cta);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  width: 100%;
+  max-width: 80ch;
+  margin: 0 auto;
+  line-height: 1.6;
+  color: var(--text);
+}
+.gww-page p {
+  margin: 0;
+}
+.gww-page-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-5);
+  padding-bottom: var(--s-5);
+  border-bottom: 1px solid var(--line);
+}
+.gww-page-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  color: var(--site);
+  background: var(--surface-1);
+  border: 1px solid color-mix(in srgb, var(--site) 45%, var(--line));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--site) 14%, transparent);
+}
+.gww-page-icon img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+.gww-kicker {
+  margin: 0;
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+  color: var(--site);
+}
+.gww-page .gww-title {
+  margin: var(--s-2) 0 0;
+  font-family: var(--font-head);
+  font-stretch: 125%;
+  font-weight: 800;
+  font-size: var(--fs-title);
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-hi);
+}
+.gww-page .gww-lead {
+  margin-top: var(--s-2);
+  color: var(--text-dim);
+}
+.gww-page section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.gww-page h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: var(--s-3) 0 0;
+  font-size: var(--fs-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--site);
+}
+.gww-page h3::before {
+  content: "";
+  width: 10px;
+  height: 2px;
+  background: var(--site);
+}
+.gww-points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gww-points li {
+  position: relative;
+  padding-left: var(--s-6);
+}
+.gww-points li::before {
+  content: "";
+  position: absolute;
+  top: 0.62em;
+  left: var(--s-2);
+  width: 6px;
+  height: 6px;
+  background: var(--site);
+}
+.gww-points b {
+  color: var(--text-hi);
+}
+
+.gww-table-wrap {
+  overflow-x: auto;
+}
+.gww-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-body-s);
+}
+.gww-table th,
+.gww-table td {
+  padding: var(--s-3) var(--s-4);
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.gww-table thead th {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--label);
+  border-bottom-color: var(--line-strong);
+}
+.gww-table tbody th {
+  font-weight: 600;
+  color: var(--text-hi);
+}
+.gww-table tbody th img {
+  width: 34px;
+  height: 16px;
+  margin-right: var(--s-4);
+  vertical-align: -3px;
+  object-fit: contain;
+}
+.gww-table tbody tr:hover {
+  background: var(--surface-1);
+}
+.gww-note {
+  margin-top: var(--s-3) !important;
+  font-size: var(--fs-body-s);
+  color: var(--text-dim);
+}
+
+.gww-kinds {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: var(--s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gww-kinds li {
+  display: flex;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+}
+.gww-kind-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+}
+.gww-kind-icon img {
+  max-width: 44px;
+  max-height: 44px;
+  object-fit: contain;
+}
+.gww-kinds b {
+  font-size: var(--fs-body-s);
+  letter-spacing: 0.1em;
+  color: var(--text-hi);
+}
+.gww-kinds p {
+  margin-top: var(--s-2);
+  font-size: var(--fs-body-s);
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.gww-faq {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.gww-faq details {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  transition: border-color var(--t-state);
+}
+.gww-faq details[open] {
+  border-color: color-mix(in srgb, var(--site) 40%, var(--line));
+}
+.gww-faq summary {
+  display: flex;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  list-style: none;
+  font-weight: 600;
+  color: var(--text-hi);
+  cursor: pointer;
+}
+.gww-faq summary::-webkit-details-marker {
+  display: none;
+}
+.gww-faq summary::before {
+  content: "Q";
+  font-weight: 800;
+  color: var(--site);
+}
+.gww-faq summary:hover {
+  color: var(--site);
+}
+.gww-faq details[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+.gww-faq details p {
+  padding: var(--s-4) var(--s-5);
+}
+
+/* The game's own words, boxed like its Training Manual Tips. */
+.gww-quote {
+  display: flex;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cta) 10%, transparent), transparent 70%), var(--surface-1);
+  border-left: 3px solid var(--cta);
+}
+.gww-quote svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--cta);
+}
+.gww-quote p {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.gww-quote b {
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+  color: var(--cta);
+}
+.gww-quote span {
+  font-style: italic;
+  color: var(--text-hi);
+}
+.gww-tip {
+  display: flex;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  background: color-mix(in srgb, var(--info) 8%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--info) 45%, transparent);
+  color: var(--text);
+}
+.gww-tip svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--info);
+}
+.gww-tip b {
+  margin-right: var(--s-2);
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--info);
+}
+.gww-source {
+  padding-top: var(--s-4);
+  border-top: 1px dashed var(--line-strong);
+  font-size: var(--fs-body-s);
+  line-height: 1.5;
+  color: var(--label);
+}
+.gww-pager {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+.gww-pager-link {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  max-width: 48%;
+  padding: var(--s-4) var(--s-5);
+  text-align: left;
+  font-size: var(--fs-body-s);
+  color: var(--text-hi);
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+  transition: border-color var(--t-state);
+}
+.gww-pager-link.next {
+  margin-left: auto;
+  text-align: right;
+}
+.gww-pager-link .caps {
+  display: block;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--label);
+}
+.gww-pager-link:hover {
+  border-color: var(--cta);
+}
+.gww-pager-link svg {
+  flex: none;
+  color: var(--cta);
+}
+
+/* ---------- Ministry and corporation sites ---------- */
+.gww-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+  padding: var(--s-6) var(--s-7);
+  background:
+    radial-gradient(circle at 10% 50%, color-mix(in srgb, var(--site) 24%, transparent), transparent 55%),
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--site) 7%, transparent) 0 2px, transparent 2px 9px),
+    var(--surface-1);
+  border: 1px solid color-mix(in srgb, var(--site) 40%, var(--line));
+  border-top: 3px solid var(--site);
+}
+.gww-banner > img,
+.gww-banner .gww-logo {
+  flex: none;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--site) 45%, transparent));
+}
+.gww-banner .gww-logo {
+  max-width: 160px;
+  max-height: 96px;
+  object-fit: contain;
+}
+.gww-banner .gww-wordmark {
+  font-size: 1.6rem;
+}
+.gww-slogan {
+  margin-top: var(--s-3) !important;
+  font-style: italic;
+  color: var(--site);
+}
+.gww-partners {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+}
+.gww-partner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-5) var(--s-3) var(--s-3);
+  font-size: var(--fs-body-s);
+  color: var(--text-hi);
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+  transition: border-color var(--t-state);
+}
+.gww-partner:hover {
+  border-color: var(--site);
+}
+.gww-partner .gww-logo {
+  width: 48px;
+  height: 32px;
+  object-fit: contain;
+}
+.gww-partner .gww-wordmark {
+  font-size: var(--fs-label);
+}
+.gww-ads-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s-5);
+}
+.gww-ads-inline .gww-ad.wide {
+  width: min(100%, 400px);
+}
+.gww-ads-inline .gww-ad.tall {
+  width: min(100%, 200px);
+}
+
+/* ---------- Diagrams ---------- */
+.gww-fig {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin: 0;
+  padding: var(--s-5);
+  background: var(--void);
+  border: 1px solid var(--line);
+}
+.gww-fig svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 290px;
+}
+.gww-fig figcaption {
+  font-size: var(--fs-body-s);
+  color: var(--text-dim);
+}
+.gf-link {
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+.gf-link.strong {
+  stroke: color-mix(in srgb, var(--f-humans) 55%, var(--line-strong));
+}
+.gf-planet circle {
+  stroke-width: 2;
+}
+.gf-planet.se circle {
+  fill: color-mix(in srgb, var(--f-humans) 30%, var(--surface-1));
+  stroke: var(--f-humans);
+}
+.gf-planet.enemy circle {
+  fill: color-mix(in srgb, var(--f-automaton) 30%, var(--surface-1));
+  stroke: var(--f-automaton);
+}
+.gf-planet.small circle {
+  stroke-width: 1.5;
+}
+.gf-planet text {
+  fill: var(--text-hi);
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+.gf-planet .gf-ring {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gf-spin 8s linear infinite;
+}
+.gf-planet.se .gf-ring {
+  stroke: var(--f-automaton);
+}
+.gf-planet.enemy .gf-ring {
+  stroke: var(--f-humans);
+}
+.gf-planet.siege .gf-ring {
+  stroke: var(--good);
+}
+.gf-attack {
+  stroke-width: 2.5;
+  stroke-dasharray: 6 5;
+  animation: gf-march 0.9s linear infinite;
+}
+.gf-attack.se {
+  stroke: var(--f-humans);
+}
+.gf-attack.enemy {
+  stroke: var(--f-automaton);
+}
+.gf-head.se {
+  fill: var(--f-humans);
+}
+.gf-head.enemy {
+  fill: var(--f-automaton);
+}
+.gf-label {
+  fill: var(--text-dim);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.gf-label.good {
+  fill: var(--good);
+}
+.gf-legend text {
+  fill: var(--label);
+  font-size: 10px;
+}
+.gf-dot.se {
+  fill: var(--f-humans);
+}
+.gf-dot.enemy {
+  fill: var(--f-automaton);
+}
+.gf-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.gf-tick {
+  fill: var(--label);
+  font-size: 10px;
+}
+.gf-series path {
+  fill: none;
+  stroke-width: 2.5;
+}
+.gf-series text {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+.gf-series.good path {
+  stroke: var(--good);
+}
+.gf-series.good text {
+  fill: var(--good);
+}
+.gf-series.flat path {
+  stroke: var(--text-dim);
+}
+.gf-series.flat text {
+  fill: var(--text-dim);
+}
+.gf-series.bad path {
+  stroke: var(--bad);
+}
+.gf-series.bad text {
+  fill: var(--bad);
+}
+.gf-point {
+  fill: var(--impact);
+}
+
+/* Most game icons are drawn in white, which vanishes on a light forced-colours canvas. */
+@media (forced-colors: active) {
+  .gww-site-icon img,
+  .gww-page-icon img,
+  .gww-kind-icon img,
+  .gww-table img,
+  .gww-mast-mark {
+    forced-color-adjust: none;
+    background: #000;
+  }
+}
+
+@keyframes gww-load {
+  from {
+    transform: scaleX(0);
+    opacity: 1;
+  }
+  70% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+@keyframes gww-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes gf-march {
+  to {
+    stroke-dashoffset: -11;
+  }
+}
+@keyframes gf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1100px) {
+  .gww-home-grid {
+    grid-template-columns: 1fr;
+  }
+  .gww-rail {
+    position: static;
+    display: grid;
+    grid-template-columns: minmax(0, 180px) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+@media (max-width: 760px) {
+  .gww-view {
+    padding: var(--s-5);
+  }
+  .gww-mast {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: var(--s-5);
+  }
+  .gww-search {
+    grid-column: 1 / -1;
+  }
+  .gww-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--s-5);
+  }
+  .gww-brand-tag {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  .gww-ticker {
+    flex-wrap: wrap;
+  }
+  .gww-ticker-text {
+    order: 3;
+    flex-basis: 100%;
+    padding-bottom: var(--s-2);
+  }
+  .gww-ticker-next {
+    margin-left: auto;
+  }
+  /* A tall advert would fill the whole phone screen. */
+  .gww-rail {
+    grid-template-columns: 1fr;
+  }
+  .gww-rail .gww-ad.tall {
+    display: none;
+  }
+  .gww-mast-mark {
+    width: 44px;
+    height: 44px;
+  }
+  .gww-page-head {
+    flex-direction: column;
+  }
+  .gww-pager {
+    flex-direction: column;
+  }
+  .gww-pager-link {
+    max-width: none;
+  }
+}

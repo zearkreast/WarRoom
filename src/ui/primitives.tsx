@@ -1,3 +1,4 @@
+import { isTauri } from "@tauri-apps/api/core";
 import { ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { factionColor, factionLabel } from "../domain/factions";
@@ -269,4 +270,22 @@ export function Loading({ what, rows = 3 }: { what: string; rows?: number }) {
 
 export function Empty({ children }: { children: ReactNode }) {
   return <div className="empty caps">{children}</div>;
+}
+
+/** A link out of the app: a new tab on the web, the system browser in the desktop app. */
+export function OutLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(e) => {
+        if (!isTauri()) return;
+        e.preventDefault();
+        void import("@tauri-apps/plugin-opener").then((o) => o.openUrl(href));
+      }}
+    >
+      {children}
+    </a>
+  );
 }
