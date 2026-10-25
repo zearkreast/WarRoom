@@ -21,7 +21,7 @@ import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtInt } from "../../domain/format";
 import { controlShares } from "../../domain/planetIndex";
 import { useSettings, useUi, type HellpadModule } from "../../state";
-import { DssIcon, FactionEmblem, type IconLike } from "../../ui/emblems";
+import { DssIcon, FactionEmblem, HellpadMark, type IconLike } from "../../ui/emblems";
 import { useFeedStatus } from "../../ui/feed";
 import { Countdown, LiveDot, StatusChip } from "../../ui/primitives";
 import { GwwModule } from "./GwwModule";
@@ -37,23 +37,6 @@ const MODULES: Record<HellpadModule, { title: string; path: string; color: strin
   gww: { title: "G.W.W.", path: "hp://gww", color: "var(--cta)" },
   campaigns: { title: "Past campaigns", path: "hp://archive", color: "var(--warn)" },
 };
-
-/** The Hellpad's mark: the four stratagem arrows a Helldiver keys in on it. */
-function HellpadMark({ size = 64 }: { size?: number }) {
-  return (
-    <svg className="hp-mark" width={size} height={size} viewBox="0 0 64 64" aria-hidden>
-      <path d="M14 4h36l10 10v36L50 60H14L4 50V14Z" fill="none" stroke="currentColor" strokeWidth="2.5" />
-      <path d="M18 9h28l9 9v28l-9 9H18l-9-9V18Z" fill="currentColor" opacity="0.08" />
-      <g fill="currentColor">
-        <path d="M32 12l8 9h-16Z" />
-        <path d="M52 32l-9 8v-16Z" />
-        <path d="M32 52l-8-9h16Z" />
-        <path d="M12 32l9-8v16Z" />
-      </g>
-      <rect x="28" y="28" width="8" height="8" fill="none" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  );
-}
 
 function Uplink() {
   const { state } = useFeedStatus(15_000);
@@ -71,7 +54,7 @@ function Mast() {
   const fronts = useCampaigns().data?.length;
   return (
     <header className="hp-mast">
-      <HellpadMark />
+      <HellpadMark size={64} className="hp-mark" />
       <div className="hp-mast-text">
         <h1 className="hp-mast-title">Hellpad</h1>
         <p className="caps">Field terminal · Super Destroyer uplink</p>
