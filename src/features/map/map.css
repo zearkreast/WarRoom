@@ -15,6 +15,12 @@
   height: 100%;
   pointer-events: none;
 }
+.map-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+}
 .galaxy {
   position: absolute;
   inset: 0;
@@ -22,6 +28,8 @@
   height: 100%;
   display: block;
   cursor: grab;
+  transform-origin: 0 0;
+  will-change: transform;
   --k: 1;
 }
 .galaxy:active {
@@ -295,6 +303,19 @@
 }
 
 /* ---------- HUD ---------- */
+.map-touch-hint {
+  display: none;
+}
+@media (pointer: coarse) {
+  .map-touch-hint {
+    display: block;
+    position: absolute;
+    top: 72px;
+    left: var(--s-3);
+    right: var(--s-3);
+    z-index: 3;
+  }
+}
 .map-title {
   position: absolute;
   top: var(--s-6);
