@@ -2,6 +2,7 @@ import { ScrollText } from "lucide-react";
 import { useEffect } from "react";
 import { APP_VERSION } from "../config";
 import { CHANGELOG } from "../changelog";
+import { releaseNumber } from "../domain/version";
 import { useSettings, useUi } from "../state";
 import { useEscape } from "../ui/primitives";
 
@@ -19,7 +20,7 @@ export function DispatchPanel() {
       <div className="dp-head">
         <ScrollText size={14} />
         <span className="caps">Tracker dispatch</span>
-        <span className="dp-ver num">v{APP_VERSION}</span>
+        <span className="dp-ver num">v{releaseNumber(APP_VERSION)}</span>
       </div>
       <div className="dp-log scroll">
         {CHANGELOG.map((c) => (
@@ -27,7 +28,7 @@ export function DispatchPanel() {
             <header>
               <b className="caps">Update log</b>
               <span className="num">
-                v{c.version} · {c.date}
+                v{releaseNumber(c.version)} · {c.date}
               </span>
             </header>
             <ul>
