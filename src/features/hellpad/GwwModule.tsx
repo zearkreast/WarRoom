@@ -344,9 +344,9 @@ export function AboutModule() {
         <h3>Not affiliated</h3>
         <p>
           A fan project, not affiliated with Arrowhead Game Studios or Sony Interactive Entertainment. Map artwork is
-          drawn for the app. The faction and sub-faction emblems (as traced by Helldivers Wiki editors), the biome
-          landscapes and the black hole and fractured planet pictures are the game's, taken from the Helldivers Wiki
-          (helldivers.wiki.gg), and belong to their owners. Effect names come from the Helldivers 2 community's
+          drawn for the app. The faction and sub-faction emblems and the DSS glyph (as traced by Helldivers Wiki
+          editors), the DSS's summary hologram, the biome landscapes and the black hole and fractured planet pictures
+          are the game's, taken from the Helldivers Wiki (helldivers.wiki.gg), and belong to their owners. Effect names come from the Helldivers 2 community's
           data set (github.com/helldivers-2/json, MIT licence).
         </p>
         <h3>Credits</h3>
