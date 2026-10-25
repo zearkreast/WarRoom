@@ -340,8 +340,6 @@
   letter-spacing: 0.14em;
 }
 .ms-counts {
-  /* Keep in sync with GROW_MS in MoStrip.tsx. */
-  --ms-grow: 1.1s;
   list-style: none;
   margin: 0;
   padding: var(--s-4) 0 0;
@@ -387,56 +385,6 @@
   color: var(--text-hi);
   text-shadow: 0 0 10px color-mix(in srgb, var(--k) 55%, transparent);
 }
-.ms-bar {
-  position: relative;
-  height: 12px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--k) 35%, var(--line));
-  /* Quarter marks over the hatched remainder. */
-  background:
-    linear-gradient(
-      90deg,
-      transparent calc(25% - 1px),
-      var(--line-strong) 0 25%,
-      transparent 0 calc(50% - 1px),
-      var(--line-strong) 0 50%,
-      transparent 0 calc(75% - 1px),
-      var(--line-strong) 0 75%,
-      transparent 0
-    ),
-    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--k) 18%, transparent) 0 3px, transparent 3px 6px),
-    var(--void);
-}
-/* No width transition: MoStrip.tsx sets the width every frame of the count-up. */
-.ms-bar-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  overflow: hidden;
-  /* Cut into 4px cells, brightening toward the leading edge. */
-  background:
-    repeating-linear-gradient(90deg, transparent 0 4px, color-mix(in srgb, var(--void) 70%, transparent) 4px 5px),
-    linear-gradient(90deg, color-mix(in srgb, var(--k) 40%, transparent), var(--k));
-  box-shadow: 0 0 12px color-mix(in srgb, var(--k) var(--strong), transparent);
-}
-.ms-bar-sheen {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.5) 50%, transparent 70%);
-  transform: translateX(-100%);
-  animation: ms-sheen 2.8s var(--ease) var(--ms-grow) infinite;
-}
-.ms-bar-head {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  margin-left: -1px;
-  background: color-mix(in srgb, var(--k) 35%, #fff);
-  box-shadow:
-    0 0 4px 1px var(--k),
-    0 0 12px 2px color-mix(in srgb, var(--k) 60%, transparent);
-  animation: ms-pulse 1.6s ease-in-out var(--ms-grow) infinite;
-}
 .ms-count-foot {
   display: flex;
   align-items: center;
@@ -457,31 +405,6 @@
 .ms-count.done .ms-count-pct {
   color: var(--good);
 }
-/* Forced colours drop the gradients the bar is painted with. */
-@media (forced-colors: active) {
-  .ms-bar {
-    border-color: CanvasText;
-  }
-  .ms-bar-fill {
-    forced-color-adjust: none;
-    background: Highlight;
-  }
-  .ms-bar-head {
-    display: none;
-  }
-}
-/* Half the cycle sweeping, half resting. */
-@keyframes ms-sheen {
-  50%,
-  100% {
-    transform: translateX(100%);
-  }
-}
-@keyframes ms-pulse {
-  50% {
-    opacity: 0.45;
-  }
-}
 .cc-late {
   padding: 1px var(--s-2);
   border: 1px solid color-mix(in srgb, var(--warn) var(--edge), transparent);
@@ -495,7 +418,7 @@
     grid-template-columns: 1fr auto;
     row-gap: var(--s-2);
   }
-  .ms-rows .meter {
+  .ms-rows .mo-bar {
     grid-column: 1 / -1;
     grid-row: 2;
   }

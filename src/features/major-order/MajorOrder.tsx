@@ -1,13 +1,15 @@
 import { Award, CheckSquare, Square, Target } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useAssignments, useEpisodes, useFreshPlanets } from "../../api/queries";
 import type { Assignment, Planet } from "../../api/types";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtCompact, fmtPct } from "../../domain/format";
-import { describeAssignment, orderName, rewardLabel, taskPercent, type TaskView } from "../../domain/majorOrder";
+import { describeAssignment, orderName, rewardLabel, type TaskView } from "../../domain/majorOrder";
 import { liberationPercent, projectedAt, projectedCompletion, trackedPercent } from "../../domain/progress";
 import { useUi } from "../../state";
-import { Countdown, Empty, Loading, Meter, Panel } from "../../ui/primitives";
+import { Countdown, Empty, Loading, Panel } from "../../ui/primitives";
 import { usePlanetRate } from "../planets/useFronts";
+import { OrderBar, useCountTask, useCountUp } from "./OrderBar";
 import "./majorOrder.css";
 
 function PlanetTask({ t, expires }: { t: TaskView; expires: number }) {
@@ -19,9 +21,10 @@ function PlanetTask({ t, expires }: { t: TaskView; expires: number }) {
   const pct = owned ? 100 : trackedPercent(p);
   const end = owned ? null : projectedAt(liberationPercent(p), rate, Date.now(), expires);
   const completeAt = owned ? null : projectedCompletion(pct, rate, Date.now());
+  const shown = useCountUp(pct);
   const Check = done ? CheckSquare : Square;
   return (
-    <li className={`mo-task ${done ? "done" : ""}`}>
+    <li className={`mo-task ${done ? "done" : ""}`} style={{ "--k": "var(--f-humans)" } as CSSProperties}>
       <div className="mo-task-head">
         <Check size={16} className="mo-check" />
         <span>
@@ -34,9 +37,18 @@ function PlanetTask({ t, expires }: { t: TaskView; expires: number }) {
             {p.name}
           </button>
         </span>
-        <span className="num mo-pct">{fmtPct(pct, 1)}</span>
+        <span className="num mo-pct">{fmtPct(shown, 1)}</span>
       </div>
-      <Meter value={pct} color="var(--f-humans)" rest={factionColor(p.currentOwner)} marker={end} size="l" chevron />
+      <OrderBar
+        shown={shown}
+        value={pct}
+        label={`${t.label} ${p.name}`}
+        valueText={`${fmtPct(pct, 1)}${done ? ", complete" : ""}`}
+        tone="var(--f-humans)"
+        rest={factionColor(p.currentOwner)}
+        marker={end}
+        done={done}
+      />
       {!owned && (
         <div className="mo-task-foot num">
           {end != null ? (
@@ -56,21 +68,37 @@ function PlanetTask({ t, expires }: { t: TaskView; expires: number }) {
 }
 
 function CountTask({ t }: { t: TaskView }) {
-  const pct = taskPercent(t);
+  const { shown, pct, final, valueText } = useCountTask(t);
+  const tone = t.faction ? factionColor(t.faction) : "var(--cta)";
   const Check = t.done ? CheckSquare : Square;
   return (
-    <li className={`mo-task ${t.done ? "done" : ""}`}>
+    <li className={`mo-task ${t.done ? "done" : ""}`} style={{ "--k": tone } as CSSProperties}>
       <div className="mo-task-head">
         <Check size={16} className="mo-check" />
         <span>
           {t.label}
-          {t.faction && <span style={{ color: factionColor(t.faction) }}> {factionLabel(t.faction)}</span>}
+          {t.faction && <span style={{ color: tone }}> {factionLabel(t.faction)}</span>}
         </span>
-        <span className="num mo-pct">
-          {fmtCompact(t.current)} / {fmtCompact(t.goal)}
-        </span>
+        <span className="num mo-pct">{fmtPct(pct, 1)}</span>
       </div>
-      <Meter value={pct} color="var(--cta)" size="l" />
+      <OrderBar
+        shown={pct}
+        value={final}
+        label={`${t.label}${t.faction ? ` ${factionLabel(t.faction)}` : ""}`}
+        valueText={valueText}
+        tone={tone}
+        done={t.done}
+      />
+      <div className="mo-task-foot num">
+        <span>
+          <b>{fmtCompact(Math.round(shown))}</b> / {fmtCompact(t.goal)}
+        </span>
+        {t.done ? (
+          <span style={{ color: "var(--good)" }}>Complete</span>
+        ) : (
+          <span>{fmtCompact(Math.max(0, Math.round(t.goal - shown)))} to go</span>
+        )}
+      </div>
     </li>
   );
 }
