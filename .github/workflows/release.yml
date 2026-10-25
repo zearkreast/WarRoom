@@ -1,4 +1,4 @@
-# Builds the Tauri desktop app for Windows, macOS and Linux and publishes
+# Builds the Tauri app for Windows, macOS, Linux and Android and publishes
 # the installers as a GitHub Release.
 #
 # Run it from the Actions tab (Release -> Run workflow), or push a tag like v0.2.7.
@@ -80,3 +80,12 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+  # Runs after the desktop builds so the release they create is there to attach the APK to.
+  android:
+    needs: build
+    if: ${{ !cancelled() }}
+    uses: ./.github/workflows/android.yml
+    with:
+      publish: true
+    secrets: inherit
