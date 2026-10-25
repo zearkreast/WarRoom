@@ -11,7 +11,9 @@ export type GwwPage =
   | { kind: "ministry"; id: string }
   | { kind: "company"; id: string }
   | { kind: "site"; id: "log" | "gov" | "citizens" }
-  | { kind: "dir"; id: "manuals" | "gov" | "corps" };
+  | { kind: "dir"; id: "manuals" | "gov" | "corps" }
+  /** What the address bar opens for an address no site answers at. */
+  | { kind: "missing"; address: string };
 
 /** Where the planet options popover is anchored, in viewport pixels. */
 export interface OptionsAnchor {

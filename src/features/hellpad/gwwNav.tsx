@@ -8,6 +8,42 @@ import { factionColor } from "../../domain/factions";
 import { parseRich } from "../../domain/gwwText";
 import { useUi, type GwwPage } from "../../state";
 
+const HOME = "se://gww";
+const SITE_ADDRESS = { gov: GOV.address, citizens: CITIZENS.address, log: "se://hc/war-log" };
+const DIR_ADDRESS = { manuals: "se://hc/manuals", gov: "se://gov/directory", corps: "se://corp" };
+
+export function addressOf(p: GwwPage): string {
+  if (p.kind === "manual") return MANUALS.find((m) => m.id === p.id)?.address ?? HOME;
+  if (p.kind === "ministry") return MINISTRIES.find((m) => m.id === p.id)?.address ?? HOME;
+  if (p.kind === "company") return COMPANIES.find((c) => c.id === p.id)?.address ?? HOME;
+  if (p.kind === "site") return SITE_ADDRESS[p.id];
+  if (p.kind === "dir") return DIR_ADDRESS[p.id];
+  if (p.kind === "missing") return p.address;
+  return HOME;
+}
+
+/** Every address on the G.W.W., to the link target it opens. */
+const ADDRESSES = new Map<string, string>([
+  [HOME, "home"],
+  ...Object.entries(SITE_ADDRESS).map(([id, a]): [string, string] => [a, `site:${id}`]),
+  ...Object.entries(DIR_ADDRESS).map(([id, a]): [string, string] => [a, `dir:${id}`]),
+  ...MANUALS.map((m): [string, string] => [m.address, `manual:${m.id}`]),
+  ...MINISTRIES.map((m): [string, string] => [m.address, `ministry:${m.id}`]),
+  ...COMPANIES.map((c): [string, string] => [c.address, `company:${c.id}`]),
+  ["se://strohmann.news", "app:news"],
+]);
+
+/** Typed addresses may skip the scheme or end in a slash. */
+export function normalize(typed: string): string {
+  const a = typed.trim().toLowerCase().replace(/\/+$/, "");
+  return a.startsWith("se://") ? a : `se://${a.replace(/^\/+/, "")}`;
+}
+
+export const ADDRESS_LIST = [...ADDRESSES.keys()];
+
+/** The link target a typed address opens, if any site answers at it. */
+export const targetAt = (typed: string): string | undefined => ADDRESSES.get(normalize(typed));
+
 /** `app:` link targets and their titles. */
 export const APP_PAGES: Record<string, string> = {
   news: "Strohmann News",

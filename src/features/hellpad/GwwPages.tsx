@@ -23,6 +23,7 @@ import {
   Radio,
   Rocket,
   Shield,
+  TriangleAlert,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefCallback } from "react";
@@ -870,6 +871,25 @@ export function GovPage({ site, headingRef }: { site: "gov" | "citizens"; headin
         sources={s.sources}
         quoted={site === "gov" ? "Training manual tips are quoted from the game." : "Ship broadcasts are quoted from the game."}
       />
+    </article>
+  );
+}
+
+export function MissingPage({ address, headingRef }: { address: string; headingRef: HeadingRef }) {
+  return (
+    <article className="gww-page" style={{ "--site": "var(--bad)" } as CSSProperties}>
+      <Banner
+        icon={<TriangleAlert size={40} strokeWidth={1.5} />}
+        crumbs={[{ label: "G.W.W.", target: "home" }, { label: "Error 404" }]}
+        title="Site not found"
+        lead={
+          <>
+            No site answers at <span className="num">{address}</span>. If one ever did, the Ministry of Truth has seen to it.
+          </>
+        }
+        headingRef={headingRef}
+      />
+      <Related title="Try instead" targets={["dir:manuals", "dir:gov", "dir:corps"]} />
     </article>
   );
 }

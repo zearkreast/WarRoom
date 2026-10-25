@@ -4,7 +4,7 @@ import { ADS, CITIZENS, COMPANIES, GOV, MINISTRIES, type SiteSection } from "../
 import { PAST_STATIONS, STAR_OF_PEACE } from "../data/stations";
 import { linksIn, nextYearly, parseRich, plainText } from "../domain/gwwText";
 import { adUrl, iconUrl, logoUrl } from "../features/hellpad/gwwArt";
-import { APP_PAGES, pageOf } from "../features/hellpad/gwwNav";
+import { ADDRESS_LIST, APP_PAGES, pageOf, targetAt } from "../features/hellpad/gwwNav";
 import planetsJson from "./fixtures/planets.json";
 
 const allText = (): string[] => {
@@ -87,6 +87,17 @@ describe("galactic wide web", () => {
     ];
     const links = text.flatMap(linksIn);
     expect(links.filter((t) => !t.startsWith("planet:") || !planets.has(t.slice(7).toLowerCase()))).toEqual([]);
+  });
+
+  it("opens a typed address with or without its scheme, and every address opens a page", () => {
+    expect(targetAt("se://gov/truth")).toBe("ministry:truth");
+    expect(targetAt("  GOV/Truth/ ")).toBe("ministry:truth");
+    expect(targetAt("se://gww")).toBe("home");
+    expect(targetAt("se://nowhere")).toBeUndefined();
+    expect(ADDRESS_LIST.filter((a) => {
+      const t = targetAt(a)!;
+      return t !== "home" && !t.startsWith("app:") && !pageOf(t);
+    })).toEqual([]);
   });
 
   it("puts every manual in a chapter, and the chapters in reading order", () => {
