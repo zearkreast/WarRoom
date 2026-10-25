@@ -9,8 +9,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEpisodes, useSpaceStations } from "../../api/queries";
-import { useHistory } from "../../history/useHistory";
-import { useUi, type HellpadModule } from "../../state";
+import { MANUALS } from "../../data/gww";
+import { useSettings, useUi, type HellpadModule } from "../../state";
 import { Hint } from "../../ui/Hint";
 import { GwwModule } from "./GwwModule";
 import { PastCampaignsModule } from "./PastCampaignsModule";
@@ -64,7 +64,7 @@ function Tile(props: {
 function Hub() {
   const openModule = useUi((s) => s.openModule);
   const stations = useSpaceStations().data;
-  const changes = useHistory((s) => s.changes);
+  const read = useSettings((s) => s.gwwRead.filter((id) => MANUALS.some((m) => m.id === id)).length);
   const ended = useEpisodes().data?.filter((e) => e.status !== "active").length;
   return (
     <>
@@ -95,8 +95,8 @@ function Hub() {
         <Tile
           icon={History}
           title="G.W.W."
-          text="Galactic Wide Web: the war log, Super Earth's ministries, training manuals on how the war works and the corporations."
-          meta={changes.length ? `${changes.length} records` : "Open"}
+          text="Galactic Wide Web: Super Earth's sites and ministries, training manuals tied to the live war, and the corporations."
+          meta={read ? `${read} of ${MANUALS.length} manuals read` : "Open"}
           onClick={() => openModule("gww")}
         />
         <Tile
