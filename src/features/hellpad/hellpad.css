@@ -878,7 +878,7 @@
 }
 .st-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
   gap: var(--s-4);
 }
 .st-action {
@@ -1000,7 +1000,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--s-5);
 }
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
   .st-cols {
     grid-template-columns: 1fr;
   }
@@ -1431,6 +1431,9 @@
   }
   .pi-controls {
     flex-direction: column;
+  }
+  .pi-search {
+    flex: none;
   }
   .pi-sector-meta .pl,
   .pi-sector-rule {
