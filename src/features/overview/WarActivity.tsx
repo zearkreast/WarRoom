@@ -4,12 +4,14 @@ import {
   Area,
   CartesianGrid,
   ComposedChart,
+  Curve,
   Line,
   ReferenceDot,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  type LineDrawShapeProps,
   type TooltipContentProps,
 } from "recharts";
 import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
@@ -17,7 +19,14 @@ import { useLastUpdate, useWar } from "../../api/queries";
 import type { Faction } from "../../api/types";
 import { useFrontActivity, useWarSamples } from "../../api/warSamples";
 import { factionLabel } from "../../domain/factions";
-import { averageReadings, mergeActivity, type ActivityPoint } from "../../domain/frontActivity";
+import {
+  averageReadings,
+  mergeActivity,
+  plotActivity,
+  type ActivityPoint,
+  type ActivitySeries,
+  type FrontKey,
+} from "../../domain/frontActivity";
 import { fmtDateTime, fmtInt, fmtTime } from "../../domain/format";
 import { fmtHourTick, hourTicks } from "../../ui/chart";
 import { FactionEmblem } from "../../ui/emblems";
@@ -36,10 +45,15 @@ export const ENEMIES: Faction[] = ["Terminids", "Illuminate", "Automaton"];
 type Series = Faction | "online" | "impact";
 /** Bottom to top of the stack. */
 const STACK: Faction[] = ["Terminids", "Automaton", "Illuminate"];
-const FRONT_KEY: Partial<Record<Faction, "terminids" | "automatons" | "illuminate">> = {
+const FRONT_KEY: Partial<Record<Faction, FrontKey>> = {
   Terminids: "terminids",
   Automaton: "automatons",
   Illuminate: "illuminate",
+};
+const PLOT_KEY: Partial<Record<Faction, "plotTerminids" | "plotAutomatons" | "plotIlluminate">> = {
+  Terminids: "plotTerminids",
+  Automaton: "plotAutomatons",
+  Illuminate: "plotIlluminate",
 };
 // Series colours are the panel's own tokens (warActivity.css).
 const FRONT: Partial<Record<Faction, string>> = {
@@ -53,6 +67,10 @@ const MUTED = "var(--wa-muted)";
 const FULL_DAY_MS = 23.5 * 3_600_000;
 const STEP = 25_000;
 const READING_WINDOW_MS = 2 * 60_000;
+// Keep in sync with --wa-morph in warActivity.css.
+const MORPH_MS = 700;
+// Keep in sync with --ease in theme.css, which the CSS fades use.
+const MORPH_EASE = "cubic-bezier(0.2,0.85,0.25,1)";
 const TICK = { fill: MUTED, fontSize: 10 } as const;
 
 const fmtK = (v: number) => (v === 0 ? "0" : `${Math.round(v / 1000)}k`);
@@ -94,6 +112,11 @@ function ActivityTip({ active, payload, label, hidden }: TooltipContentProps<Val
   );
 }
 
+/** Recharts' default line shape wipes a line in from the left the first time it animates; this one only morphs. */
+function MorphLine({ animationElapsedTime, isAnimating, isEntrance, visibleLength, ...curve }: LineDrawShapeProps) {
+  return <Curve {...curve} />;
+}
+
 /** The newest online reading: a ring that pings, as a live feed does. */
 function LiveRing({ cx, cy }: { cx?: number; cy?: number }) {
   if (cx == null || cy == null) return <g />;
@@ -129,11 +152,16 @@ export function WarActivity() {
   const war = useWar().data;
   const lastUpdate = useLastUpdate().data;
   const [hidden, setHidden] = useState<Set<Series>>(new Set());
+  // Chips toggled at least once, so their switch animation never plays on first paint.
+  const [touched, setTouched] = useState<Set<Series>>(new Set());
+  const [morphFor, setMorphFor] = useState<ActivityPoint[] | null>(null);
   const rows = useMemo(
     () =>
       data && lastUpdate != null ? mergeActivity(data, averageReadings(readings ?? [], READING_WINDOW_MS), lastUpdate) : [],
     [data, readings, lastUpdate],
   );
+  // Morph until the data next changes: refreshes redraw at once, and the duration never switches mid-morph.
+  const morphing = morphFor === rows;
   const online = rows.filter((r) => r.online != null);
   const hasOnline = online.length > 1;
   // The online total once the collector has recorded it; until then, everyone on the fronts.
@@ -149,13 +177,27 @@ export function WarActivity() {
   const domain: [number, number] = [rows[0]?.at ?? 0, rows[rows.length - 1]?.at ?? 0];
   const ticks = hourTicks(domain[0], domain[1]);
   const span = rows.length < 2 || domain[1] - domain[0] >= FULL_DAY_MS ? "last 24 h" : `since ${fmtTime(domain[0])}`;
-  const toggle = (s: Series) =>
+  const flatImpact = impactAxis ? (impactAxis.domain[0] + impactAxis.domain[1]) / 2 : 0;
+  const plot = useMemo(() => {
+    const off = new Set<ActivitySeries>([...hidden].map((s) => FRONT_KEY[s as Faction] ?? (s as ActivitySeries)));
+    return plotActivity(rows, off, hasOnline, flatImpact);
+  }, [rows, hidden, hasOnline, flatImpact]);
+  const motion = {
+    isAnimationActive: "auto",
+    animationDuration: morphing ? MORPH_MS : 1,
+    animationEasing: MORPH_EASE,
+  } as const;
+  const off = (s: Series) => (hidden.has(s) ? " is-off" : "");
+  const toggle = (s: Series) => {
     setHidden((h) => {
       const n = new Set(h);
       if (n.has(s)) n.delete(s);
       else n.add(s);
       return n;
     });
+    setTouched((t) => (t.has(s) ? t : new Set(t).add(s)));
+    setMorphFor(rows);
+  };
   const chips: [Series, string][] = [
     ["online", "Helldivers online"],
     ...(["Terminids", "Automaton", "Illuminate"] as Faction[]).map((f): [Series, string] => [f, `Fighting ${factionLabel(f)}`]),
@@ -187,7 +229,7 @@ export function WarActivity() {
               <span className="wa-corner bl" aria-hidden />
               <span className="wa-corner br" aria-hidden />
               <ResponsiveContainer width="100%" height={280}>
-                <ComposedChart data={rows} margin={{ top: 20, right: 0, bottom: 0, left: 0 }}>
+                <ComposedChart data={plot} margin={{ top: 20, right: 0, bottom: 0, left: 0 }}>
                   <defs>
                     {STACK.map((f) => (
                       <linearGradient key={f} id={`wa-front-${f}`} x1="0" y1="0" x2="0" y2="1">
@@ -226,20 +268,20 @@ export function WarActivity() {
                       domain={impactAxis.domain}
                       ticks={impactAxis.ticks}
                       tickFormatter={(v) => Number(v).toFixed(4)}
-                      tick={TICK}
+                      tick={{ ...TICK, className: `wa-axis-tick${off("impact")}` }}
                       tickLine={false}
                       axisLine={false}
                       width={56}
                     />
                   )}
                   <Tooltip content={tip} cursor={{ stroke: MUTED, strokeOpacity: 0.5, strokeWidth: 1 }} />
-                  {STACK.filter((f) => !hidden.has(f)).map((f) => (
+                  {STACK.map((f) => (
                     <Area
                       key={f}
-                      className={`wa-front wa-front-${f}`}
+                      className={`wa-series wa-front wa-front-${f}${off(f)}`}
                       yAxisId="divers"
                       type="monotone"
-                      dataKey={FRONT_KEY[f]!}
+                      dataKey={PLOT_KEY[f]!}
                       name={factionLabel(f)}
                       stackId="fronts"
                       stroke={FRONT[f]}
@@ -248,58 +290,63 @@ export function WarActivity() {
                       fill={`url(#wa-front-${f})`}
                       fillOpacity={1}
                       activeDot={false}
-                      isAnimationActive={false}
+                      {...motion}
                     />
                   ))}
-                  {!hidden.has("online") && (
+                  <Line
+                    className={`wa-series wa-online${off("online")}`}
+                    yAxisId="divers"
+                    type="monotone"
+                    dataKey="plotOnline"
+                    name="Helldivers online"
+                    stroke={ONLINE}
+                    strokeWidth={2.5}
+                    dot={false}
+                    activeDot={false}
+                    connectNulls
+                    shape={MorphLine}
+                    {...motion}
+                  />
+                  {impactAxis && (
                     <Line
-                      className="wa-online"
-                      yAxisId="divers"
-                      type="monotone"
-                      dataKey={hasOnline ? "online" : "players"}
-                      name="Helldivers online"
-                      stroke={ONLINE}
-                      strokeWidth={2.5}
-                      dot={false}
-                      activeDot={false}
-                      connectNulls
-                      isAnimationActive={false}
-                    />
-                  )}
-                  {impactAxis && !hidden.has("impact") && (
-                    <Line
-                      className="wa-impact"
+                      className={`wa-series wa-impact${off("impact")}`}
                       yAxisId="impact"
                       type="monotone"
-                      dataKey="impact"
+                      dataKey="plotImpact"
                       name="Galactic impact mod"
                       stroke={IMPACT}
                       strokeWidth={2}
                       dot={false}
                       activeDot={false}
                       connectNulls
-                      isAnimationActive={false}
+                      shape={MorphLine}
+                      {...motion}
                     />
                   )}
-                  {!hidden.has("online") &&
-                    [peak, low].map(
-                      (p, i) =>
-                        p && (
-                          <ReferenceDot
-                            key={i}
-                            className="wa-dot"
-                            yAxisId="divers"
-                            x={p.at}
-                            y={total(p)}
-                            r={4}
-                            fill={ONLINE}
-                            stroke="var(--wa-surface)"
-                            strokeWidth={2}
-                          />
-                        ),
-                    )}
-                  {!hidden.has("online") && last && (
-                    <ReferenceDot yAxisId="divers" x={last.at} y={total(last)} shape={LiveRing} />
+                  {[peak, low].map(
+                    (p, i) =>
+                      p && (
+                        <ReferenceDot
+                          key={i}
+                          className={`wa-dot${off("online")}`}
+                          yAxisId="divers"
+                          x={p.at}
+                          y={total(p)}
+                          r={4}
+                          fill={ONLINE}
+                          stroke="var(--wa-surface)"
+                          strokeWidth={2}
+                        />
+                      ),
+                  )}
+                  {last && (
+                    <ReferenceDot
+                      className={`wa-live-dot${off("online")}`}
+                      yAxisId="divers"
+                      x={last.at}
+                      y={total(last)}
+                      shape={LiveRing}
+                    />
                   )}
                 </ComposedChart>
               </ResponsiveContainer>
@@ -313,6 +360,7 @@ export function WarActivity() {
                   key={s}
                   className={`filter-chip ${hidden.has(s) ? "" : "on"}`}
                   aria-pressed={!hidden.has(s)}
+                  data-flash={touched.has(s) ? (hidden.has(s) ? "off" : "on") : undefined}
                   onClick={() => toggle(s)}
                   style={{ "--k": s === "online" ? ONLINE : s === "impact" ? IMPACT : FRONT[s as Faction] } as CSSProperties}
                 >

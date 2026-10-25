@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { WarStatusRaw } from "../api/types";
 import { planetTint } from "../domain/biomes";
 import { latestDispatches } from "../domain/dispatch";
-import { averageReadings } from "../domain/frontActivity";
+import { averageReadings, plotActivity, type ActivityPoint } from "../domain/frontActivity";
 import { planetEffects } from "../domain/effects";
-import { orderName } from "../domain/majorOrder";
+import { orderName, taskPercent, type TaskView } from "../domain/majorOrder";
 import { toEffectsLive, type EpisodeLive, type EpisodeStatus } from "../domain/snapshot";
 import statusJson from "./fixtures/status-effects.json";
 
@@ -77,6 +77,41 @@ describe("activity readings", () => {
   });
 });
 
+describe("activity chart toggles", () => {
+  const row = (online: number | null, impact: number | null): ActivityPoint => ({
+    at: 0,
+    terminids: 10,
+    automatons: 20,
+    illuminate: 30,
+    players: 60,
+    online,
+    impact,
+  });
+
+  it("draws every series as recorded while all are on", () => {
+    const [p] = plotActivity([row(100, 0.012)], new Set(), true, 0.01);
+    expect(p).toMatchObject({ plotTerminids: 10, plotAutomatons: 20, plotIlluminate: 30, plotOnline: 100, plotImpact: 0.012 });
+  });
+
+  it("flattens a switched-off front so the bands above settle onto the rest", () => {
+    const [p] = plotActivity([row(100, 0.012)], new Set(["automatons"]), true, 0.01);
+    expect(p).toMatchObject({ plotTerminids: 10, plotAutomatons: 0, plotIlluminate: 30, automatons: 20 });
+  });
+
+  it("parks the online line on the fronts still shown, and the multiplier flat", () => {
+    const [p] = plotActivity([row(100, 0.012)], new Set(["online", "impact", "terminids"]), true, 0.01);
+    expect(p.plotOnline).toBe(50);
+    expect(p.plotImpact).toBe(0.01);
+  });
+
+  it("keeps gaps as gaps and falls back to everyone on the fronts without readings", () => {
+    const [gap] = plotActivity([row(null, null)], new Set(["online", "impact"]), true, 0.01);
+    expect([gap.plotOnline, gap.plotImpact]).toEqual([null, null]);
+    const [fronts] = plotActivity([row(null, null)], new Set(), false, 0.01);
+    expect(fronts.plotOnline).toBe(60);
+  });
+});
+
 describe("major order name", () => {
   const phase = (title: string, status: EpisodeStatus) => ({ title, briefing: "", outro: "", status, medals: null, issued: null });
   const episode = (status: EpisodeStatus, phases: ReturnType<typeof phase>[]): EpisodeLive => ({
@@ -103,5 +138,20 @@ describe("major order name", () => {
 
   it("is left out while the game hasn't named the order yet", () => {
     expect(orderName([episode("active", [phase("HONOR THE FALLEN", "lost"), phase("MAJOR ORDER", "active")])])).toBeUndefined();
+  });
+});
+
+describe("major order progress", () => {
+  const task = (current: number, goal: number): TaskView => ({ kind: "count", label: "Eradicate", current, goal, done: current >= goal });
+
+  it("is the share of the goal, held to 0-100%", () => {
+    expect(taskPercent(task(21_200_000, 300_000_000))).toBeCloseTo(7.07, 2);
+    expect(taskPercent(task(-2, 1))).toBe(0);
+    expect(taskPercent(task(70, 50))).toBe(100);
+  });
+
+  it("reads 100% only once the task is done", () => {
+    expect(taskPercent(task(299_900_000, 300_000_000))).toBe(99.9);
+    expect(taskPercent(task(5, 0))).toBe(100);
   });
 });

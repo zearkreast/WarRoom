@@ -136,3 +136,40 @@ export function mergeActivity(buckets: FrontBucket[], readings: Reading[], now: 
   }
   return rows;
 }
+
+export type FrontKey = "terminids" | "automatons" | "illuminate";
+/** A line or band the activity chart can switch off. */
+export type ActivitySeries = FrontKey | "online" | "impact";
+
+/** An activity row as drawn, with the switched-off series parked. */
+export interface PlotPoint extends ActivityPoint {
+  plotTerminids: number;
+  plotAutomatons: number;
+  plotIlluminate: number;
+  plotOnline: number | null;
+  plotImpact: number | null;
+}
+
+/** The chart's rows with switched-off series parked rather than dropped, so they can morph away and back. */
+export function plotActivity(
+  rows: ActivityPoint[],
+  off: ReadonlySet<ActivitySeries>,
+  hasOnline: boolean,
+  flatImpact: number,
+): PlotPoint[] {
+  const front = (r: ActivityPoint, k: FrontKey) => (off.has(k) ? 0 : r[k]);
+  return rows.map((r) => {
+    const plotTerminids = front(r, "terminids");
+    const plotAutomatons = front(r, "automatons");
+    const plotIlluminate = front(r, "illuminate");
+    const online = hasOnline ? r.online : r.players;
+    return {
+      ...r,
+      plotTerminids,
+      plotAutomatons,
+      plotIlluminate,
+      plotOnline: online == null || !off.has("online") ? online : plotTerminids + plotAutomatons + plotIlluminate,
+      plotImpact: r.impact == null || !off.has("impact") ? r.impact : flatImpact,
+    };
+  });
+}
