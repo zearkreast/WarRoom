@@ -32,6 +32,7 @@ export const WIKI = {
   wallOfMartyrs: wiki("Wall of Martyrs"),
   ministryOfScience: wiki("Ministry of Science"),
   admiralDefense: wiki("Admiral Defense"),
+  dss: wiki("Democracy Space Station"),
 } satisfies Record<string, Source>;
 
 export interface Section {
@@ -466,10 +467,14 @@ export const MANUALS: Manual[] = [
           },
         ],
       },
+      {
+        heading: "The Star of Peace",
+        text: "In January 2186 the station was fitted with the Star of Peace, a beam of Dark Fluid that collapsed [[planet:Penta|Penta]] into a black hole on 18 January. The shot spent all the Dark Fluid Super Earth had, and the weapon has been unarmed since. The [[app:stations|space station page]] tells its story, and that of the Automaton superweapon destroyed over [[planet:Mort|Mort]] in July.",
+      },
     ],
     tips: ["The [[app:stations|space station page]] shows which actions are running now and when the others are ready again."],
     related: ["app:stations", "manual:defense", "company:cob-genetics"],
-    sources: [WIKI.mechanics],
+    sources: [WIKI.mechanics, WIKI.dss],
   },
   {
     id: "campaigns",

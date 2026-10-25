@@ -14,7 +14,6 @@ import {
   Newspaper,
   Radio,
   RefreshCw,
-  Satellite,
   Search,
   Shield,
   Target,
@@ -27,7 +26,7 @@ import { FACTIONS, factionColor } from "../../domain/factions";
 import { nextYearly, plainText } from "../../domain/gwwText";
 import { useHistory } from "../../history/useHistory";
 import { useUi, type GwwPage } from "../../state";
-import { FactionEmblem } from "../../ui/emblems";
+import { DssIcon, FactionEmblem } from "../../ui/emblems";
 import { Empty, OutLink, Panel, useMedia, useNow } from "../../ui/primitives";
 import type { Faction } from "../../api/types";
 import { iconUrl } from "./gwwArt";
@@ -443,7 +442,7 @@ const MARKS: { icon: React.ReactNode; name: string; text: string }[] = [
     text: "The planet is an objective of the current Major Order.",
   },
   {
-    icon: <Satellite size={20} color="var(--f-humans)" />,
+    icon: <DssIcon size={20} color="var(--f-humans)" />,
     name: "Democracy Space Station",
     text: "The DSS is in orbit; see Hellpad › Space Stations for its tactical actions.",
   },

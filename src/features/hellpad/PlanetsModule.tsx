@@ -1,4 +1,4 @@
-import { ArrowDownWideNarrow, Flame, Pin, Satellite, Search, Swords, Target, Users } from "lucide-react";
+import { ArrowDownWideNarrow, Flame, Pin, Search, Swords, Target, Users } from "lucide-react";
 import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { useCampaigns, useFreshPlanets } from "../../api/queries";
 import type { Faction, Planet } from "../../api/types";
@@ -14,7 +14,7 @@ import {
 } from "../../domain/planetIndex";
 import { liberationPercent, trackedPercent } from "../../domain/progress";
 import { useSettings, useUi } from "../../state";
-import { FactionEmblem } from "../../ui/emblems";
+import { DssIcon, FactionEmblem } from "../../ui/emblems";
 import { hazardIcon } from "../../ui/hazardIcons";
 import { Empty, Loading } from "../../ui/primitives";
 import { useMajorOrderPlanets, useStationPlanets } from "../planets/useFronts";
@@ -61,7 +61,7 @@ function PlanetRow(props: { p: Planet; active: boolean; mo: boolean; station: bo
           )}
           {station && (
             <span className="pi-icon dss" title="Democracy Space Station">
-              <Satellite size={13} />
+              <DssIcon size={13} />
             </span>
           )}
           {p.hazards.slice(0, 2).map((h) => {

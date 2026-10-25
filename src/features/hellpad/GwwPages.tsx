@@ -20,7 +20,6 @@ import {
   Orbit,
   Quote,
   Radio,
-  Satellite,
   Shield,
   type LucideIcon,
 } from "lucide-react";
@@ -41,7 +40,7 @@ import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtDate, fmtDateTime } from "../../domain/format";
 import { useHistory } from "../../history/useHistory";
 import { useSettings, useUi } from "../../state";
-import { FactionEmblem } from "../../ui/emblems";
+import { DssIcon, FactionEmblem, type IconLike } from "../../ui/emblems";
 import { Empty, Loading, OutLink, useMedia } from "../../ui/primitives";
 import { Figure } from "./GwwFigures";
 import { LivePanel } from "./GwwLive";
@@ -53,22 +52,22 @@ type HeadingRef = RefCallback<HTMLElement>;
 /* ---------- Pictures ---------- */
 
 /** Drawn icons for manuals the game has no picture for. */
-const MANUAL_ICONS: Record<string, LucideIcon> = {
+const MANUAL_ICONS: Record<string, IconLike> = {
   resistance: Activity,
   regions: Building2,
   "supply-lines": Network,
-  dss: Satellite,
+  dss: DssIcon,
   campaigns: Flag,
   gloom: CloudFog,
   misconceptions: CircleHelp,
 };
 
-const APP_ICONS: Record<string, LucideIcon> = {
+const APP_ICONS: Record<string, IconLike> = {
   news: Newspaper,
   overview: Shield,
   map: Orbit,
   campaigns: LayoutGrid,
-  stations: Satellite,
+  stations: DssIcon,
   past: Archive,
   planets: Globe2,
 };

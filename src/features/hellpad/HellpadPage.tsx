@@ -8,7 +8,6 @@ import {
   Lock,
   Radio,
   Rocket,
-  Satellite,
   type LucideIcon,
 } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
@@ -18,7 +17,7 @@ import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtInt } from "../../domain/format";
 import { controlShares } from "../../domain/planetIndex";
 import { useSettings, useUi, type HellpadModule } from "../../state";
-import { FactionEmblem } from "../../ui/emblems";
+import { DssIcon, FactionEmblem, type IconLike } from "../../ui/emblems";
 import { useFeedStatus } from "../../ui/feed";
 import { Countdown, LiveDot, StatusChip } from "../../ui/primitives";
 import { GwwModule } from "./GwwModule";
@@ -127,7 +126,7 @@ function StationReport() {
 
 function ModuleTile(props: {
   id: HellpadModule;
-  icon: LucideIcon;
+  icon: IconLike;
   text: string;
   meta: string;
   children?: ReactNode;
@@ -217,7 +216,7 @@ function StationsTile() {
   return (
     <ModuleTile
       id="stations"
-      icon={Satellite}
+      icon={DssIcon}
       text="Where the DSS is, its next FTL jump, its tactical actions and the Automaton station it destroyed."
       meta={stations?.length ? `${stations.length} in orbit` : "Open"}
     >

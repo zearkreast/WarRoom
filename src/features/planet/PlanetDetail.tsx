@@ -1,4 +1,4 @@
-import { Compass, MapPin, Mountain, Pin, PinOff, Satellite, Target, Users } from "lucide-react";
+import { Compass, MapPin, Mountain, Pin, PinOff, Target, Users } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useCampaigns, usePlanet } from "../../api/queries";
 import type { Planet } from "../../api/types";
@@ -7,7 +7,7 @@ import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtInt, sestClock, sestDate } from "../../domain/format";
 import { trackedPercent } from "../../domain/progress";
 import { useSettings, useUi } from "../../state";
-import { FactionEmblem } from "../../ui/emblems";
+import { DssIcon, FactionEmblem } from "../../ui/emblems";
 import { FeedTag } from "../../ui/feed";
 import { CtaButton, Loading, Overlay, useNow } from "../../ui/primitives";
 import { buildFront, useMajorOrderPlanets, usePlanetRate, useStationPlanets, type Front } from "../planets/useFronts";
@@ -132,7 +132,7 @@ function Hero({ p, front }: { p: Planet; front: Front | null }) {
           </span>
           {stations.has(p.index) && (
             <button className="chip chip-dss" onClick={() => openModule("stations")}>
-              <Satellite size={13} /> Democracy Space Station
+              <DssIcon size={13} /> Democracy Space Station
             </button>
           )}
           {mo.has(p.index) && (
