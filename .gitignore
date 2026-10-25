@@ -34,3 +34,6 @@ src-tauri/target
 
 # Local editor/agent config
 .claude/
+
+# Local agent instructions, not part of the repo
+CLAUDE.md
