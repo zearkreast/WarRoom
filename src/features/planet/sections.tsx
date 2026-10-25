@@ -48,7 +48,7 @@ import { fmtCompact, fmtDate, fmtDateTime, fmtInt, fmtPct } from "../../domain/f
 import { liberationPercent } from "../../domain/progress";
 import { buildWarHistory, defenseEvents, fmtLongDuration, type LogEntry } from "../../domain/warHistory";
 import { useUi } from "../../state";
-import { FactionEmblem } from "../../ui/emblems";
+import { FactionEmblem, SubfactionEmblem } from "../../ui/emblems";
 import { hazardIcon } from "../../ui/hazardIcons";
 import { Countdown, Empty, Meter, Panel, Tile } from "../../ui/primitives";
 import type { Front } from "../planets/useFronts";
@@ -613,7 +613,11 @@ export function OperationsSection({ p }: { p: Planet }) {
         {effects.map((e) => {
           const Icon = EFFECT_ICON[e.kind];
           const icon =
-            e.kind === "subfaction" && enemy ? <FactionEmblem faction={enemy} size={16} color="currentColor" /> : <Icon size={16} />;
+            e.kind === "subfaction" && enemy ? (
+              <SubfactionEmblem name={e.name} faction={enemy} size={16} color="currentColor" />
+            ) : (
+              <Icon size={16} />
+            );
           const tone = e.kind === "subfaction" && enemy ? factionColor(enemy) : e.kind === "seaf" ? "var(--f-humans)" : undefined;
           return row(`e${e.id}`, icon, e.name, e.description, tone);
         })}
