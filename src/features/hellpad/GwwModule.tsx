@@ -1,6 +1,8 @@
 import {
   ArrowLeft,
+  ArrowRight,
   BookOpen,
+  CalendarDays,
   CloudFog,
   Database,
   History,
@@ -17,70 +19,71 @@ import {
   Shield,
   Target,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { APP_NAME, APP_VERSION } from "../../config";
-import { ADS, COMPANIES, MANUALS, MINISTRIES, TIPS, WIKI, WIKI_LICENCE } from "../../data/gww";
+import { CHAPTERS, MANUALS, TIPS, WIKI, WIKI_LICENCE } from "../../data/gww";
+import { ADS, BRANDS, COMPANIES, GOV, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
 import { FACTIONS, factionColor } from "../../domain/factions";
+import { nextYearly, plainText } from "../../domain/gwwText";
 import { useHistory } from "../../history/useHistory";
-import { useUi } from "../../state";
+import { useUi, type GwwPage } from "../../state";
 import { FactionEmblem } from "../../ui/emblems";
-import { Empty, OutLink, Panel } from "../../ui/primitives";
+import { Empty, OutLink, Panel, useNow } from "../../ui/primitives";
 import type { Faction } from "../../api/types";
 import { iconUrl } from "./gwwArt";
-import { AdBox, CompanyMark, CompanyPage, ManualIcon, ManualPage, MinistryPage, WarLog } from "./GwwPages";
+import { GwwNavProvider, useGwwNav } from "./gwwNav";
+import {
+  AdBox,
+  BrandPage,
+  BrandTile,
+  CompanyPage,
+  CompanyTile,
+  CourseProgress,
+  DirPage,
+  GovPage,
+  ManualPage,
+  ManualTile,
+  MinistryPage,
+  MinistryTile,
+  SiteTile,
+  WarLogPage,
+} from "./GwwPages";
 import "./gww.css";
-
-type Page =
-  | { kind: "home" }
-  | { kind: "log" }
-  | { kind: "manual"; id: string }
-  | { kind: "ministry"; id: string }
-  | { kind: "company"; name: string };
 
 const HOME = "se://gww";
 
-function addressOf(p: Page): string {
-  if (p.kind === "log") return "se://hc/war-log";
+function addressOf(p: GwwPage): string {
   if (p.kind === "manual") return MANUALS.find((m) => m.id === p.id)?.address ?? HOME;
   if (p.kind === "ministry") return MINISTRIES.find((m) => m.id === p.id)?.address ?? HOME;
-  if (p.kind === "company") return COMPANIES.find((c) => c.name === p.name)?.address ?? HOME;
+  if (p.kind === "company") return COMPANIES.find((c) => c.id === p.id)?.address ?? HOME;
+  if (p.kind === "brand") return `se://market/${p.id}`;
+  if (p.kind === "site") return p.id === "gov" ? GOV.address : "se://hc/war-log";
+  if (p.kind === "dir") return { manuals: "se://hc/manuals", gov: "se://gov/directory", corps: "se://corp", market: "se://market" }[p.id];
   return HOME;
 }
 
+const keyOf = (p: GwwPage) => ("id" in p ? `${p.kind}:${p.id}` : p.kind);
+
 const pickOne = <T,>(list: T[]): T => list[Math.floor(Math.random() * list.length)];
 
-function Site(props: {
-  address: string;
-  title: string;
-  text: string;
-  icon: ReactNode;
-  color?: string;
-  wide?: boolean;
-  onClick(): void;
-}) {
-  return (
-    <button
-      className={`gww-site ${props.wide ? "wide" : ""}`}
-      style={props.color ? ({ "--site": props.color } as CSSProperties) : undefined}
-      onClick={props.onClick}
-    >
-      <span className="gww-site-icon">{props.icon}</span>
-      <span className="gww-site-body">
-        <span className="gww-address num">{props.address}</span>
-        <b className="gww-site-title">{props.title}</b>
-        <span className="gww-site-text">{props.text}</span>
-      </span>
-    </button>
-  );
+function logLine(count: number): string {
+  if (count === 1) return "1 planet has changed hands since tracking began.";
+  return count ? `${count} planets have changed hands since tracking began.` : "Every planet that changed hands.";
 }
 
-function Group({ title, count, children }: { title: string; count: number; children: ReactNode }) {
+function Group(props: { title: string; count: number; all?: string; children: ReactNode }) {
+  const { follow } = useGwwNav();
   return (
     <section className="gww-group">
       <h3 className="gww-group-title caps">
-        {title} <span className="num">{count}</span>
+        {props.title} <span className="num">{props.count}</span>
+        {props.all && (
+          <button className="gww-group-all" onClick={(e) => follow(props.all!, e)}>
+            View all <ArrowRight size={12} aria-hidden />
+          </button>
+        )}
       </h3>
-      <div className="gww-sites">{children}</div>
+      <div className="gww-sites">{props.children}</div>
     </section>
   );
 }
@@ -103,64 +106,81 @@ function TipTicker() {
   );
 }
 
-function Home({ go }: { go(p: Page): void }) {
-  const setView = useUi((s) => s.setView);
-  const { changes } = useHistory();
+/** The next Super Earth holiday, counted down by date. */
+function HolidayChip() {
+  const { follow } = useGwwNav();
+  const now = useNow(60 * 60_000);
+  const next = nextYearly(HOLIDAYS, new Date(now));
+  if (!next) return null;
+  const when = next.in === 0 ? "today" : next.in === 1 ? "tomorrow" : `in ${next.in} days`;
+  return (
+    <button className={`gww-holiday caps ${next.in <= 1 ? "soon" : ""}`} onClick={(e) => follow("site:gov", e)}>
+      <CalendarDays size={13} aria-hidden /> {next.name} {when}
+    </button>
+  );
+}
+
+function Home({ logText }: { logText: string }) {
   const [query, setQuery] = useState("");
   const [ads] = useState(() => {
-    const tall = pickOne(ADS.filter((a) => a.shape === "tall"));
     const wide = ADS.filter((a) => a.shape === "wide");
     const first = pickOne(wide);
-    return { tall, wide: first, banner: pickOne(wide.filter((a) => a !== first)) };
+    return { tall: pickOne(ADS.filter((a) => a.shape === "tall")), wide: first, banner: pickOne(wide.filter((a) => a !== first)) };
   });
   const q = query.trim().toLowerCase();
-  const hit = (...text: string[]) => !q || text.some((t) => t.toLowerCase().includes(q));
-  const logText =
-    changes.length === 1
-      ? "1 planet has changed hands since tracking began."
-      : changes.length
-        ? `${changes.length} planets have changed hands since tracking began.`
-        : "Every planet that changed hands.";
+  const hit = (...text: string[]) => !q || text.some((t) => plainText(t).toLowerCase().includes(q));
   const official = [
+    hit(GOV.title, GOV.summary, GOV.address, ...GOV.sections.map((s) => `${s.heading} ${s.text ?? ""}`)) && (
+      <SiteTile
+        key="gov"
+        target="site:gov"
+        address={GOV.address}
+        title={GOV.title}
+        text={GOV.summary}
+        icon={<img src={iconUrl(GOV.icon)} alt="" />}
+        color="var(--f-humans)"
+      />
+    ),
     hit("Galactic war log", logText, "se://hc/war-log") && (
-      <Site
+      <SiteTile
         key="log"
+        target="site:log"
         address="se://hc/war-log"
         title="Galactic war log"
         text={logText}
         icon={<History size={26} strokeWidth={1.5} />}
         color="var(--f-humans)"
-        onClick={() => go({ kind: "log" })}
       />
     ),
     hit("Strohmann News", "Dispatches and campaign news", "se://strohmann.news") && (
-      <Site
+      <SiteTile
         key="news"
+        target="app:news"
         address="se://strohmann.news"
         title="Strohmann News"
-        text="Dispatches and campaign news from Super Earth."
+        text="Dispatches and campaign news, in the tracker's news page."
         icon={<Newspaper size={26} strokeWidth={1.5} />}
         color="#f074d8"
-        onClick={() => setView("news")}
+        out
       />
     ),
-    ...MINISTRIES.filter((m) => hit(m.name, m.text, m.motto, m.address)).map((m) => (
-      <Site
-        key={m.id}
-        address={m.address}
-        title={m.name}
-        text={m.text}
-        icon={<img src={iconUrl(m.icon)} alt="" />}
-        color={m.color}
-        onClick={() => go({ kind: "ministry", id: m.id })}
-      />
+    ...MINISTRIES.filter((m) => hit(m.name, m.summary, m.motto, m.address, ...m.sections.map((s) => s.text ?? ""))).map((m) => (
+      <MinistryTile key={m.id} m={m} />
     )),
   ].filter(Boolean);
   const manuals = MANUALS.filter((m) =>
-    hit(m.title, m.summary, m.address, ...m.sections.map((s) => s.heading + " " + (s.text ?? ""))),
+    hit(
+      m.title,
+      m.summary,
+      m.address,
+      ...m.sections.flatMap((s) => [s.heading, s.text ?? "", ...(s.points ?? []), ...(s.faq ?? []).map((f) => `${f.q} ${f.a}`)]),
+    ),
   );
-  const companies = COMPANIES.filter((c) => hit(c.name, c.trade, c.text, c.slogan ?? "", c.address));
-  const none = official.length + manuals.length + companies.length === 0;
+  const companies = COMPANIES.filter((c) =>
+    hit(c.name, c.trade, c.summary, c.slogan ?? "", c.address, ...c.sections.map((s) => `${s.text ?? ""} ${(s.products ?? []).join(" ")}`)),
+  );
+  const brands = BRANDS.filter((b) => hit(b.name, b.trade, b.text, b.slogan ?? ""));
+  const none = official.length + manuals.length + companies.length + brands.length === 0;
   return (
     <div className="gww-home">
       <header className="gww-mast">
@@ -170,6 +190,7 @@ function Home({ go }: { go(p: Page): void }) {
             Galactic Wide Web
           </h2>
           <p className="caps">The Federation's net · verified by the Ministry of Truth</p>
+          <HolidayChip />
         </div>
         <label className="gww-search">
           <Search size={14} aria-hidden />
@@ -183,50 +204,46 @@ function Home({ go }: { go(p: Page): void }) {
         </label>
       </header>
       <TipTicker />
+      {!q && <CourseProgress compact />}
       <div className="gww-home-grid">
         <div className="gww-dir">
           {none && <Empty>No site on the G.W.W. matches “{query}”.</Empty>}
           {official.length > 0 && (
-            <Group title="Super Earth" count={official.length}>
+            <Group title="Super Earth" count={official.length} all="dir:gov">
               {official}
             </Group>
           )}
           {manuals.length > 0 && (
-            <Group title="Training manuals" count={manuals.length}>
-              {manuals.map((m) => (
-                <Site
-                  key={m.id}
-                  address={m.address}
-                  title={m.title}
-                  text={m.summary}
-                  icon={<ManualIcon m={m} size={30} />}
-                  color="var(--cta)"
-                  onClick={() => go({ kind: "manual", id: m.id })}
-                />
-              ))}
+            <Group title="Training manuals" count={manuals.length} all="dir:manuals">
+              {q
+                ? manuals.map((m) => <ManualTile key={m.id} m={m} />)
+                : CHAPTERS.map((ch, i) => [
+                    <p key={ch.id} className="gww-chapter-label caps">
+                      <span className="num">Chapter {i + 1}</span> {ch.title}
+                    </p>,
+                    ...MANUALS.filter((m) => m.chapter === ch.id).map((m) => <ManualTile key={m.id} m={m} />),
+                  ])}
             </Group>
           )}
           {!q && ads.banner && <AdBox ad={ads.banner} />}
           {companies.length > 0 && (
-            <Group title="Corporations" count={companies.length}>
+            <Group title="Corporations" count={companies.length} all="dir:corps">
               {companies.map((c) => (
-                <button
-                  key={c.name}
-                  className="gww-site corp"
-                  style={{ "--site": c.color } as CSSProperties}
-                  onClick={() => go({ kind: "company", name: c.name })}
-                >
-                  <span className="gww-corp-logo">
-                    <CompanyMark c={c} />
-                  </span>
-                  <span className="gww-site-body">
-                    <span className="gww-address num">{c.address}</span>
-                    <b className="gww-site-title">{c.name}</b>
-                    <span className="gww-site-text">{c.slogan ?? c.trade}</span>
-                  </span>
-                </button>
+                <CompanyTile key={c.id} c={c} />
               ))}
             </Group>
+          )}
+          {brands.length > 0 && (
+            <section className="gww-group">
+              <h3 className="gww-group-title caps">
+                Marketplace <span className="num">{brands.length}</span>
+              </h3>
+              <div className="gww-brands">
+                {brands.map((b) => (
+                  <BrandTile key={b.id} b={b} />
+                ))}
+              </div>
+            </section>
           )}
         </div>
         <aside className="gww-rail" aria-label="Sponsored">
@@ -238,60 +255,91 @@ function Home({ go }: { go(p: Page): void }) {
   );
 }
 
+function View({ page, logText, headingRef }: { page: GwwPage; logText: string; headingRef: (el: HTMLElement | null) => void }) {
+  if (page.kind === "manual") {
+    const m = MANUALS.find((x) => x.id === page.id);
+    if (m) return <ManualPage m={m} headingRef={headingRef} />;
+  }
+  if (page.kind === "ministry") {
+    const m = MINISTRIES.find((x) => x.id === page.id);
+    if (m) return <MinistryPage m={m} headingRef={headingRef} />;
+  }
+  if (page.kind === "company") {
+    const c = COMPANIES.find((x) => x.id === page.id);
+    if (c) return <CompanyPage c={c} headingRef={headingRef} />;
+  }
+  if (page.kind === "brand") {
+    const b = BRANDS.find((x) => x.id === page.id);
+    if (b) return <BrandPage b={b} headingRef={headingRef} />;
+  }
+  if (page.kind === "site") return page.id === "gov" ? <GovPage headingRef={headingRef} /> : <WarLogPage headingRef={headingRef} />;
+  if (page.kind === "dir") return <DirPage id={page.id} headingRef={headingRef} logText={logText} />;
+  return <Home logText={logText} />;
+}
+
 /**
- * The Galactic Wide Web: the Federation's net in a browser frame. Super Earth's own sites and its
- * ministries, training manuals on how the war works, the corporations, and adverts between them.
+ * The Galactic Wide Web: the Federation's net in a browser frame. Its history lives in the UI store, so
+ * leaving for another page of the tracker and coming back picks up where the reader was.
  */
 export function GwwModule() {
-  const [stack, setStack] = useState<Page[]>([{ kind: "home" }]);
-  const page = stack[stack.length - 1];
+  const stack = useUi((s) => s.gww);
+  const setStack = useUi((s) => s.setGww);
+  const { changes } = useHistory();
+  const page = stack[stack.length - 1] ?? { kind: "home" };
   const root = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLElement | null>(null);
   const shown = useRef(stack);
+  // Where each page in the history was scrolled to, so going back returns there.
+  const scrolls = useRef<number[]>([]);
+  const scroller = () => root.current?.closest<HTMLElement>(".scroll") ?? null;
   const setHeading = useCallback((el: HTMLElement | null) => {
     heading.current = el;
   }, []);
-  const go = (p: Page) => setStack((s) => [...s, p]);
-  const back = () => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
-  const home = () => setStack((s) => (s.length > 1 ? [...s, { kind: "home" }] : s));
-  // On each navigation, not on opening: bring the page into view and move focus to its heading.
+  const go = useCallback(
+    (p: GwwPage) => {
+      const now = useUi.getState().gww;
+      scrolls.current[now.length - 1] = scroller()?.scrollTop ?? 0;
+      setStack([...now, p].slice(-50));
+    },
+    [setStack],
+  );
+  const back = () => stack.length > 1 && setStack(stack.slice(0, -1));
+  const home = () => page.kind !== "home" && go({ kind: "home" });
+  // On each navigation, not on opening: going back restores the old scroll, going on shows the new page's top.
   useEffect(() => {
-    if (shown.current === stack) return;
+    const before = shown.current;
+    if (before === stack) return;
     shown.current = stack;
-    root.current?.scrollIntoView({ block: "start" });
+    const box = scroller();
+    if (stack.length < before.length && box) box.scrollTop = scrolls.current[stack.length - 1] ?? 0;
+    else root.current?.scrollIntoView({ block: "start" });
     (heading.current ?? root.current?.querySelector<HTMLElement>(".gww-mast-title"))?.focus({ preventScroll: true });
   }, [stack]);
-  const manual = page.kind === "manual" ? MANUALS.find((m) => m.id === page.id) : undefined;
-  const ministry = page.kind === "ministry" ? MINISTRIES.find((m) => m.id === page.id) : undefined;
-  const company = page.kind === "company" ? COMPANIES.find((c) => c.name === page.name) : undefined;
+  const logText = logLine(changes.length);
   return (
-    <div className="gww" ref={root}>
-      <div className="gww-bar">
-        <button className="gww-nav" aria-label="Back" title="Back" disabled={stack.length < 2} onClick={back}>
-          <ArrowLeft size={16} />
-        </button>
-        <button className="gww-nav" aria-label="G.W.W. home" title="Home" disabled={page.kind === "home"} onClick={home}>
-          <House size={16} />
-        </button>
-        <div className="gww-url num" aria-label="Address">
-          <Lock size={12} aria-hidden />
-          <span>{addressOf(page)}</span>
+    <GwwNavProvider go={go}>
+      <div className="gww" ref={root}>
+        <div className="gww-bar">
+          <button className="gww-nav" aria-label="Back" title="Back" disabled={stack.length < 2} onClick={back}>
+            <ArrowLeft size={16} />
+          </button>
+          <button className="gww-nav" aria-label="G.W.W. home" title="Home" disabled={page.kind === "home"} onClick={home}>
+            <House size={16} />
+          </button>
+          <div className="gww-url num" aria-label="Address">
+            <Lock size={12} aria-hidden />
+            <span>{addressOf(page)}</span>
+          </div>
+          <span className="gww-brand-tag caps" aria-hidden>
+            G.W.W.
+          </span>
         </div>
-        <span className="gww-brand-tag caps" aria-hidden>
-          G.W.W.
-        </span>
+        <div className="gww-load" key={stack.length} aria-hidden />
+        <div className="gww-view" key={`${stack.length}-${keyOf(page)}`}>
+          <View page={page} logText={logText} headingRef={setHeading} />
+        </div>
       </div>
-      <div className="gww-load" key={stack.length} aria-hidden />
-      <div className="gww-view">
-        {page.kind === "home" && <Home go={go} />}
-        {page.kind === "log" && <WarLog headingRef={setHeading} />}
-        {manual && <ManualPage m={manual} headingRef={setHeading} open={(id) => go({ kind: "manual", id })} />}
-        {ministry && (
-          <MinistryPage m={ministry} headingRef={setHeading} openCompany={(name) => go({ kind: "company", name })} />
-        )}
-        {company && <CompanyPage c={company} headingRef={setHeading} />}
-      </div>
-    </div>
+    </GwwNavProvider>
   );
 }
 
@@ -328,17 +376,20 @@ export function AboutModule() {
         <h3>Credits</h3>
         <p>
           The G.W.W.'s training manuals are adapted from the <OutLink href={WIKI.home.url}>{WIKI.home.title}</OutLink>,
-          chiefly <OutLink href={WIKI.mechanics.url}>{WIKI.mechanics.title}</OutLink>; its ministry and corporation pages
-          draw on the wiki's <OutLink href={WIKI.ministries.url}>{WIKI.ministries.title}</OutLink> and{" "}
-          <OutLink href={WIKI.corporations.url}>{WIKI.corporations.title}</OutLink> pages. The wiki's text is shared under{" "}
-          <OutLink href={WIKI_LICENCE.url}>{WIKI_LICENCE.title}</OutLink>, and so are the manuals adapted from it. Training
-          manual tips and slogans are quoted from the game, as collected on the wiki's{" "}
-          <OutLink href={WIKI.tips.url}>{WIKI.tips.title}</OutLink> page.
+          chiefly <OutLink href={WIKI.mechanics.url}>{WIKI.mechanics.title}</OutLink>. Its government, ministry,
+          corporation and marketplace sites draw on the wiki's{" "}
+          <OutLink href={WIKI.government.url}>{WIKI.government.title}</OutLink>, ministry,{" "}
+          <OutLink href={WIKI.corporations.url}>{WIKI.corporations.title}</OutLink> and{" "}
+          <OutLink href={WIKI.minorCorporations.url}>{WIKI.minorCorporations.title}</OutLink> pages; each page names its
+          own sources at its foot. The wiki's text is shared under{" "}
+          <OutLink href={WIKI_LICENCE.url}>{WIKI_LICENCE.title}</OutLink>, and so are the pages adapted from it. Training
+          manual tips, slogans, poster and broadcast lines are quoted from the game, as collected on the wiki, its{" "}
+          <OutLink href={WIKI.tips.url}>{WIKI.tips.title}</OutLink> page among them.
         </p>
         <p>
-          The ministry, campaign and difficulty icons (vector tracings by the wiki's contributors), corporation logos and
-          city adverts are the game's, taken from the Helldivers Wiki, and belong to Arrowhead Game Studios and Sony
-          Interactive Entertainment.
+          The ministry, campaign and difficulty icons (vector tracings by the wiki's contributors), corporation logos,
+          product pictures and city adverts are the game's, taken from the Helldivers Wiki, and belong to Arrowhead Game
+          Studios and Sony Interactive Entertainment.
         </p>
       </div>
     </Panel>
