@@ -1799,6 +1799,17 @@
   text-decoration-color: color-mix(in srgb, var(--info) 45%, transparent);
   text-underline-offset: 2px;
 }
+.about-sources {
+  margin: var(--s-4) 0;
+  padding: 0;
+  list-style: none;
+  columns: 2 16ch;
+  column-gap: var(--s-6);
+  font-size: var(--fs-body-s);
+}
+.about-sources li {
+  break-inside: avoid;
+}
 .legend-page {
   display: flex;
   flex-direction: column;

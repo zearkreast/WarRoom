@@ -89,7 +89,7 @@ function LiveBasics() {
   const war = useWar().data;
   const { fronts, loading } = useFronts();
   const orders = useAssignments().data;
-  if (!war || loading) return <Live title="The war today"><Waiting what="Waiting for the collector…" /></Live>;
+  if (!war || loading) return <Live title="The war today"><Waiting what="Awaiting telemetry…" /></Live>;
   const defenses = fronts.filter((f) => f.kind === "defense").length;
   const order = orders?.[0];
   return (
@@ -123,7 +123,7 @@ function LiveSupplyLines() {
   return (
     <Live title="Attacks along the lines" actions={["app:map"]}>
       {!attacks ? (
-        <Waiting what="Waiting for the collector…" />
+        <Waiting what="Awaiting telemetry…" />
       ) : attacks.length === 0 ? (
         <Waiting what="No planet is attacking another right now." />
       ) : (
@@ -143,7 +143,7 @@ function LiveSupplyLines() {
 
 function LiveCampaignTypes() {
   const { fronts, loading } = useFronts();
-  if (loading) return <Live title="Campaigns now"><Waiting what="Waiting for the collector…" /></Live>;
+  if (loading) return <Live title="Campaigns now"><Waiting what="Awaiting telemetry…" /></Live>;
   const defenses = fronts.filter((f) => f.kind === "defense");
   return (
     <Live title="Campaigns now" actions={["app:campaigns"]}>
@@ -165,7 +165,7 @@ function LiveLiberation() {
   return (
     <Live title="Busiest liberations" actions={["app:campaigns"]}>
       {loading ? (
-        <Waiting what="Waiting for the collector…" />
+        <Waiting what="Awaiting telemetry…" />
       ) : top.length === 0 ? (
         <Waiting what="No liberation campaign is open right now." />
       ) : (
@@ -201,7 +201,7 @@ function LiveResistance() {
   return (
     <Live title="Resistance now" actions={["app:campaigns"]}>
       {loading ? (
-        <Waiting what="Waiting for the collector…" />
+        <Waiting what="Awaiting telemetry…" />
       ) : liberations.length === 0 ? (
         <Waiting what="No liberation campaign is open right now." />
       ) : (
@@ -239,7 +239,7 @@ function LiveRegions() {
   return (
     <Live title="Cities in the fight" actions={["app:campaigns"]}>
       {loading ? (
-        <Waiting what="Waiting for the collector…" />
+        <Waiting what="Awaiting telemetry…" />
       ) : regions.length === 0 ? (
         <Waiting what="No city is being fought over right now." />
       ) : (
@@ -267,7 +267,7 @@ function LiveDefense() {
   return (
     <Live title="Defenses and their gambits" actions={["app:campaigns", "app:map"]}>
       {loading ? (
-        <Waiting what="Waiting for the collector…" />
+        <Waiting what="Awaiting telemetry…" />
       ) : defenses.length === 0 ? (
         <Waiting what="No Super Earth planet is under attack right now." />
       ) : (
@@ -315,7 +315,7 @@ function LiveImpact() {
   return (
     <Live title="The modifier now" actions={["app:overview"]}>
       {!war ? (
-        <Waiting what="Waiting for the collector…" />
+        <Waiting what="Awaiting telemetry…" />
       ) : (
         <div className="gww-live-stats">
           <Stat label="Impact modifier" value={war.impactMultiplier.toFixed(4)} tone="var(--impact)" />
@@ -337,7 +337,7 @@ function LiveDss() {
   return (
     <Live title="The station now" actions={["app:stations"]}>
       {!stations ? (
-        <Waiting what="Waiting for the collector…" />
+        <Waiting what="Awaiting telemetry…" />
       ) : !station ? (
         <Waiting what="The Democracy Space Station is out of service." />
       ) : (
@@ -361,9 +361,9 @@ function LiveCampaigns() {
   const running = episodes?.find((e) => e.status === "active");
   const order = orders?.[0];
   return (
-    <Live title="The story now" actions={["app:overview", "app:past"]}>
+    <Live title="The campaign now" actions={["app:overview", "app:past"]}>
       {!episodes && !orders ? (
-        <Waiting what="Waiting for the collector…" />
+        <Waiting what="Awaiting telemetry…" />
       ) : (
         <div className="gww-live-stats">
           <Stat label="Galactic Campaign" value={running?.title ?? "Between campaigns"} tone={running ? factionColor(running.faction) : undefined} />
@@ -386,7 +386,7 @@ function LiveGloom() {
   return (
     <Live title="The Gloom now" actions={["app:map"]}>
       {!effects ? (
-        <Waiting what="Waiting for the collector…" />
+        <Waiting what="Awaiting telemetry…" />
       ) : (
         <>
           <div className="gww-live-stats">

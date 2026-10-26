@@ -67,6 +67,31 @@ describe("galactic wide web", () => {
     for (const list of [MANUALS, MINISTRIES, COMPANIES, HOLIDAYS]) expect(new Set(list.map((x) => x.id)).size).toBe(list.length);
   });
 
+  it("stays in-universe", () => {
+    const shown = [
+      ...allText(),
+      ...CHAPTERS.flatMap((c) => [c.title, c.summary]),
+      ...MANUALS.flatMap((m) => [m.title, m.summary, ...m.sections.map((s) => s.heading), ...(m.quotes ?? [])]),
+      ...MINISTRIES.flatMap((m) => [m.summary, ...m.sections.map((s) => s.heading), ...(m.ties ?? []).map((t) => t.how)]),
+      ...COMPANIES.flatMap((c) => [
+        c.trade,
+        c.summary,
+        c.broadcast ?? "",
+        ...c.sections.flatMap((s) => [s.heading, ...(s.products ?? [])]),
+        ...(c.ties ?? []).map((t) => t.how),
+      ]),
+      ...HOLIDAYS.flatMap((h) => [h.summary, h.when, ...h.quotes.flatMap((q) => [q.from, q.text]), ...h.sections.map((s) => s.heading)]),
+      GOV.summary,
+      CITIZENS.summary,
+      ...CITIZENS.broadcasts,
+      HOLIDAYS_SITE.summary,
+      ...ADS.map((a) => a.alt),
+    ];
+    const outOfUniverse =
+      /\b(arrowhead|players?|playerbase|crossovers?|concept art|game master|halo|killzone|starship troopers|memes?|canon|community|tracker|companion app|wiki|developers?|patch)\b|\bthe game\b|\bgame's\b|\b20\d\d\b/i;
+    expect(shown.filter((t) => outOfUniverse.test(t))).toEqual([]);
+  });
+
   it("links only to pages, tracker views and planets that exist", () => {
     const planets = new Set((planetsJson as { name: string }[]).map((p) => p.name.toLowerCase()));
     const broken = targets().filter((t) => {
