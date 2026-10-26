@@ -102,6 +102,8 @@ interface SettingsState {
   twSpin: boolean;
   /** How many dispatches the map's Dispatches box lists, or "72h" for all from the last 72 hours. */
   mapDispatches: MapDispatches;
+  /** Desktop: closing the window hides it to the tray, so alerts keep coming. */
+  closeToTray: boolean;
   pinned: number[];
   /** Views whose first-run hint has been dismissed. */
   hintsSeen: string[];
@@ -125,7 +127,8 @@ interface SettingsState {
       | "planetsControlOpen"
       | "moStripOpen"
       | "twSpin"
-      | "mapDispatches",
+      | "mapDispatches"
+      | "closeToTray",
   >(
     k: K,
     v: SettingsState[K],
@@ -154,6 +157,7 @@ export const useSettings = create<SettingsState>()(
       moStripOpen: false,
       twSpin: typeof window === "undefined" || !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
       mapDispatches: "5",
+      closeToTray: true,
       pinned: [],
       hintsSeen: [],
       seenAssignments: [],
