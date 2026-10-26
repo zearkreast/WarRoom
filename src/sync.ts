@@ -1,8 +1,10 @@
+import { isTauri } from "@tauri-apps/api/core";
 import { useEffect, useRef } from "react";
-import { useAssignments, useCampaigns, useDispatches } from "./api/queries";
+import { useAssignments, useCampaigns, useDispatches, useEpisodes } from "./api/queries";
 import type { Planet } from "./api/types";
-import { notify } from "./alerts/notify";
+import { notify, requestNotifications } from "./alerts/notify";
 import { POLL_MS } from "./config";
+import { campaignAlerts, campaignHeadline } from "./domain/campaignNews";
 import { factionLabel } from "./domain/factions";
 import { dispatchTitle } from "./domain/format";
 import { detectNewDefenses } from "./domain/history";
@@ -16,8 +18,14 @@ export function useDataSync() {
   const campaigns = useCampaigns();
   const assignments = useAssignments();
   const dispatches = useDispatches();
+  const episodes = useEpisodes();
   const refresh = useHistory((s) => s.refresh);
   const lastDefenseSnapshot = useRef<Planet[] | undefined>(undefined);
+
+  // Not on the web, where browsers block or bury a permission prompt nobody clicked for.
+  useEffect(() => {
+    if (isTauri() && useSettings.getState().alerts.system) requestNotifications();
+  }, []);
 
   // Captures and losses, from the collector's ownership log.
   useEffect(() => {
@@ -83,4 +91,24 @@ export function useDataSync() {
       Math.max(s.seenDispatch, latestDispatch),
     );
   }, [assignments.data, dispatches.data]);
+
+  // Galactic Campaign launches and outcomes, as Strohmann News tells them.
+  useEffect(() => {
+    if (!episodes.data) return;
+    const s = useSettings.getState();
+    const { fresh, keys } = campaignAlerts(episodes.data, s.seenCampaignEvents);
+    if (s.alerts.orders) {
+      for (const ev of fresh) {
+        const launched = ev.type === "launched";
+        notify(
+          "order",
+          launched ? "New Galactic Campaign" : "Galactic Campaign over",
+          campaignHeadline(ev),
+          s.alerts.system,
+          launched ? ev.campaign.description : undefined,
+        );
+      }
+    }
+    s.markCampaignSeen(keys);
+  }, [episodes.data]);
 }
