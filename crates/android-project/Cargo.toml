@@ -1,0 +1,9 @@
+[package]
+name = "android-project"
+version.workspace = true
+description = "Adds what WarCommand Tracker needs to the Android project that `tauri android init` generates"
+edition = "2024"
+publish = false
+
+[dependencies]
+serde_json = "1"

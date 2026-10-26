@@ -17,7 +17,7 @@ on:
     branches-ignore: [main]
     paths:
       - "src-tauri/**"
-      - "crates/firebase-values/**"
+      - "crates/android-project/**"
       - ".github/workflows/android.yml"
 
 permissions:
@@ -74,12 +74,13 @@ jobs:
           tool: tauri-cli@2.12.4
 
       # The Android project isn't kept in the repo; it is generated fresh, then given the app's icons,
-      # its own MainActivity and Firebase Messaging.
+      # its own MainActivity, the manifest entries for in-app updates and Firebase Messaging.
       - name: Generate the Android project
         run: |
           cargo tauri android init --ci
           cp -r src-tauri/icons/android/. src-tauri/android/res/. src-tauri/gen/android/app/src/main/res/
           cp src-tauri/android/MainActivity.kt.template "$(find src-tauri/gen/android/app/src/main -name MainActivity.kt)"
+          cargo run -q -p android-project -- manifest src-tauri/gen/android/app/src/main/AndroidManifest.xml
           echo 'dependencies { implementation("com.google.firebase:firebase-messaging:24.1.0") }' \
             >> src-tauri/gen/android/app/build.gradle.kts
 
@@ -93,7 +94,7 @@ jobs:
             exit 0
           fi
           printf '%s' "$GOOGLE_SERVICES_JSON" > "$RUNNER_TEMP/google-services.json"
-          cargo run -q -p firebase-values -- "$RUNNER_TEMP/google-services.json" \
+          cargo run -q -p android-project -- firebase-values "$RUNNER_TEMP/google-services.json" \
             > src-tauri/gen/android/app/src/main/res/values/firebase.xml
           # The page then leaves OS notifications for news to the pushes, so none arrives twice.
           echo "WARROOM_NEWS_PUSH=1" >> "$GITHUB_ENV"

@@ -18,6 +18,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "android-project"
+version = "0.3.2-beta"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
 name = "any_spawner"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -411,13 +418,6 @@ name = "find-msvc-tools"
 version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48"
-
-[[package]]
-name = "firebase-values"
-version = "0.3.1-beta"
-dependencies = [
- "serde_json",
-]
 
 [[package]]
 name = "flate2"
@@ -2030,7 +2030,7 @@ dependencies = [
 
 [[package]]
 name = "warroom"
-version = "0.3.1-beta"
+version = "0.3.2-beta"
 dependencies = [
  "any_spawner",
  "console_error_panic_hook",
@@ -2049,7 +2049,7 @@ dependencies = [
 
 [[package]]
 name = "warroom-collector"
-version = "0.3.1-beta"
+version = "0.3.2-beta"
 dependencies = [
  "base64 0.22.1",
  "ring",
@@ -2063,7 +2063,7 @@ dependencies = [
 
 [[package]]
 name = "warroom-core"
-version = "0.3.1-beta"
+version = "0.3.2-beta"
 dependencies = [
  "regex-lite",
  "robust",

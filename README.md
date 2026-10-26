@@ -51,8 +51,9 @@ Add `?fixtures` to the browser URL (`http://localhost:1420/?fixtures`) to use th
 Android: `cargo tauri android init`, then `cargo tauri android dev`. This needs Android Studio and the SDK.
 The Android project (`src-tauri/gen/`) isn't kept in the repo; CI generates it for each build. After `init`,
 do what the "Generate the Android project" step of `android.yml` does: copy in the icons, `src-tauri/android/res`
-and `MainActivity.kt.template` (over the generated `MainActivity.kt`), and add Firebase Messaging to
-`app/build.gradle.kts`.
+and `MainActivity.kt.template` (over the generated `MainActivity.kt`), run
+`cargo run -q -p android-project -- manifest` on `app/src/main/AndroidManifest.xml`, and add Firebase Messaging
+to `app/build.gradle.kts`.
 
 ## Pushed news on Android
 
@@ -119,16 +120,18 @@ cargo run --profile collector -p warroom-collector -- --once   # every job once,
   `.css` file beside it; `index.html` loads them in order.
 - `src/layout/`: the shell: top bar, status strip with the news ticker, the dock, the About and legend
   dialogs, Tracker Dispatch, and the briefing popup alerts open into.
-- `src/update/`: looks for a newer release and installs it (the Tauri updater on desktop, the release's APK
-  on Android).
+- `src/update/`: looks for a newer release and installs it (the Tauri updater on desktop; on Android the
+  release's APK, downloaded in the app and handed to Android's installer).
 - `vendor/tachys/`: Leptos's renderer with a fix for static SVG it otherwise wraps in a stray `<g>`; drop it on
   the move to Leptos 0.9.
 - `src-tauri/app-icon.svg`: the source of every app icon; regenerate them with
   `cargo tauri icon src-tauri/app-icon.svg`.
 - `src-tauri/android/`: what the generated Android project gets added: a `MainActivity.kt.template` that keeps
-  the page between the status and navigation bars and subscribes to pushed news, and the notification icon.
-- `crates/firebase-values/`: turns `google-services.json` into the resources Firebase starts from, for the
-  Android build.
+  the page between the status and navigation bars, subscribes to pushed news and downloads and installs update
+  APKs, and the notification icon.
+- `crates/android-project/`: adds to the generated Android project the manifest entries the in-app update
+  needs (the install permission and file provider), and turns `google-services.json` into the resources
+  Firebase starts from.
 - `.github/workflows/`: `release.yml` (installers, APK and update manifest), `android.yml` (the APK, also built
-  on pushes that touch `src-tauri/` or `crates/firebase-values/`) and `pages.yml` (tests, then the web version
+  on pushes that touch `src-tauri/` or `crates/android-project/`) and `pages.yml` (tests, then the web version
   on GitHub Pages).

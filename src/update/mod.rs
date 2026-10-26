@@ -25,6 +25,8 @@ pub enum UpdatePhase {
     Current,
     Available { version: String, notes: String },
     Downloading { version: String, progress: Option<f64> },
+    // Android: the APK is saved and Android's installer has been opened on it.
+    Downloaded { version: String },
     Installing { version: String },
     HandedOff { version: String },
     Error { version: Option<String>, message: String },
@@ -51,10 +53,50 @@ thread_local! {
     /// The updater's Update object from the last check.
     static PENDING: RefCell<Option<JsValue>> = const { RefCell::new(None) };
     static APK_URL: RefCell<Option<String>> = const { RefCell::new(None) };
+    /// `window.__warroomApk`, kept alive here until the next download replaces it.
+    static APK_EVENTS: RefCell<Option<Closure<dyn Fn(JsValue)>>> = const { RefCell::new(None) };
 }
 
 fn set(phase: UpdatePhase) {
     update().state.set(phase);
+}
+
+/// ApkUpdate in src-tauri/android/MainActivity.kt.template; APKs from before it have none.
+fn apk_bridge() -> Option<JsValue> {
+    Some(get(&js::window(), "WarRoomApk")).filter(|b| !b.is_undefined() && !b.is_null())
+}
+
+/// An event the bridge sends back to `window.__warroomApk`.
+#[derive(Debug, PartialEq)]
+enum ApkEvent {
+    // `total` is -1 when the server didn't say how big the APK is.
+    Progress { received: f64, total: f64 },
+    Done,
+    Error(String),
+}
+
+impl ApkEvent {
+    fn read(e: &JsValue) -> Self {
+        match get(e, "type").as_string().as_deref() {
+            Some("progress") => Self::Progress {
+                received: get(e, "received").as_f64().unwrap_or(0.0),
+                total: get(e, "total").as_f64().unwrap_or(0.0),
+            },
+            Some("done") => Self::Done,
+            _ => Self::Error(get(e, "message").as_string().unwrap_or_default()),
+        }
+    }
+}
+
+fn apk_phase(version: &str, event: ApkEvent) -> UpdatePhase {
+    let version = version.to_string();
+    match event {
+        ApkEvent::Progress { received, total } => {
+            UpdatePhase::Downloading { version, progress: (total > 0.0).then(|| received / total) }
+        }
+        ApkEvent::Done => UpdatePhase::Downloaded { version },
+        ApkEvent::Error(message) => UpdatePhase::Error { version: Some(version), message },
+    }
 }
 
 async fn check_android() -> Result<UpdatePhase, String> {
@@ -118,9 +160,20 @@ pub fn install_update() {
     spawn_local(async move {
         if is_android() {
             let Some(url) = APK_URL.with_borrow(|u| u.clone()) else { return };
-            match tauri::open_url(&url).await {
-                Ok(()) => set(UpdatePhase::HandedOff { version }),
-                Err(e) => set(UpdatePhase::Error { version: Some(version), message: error_text(&e) }),
+            let Some(bridge) = apk_bridge() else {
+                match tauri::open_url(&url).await {
+                    Ok(()) => set(UpdatePhase::HandedOff { version }),
+                    Err(e) => set(UpdatePhase::Error { version: Some(version), message: error_text(&e) }),
+                }
+                return;
+            };
+            let v = version.clone();
+            let on_event = Closure::<dyn Fn(JsValue)>::new(move |e: JsValue| set(apk_phase(&v, ApkEvent::read(&e))));
+            let _ = js_sys::Reflect::set(&js::window(), &"__warroomApk".into(), on_event.as_ref());
+            APK_EVENTS.with_borrow_mut(|c| *c = Some(on_event));
+            set(UpdatePhase::Downloading { version: version.clone(), progress: None });
+            if let Err(e) = js::call(&bridge, "download", &[url.into()]) {
+                set(UpdatePhase::Error { version: Some(version), message: error_text(&e) });
             }
             return;
         }
@@ -156,6 +209,13 @@ pub fn install_update() {
     });
 }
 
+/// Android: opens the installer again on the downloaded APK, if it was closed without installing.
+pub fn open_installer() {
+    if let Some(bridge) = apk_bridge() {
+        let _ = js::call(&bridge, "install", &[]);
+    }
+}
+
 /// Checks shortly after start-up, then every few hours while the app stays open.
 pub fn start_update_checks() {
     if !is_tauri() {
@@ -171,4 +231,24 @@ pub fn start_update_checks() {
         std::time::Duration::from_millis(RECHECK_MS as u64),
     );
     let _keep = SendWrapper::new(again);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn follows_the_apk_download_to_the_installer() {
+        let progress = |received, total| apk_phase("99.0.0", ApkEvent::Progress { received, total });
+        assert_eq!(progress(25.0, 100.0), UpdatePhase::Downloading { version: "99.0.0".into(), progress: Some(0.25) });
+        assert_eq!(progress(25.0, -1.0), UpdatePhase::Downloading { version: "99.0.0".into(), progress: None });
+        assert_eq!(apk_phase("99.0.0", ApkEvent::Done), UpdatePhase::Downloaded { version: "99.0.0".into() });
+        assert_eq!(
+            apk_phase("99.0.0", ApkEvent::Error("The download is gone; download it again.".into())),
+            UpdatePhase::Error {
+                version: Some("99.0.0".into()),
+                message: "The download is gone; download it again.".into()
+            }
+        );
+    }
 }

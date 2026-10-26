@@ -38,6 +38,7 @@ fn update_text(p: &UpdatePhase) -> &'static str {
         UpdatePhase::Current => "You have the latest release.",
         UpdatePhase::Available { .. } => "A new release is ready: see the card at the top right.",
         UpdatePhase::Downloading { .. } => "Downloading the new release…",
+        UpdatePhase::Downloaded { .. } => "",
         UpdatePhase::Installing { .. } => "Installing; the app restarts when it is done.",
         UpdatePhase::HandedOff { .. } => "The APK is downloading; open it from your notifications to install.",
         UpdatePhase::Error { .. } => "The last check failed.",

@@ -2,7 +2,7 @@ use crate::config::APP_VERSION;
 use crate::tauri::is_android;
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{CtaButton, Meter, MeterSize};
-use crate::update::{UpdatePhase, check_for_update, install_update, update};
+use crate::update::{UpdatePhase, check_for_update, install_update, open_installer, update};
 use leptos::prelude::*;
 use regex_lite::Regex;
 use std::sync::LazyLock;
@@ -33,6 +33,7 @@ pub fn UpdateCard() -> impl IntoView {
         let version = match &state {
             UpdatePhase::Available { version, .. }
             | UpdatePhase::Downloading { version, .. }
+            | UpdatePhase::Downloaded { version }
             | UpdatePhase::Installing { version }
             | UpdatePhase::HandedOff { version } => Some(version.clone()),
             UpdatePhase::Error { version, .. } => version.clone(),
@@ -59,6 +60,17 @@ pub fn UpdateCard() -> impl IntoView {
                             Some(p) => format!("Downloading {}%", (p * 100.0).round()),
                         }}
                     </span>
+                </div>
+            }
+            .into_any(),
+            UpdatePhase::Downloaded { .. } => view! {
+                <p class="uc-notes">
+                    "Downloaded. Tap Install in Android's installer; the first time, Android asks you to allow installs from WarCommand."
+                </p>
+                <div class="uc-actions">
+                    <CtaButton icon=icons::PACKAGE_CHECK on_click=Callback::new(|_| open_installer())>
+                        "Install"
+                    </CtaButton>
                 </div>
             }
             .into_any(),
@@ -97,7 +109,9 @@ pub fn UpdateCard() -> impl IntoView {
                     <div class="uc-title">
                         <b class="caps">{if error { "Update failed" } else { "Update available" }}</b>
                         <span class="num caps">
-                            {format!("{}you have v{APP_VERSION}", version.map(|v| format!("v{v} · ")).unwrap_or_default())}
+                            {version.map(|v| format!("v{v} · "))}
+                            "you have v"
+                            {APP_VERSION}
                         </span>
                     </div>
                     {(!busy).then(|| view! {

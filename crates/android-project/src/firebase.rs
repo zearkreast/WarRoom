@@ -1,29 +1,13 @@
-//! Turns google-services.json into the string resources Firebase starts from, as the google-services Gradle
-//! plugin would, so the project `tauri android init` regenerates needs no extra plugin.
-//!
-//!   cargo run -q -p firebase-values -- google-services.json \
-//!     > src-tauri/gen/android/app/src/main/res/values/firebase.xml
+//! `values/firebase.xml` from google-services.json: the string resources Firebase starts from, as the
+//! google-services Gradle plugin would write them, so the project `tauri android init` regenerates needs no
+//! extra plugin.
 
 use serde_json::Value;
-use std::process::ExitCode;
 
 const TAURI_CONF: &str = include_str!("../../../src-tauri/tauri.conf.json");
 
-fn main() -> ExitCode {
-    let Some(path) = std::env::args().nth(1) else {
-        eprintln!("usage: firebase-values <google-services.json>");
-        return ExitCode::FAILURE;
-    };
-    match identifier().and_then(|id| resources(&read(&path)?, &id)) {
-        Ok(xml) => {
-            println!("{xml}");
-            ExitCode::SUCCESS
-        }
-        Err(e) => {
-            eprintln!("firebase-values: {e}");
-            ExitCode::FAILURE
-        }
-    }
+pub fn run(path: &str) -> Result<String, String> {
+    identifier().and_then(|id| resources(&read(path)?, &id))
 }
 
 /// The app's Android package.

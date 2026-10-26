@@ -236,6 +236,10 @@ pub const ORBIT: IconData = IconData {
     class: "lucide lucide-orbit",
     body: r#"<path d="M20.341 6.484A10 10 0 0 1 10.266 21.85"></path><path d="M3.659 17.516A10 10 0 0 1 13.74 2.152"></path><circle cx="12" cy="12" r="3"></circle><circle cx="19" cy="5" r="2"></circle><circle cx="5" cy="19" r="2"></circle>"#,
 };
+pub const PACKAGE_CHECK: IconData = IconData {
+    class: "lucide lucide-package-check",
+    body: r#"<path d="M12 22V12"></path><path d="m16 17 2 2 4-4"></path><path d="M21 11.127V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l1.32-.753"></path><path d="M3.29 7 12 12l8.71-5"></path><path d="m7.5 4.27 8.997 5.148"></path>"#,
+};
 pub const PAUSE: IconData = IconData {
     class: "lucide lucide-pause",
     body: r#"<rect x="14" y="3" width="5" height="18" rx="1"></rect><rect x="5" y="3" width="5" height="18" rx="1"></rect>"#,

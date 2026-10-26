@@ -1,9 +1,0 @@
-[package]
-name = "firebase-values"
-version.workspace = true
-description = "Turns Firebase's google-services.json into the string resources the Android app starts Firebase from"
-edition = "2024"
-publish = false
-
-[dependencies]
-serde_json = "1"

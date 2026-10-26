@@ -3,18 +3,31 @@
 // The package must match `identifier` in tauri.conf.json.
 package com.warcommand.tracker
 
+import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.View
+import android.webkit.JavascriptInterface
+import android.webkit.WebView
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
+import java.io.File
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
+import org.json.JSONObject
 
 class MainActivity : TauriActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +59,11 @@ class MainActivity : TauriActivity() {
     }
   }
 
+  // Called before the page loads, so window.WarRoomApk is there from the start.
+  override fun onWebViewCreate(webView: WebView) {
+    webView.addJavascriptInterface(ApkUpdate(this, webView), "WarRoomApk")
+  }
+
   private companion object {
     /** --surface-0 in src/ui/theme.css, the top bar's and dock's colour. */
     val BAR_COLOR = Color.parseColor("#0b0f16")
@@ -55,3 +73,83 @@ class MainActivity : TauriActivity() {
     const val NEWS_CHANNEL = "news"
   }
 }
+
+/**
+ * Downloads a release APK into the app's cache, then opens Android's installer on it. Progress, completion
+ * and errors go back to the page through window.__warroomApk (src/update/mod.rs).
+ */
+class ApkUpdate(private val activity: Activity, private val webView: WebView) {
+  private val busy = AtomicBoolean(false)
+  private val apk = File(File(activity.cacheDir, "updates"), "update.apk")
+
+  @JavascriptInterface
+  fun download(url: String) {
+    if (!busy.compareAndSet(false, true)) return
+    thread {
+      try {
+        apk.parentFile?.mkdirs()
+        val part = File(apk.path + ".part")
+        // GitHub answers release downloads with a redirect to its file host, which this follows.
+        val conn = URL(url).openConnection() as HttpURLConnection
+        conn.connectTimeout = 15_000
+        conn.readTimeout = 30_000
+        conn.setRequestProperty("User-Agent", "WarCommandTracker")
+        if (conn.responseCode !in 200..299) throw IOException("The download server answered ${conn.responseCode}")
+        val total = conn.contentLengthLong
+        var received = 0L
+        var sentAt = 0L
+        conn.inputStream.use { input ->
+          part.outputStream().use { output ->
+            val buffer = ByteArray(64 * 1024)
+            while (true) {
+              val n = input.read(buffer)
+              if (n < 0) break
+              output.write(buffer, 0, n)
+              received += n
+              val now = SystemClock.uptimeMillis()
+              if (now - sentAt > PROGRESS_MS) {
+                sentAt = now
+                send(JSONObject().put("type", "progress").put("received", received).put("total", total))
+              }
+            }
+          }
+        }
+        apk.delete()
+        if (!part.renameTo(apk)) throw IOException("Couldn't save the download")
+        send(JSONObject().put("type", "done"))
+        install()
+      } catch (e: Exception) {
+        send(JSONObject().put("type", "error").put("message", e.message ?: e.toString()))
+      } finally {
+        busy.set(false)
+      }
+    }
+  }
+
+  /** Opens Android's installer on the downloaded APK; the first time, Android asks to allow installs from this app. */
+  @JavascriptInterface
+  fun install() {
+    if (!apk.exists()) {
+      send(JSONObject().put("type", "error").put("message", "The download is gone; download it again."))
+      return
+    }
+    activity.runOnUiThread {
+      val uri = FileProvider.getUriForFile(activity, "${activity.packageName}.apkupdate", apk)
+      val intent = Intent(Intent.ACTION_VIEW)
+        .setDataAndType(uri, "application/vnd.android.package-archive")
+        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+      activity.startActivity(intent)
+    }
+  }
+
+  private fun send(event: JSONObject) {
+    webView.post { webView.evaluateJavascript("window.__warroomApk && window.__warroomApk($event)", null) }
+  }
+
+  private companion object {
+    const val PROGRESS_MS = 150L
+  }
+}
+
+/** Its own FileProvider class, so the manifest can declare it beside any FileProvider Tauri declares. */
+class ApkFileProvider : FileProvider()
