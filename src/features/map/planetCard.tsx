@@ -1,16 +1,16 @@
 import { Crosshair, FileText, MousePointerClick, Pin, PinOff, X } from "lucide-react";
 import { useEffect, type CSSProperties } from "react";
-import type { Planet } from "../../api/types";
+import type { Faction, Planet } from "../../api/types";
 import { biomeTint, planetTint, regenPctPerHour, resistanceLevel } from "../../domain/biomes";
 import { hasPawn, type PlanetEffect } from "../../domain/effects";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtInt, fmtPct } from "../../domain/format";
+import { citiesOf } from "../../domain/cities";
 import { anomalyOf, type Landmark } from "../../domain/galaxy";
 import { liberationPercent, trackedPercent } from "../../domain/progress";
 import { useSettings, useUi } from "../../state";
 import { DssIcon, SubfactionEmblem } from "../../ui/emblems";
-import { Meter } from "../../ui/primitives";
-import { CityList } from "../planet/Cities";
+import { CityList, CityMark } from "../planet/Cities";
 import { useStationPlanets } from "../planets/useFronts";
 import { PoiGlyph, poiImage, poiKind, poiOrigin } from "./poi";
 
@@ -41,6 +41,40 @@ function cardLook(p: Planet, effects?: PlanetEffect[]): CSSProperties {
     "--art": art ? `url("${art}")` : tint.art,
     "--tone": factionColor(enemyOf(p) ?? "Humans"),
   } as CSSProperties;
+}
+
+/** The planet's progress, with a mark where each city opens; cities opening at the same point stand side by side. */
+export function LiberationBar({ p, pct, enemy }: { p: Planet; pct: number; enemy: Faction }) {
+  const marks = p.event ? [] : citiesOf(p).filter((c) => c.opensAt != null);
+  return (
+    <div className={`hc-bar ${marks.length ? "marked" : ""}`} style={{ "--rest": factionColor(enemy) } as CSSProperties}>
+      <div
+        className="hc-bar-track"
+        role="progressbar"
+        aria-valuenow={Math.round(pct)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={p.event ? "Defended" : "Liberated"}
+      >
+        <div className="hc-bar-fill" style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />
+      </div>
+      {marks.map((c, i) => (
+        <span
+          key={c.id}
+          className={`hc-bar-mark ${c.waiting ? "" : "open"}`}
+          style={
+            {
+              left: `calc(${c.opensAt}% + ${marks.slice(0, i).filter((m) => Math.abs(m.opensAt! - c.opensAt!) < 4).length * 18}px)`,
+              "--k": factionColor(c.holder),
+            } as CSSProperties
+          }
+          title={`${c.name} opens at ${fmtPct(c.opensAt!, 1)}`}
+        >
+          <CityMark stars={c.stars} state={c.waiting ? "locked" : "liberating"} size={16} holder={c.holder} />
+        </span>
+      ))}
+    </div>
+  );
 }
 
 /** What the map's hover card and planet panel both show: picture, name, what's there and the fight. */
@@ -99,7 +133,7 @@ function PlanetSummary({ p, active, effects }: { p: Planet; active: boolean; eff
       )}
       {enemy && (
         <div className="hc-progress">
-          <Meter value={pct} color="var(--f-humans)" rest={factionColor(enemy)} size="m" />
+          <LiberationBar p={p} pct={pct} enemy={enemy} />
           <span className="num caps">
             {fmtPct(p.event ? pct : liberationPercent(p), 4)} {p.event ? "defended" : "liberated"}
           </span>

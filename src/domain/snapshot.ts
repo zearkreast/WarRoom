@@ -75,6 +75,7 @@ export interface RegionLive {
   isAvailable: boolean;
   players: number;
   regenPerSecond?: number | null;
+  availabilityFactor?: number | null;
   /** Progress trend in %/h; only on campaign planets. */
   rate?: number | null;
 }
@@ -143,6 +144,7 @@ export function toLive(p: Planet): PlanetLive {
       isAvailable: r.isAvailable,
       players: r.players,
       regenPerSecond: r.regenPerSecond ?? null,
+      ...(r.availabilityFactor != null && { availabilityFactor: r.availabilityFactor }),
     })),
   };
 }
@@ -224,6 +226,7 @@ export function toPlanet(s: PlanetStatic, l: PlanetLive): Planet {
         isAvailable: l?.isAvailable ?? false,
         players: l?.players ?? 0,
         regenPerSecond: l?.regenPerSecond ?? null,
+        availabilityFactor: l?.availabilityFactor ?? null,
         rate: l?.rate ?? null,
       };
     }),

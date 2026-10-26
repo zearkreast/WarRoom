@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Building2,
+  CalendarDays,
   Check,
   CircleHelp,
   CloudFog,
@@ -24,6 +25,7 @@ import {
   Rocket,
   Shield,
   TriangleAlert,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefCallback } from "react";
@@ -33,23 +35,31 @@ import {
   CITIZENS,
   COMPANIES,
   GOV,
+  HOLIDAYS,
+  HOLIDAYS_SITE,
   MINISTRIES,
   type Ad,
   type Company,
+  type Holiday,
   type Ministry,
   type SiteSection,
   type Tie,
 } from "../../data/gwwSites";
 import { factionColor, factionLabel } from "../../domain/factions";
-import { fmtDate, fmtDateTime } from "../../domain/format";
+import { fmtDate, fmtDateTime, fmtInt, sestClock, sestDate } from "../../domain/format";
+import { nextYearly, plainText } from "../../domain/gwwText";
+import { useSpaceStations } from "../../api/queries";
+import { useStationJumps } from "../../api/stations";
+import { useWarDays } from "../../api/warSamples";
 import { useHistory } from "../../history/useHistory";
 import { useSettings, useUi } from "../../state";
 import { DssIcon, FactionEmblem, type IconLike } from "../../ui/emblems";
-import { Empty, Loading, OutLink, useMedia } from "../../ui/primitives";
+import { Empty, Loading, OutLink, useMedia, useNow } from "../../ui/primitives";
 import { Figure } from "./GwwFigures";
 import { LivePanel } from "./GwwLive";
 import { adUrl, iconUrl, logoUrl } from "./gwwArt";
-import { DIRS, Rich, titleOf, useGwwNav } from "./gwwNav";
+import { DIRS, LOG_ADDRESS, LOG_TITLE, Rich, titleOf, useGwwNav } from "./gwwNav";
+import { JumpRoute } from "./StationJumps";
 
 type HeadingRef = RefCallback<HTMLElement>;
 
@@ -121,6 +131,7 @@ export function TargetIcon({ target, size = 20 }: { target: string; size?: numbe
     const src = c?.logo && logoUrl(c.logo);
     return src ? img(src) : <Building2 size={size} strokeWidth={1.5} aria-hidden />;
   }
+  if (kind === "holiday" || (kind === "site" && id === "holidays")) return <CalendarDays size={size} strokeWidth={1.5} aria-hidden />;
   if (kind === "site") {
     if (id === "log") return <History size={size} strokeWidth={1.5} aria-hidden />;
     return img(iconUrl(id === "citizens" ? CITIZENS.icon : GOV.icon));
@@ -133,6 +144,7 @@ const KIND_LABEL: Record<string, string> = {
   manual: "Training manual",
   ministry: "Ministry",
   company: "Corporation",
+  holiday: "Holiday",
   site: "Super Earth",
   dir: "Directory",
   app: "In the tracker",
@@ -222,6 +234,18 @@ function Broadcast({ text }: { text: string }) {
       <Radio size={16} aria-hidden />
       <p>
         <b className="caps">Ship broadcast</b>
+        <span>“{text}”</span>
+      </p>
+    </aside>
+  );
+}
+
+function SourcedQuote({ from, text }: { from: string; text: string }) {
+  return (
+    <aside className="gww-quote">
+      <Quote size={16} aria-hidden />
+      <p>
+        <b className="caps">{from}</b>
         <span>“{text}”</span>
       </p>
     </aside>
@@ -640,19 +664,6 @@ export function MinistryTile({ m }: { m: Ministry }) {
 
 const HUMANITY = MINISTRIES.find((m) => m.id === "humanity")!.color;
 
-export function CitizensTile() {
-  return (
-    <SiteTile
-      target="site:citizens"
-      address={CITIZENS.address}
-      title={CITIZENS.title}
-      text={CITIZENS.summary}
-      icon={<img src={iconUrl(CITIZENS.icon)} alt="" />}
-      color={HUMANITY}
-    />
-  );
-}
-
 export function OfficialTiles({ logText }: { logText: string }) {
   return (
     <>
@@ -664,11 +675,10 @@ export function OfficialTiles({ logText }: { logText: string }) {
         icon={<img src={iconUrl(GOV.icon)} alt="" />}
         color="var(--f-humans)"
       />
-      <CitizensTile />
       <SiteTile
         target="site:log"
-        address="se://hc/war-log"
-        title="Galactic war log"
+        address={LOG_ADDRESS}
+        title={LOG_TITLE}
         text={logText}
         icon={<History size={26} strokeWidth={1.5} />}
         color="var(--f-humans)"
@@ -817,7 +827,8 @@ export function CompanyPage({ c, headingRef }: { c: Company; headingRef: Heading
     <WithRail rail={ads.rail} here={here}>
       <article className="gww-page" style={{ "--site": c.color } as CSSProperties}>
         <Banner
-          icon={<CompanyMark c={c} />}
+          // The name is beside the banner's picture, so a company without a logo shows no picture there.
+          icon={c.logo && logoUrl(c.logo) ? <CompanyMark c={c} /> : undefined}
           corp
           crumbs={[{ label: "Corporations", target: "dir:corps" }, { label: c.trade }]}
           title={c.name}
@@ -845,17 +856,52 @@ export function CompanyPage({ c, headingRef }: { c: Company; headingRef: Heading
   );
 }
 
+type GovSite = "gov" | "citizens" | "holidays";
+
+const GOV_TABS: [GovSite, string][] = [
+  ["gov", "Managed Democracy"],
+  ["citizens", "Citizen classes"],
+  ["holidays", "Holidays"],
+];
+
+/** Managed Democracy's own menu: its sub-sites are reached from here, not from the G.W.W. home. */
+function GovNav({ at }: { at: GovSite }) {
+  const { follow } = useGwwNav();
+  return (
+    <nav className="gww-sitenav" aria-label="Managed Democracy">
+      <span className="gww-sitenav-brand caps">
+        <img src={iconUrl(GOV.icon)} alt="" width={18} height={18} />
+        se://gov
+      </span>
+      {GOV_TABS.map(([id, label]) => (
+        <button
+          key={id}
+          className={`gww-sitenav-link caps ${id === at ? "on" : ""}`}
+          aria-current={id === at ? "page" : undefined}
+          onClick={(e) => follow(`site:${id}`, e)}
+        >
+          {label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+const govCrumbs = (site: GovSite): Crumb[] => [
+  { label: "Super Earth", target: "dir:gov" },
+  ...(site === "gov" ? [] : [{ label: GOV.title, target: "site:gov" }]),
+];
+
 /** Super Earth's own sites: Managed Democracy, and the Citizenship Classification Structure under it. */
 export function GovPage({ site, headingRef }: { site: "gov" | "citizens"; headingRef: HeadingRef }) {
   const prefix = `gww-${site}`;
   const s = site === "gov" ? GOV : CITIZENS;
-  const crumbs: Crumb[] = [{ label: "Super Earth", target: "dir:gov" }];
-  if (site === "citizens") crumbs.push({ label: GOV.title, target: "site:gov" });
   return (
     <article className="gww-page" style={{ "--site": site === "gov" ? "var(--f-humans)" : HUMANITY } as CSSProperties}>
+      <GovNav at={site} />
       <Banner
         icon={<img src={iconUrl(s.icon)} alt="" width={72} height={72} />}
-        crumbs={crumbs}
+        crumbs={govCrumbs(site)}
         title={s.title}
         lead={s.summary}
         headingRef={headingRef}
@@ -871,6 +917,104 @@ export function GovPage({ site, headingRef }: { site: "gov" | "citizens"; headin
         sources={s.sources}
         quoted={site === "gov" ? "Training manual tips are quoted from the game." : "Ship broadcasts are quoted from the game."}
       />
+    </article>
+  );
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function DateBadge({ h }: { h: Holiday }) {
+  return (
+    <span className="gww-date" aria-hidden>
+      <span className="caps">{MONTHS[h.month - 1]}</span>
+      <b className="num">{h.day}</b>
+    </span>
+  );
+}
+
+const countdown = (days: number) => (days === 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`);
+
+export function HolidaysPage({ headingRef }: { headingRef: HeadingRef }) {
+  const { follow } = useGwwNav();
+  const now = useNow(60 * 60_000);
+  const next = nextYearly(HOLIDAYS, new Date(now));
+  const until = (h: Holiday) => nextYearly([h], new Date(now))!.in;
+  return (
+    <article className="gww-page" style={{ "--site": "var(--cta)" } as CSSProperties}>
+      <GovNav at="holidays" />
+      <Banner
+        icon={<CalendarDays size={40} strokeWidth={1.5} />}
+        crumbs={govCrumbs("holidays")}
+        title={HOLIDAYS_SITE.title}
+        lead={HOLIDAYS_SITE.summary}
+        headingRef={headingRef}
+      />
+      <ol className="gww-holidays">
+        {HOLIDAYS.map((h) => {
+          const days = until(h);
+          return (
+            <li key={h.id}>
+              <button
+                className={`gww-holiday-card ${h === next ? "next" : ""} ${days === 0 ? "today" : ""}`}
+                style={{ "--site": h.color } as CSSProperties}
+                onClick={(e) => follow(`holiday:${h.id}`, e)}
+              >
+                <DateBadge h={h} />
+                <span className="gww-holiday-body">
+                  <span className="gww-address num">{h.address}</span>
+                  <b className="gww-site-title">{h.name}</b>
+                  <span className="caps gww-holiday-when">{h.when}</span>
+                  <span className="gww-site-text">{h.summary}</span>
+                  {h.sections[0]?.text && (
+                    <span className="gww-holiday-story">{plainText(h.sections[0].text)}</span>
+                  )}
+                </span>
+                <span className={`gww-holiday-in caps num ${days <= 1 ? "soon" : ""}`}>{countdown(days)}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+      <Related targets={HOLIDAYS_SITE.related} />
+      <SourceLine sources={HOLIDAYS.flatMap((h) => h.sources)} />
+    </article>
+  );
+}
+
+export function HolidayPage({ h, headingRef }: { h: Holiday; headingRef: HeadingRef }) {
+  const prefix = `gww-${h.id}`;
+  const now = useNow(60 * 60_000);
+  const days = nextYearly([h], new Date(now))!.in;
+  return (
+    <article className="gww-page" style={{ "--site": h.color } as CSSProperties}>
+      <GovNav at="holidays" />
+      <Banner
+        icon={<DateBadge h={h} />}
+        crumbs={[...govCrumbs("holidays"), { label: "Holidays", target: "site:holidays" }]}
+        title={h.name}
+        lead={
+          <>
+            {h.summary}{" "}
+            <span className={`gww-holiday-in caps num ${days <= 1 ? "soon" : ""}`}>
+              {h.when} · {countdown(days)}
+            </span>
+          </>
+        }
+        headingRef={headingRef}
+      />
+      {h.quotes.slice(0, 1).map((q) => (
+        <SourcedQuote key={q.text} {...q} />
+      ))}
+      <Toc sections={h.sections} prefix={prefix} />
+      {h.sections.map((sec, i) => (
+        <SectionBlock key={sec.heading} sec={sec} id={`${prefix}-${i}`} />
+      ))}
+      {h.quotes.slice(1).map((q) => (
+        <SourcedQuote key={q.text} {...q} />
+      ))}
+      <Related targets={h.related} />
+      <SourceLine sources={h.sources} quoted={h.quotes.length ? "Decrees, carols, tips and broadcasts are quoted from the game." : undefined} />
+      <Pager list={HOLIDAYS.map((x) => `holiday:${x.id}`)} at={HOLIDAYS.indexOf(h)} noun="holiday" />
     </article>
   );
 }
@@ -894,11 +1038,28 @@ export function MissingPage({ address, headingRef }: { address: string; headingR
   );
 }
 
-export function WarLogPage({ headingRef }: { headingRef: HeadingRef }) {
+function LogBox(props: { title: string; note: ReactNode; icon: ReactNode; children: ReactNode }) {
+  return (
+    <details className="gww-fold gww-logbox" open>
+      <summary>
+        <span className="gww-logbox-icon" aria-hidden>
+          {props.icon}
+        </span>
+        <b>{props.title}</b>
+        <span className="caps num">{props.note}</span>
+      </summary>
+      <div className="gww-logbox-body">{props.children}</div>
+    </details>
+  );
+}
+
+const LOG_DAYS = 7;
+
+function WarLog() {
   const { changes, ready } = useHistory();
   const openOptions = useUi((s) => s.openOptions);
   const [show, setShow] = useState<"all" | "won" | "lost">("all");
-  const liberated = changes.filter((c) => c.to === "Humans").length;
+  const [allDays, setAllDays] = useState(false);
   const list = changes.filter((c) => show === "all" || (show === "won") === (c.to === "Humans"));
   const days: { day: string; items: typeof list }[] = [];
   for (const c of list) {
@@ -907,23 +1068,7 @@ export function WarLogPage({ headingRef }: { headingRef: HeadingRef }) {
     days[days.length - 1].items.push(c);
   }
   return (
-    <article className="gww-page" style={{ "--site": "var(--f-humans)" } as CSSProperties}>
-      <Banner
-        icon={<History size={40} strokeWidth={1.5} />}
-        crumbs={[{ label: "Super Earth", target: "dir:gov" }]}
-        title="Galactic war log"
-        lead={
-          ready ? (
-            <span className="num">
-              <span style={{ color: "var(--f-humans)" }}>{liberated} liberated</span> ·{" "}
-              <span style={{ color: "var(--bad)" }}>{changes.length - liberated} lost</span> since tracking began
-            </span>
-          ) : (
-            "Every planet that changed hands since tracking began."
-          )
-        }
-        headingRef={headingRef}
-      />
+    <>
       <div className="gww-filter" role="group" aria-label="Show">
         {(
           [
@@ -946,7 +1091,7 @@ export function WarLogPage({ headingRef }: { headingRef: HeadingRef }) {
             : `No planet has been ${show === "won" ? "liberated" : "lost"} since tracking began.`}
         </Empty>
       ) : (
-        days.map((d) => (
+        (allDays ? days : days.slice(0, LOG_DAYS)).map((d) => (
           <section key={d.day} className="gww-log-day">
             <h3 className="caps num">{d.day}</h3>
             <ol className="wl">
@@ -980,7 +1125,128 @@ export function WarLogPage({ headingRef }: { headingRef: HeadingRef }) {
           </section>
         ))
       )}
-      <Related targets={["manual:liberation", "manual:defense", "app:past"]} />
+      {ready && days.length > LOG_DAYS && (
+        <button className="gww-chip gww-more" onClick={() => setAllDays((a) => !a)}>
+          {allDays ? "Show fewer days" : `Show all ${days.length} days`}
+        </button>
+      )}
+    </>
+  );
+}
+
+const ACTIVITY_DAYS = 14;
+
+function DayStat({ kind, value, at, top }: { kind: "peak" | "low"; value: number; at: string; top: number }) {
+  return (
+    <span className={`gww-day-stat ${kind}`}>
+      <span className="gww-day-num num">
+        <b>{fmtInt(value)}</b>
+        <span className="caps">
+          <span className="sr-only">{kind === "peak" ? "peak" : "lowest"} </span>at {at}
+        </span>
+      </span>
+      <span className="gww-day-bar" aria-hidden>
+        <i style={{ width: `${(value / top) * 100}%` }} />
+      </span>
+    </span>
+  );
+}
+
+function ActivityDays({ now }: { now: number }) {
+  const { data: days = [], isLoading } = useWarDays();
+  const [all, setAll] = useState(false);
+  const shown = all ? days : days.slice(0, ACTIVITY_DAYS);
+  const top = Math.max(1, ...shown.map((d) => d.peak));
+  const today = Math.floor(now / 86_400_000) * 86_400_000;
+  const hm = (ms: number) => sestClock(ms).slice(0, 5);
+  if (isLoading) return <Loading what="the activity log" rows={2} />;
+  if (days.length === 0) return <Empty>No days logged yet. Each day is recorded from the next collector update on.</Empty>;
+  return (
+    <>
+      <div className="gww-days-head caps" aria-hidden>
+        <span>SEST day</span>
+        <span>Peak online</span>
+        <span>Lowest online</span>
+      </div>
+      <ol className="gww-days">
+        {shown.map((d) => (
+          <li key={d.day} className={d.day === today ? "today" : ""}>
+            <span className="gww-day-date num">
+              {sestDate(d.day)}
+              {d.day === today && <span className="caps">Today, so far</span>}
+            </span>
+            <DayStat kind="peak" value={d.peak} at={hm(d.peakAt)} top={top} />
+            <DayStat kind="low" value={d.low} at={hm(d.lowAt)} top={top} />
+          </li>
+        ))}
+      </ol>
+      <p className="gww-note">Each bar is the day's count against the busiest day listed.</p>
+      {days.length > ACTIVITY_DAYS && (
+        <button className="gww-chip gww-more" onClick={() => setAll((a) => !a)}>
+          {all ? "Show fewer days" : `Show all ${days.length} days`}
+        </button>
+      )}
+    </>
+  );
+}
+
+function StationJumps({ station, name, now }: { station: number; name: string; now: number }) {
+  const { data: jumps = [], isLoading } = useStationJumps(station);
+  return (
+    <LogBox
+      title={`${name} FTL jumps`}
+      note={jumps.length === 1 ? "1 jump" : `${jumps.length} jumps`}
+      icon={<DssIcon size={18} />}
+    >
+      {isLoading ? (
+        <Loading what="the jump log" rows={2} />
+      ) : jumps.length === 0 ? (
+        <Empty>No jumps logged yet. Each jump is recorded from the next collector update on.</Empty>
+      ) : (
+        <JumpRoute jumps={jumps} now={now} />
+      )}
+    </LogBox>
+  );
+}
+
+/** Every planet that changed hands and every station jump, as the collector logged them. */
+export function LogsPage({ headingRef }: { headingRef: HeadingRef }) {
+  const { changes, ready } = useHistory();
+  const stations = useSpaceStations().data ?? [];
+  const now = useNow(60_000);
+  const liberated = changes.filter((c) => c.to === "Humans").length;
+  return (
+    <article className="gww-page" style={{ "--site": "var(--f-humans)" } as CSSProperties}>
+      <Banner
+        icon={<History size={40} strokeWidth={1.5} />}
+        crumbs={[{ label: "Super Earth", target: "dir:gov" }]}
+        title={LOG_TITLE}
+        lead="The war log, Helldivers online day by day and the space stations' FTL jumps, since tracking began."
+        headingRef={headingRef}
+      />
+      <LogBox
+        title="War log"
+        icon={<Globe2 size={18} />}
+        note={
+          ready ? (
+            <>
+              <span style={{ color: "var(--f-humans)" }}>{liberated} liberated</span> ·{" "}
+              <span style={{ color: "var(--bad)" }}>{changes.length - liberated} lost</span>
+            </>
+          ) : (
+            "Planets that changed hands"
+          )
+        }
+      >
+        <WarLog />
+      </LogBox>
+      <LogBox title="Helldivers online" icon={<Users size={18} />} note="Each SEST day, midnight to midnight">
+        <ActivityDays now={now} />
+      </LogBox>
+      {stations.map((st, i) => (
+        <StationJumps key={st.id32} station={st.id32} name={i === 0 ? "DSS" : `Station ${i + 1}`} now={now} />
+      ))}
+      <Related targets={["manual:liberation", "manual:dss", "app:stations", "app:past"]} />
     </article>
   );
 }
@@ -989,7 +1255,7 @@ export function DirPage({ id, headingRef, logText }: { id: keyof typeof DIRS; he
   const Icon = DIR_ICONS[id];
   const lead: Record<keyof typeof DIRS, string> = {
     manuals: "How the Second Galactic War works, in reading order.",
-    gov: "The Federation's own sites: its government, its ministries, its war log and its news.",
+    gov: "The Federation's own sites: its government, its ministries, its logs and its news.",
     corps: "The mega-corporations that arm, feed, heal and bank the Federation.",
   };
   return (

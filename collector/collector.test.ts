@@ -131,6 +131,39 @@ describe("trend readings", () => {
     expect(recorder.regionRate(p.index, r.id + 99)).toBeNull();
   });
 
+  it("stores Helldivers on a planet with no campaign, and a busy city at most every few minutes", async () => {
+    const { db, calls } = fakeSupabase();
+    const recorder = new Recorder(db);
+    const idle = structuredClone(planets.find((x) => x.regions.length > 0)!);
+    idle.health = idle.maxHealth;
+    idle.event = null;
+    idle.statistics.playerCount = 4321;
+    idle.regions[0].players = 12;
+    for (const m of [0, 1, 5]) await recorder.ingest([idle], m * 60_000);
+    const idleRows = calls.filter((c) => c.path === "planet_players").flatMap((c) => c.body as { players: number }[]);
+    expect(idleRows.map((r) => r.players)).toEqual([4321, 4321, 4321]);
+    expect(calls.some((c) => c.path === "samples" && (c.body as unknown[]).length > 0)).toBe(false);
+    const cityRows = calls.filter((c) => c.path === "region_samples").flatMap((c) => c.body as { at: string }[]);
+    expect(cityRows.map((r) => Date.parse(r.at))).toEqual([0, 5 * 60_000]);
+  });
+
+  it("skips the activity writes, rather than failing, before their migration is applied", async () => {
+    const db = createSupabase({
+      url: "https://x.supabase.co",
+      key: "sb_secret_test",
+      fetchFn: async (url, init) => {
+        if (/planet_players|region_samples|rpc\/note_war_day/.test(url)) return new Response("{}", { status: 404 });
+        return init.method === "GET" ? new Response("[]", { status: 200 }) : new Response(null, { status: 201 });
+      },
+    });
+    const recorder = new Recorder(db);
+    const idle = structuredClone(planets[0]);
+    idle.statistics.playerCount = 10;
+    await expect(recorder.ingest([idle], 0)).resolves.toMatchObject({ samples: 0 });
+    const war = await runTask(createTasks(fakeHd2(api), db, recorder, () => 0).find((t) => t.name === "war")!);
+    expect(war).toMatchObject({ ok: true, message: expect.stringContaining("no war_days table yet") });
+  });
+
   it("keeps a day of Major Order readings, only for running orders", () => {
     const day = 24 * 3_600_000;
     const kept = [
@@ -210,6 +243,10 @@ describe("collector cycle", () => {
     expect(calls.some((c) => c.path === "owner_changes")).toBe(false);
     expect(calls.some((c) => c.path === "rpc/compact_samples")).toBe(true);
     expect(calls.some((c) => c.path === "rpc/compact_war_samples")).toBe(true);
+    expect(calls.find((c) => c.path === "rpc/note_war_day")?.body).toEqual({
+      reading_at: new Date(1_000_000).toISOString(),
+      online: warJson.statistics.playerCount,
+    });
   });
 
   it("records a capture and skips unchanged static data and dispatches", async () => {

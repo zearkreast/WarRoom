@@ -5,6 +5,7 @@ import {
   CalendarDays,
   CloudFog,
   Database,
+  GraduationCap,
   History,
   House,
   Info,
@@ -21,24 +22,25 @@ import {
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { APP_NAME, APP_VERSION } from "../../config";
 import { CHAPTERS, MANUALS, TIPS, WIKI, WIKI_LICENCE } from "../../data/gww";
-import { ADS, CITIZENS, COMPANIES, GOV, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
+import { ADS, COMPANIES, GOV, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
 import { FACTIONS, factionColor } from "../../domain/factions";
 import { nextYearly, plainText } from "../../domain/gwwText";
 import { useHistory } from "../../history/useHistory";
-import { useUi, type GwwPage } from "../../state";
+import { useSettings, useUi, type GwwPage } from "../../state";
 import { DssIcon, FactionEmblem } from "../../ui/emblems";
 import { Empty, OutLink, Panel, useMedia, useNow } from "../../ui/primitives";
 import type { Faction } from "../../api/types";
 import { iconUrl } from "./gwwArt";
-import { ADDRESS_LIST, addressOf, GwwNavProvider, normalize, targetAt, useGwwNav } from "./gwwNav";
+import { addressOf, GwwNavProvider, LOG_ADDRESS, LOG_TITLE, normalize, SUGGESTED_ADDRESSES, targetAt, useGwwNav } from "./gwwNav";
 import {
   AdBox,
-  CitizensTile,
   CompanyPage,
   CompanyTile,
-  CourseProgress,
   DirPage,
   GovPage,
+  HolidayPage,
+  HolidaysPage,
+  LogsPage,
   ManualPage,
   ManualTile,
   MinistryPage,
@@ -47,7 +49,6 @@ import {
   pickOne,
   RAIL_QUERY,
   SiteTile,
-  WarLogPage,
 } from "./GwwPages";
 import "./gww.css";
 
@@ -92,7 +93,7 @@ function AddressBar({ page }: { page: GwwPage }) {
         }}
       />
       <datalist id={listId}>
-        {ADDRESS_LIST.map((a) => (
+        {SUGGESTED_ADDRESSES.map((a) => (
           <option key={a} value={a} />
         ))}
       </datalist>
@@ -101,8 +102,8 @@ function AddressBar({ page }: { page: GwwPage }) {
 }
 
 function logLine(count: number): string {
-  if (count === 1) return "1 planet has changed hands since tracking began.";
-  return count ? `${count} planets have changed hands since tracking began.` : "Every planet that changed hands.";
+  const won = count === 1 ? "1 planet has" : `${count} planets have`;
+  return count ? `The war log and the FTL jumps. ${won} changed hands since tracking began.` : "The war log and the FTL jumps.";
 }
 
 function Group(props: { title: string; count: number; all?: string; children: ReactNode }) {
@@ -147,7 +148,7 @@ function HolidayChip() {
   if (!next) return null;
   const when = next.in === 0 ? "today" : next.in === 1 ? "tomorrow" : `in ${next.in} days`;
   return (
-    <button className={`gww-holiday caps ${next.in <= 1 ? "soon" : ""}`} onClick={(e) => follow("site:gov", e)}>
+    <button className={`gww-holiday caps ${next.in <= 1 ? "soon" : ""}`} onClick={(e) => follow("site:holidays", e)}>
       <CalendarDays size={13} aria-hidden /> {next.name} {when}
     </button>
   );
@@ -179,15 +180,12 @@ function Home({ logText }: { logText: string }) {
         color="var(--f-humans)"
       />
     ),
-    hit(CITIZENS.title, CITIZENS.summary, CITIZENS.address, ...CITIZENS.sections.map((s) => `${s.heading} ${s.text ?? ""}`)) && (
-      <CitizensTile key="citizens" />
-    ),
-    hit("Galactic war log", logText, "se://hc/war-log") && (
+    hit(LOG_TITLE, logText, LOG_ADDRESS, "war log", "FTL jumps") && (
       <SiteTile
         key="log"
         target="site:log"
-        address="se://hc/war-log"
-        title="Galactic war log"
+        address={LOG_ADDRESS}
+        title={LOG_TITLE}
         text={logText}
         icon={<History size={26} strokeWidth={1.5} />}
         color="var(--f-humans)"
@@ -226,6 +224,8 @@ function Home({ logText }: { logText: string }) {
   const companies = COMPANIES.filter((c) =>
     hit(c.name, c.trade, c.summary, c.slogan ?? "", c.address, ...c.sections.map((s) => `${s.text ?? ""} ${(s.products ?? []).join(" ")}`)),
   );
+  const read = useSettings((s) => s.gwwRead);
+  const readCount = MANUALS.filter((m) => read.includes(m.id)).length;
   const none = official.length + manuals.length + companies.length === 0;
   return (
     <div className="gww-home">
@@ -250,7 +250,6 @@ function Home({ logText }: { logText: string }) {
         </label>
       </header>
       <TipTicker />
-      {!q && <CourseProgress compact />}
       <div className="gww-home-grid">
         <div className="gww-dir">
           {none && <Empty>No site on the G.W.W. matches “{query}”.</Empty>}
@@ -259,16 +258,24 @@ function Home({ logText }: { logText: string }) {
               {official}
             </Group>
           )}
-          {manuals.length > 0 && (
+          {q && manuals.length > 0 && (
             <Group title="Training manuals" count={manuals.length} all="dir:manuals">
-              {q
-                ? manuals.map((m) => <ManualTile key={m.id} m={m} />)
-                : CHAPTERS.map((ch, i) => [
-                    <p key={ch.id} className="gww-chapter-label caps">
-                      <span className="num">Chapter {i + 1}</span> {ch.title}
-                    </p>,
-                    ...MANUALS.filter((m) => m.chapter === ch.id).map((m) => <ManualTile key={m.id} m={m} />),
-                  ])}
+              {manuals.map((m) => (
+                <ManualTile key={m.id} m={m} />
+              ))}
+            </Group>
+          )}
+          {!q && (
+            <Group title="Training manuals" count={MANUALS.length}>
+              <SiteTile
+                target="dir:manuals"
+                address="se://hc/manuals"
+                title="Training manuals"
+                text={`How the Second Galactic War works, in ${CHAPTERS.length} chapters and ${MANUALS.length} manuals. ${readCount} of ${MANUALS.length} read.`}
+                icon={<GraduationCap size={28} strokeWidth={1.5} />}
+                color="var(--cta)"
+                done={readCount === MANUALS.length}
+              />
             </Group>
           )}
           {!q && ads.banner && <AdBox ad={ads.banner} />}
@@ -304,8 +311,15 @@ function View({ page, logText, headingRef }: { page: GwwPage; logText: string; h
     const c = COMPANIES.find((x) => x.id === page.id);
     if (c) return <CompanyPage c={c} headingRef={headingRef} />;
   }
-  if (page.kind === "site")
-    return page.id === "log" ? <WarLogPage headingRef={headingRef} /> : <GovPage site={page.id} headingRef={headingRef} />;
+  if (page.kind === "holiday") {
+    const h = HOLIDAYS.find((x) => x.id === page.id);
+    if (h) return <HolidayPage h={h} headingRef={headingRef} />;
+  }
+  if (page.kind === "site") {
+    if (page.id === "log") return <LogsPage headingRef={headingRef} />;
+    if (page.id === "holidays") return <HolidaysPage headingRef={headingRef} />;
+    return <GovPage site={page.id} headingRef={headingRef} />;
+  }
   if (page.kind === "dir") return <DirPage id={page.id} headingRef={headingRef} logText={logText} />;
   if (page.kind === "missing") return <MissingPage address={page.address} headingRef={headingRef} />;
   return <Home logText={logText} />;

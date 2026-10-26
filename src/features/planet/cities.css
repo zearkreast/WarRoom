@@ -22,6 +22,14 @@
 .city.liberating {
   border-left-color: var(--f-humans);
 }
+.city.openable {
+  cursor: pointer;
+  transition: background var(--t-state);
+}
+.city.openable:hover,
+.city.openable:focus-visible {
+  background: color-mix(in srgb, var(--f-humans) 8%, var(--surface-2));
+}
 .city.destroyed {
   border-left-color: var(--bad);
 }
@@ -181,4 +189,21 @@
   .city-razed {
     stroke: CanvasText;
   }
+}
+.cd-about {
+  padding: var(--s-4) var(--s-5);
+  background: var(--surface-2);
+  border-left: 2px solid var(--tone, var(--line-strong));
+}
+.cd-about p {
+  margin: 0;
+  line-height: 1.55;
+  color: var(--text);
+}
+.cd-about p + p {
+  margin-top: var(--s-3);
+}
+.cd-note {
+  font-size: var(--fs-body-s);
+  color: var(--text-dim) !important;
 }

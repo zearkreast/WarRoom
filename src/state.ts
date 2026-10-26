@@ -10,10 +10,17 @@ export type GwwPage =
   | { kind: "manual"; id: string }
   | { kind: "ministry"; id: string }
   | { kind: "company"; id: string }
-  | { kind: "site"; id: "log" | "gov" | "citizens" }
+  | { kind: "site"; id: "log" | "gov" | "citizens" | "holidays" }
+  | { kind: "holiday"; id: string }
   | { kind: "dir"; id: "manuals" | "gov" | "corps" }
   /** What the address bar opens for an address no site answers at. */
   | { kind: "missing"; address: string };
+
+/** A city: its planet, and its region id on that planet. */
+export interface CityRef {
+  planet: number;
+  region: number;
+}
 
 /** Where the planet options popover is anchored, in viewport pixels. */
 export interface OptionsAnchor {
@@ -31,6 +38,8 @@ interface UiState {
   focusSeq: number;
   /** Planet whose detail overlay is open. */
   detail: number | null;
+  /** City whose overlay is open, over the planet's when both are. */
+  city: CityRef | null;
   options: OptionsAnchor | null;
   dispatchOpen: boolean;
   /** The About or Icons legend dialog, when one is open. */
@@ -43,6 +52,7 @@ interface UiState {
   showOnMap(planet: number): void;
   focus(planet: number): void;
   openDetail(planet: number | null): void;
+  openCity(city: CityRef | null): void;
   openOptions(o: OptionsAnchor | null): void;
   toggleDispatch(open?: boolean): void;
   showDialog(d: InfoDialog | null): void;
@@ -55,6 +65,7 @@ export const useUi = create<UiState>((set) => ({
   selectedPlanet: null,
   focusSeq: 0,
   detail: null,
+  city: null,
   options: null,
   dispatchOpen: false,
   dialog: null,
@@ -65,7 +76,8 @@ export const useUi = create<UiState>((set) => ({
   showOnMap: (planet) =>
     set((s) => ({ view: "map", selectedPlanet: planet, focusSeq: s.focusSeq + 1, detail: null, options: null })),
   focus: (planet) => set((s) => ({ selectedPlanet: planet, focusSeq: s.focusSeq + 1, options: null })),
-  openDetail: (detail) => set({ detail, options: null }),
+  openDetail: (detail) => set({ detail, city: null, options: null }),
+  openCity: (city) => set({ city, options: null }),
   openOptions: (options) => set({ options }),
   toggleDispatch: (open) => set((s) => ({ dispatchOpen: open ?? !s.dispatchOpen })),
   showDialog: (dialog) => set({ dialog }),
@@ -98,6 +110,8 @@ interface SettingsState {
   planetsControlOpen: boolean;
   /** Whether the Major Order strip on Active planets is unfolded. */
   moStripOpen: boolean;
+  /** Whether the Major Order on the High Command overview is unfolded. */
+  overviewMoOpen: boolean;
   /** Whether the Theater of War disc turns by itself. */
   twSpin: boolean;
   /** How many dispatches the map's Dispatches box lists, or "72h" for all from the last 72 hours. */
@@ -127,6 +141,7 @@ interface SettingsState {
       | "showInactive"
       | "planetsControlOpen"
       | "moStripOpen"
+      | "overviewMoOpen"
       | "twSpin"
       | "mapDispatches"
       | "closeToTray",
@@ -157,6 +172,7 @@ export const useSettings = create<SettingsState>()(
       showInactive: false,
       planetsControlOpen: true,
       moStripOpen: false,
+      overviewMoOpen: true,
       twSpin: typeof window === "undefined" || !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
       mapDispatches: "5",
       closeToTray: true,

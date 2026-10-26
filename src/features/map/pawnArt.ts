@@ -74,6 +74,12 @@ const ACTIONS: [RegExp, string][] = [
   [/heavy ordnance/i, "heavy_ordnance"],
 ];
 
+/** A tactical action's icon, by its name or an effect named after it. */
+export function actionIcon(name: string): string | undefined {
+  const key = ACTIONS.find(([re]) => re.test(name))?.[1];
+  return key && ACTION_ART[`../../assets/dss-actions/${key}.png`];
+}
+
 export interface DssAction {
   key: string;
   href: string;
@@ -89,7 +95,7 @@ export function dssInfo(actions: TacticalAction[], now: number): DssInfo {
   const active = actions.flatMap((a) => {
     if (a.status !== 2 || Date.parse(a.statusExpire) <= now) return [];
     const key = ACTIONS.find(([re]) => re.test(a.name))?.[1];
-    const href = key && ACTION_ART[`../../assets/dss-actions/${key}.png`];
+    const href = actionIcon(a.name);
     return key && href ? [{ key, href }] : [];
   });
   return { state: dssState(actions, now), active };

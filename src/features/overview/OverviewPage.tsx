@@ -1,5 +1,5 @@
 import { PieChart as PieIcon, Users } from "lucide-react";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent } from "react";
 import { useCampaigns, useFreshPlanets, useWar } from "../../api/queries";
 import type { Faction } from "../../api/types";
 import { LIST_SIZE } from "../../domain/factionPlanets";
@@ -59,6 +59,19 @@ function Distribution() {
   const [hoverRow, setHoverRow] = useState<string | null>(null);
   const [card, setCard] = useState<{ kind: RingKey | typeof OTHERS; at: PointerAt } | null>(null);
   const rowSlice = slices.find((p) => p.name === hoverRow);
+  const mouse = (e: PointerEvent) => e.pointerType === "mouse";
+  // A touch has no hover: a tap on a legend or front row shows it until a tap lands elsewhere.
+  useEffect(() => {
+    if (!hoverRow && !activeArc) return;
+    const away = (e: globalThis.PointerEvent) => {
+      if (e.pointerType === "mouse" || (e.target as Element).closest?.(".ov-legend li, .ov-front, .nr")) return;
+      setHoverRow(null);
+      setActiveArc(null);
+      setCard(null);
+    };
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, [hoverRow, activeArc]);
   const arc = arcs.find((a) => a.key === (activeArc ?? rowSlice?.enemy));
   const pctOfOnline = (n: number) => fmtPct((n / (total || 1)) * 100, 1);
 
@@ -170,7 +183,8 @@ function Distribution() {
           />
           <ul
             className="ov-legend"
-            onPointerLeave={() => {
+            onPointerLeave={(e) => {
+              if (!mouse(e)) return;
               setHoverRow(null);
               setCard(null);
             }}
@@ -180,14 +194,23 @@ function Distribution() {
                 key={p.name}
                 className={hoverRow === p.name ? "on" : ""}
                 style={{ "--k": p.color } as CSSProperties}
-                onPointerEnter={() => {
+                onPointerEnter={(e) => {
+                  if (!mouse(e)) return;
                   setHoverRow(p.name);
                   if (p.name !== OTHERS) setCard(null);
                 }}
                 onPointerMove={(e) => {
-                  if (p.name !== OTHERS) return;
+                  if (!mouse(e) || p.name !== OTHERS) return;
                   const ring = e.currentTarget.closest(".ov-donut")!.querySelector(".nr")!;
                   setCard({ kind: OTHERS, at: pointerAt(e, ring) });
+                }}
+                onPointerUp={(e) => {
+                  if (mouse(e)) return;
+                  const again = hoverRow === p.name;
+                  setActiveArc(null);
+                  setHoverRow(again ? null : p.name);
+                  const ring = e.currentTarget.closest(".ov-donut")!.querySelector(".nr")!;
+                  setCard(!again && p.name === OTHERS ? { kind: OTHERS, at: pointerAt(e, ring) } : null);
                 }}
               >
                 <span className="ov-legend-name caps">{p.name}</span>
@@ -215,8 +238,14 @@ function Distribution() {
             key={f}
             className={`ov-front ${arc?.key === f ? "on" : ""}`}
             style={{ "--k": CHART[f], "--t": `var(--f-${f.toLowerCase()})` } as CSSProperties}
-            onPointerEnter={() => setActiveArc(f)}
-            onPointerLeave={() => setActiveArc(null)}
+            onPointerEnter={(e) => mouse(e) && setActiveArc(f)}
+            onPointerLeave={(e) => mouse(e) && setActiveArc(null)}
+            onPointerUp={(e) => {
+              if (mouse(e)) return;
+              setHoverRow(null);
+              setCard(null);
+              setActiveArc(activeArc === f ? null : f);
+            }}
           >
             <FactionEmblem faction={f} size={18} />
             <span className="caps">{factionLabel(f)}</span>
@@ -230,8 +259,14 @@ function Distribution() {
         <div
           className={`ov-front ${arc?.key === ELSEWHERE ? "on" : ""}`}
           style={{ "--k": "var(--faint)" } as CSSProperties}
-          onPointerEnter={() => setActiveArc(ELSEWHERE)}
-          onPointerLeave={() => setActiveArc(null)}
+          onPointerEnter={(e) => mouse(e) && setActiveArc(ELSEWHERE)}
+          onPointerLeave={(e) => mouse(e) && setActiveArc(null)}
+          onPointerUp={(e) => {
+            if (mouse(e)) return;
+            setHoverRow(null);
+            setCard(null);
+            setActiveArc(activeArc === ELSEWHERE ? null : ELSEWHERE);
+          }}
         >
           <FactionEmblem faction="Humans" size={18} color="var(--text-dim)" />
           <span className="caps">Elsewhere</span>
@@ -265,7 +300,7 @@ export function OverviewPage() {
           <Distribution />
         </div>
         <div className="ov-col ov-col-mid">
-          <MajorOrderList />
+          <MajorOrderList foldable />
           <WarActivity />
         </div>
         <div className="ov-col ov-col-right">

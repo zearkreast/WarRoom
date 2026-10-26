@@ -2,12 +2,14 @@ import type { Faction, Planet } from "../src/api/types.ts";
 import { FACTION_BY_ID, FACTION_ID } from "../src/domain/factions.ts";
 import { detectOwnerChanges, isActive, type OwnerChange } from "../src/domain/history.ts";
 import { ratePerHour, toSample, type Sample } from "../src/domain/progress.ts";
-import type { Supabase } from "./supabase.ts";
+import { unlessMissing, type Supabase } from "./supabase.ts";
 
 /** Samples kept in memory for rates. Matches the window ratePerHour looks at. */
 const RATE_WINDOW_MS = 60 * 60_000;
 /** PostgREST returns at most 1000 rows per request by default. */
 const PAGE = 1000;
+/** A city is stored at most this often; the campaigns task reads its planet every minute. */
+const REGION_EVERY_MS = 4.5 * 60_000;
 
 interface SampleRow {
   planet: number;
@@ -41,6 +43,21 @@ export interface IngestResult {
   changes: OwnerChange[];
 }
 
+interface RegionRow {
+  planet: number;
+  region: number;
+  at: string;
+  players: number;
+  percent: number | null;
+}
+
+/** A city worth a reading: Helldivers in it, or its liberation counting down. */
+function regionRow(p: Planet, r: Planet["regions"][number], at: number): RegionRow | null {
+  const percent = r.isAvailable && r.health != null && r.maxHealth ? 100 - (r.health / r.maxHealth) * 100 : null;
+  if (r.players <= 0 && percent == null) return null;
+  return { planet: p.index, region: r.id, at: new Date(at).toISOString(), players: r.players, percent };
+}
+
 /** A region's liberation as a sample of its planet, so the planet's rate maths applies to it. */
 function regionSample(p: Planet, r: Planet["regions"][number], at: number): Sample | null {
   if (r.health == null || !r.maxHealth) return null;
@@ -63,6 +80,7 @@ export class Recorder {
   private owners = new Map<number, string>();
   private recent = new Map<number, Sample[]>();
   private regions = new Map<string, Sample[]>();
+  private regionWritten = new Map<string, number>();
   private db: Supabase;
 
   constructor(db: Supabase) {
@@ -109,12 +127,23 @@ export class Recorder {
     // A planet that just changed hands gets one sample even if it's no longer contested,
     // so its chart ends at the moment of capture.
     const changed = new Set(changes.map((c) => c.planet));
-    const samples = planets.filter((p) => isActive(p) || changed.has(p.index)).map((p) => toSample(p, at));
+    const contested = (p: Planet) => isActive(p) || changed.has(p.index);
+    const samples = planets.filter(contested).map((p) => toSample(p, at));
     for (const s of samples) this.remember(s);
+    const idle = planets
+      .filter((p) => !contested(p) && p.statistics.playerCount > 0)
+      .map((p) => ({ planet: p.index, at: new Date(at).toISOString(), players: p.statistics.playerCount }));
+    const cities: RegionRow[] = [];
     for (const p of planets) {
       for (const r of p.regions) {
+        const key = `${p.index}:${r.id}`;
         const s = regionSample(p, r, at);
-        if (s) keep(this.regions, `${p.index}:${r.id}`, s);
+        if (s) keep(this.regions, key, s);
+        const row = regionRow(p, r, at);
+        if (row && at - (this.regionWritten.get(key) ?? -Infinity) >= REGION_EVERY_MS) {
+          cities.push(row);
+          this.regionWritten.set(key, at);
+        }
       }
     }
 
@@ -131,6 +160,8 @@ export class Recorder {
       })),
     );
     await this.db.upsert("planet_owners", updated);
+    await unlessMissing(this.db.upsert("planet_players", idle, { ignoreDuplicates: true }));
+    await unlessMissing(this.db.upsert("region_samples", cities, { ignoreDuplicates: true }));
     return { samples: samples.length, changes };
   }
 

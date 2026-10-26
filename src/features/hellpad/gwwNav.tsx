@@ -3,19 +3,22 @@ import { createContext, Fragment, useContext, useMemo, type MouseEvent, type Rea
 import { useFreshPlanets } from "../../api/queries";
 import type { Planet } from "../../api/types";
 import { MANUALS } from "../../data/gww";
-import { CITIZENS, COMPANIES, GOV, MINISTRIES } from "../../data/gwwSites";
+import { CITIZENS, COMPANIES, GOV, HOLIDAYS, HOLIDAYS_SITE, MINISTRIES } from "../../data/gwwSites";
 import { factionColor } from "../../domain/factions";
 import { parseRich } from "../../domain/gwwText";
 import { useUi, type GwwPage } from "../../state";
 
 const HOME = "se://gww";
-const SITE_ADDRESS = { gov: GOV.address, citizens: CITIZENS.address, log: "se://hc/war-log" };
+export const LOG_ADDRESS = "se://hc/logs";
+export const LOG_TITLE = "Galactic logs";
+const SITE_ADDRESS = { gov: GOV.address, citizens: CITIZENS.address, holidays: HOLIDAYS_SITE.address, log: LOG_ADDRESS };
 const DIR_ADDRESS = { manuals: "se://hc/manuals", gov: "se://gov/directory", corps: "se://corp" };
 
 export function addressOf(p: GwwPage): string {
   if (p.kind === "manual") return MANUALS.find((m) => m.id === p.id)?.address ?? HOME;
   if (p.kind === "ministry") return MINISTRIES.find((m) => m.id === p.id)?.address ?? HOME;
   if (p.kind === "company") return COMPANIES.find((c) => c.id === p.id)?.address ?? HOME;
+  if (p.kind === "holiday") return HOLIDAYS.find((h) => h.id === p.id)?.address ?? HOME;
   if (p.kind === "site") return SITE_ADDRESS[p.id];
   if (p.kind === "dir") return DIR_ADDRESS[p.id];
   if (p.kind === "missing") return p.address;
@@ -30,6 +33,7 @@ const ADDRESSES = new Map<string, string>([
   ...MANUALS.map((m): [string, string] => [m.address, `manual:${m.id}`]),
   ...MINISTRIES.map((m): [string, string] => [m.address, `ministry:${m.id}`]),
   ...COMPANIES.map((c): [string, string] => [c.address, `company:${c.id}`]),
+  ...HOLIDAYS.map((h): [string, string] => [h.address, `holiday:${h.id}`]),
   ["se://strohmann.news", "app:news"],
 ]);
 
@@ -40,6 +44,12 @@ export function normalize(typed: string): string {
 }
 
 export const ADDRESS_LIST = [...ADDRESSES.keys()];
+
+/** Pages reached only through Managed Democracy: they open when typed, but aren't suggested. */
+export const isGovSubpage = (target: string) =>
+  target === "site:citizens" || target === "site:holidays" || target.startsWith("holiday:");
+
+export const SUGGESTED_ADDRESSES = ADDRESS_LIST.filter((a) => !isGovSubpage(ADDRESSES.get(a)!));
 
 /** The link target a typed address opens, if any site answers at it. */
 export const targetAt = (typed: string): string | undefined => ADDRESSES.get(normalize(typed));
@@ -68,7 +78,8 @@ export function pageOf(target: string): GwwPage | null {
   if (kind === "manual" && MANUALS.some((m) => m.id === id)) return { kind, id };
   if (kind === "ministry" && MINISTRIES.some((m) => m.id === id)) return { kind, id };
   if (kind === "company" && COMPANIES.some((c) => c.id === id)) return { kind, id };
-  if (kind === "site" && (id === "log" || id === "gov" || id === "citizens")) return { kind, id };
+  if (kind === "holiday" && HOLIDAYS.some((h) => h.id === id)) return { kind, id };
+  if (kind === "site" && (id === "log" || id === "gov" || id === "citizens" || id === "holidays")) return { kind, id };
   if (kind === "dir" && id in DIRS) return { kind, id: id as keyof typeof DIRS };
   return null;
 }
@@ -80,7 +91,9 @@ export function titleOf(target: string): string {
   if (page?.kind === "manual") return MANUALS.find((m) => m.id === id)!.title;
   if (page?.kind === "ministry") return MINISTRIES.find((m) => m.id === id)!.name;
   if (page?.kind === "company") return COMPANIES.find((c) => c.id === id)!.name;
-  if (page?.kind === "site") return { gov: GOV.title, citizens: CITIZENS.title, log: "Galactic war log" }[page.id];
+  if (page?.kind === "holiday") return HOLIDAYS.find((h) => h.id === id)!.name;
+  if (page?.kind === "site")
+    return { gov: GOV.title, citizens: CITIZENS.title, holidays: HOLIDAYS_SITE.title, log: LOG_TITLE }[page.id];
   if (page?.kind === "dir") return DIRS[page.id];
   if (target.startsWith("app:")) return APP_PAGES[id] ?? id;
   return id;

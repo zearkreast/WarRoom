@@ -28,7 +28,7 @@ import { dispatchTitle } from "../src/domain/format.ts";
 import type { Hd2Client } from "./hd2.ts";
 import type { Push } from "./push.ts";
 import type { Recorder } from "./recorder.ts";
-import type { Supabase } from "./supabase.ts";
+import { unlessMissing, type Supabase } from "./supabase.ts";
 
 export interface Task {
   name: string;
@@ -129,7 +129,11 @@ export function createTasks(
         const war = await hd2.get<War>("/api/v1/war");
         await snapshot("war", war);
         await db.upsert("war_samples", [toWarSample(war, lastCampaigns, now())], { ignoreDuplicates: true });
-        return `${war.statistics.playerCount} divers`;
+        const online = war.statistics.playerCount;
+        // A reading of nobody online is an API blip, not the day's low.
+        const noted =
+          online > 0 && (await unlessMissing(db.rpc("note_war_day", { reading_at: new Date(now()).toISOString(), online })));
+        return `${online} divers${online > 0 && !noted ? ", no war_days table yet" : ""}`;
       },
     },
     {
@@ -215,7 +219,9 @@ export function createTasks(
       async run() {
         const removed = await db.rpc<number>("compact_samples");
         const removedWar = await db.rpc<number>("compact_war_samples");
-        return `${removed} old samples and ${removedWar} war samples thinned`;
+        let removedActivity = 0;
+        await unlessMissing(db.rpc<number>("compact_activity").then((n) => (removedActivity = n)));
+        return `${removed} old samples, ${removedWar} war samples and ${removedActivity} activity readings thinned`;
       },
     },
   ];

@@ -512,6 +512,27 @@ export const COMPANIES: Company[] = [
     related: ["ministry:expansion"],
     source: wiki("Ulterior"),
   },
+  {
+    id: "martian-armory",
+    name: "Martian Armory",
+    address: "se://martian.armory",
+    trade: "Arms",
+    summary: "The weapons maker behind the arms made famous by the Obedient Democracy Support Troopers cartoon.",
+    color: "#6f9a4a",
+    sections: [
+      {
+        heading: "The armory",
+        text: "A megacorporation weapons producer for the Federation, supplying the Helldivers with weapons, several of them made famous by the Obedient Democracy Support Troopers cartoon.",
+        products: ["MA5C Assault Rifle", "M7S SMG", "M90A Shotgun", "M6C/SOCOM Pistol"],
+      },
+      {
+        heading: "From another war",
+        text: "Added with the Obedient Democracy Support Troopers Legendary Warbond, a Halo crossover. Unlike [[company:stahl-arms|Ståhl Arms]] in the Killzone crossover before it, Martian Armory does not exist in Halo canon; it is likely based on Misriah Armory.",
+      },
+    ],
+    related: ["company:stahl-arms", "company:morgunson"],
+    source: wiki("Martian Armory"),
+  },
 ];
 
 /** `by` is the advertiser's site, as a link target; `brand` names an advertiser without one. */
@@ -553,18 +574,254 @@ export const ADS: Ad[] = [
 ];
 
 export interface Holiday {
+  id: string;
   name: string;
   /** 1-12. */
   month: number;
   day: number;
+  /** The days it's kept, as the calendar gives them. */
+  when: string;
+  address: string;
+  color: string;
+  /** One line for its card. */
+  summary: string;
+  /** The game's own words about it, quoted, each with where it's from. */
+  quotes: { from: string; text: string }[];
+  sections: SiteSection[];
+  related: string[];
+  sources: Source[];
 }
 
 export const HOLIDAYS: Holiday[] = [
-  { name: "Malevelon Creek Memorial Day", month: 4, day: 3 },
-  { name: "Avengement Day", month: 10, day: 14 },
-  { name: "Liberty Day", month: 10, day: 26 },
-  { name: "Festival of Reckoning", month: 12, day: 25 },
+  {
+    id: "malevelon-creek",
+    name: "Malevelon Creek Memorial Day",
+    month: 4,
+    day: 3,
+    when: "3 April",
+    address: "se://gov/holidays/malevelon-creek",
+    color: "#e0323c",
+    summary: "Three minutes of the lunch break, in remembrance of those who died freeing Malevelon Creek.",
+    quotes: [
+      {
+        from: "Presidential decree",
+        text: "The President of Super Earth has officially recognized this day as Malevelon Creek Memorial Day. Every year on this day, Super Earth citizens will unite for a full 3 minutes of their lunch break in solemn remembrance of those who gave their lives to free Malevelon Creek.",
+      },
+    ],
+    sections: [
+      {
+        heading: "The Creek",
+        text: "The day commemorates the countless Helldivers who died in the effort to liberate [[planet:Malevelon Creek|Malevelon Creek]], a jungle world fought over against the Automatons. The planet became the target of Major Order A1-4-1, and its liberation was won in mere hours.",
+      },
+      {
+        heading: "The decree",
+        text: "After the campaign, a presidential decree sent to every Super Destroyer as a dispatch set 3 April as Malevelon Creek Memorial Day, and every Helldiver was awarded the Fallen Hero's Vengeance cape.",
+        products: ["Fallen Hero's Vengeance"],
+      },
+      {
+        heading: "Remembrance",
+        text: "Every year on 3 April, citizens give three minutes of their lunch break to solemn remembrance. The day's posters read “Remember the Creek” and “Remember the Fallen”.",
+      },
+      {
+        heading: "The memorial",
+        text: "On 21 October 2186, in the run-up to [[holiday:liberty-day|Liberty Day]], construction of a Malevelon Creek Memorial & Interrogation Center for Human Rights was ordered. Its materials were to come from key planets on each front in Major Order A3-10-5, but only one of the objectives was reached.",
+      },
+      {
+        heading: "Behind the day",
+        text: "Players had dubbed the planet “space Vietnam”, for its thick jungle and the Automatons firing through it from every direction. Arrowhead Game Studios honoured the meme by making the Creek part of the game's official lore.",
+      },
+    ],
+    related: ["holiday:liberty-day", "site:gov"],
+    sources: [WIKI.malevelonDay],
+  },
+  {
+    id: "avengement",
+    name: "Avengement Day",
+    month: 10,
+    day: 14,
+    when: "14 October, on Seyshel Beach",
+    address: "se://gov/holidays/avengement",
+    color: "#9b6cf0",
+    summary: "Seyshel Beach's own holiday, for the day a small cohort of Helldivers set it free.",
+    quotes: [],
+    sections: [
+      {
+        heading: "Seyshel Beach",
+        text: "[[planet:Seyshel Beach|Seyshel Beach]] first fell to the Illuminate during their massive incursion on all three fronts. Once the invasions were stopped and the Helldivers' focus moved to [[planet:Oshaune|Oshaune]] and [[manual:gloom|the Gloom]], a small cohort of Helldivers stayed behind on the planet.",
+      },
+      {
+        heading: "New Alexandria",
+        text: "The planet had no real strategic significance, yet High Command congratulated the cohort on liberating its mega city, New Alexandria. After a slow battle of six weeks, Seyshel Beach was free.",
+      },
+      {
+        heading: "The holiday",
+        text: "Its citizens made 14 October, the day of its liberation, a planetary holiday to remember the planets lost to humanity's foes: Avengement Day. It is kept on Seyshel Beach only.",
+      },
+      { heading: "Behind the name", text: "New Alexandria is a reference to the city of the same name in Halo: Reach." },
+    ],
+    related: ["holiday:liberty-day", "site:gov"],
+    sources: [wiki("Seyshel Beach")],
+  },
+  {
+    id: "liberty-day",
+    name: "Liberty Day",
+    month: 10,
+    day: 26,
+    when: "26 October",
+    address: "se://gov/holidays/liberty-day",
+    color: "#ffd23f",
+    summary: "The Federation's most important holiday, for the day Managed Democracy was presented.",
+    quotes: [
+      { from: "Training manual tip", text: "Super Earth has many holidays, but the most important is October 26th-Liberty Day!" },
+      { from: "Ship ticker", text: "Humanity everywhere rejoices as we celebrate Liberty Day!" },
+      {
+        from: "Liberty Day broadcast",
+        text: "This Liberty Day, become the patriot your family needs. When your children sprint to the Liberty Day Pyre to pull presents from the flames, make sure they get the gift they deserve. The gift of Helldivers. Because Super Earth isn't just about the heroes on the front. It's about the heroes right here at home.",
+      },
+    ],
+    sections: [
+      {
+        heading: "The day",
+        text: "Kept every 26 October by all citizens of Super Earth, it marks the day the Democratic Council presented the first and final draft of [[site:gov|Managed Democracy]]. It is the most important holiday in the whole Federation.",
+      },
+      {
+        heading: "The Liberty Day Pyre",
+        text: "An annual tradition: the enemies of democracy are set ablaze, and beneath them lie presents for every child of Super Earth, of any [[site:citizens|class]], to pull from the flames.",
+      },
+      {
+        heading: "Liberty Day 2184",
+        text: "The first Liberty Day of the Second Galactic War brought new gear for the Helldivers.",
+        products: ["DP-00 Tactical armour", "R-2124 Constitution"],
+      },
+      {
+        heading: "Liberty Day 2185",
+        timeline: [
+          {
+            when: "Before",
+            text: "Less than two weeks ahead of the day, the Helldivers seized unsanctioned explosives from Automaton planets in Major Order A2-10-3.",
+          },
+          { when: "26 Oct 2185", text: "Every Helldiver got a single use of the CQC-1 One True Flag stratagem per mission." },
+          {
+            when: "26 Oct 2185",
+            text: "The seized explosives made possible a 24-Hour Pyrotechnics Display over [[planet:Super Earth|Super Earth]]'s atmosphere, and Helldivers were encouraged to warp there to see it.",
+          },
+          {
+            when: "Major Order",
+            text: "Kill 40 million enemies using only the R-2124 Constitution (A2-10-5). Its reward was the new Liberty Day cape, the Veridical Ideology.",
+          },
+        ],
+      },
+      {
+        heading: "Liberty Day 2186",
+        timeline: [
+          {
+            when: "6 Oct 2186",
+            text: "Celebratory mirthfulness drops below the regulatory threshold, and High Command authorizes the Liberty Day Party Planning Protocol: citizens are required to host Liberty Day parties and document their festivities. “Not being a party person” is not a recognized exemption.",
+          },
+          { when: "10 Oct 2186", text: "Super Destroyer Appreciation Day." },
+          {
+            when: "12 Oct 2186",
+            text: "High Command asks how the Helldivers take their liber-tea, or democroffee.",
+          },
+          {
+            when: "21 Oct 2186",
+            text: "Construction of the [[holiday:malevelon-creek|Malevelon Creek]] Memorial & Interrogation Center for Human Rights is ordered. The [[ministry:truth|Ministry of Truth]] then orders enough kills to film combat footage for “Democratic Sniper”, its reenactment of the battle fought by Kurt Calhoun.",
+          },
+          {
+            when: "22 Oct 2186",
+            text: "High Command releases the Liberty Day 2186 Party Pack: printable bunting, a game like darts, a colouring page, decorations, a DIY Helldiver mask, event highlights and democratic trivia.",
+          },
+          {
+            when: "26 Oct 2186",
+            text: "Every Super Destroyer is decorated for the day with flags, rugs and party cups, and Helldivers get the temporary Eagle Fly By and Orbital Confetti stratagems: tactically useless, full of patriotism. A new game, Adopt a SEAF, has Helldivers look after their own SEAF soldier and send them on missions. At the end of the day every Helldiver receives the AR-23L Liberator.",
+          },
+        ],
+      },
+      {
+        heading: "Behind the day",
+        text: "26 October is the day Starship Troopers was published, in 1959. Arrowhead Game Studios has marked it every year since the first Helldivers.",
+      },
+    ],
+    related: ["site:gov", "holiday:malevelon-creek"],
+    sources: [WIKI.libertyDay],
+  },
+  {
+    id: "reckoning",
+    name: "Festival of Reckoning",
+    month: 12,
+    day: 25,
+    when: "25 to 28 December",
+    address: "se://gov/holidays/reckoning",
+    color: "#4fc3e8",
+    summary: "The winter holiday of “love, family, and the pursuit of peace”, and of the Dissident Execution Parade.",
+    quotes: [
+      {
+        from: "Carol: Here They Come a'Reckonin'",
+        text: "Oh, here they come a'Reckonin', O'er hill and vale, Children play, bombs away, Super Earth we hail! Here they come a'Reckonin', Justice justly served, Flowers grow, blood will flow, Peace on Super Earth!",
+      },
+      {
+        from: "Carol: O Come, And Report Them",
+        text: "O Come, and report them, dissidents and traitors, Inform, inform ye on Treachery! Come and report them, tell on all your neighbors! O come let us arrest them, traitors and scum!",
+      },
+      {
+        from: "Story: Wally, the White-Nosed Walrus",
+        text: "Wally was ostracized from the other walruses at the weapons factory, because of his odd white nose. He wasn't included in walrus games. But one day there was a terrible storm, and the factory shut down. Wally indicated to his superiors that several of the other walruses had made concerning comments about the righteousness of Super Earth's wars. They were arrested, the storm ended, and production continued, just in time. Wally's bravery had saved the Festival of Reckoning.",
+      },
+    ],
+    sections: [
+      {
+        heading: "The festival",
+        text: "Super Earth's winter holiday, dedicated to “love, family, and the pursuit of peace”. Citizens spend it with friends and family and take advantage of deep discounts on consumer goods, while the Helldivers' successes are televised for all to see. Each year the Reckoning Fund is set aside to finance extra ordnance for the Helldivers.",
+      },
+      {
+        heading: "The Dissident Execution Parade",
+        text: "A dissident execution parade is held every year. The record stands at 8,701 executions in one parade, set in 2185 over seven and a half hours; it closed with “All I want for The Festival of Reckoning is Vengeance”, sung by the [[planet:Hydrofall Prime|Hydrofall Prime]] Children's Choir.",
+      },
+      {
+        heading: "The Feast of the Electorate",
+        text: "The last day, 28 December, celebrates the first ever free and managed election.",
+      },
+      {
+        heading: "Reckoning 2184",
+        timeline: [
+          {
+            when: "25 Dec 2184",
+            text: "Helldivers get incendiary weaponry for the day, among it the Orbital Napalm Barrage and Eagle Napalm Airstrike, and the StA-X3 W.A.S.P. Launcher for good.",
+          },
+          {
+            when: "26 Dec 2184",
+            text: "Explosive weaponry: the Eagle 500kg Bomb, Eagle 110mm Rocket Pods, Orbital Laser, Orbital Railcannon Strike and Anti-Tank Mines.",
+          },
+          { when: "27 Dec 2184", text: "A large set of mixed weaponry, the Patriot Exosuit and MD-8 Gas Mines among it." },
+          { when: "28 Dec 2184", text: "The festival ends. During it, the Illuminate invade [[planet:Julheim|Julheim]]." },
+        ],
+      },
+      {
+        heading: "Reckoning 2185",
+        text: "With a record-breaking volume of vengeance owed that year, the [[ministry:prosperity|Ministry of Prosperity]] extended the festivities to 14 days. The Major Order: liberate more planets than are lost, for 100 Medals. Every few days a Minor Order set a kill count on one of three Icy Glaciers worlds, [[planet:Heeth|Heeth]], [[planet:Marfark|Marfark]] and [[planet:New Stockholm|New Stockholm]], where experimental stratagems were enabled, for 40 Medals each. At the end every Helldiver received the Reckoning's Cheer cape.",
+        points: [
+          "Orbital 120mm HE Barrage: from 18 December, a tighter radius, six shells a salvo and an Orbital EMS Strike before each.",
+          "Orbital Gatling Barrage: from 23 December, incendiary rounds that set the ground alight.",
+          "Orbital Walking Barrage: from 28 December, Orbital Smoke Strikes mixed into its salvos.",
+        ],
+      },
+      {
+        heading: "Behind the carols",
+        text: "“All I want for The Festival of Reckoning is Vengeance” parodies Mariah Carey's “All I Want for Christmas Is You”.",
+      },
+    ],
+    related: ["site:gov", "ministry:prosperity"],
+    sources: [wiki("Festival of Reckoning")],
+  },
 ];
+
+export const HOLIDAYS_SITE = {
+  title: "Super Earth Holidays",
+  address: "se://gov/holidays",
+  icon: "super-earth",
+  summary: "The days the Federation keeps, and the stories behind them.",
+  related: ["site:gov", "site:citizens"],
+};
 
 export const GOV = {
   title: "Managed Democracy",
@@ -594,29 +851,10 @@ export const GOV = {
     },
     {
       heading: "Holidays",
+      text: "The days the Federation keeps; the stories behind them are on the [[site:holidays|Super Earth Holidays]] site.",
       table: {
         head: ["Day", "Holiday"],
-        rows: [
-          {
-            cells: [
-              "3 April",
-              "Malevelon Creek Memorial Day: three minutes of the lunch break in remembrance of those who died freeing [[planet:Malevelon Creek|Malevelon Creek]].",
-            ],
-          },
-          {
-            cells: [
-              "14 October",
-              "Avengement Day, on [[planet:Seyshel Beach|Seyshel Beach]] only: its citizens made the day of its liberation in 2185, after six weeks of fighting by a small cohort of Helldivers, a planetary holiday to remember the planets lost to humanity's foes.",
-            ],
-          },
-          { cells: ["26 October", "Liberty Day: the Federation's most important holiday, for the day Managed Democracy was presented."] },
-          {
-            cells: [
-              "25 to 28 December",
-              "Festival of Reckoning: the winter holiday of “love, family, and the pursuit of peace”, with deep discounts, televised Helldiver victories, a Reckoning Fund for extra ordnance and a dissident execution parade. Its last day is the Feast of the Electorate, for the first free and managed election.",
-            ],
-          },
-        ],
+        rows: HOLIDAYS.map((h) => ({ cells: [h.when, `[[holiday:${h.id}|${h.name}]]: ${h.summary}`] })),
         note: "In 2186 the Liberty Day preparations began on 6 October with the Liberty Day Party Planning Protocol, under which “not being a party person” is no exemption.",
       },
     },
@@ -629,7 +867,7 @@ export const GOV = {
     "Managed Democracy is a cornerstone of advanced civilization.",
     "Super Earth has many holidays, but the most important is October 26th-Liberty Day!",
   ],
-  related: ["dir:gov", "ministry:defense", "ministry:truth", "site:log"],
+  related: ["site:citizens", "site:holidays", "dir:gov", "ministry:defense", "ministry:truth"],
   sources: [WIKI.government, WIKI.libertyDay, WIKI.malevelonDay, wiki("Festival of Reckoning"), wiki("Seyshel Beach"), WIKI.wallOfMartyrs],
 };
 

@@ -1,4 +1,4 @@
-import { FileText, History, Sparkle, Timer, Vote, Zap } from "lucide-react";
+import { ArrowRight, FileText, History, Sparkle, Timer, Zap } from "lucide-react";
 import { Fragment, useState, type CSSProperties, type MouseEvent } from "react";
 import { useCampaigns, useEffects, useFreshPlanets, useSpaceStations } from "../../api/queries";
 import { useStationJumps } from "../../api/stations";
@@ -14,10 +14,11 @@ import type { StationLive } from "../../domain/snapshot";
 import { fmtLongDuration } from "../../domain/warHistory";
 import { useUi } from "../../state";
 import { DssIcon, FactionEmblem, StationEmblem } from "../../ui/emblems";
-import { Countdown, Empty, Loading, Meter, OutLink, Panel, StatusChip, useNow } from "../../ui/primitives";
-import { dssState } from "../map/pawnArt";
+import { Countdown, Empty, Loading, OutLink, Panel, StatusChip, useNow } from "../../ui/primitives";
+import { actionIcon, dssState } from "../map/pawnArt";
 import { usePlanetRate } from "../planets/useFronts";
 import { PlanetSphere } from "../planet/PlanetDetail";
+import { LOG_ADDRESS } from "./gwwNav";
 import { CssHolo, DssHolo } from "./StationHolo";
 
 /** Splits the API's `<span data-ah="1">…</span>` highlights into plain and emphasised runs. */
@@ -138,12 +139,37 @@ const DSS_STATE_LABEL = { active: "Action deployed", cooldown: "Cooling down", o
 const isActive = (a: TacticalAction, now: number) => a.status === 2 && Date.parse(a.statusExpire) > now;
 const isCooling = (a: TacticalAction, now: number) => a.status === 3 && Date.parse(a.statusExpire) > now;
 
-function actionState(a: TacticalAction, now: number): { label: string; tone: string } {
-  if (isActive(a, now)) return { label: "Active", tone: "var(--good)" };
-  if (isCooling(a, now)) return { label: "On cooldown", tone: "var(--warn)" };
+type ActionMode = "active" | "cooling" | "ready" | "gathering";
+
+function actionState(a: TacticalAction, now: number): { mode: ActionMode; label: string; tone: string } {
+  if (isActive(a, now)) return { mode: "active", label: "Active", tone: "var(--good)" };
+  if (isCooling(a, now)) return { mode: "cooling", label: "Cooldown", tone: "var(--warn)" };
   const cost = a.costs[0];
-  if (cost && cost.currentValue >= cost.targetValue) return { label: "Ready", tone: "var(--good)" };
-  return { label: "Gathering", tone: "var(--f-humans)" };
+  if (cost && cost.currentValue >= cost.targetValue) return { mode: "ready", label: "Ready", tone: "var(--good)" };
+  return { mode: "gathering", label: "Gathering", tone: "var(--f-humans)" };
+}
+
+function ActionIcon({ name, size }: { name: string; size: number }) {
+  const href = actionIcon(name);
+  if (!href) return <Zap size={size} aria-hidden />;
+  return <img className="st-action-icon" src={href} width={size} height={size} alt="" />;
+}
+
+function ActionBar({ pct, mode, label }: { pct: number; mode: ActionMode; label: string }) {
+  const v = Math.max(0, Math.min(100, pct));
+  return (
+    <div
+      className={`st-bar ${mode}`}
+      role="progressbar"
+      aria-valuenow={Math.round(v)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={label}
+    >
+      <div className="st-bar-fill" style={{ width: `${v}%` }} />
+      {mode === "cooling" && <span className="st-bar-tag caps">Standby</span>}
+    </div>
+  );
 }
 
 function ActionCard({ a, now }: { a: TacticalAction; now: number }) {
@@ -158,8 +184,9 @@ function ActionCard({ a, now }: { a: TacticalAction; now: number }) {
       : null;
   const state = actionState(a, now);
   return (
-    <article className="st-action">
+    <article className={`st-action ${state.mode}`} style={{ "--tone": state.tone } as CSSProperties}>
       <header>
+        <ActionIcon name={a.name} size={34} />
         <h3>{a.name}</h3>
         <span className="status-chip" style={{ "--tone": state.tone } as CSSProperties}>
           {state.label}
@@ -171,7 +198,7 @@ function ActionCard({ a, now }: { a: TacticalAction; now: number }) {
       <p className="st-desc">{a.description}</p>
       {cost && (
         <div className="st-progress">
-          <Meter value={pct} color="var(--f-humans)" size="l" label={`${a.name} readiness`} />
+          <ActionBar pct={pct} mode={state.mode} label={`${a.name} readiness`} />
           <div className="st-progress-row num">
             <span>
               {active ? (
@@ -196,33 +223,35 @@ function ActionCard({ a, now }: { a: TacticalAction; now: number }) {
   );
 }
 
-function JumpHistory({ station }: { station: number }) {
+function JumpHistoryLink({ station }: { station: number }) {
   const jumps = useStationJumps(station).data ?? [];
-  const planets = useFreshPlanets().data;
-  const name = (i: number | null) => (i == null ? "—" : (planets?.find((p) => p.index === i)?.name ?? `Planet ${i}`));
+  // One state change, so Back steps straight back to the station.
+  const open = () =>
+    useUi.setState({ view: "hellpad", module: "gww", gww: [{ kind: "home" }, { kind: "site", id: "log" }], options: null, detail: null });
+  const last = jumps[0];
   return (
-    <Panel title="FTL jump history" icon={History} right={<span className="num">{jumps.length}</span>}>
-      {jumps.length === 0 ? (
-        <Empty>No jumps logged yet. Each jump is recorded from the next collector update on.</Empty>
-      ) : (
-        <ol className="st-jumps">
-          {jumps.map((j) => (
-            <li key={j.at}>
-              <span className="num">{fmtDateTime(j.at)}</span>
-              <span className="caps">
-                {name(j.from)} <span aria-hidden>→</span> <b>{name(j.to)}</b>
-              </span>
-            </li>
-          ))}
-        </ol>
-      )}
-    </Panel>
+    <button className="st-jumplink" onClick={open}>
+      <History size={18} aria-hidden />
+      <span className="st-jumplink-text">
+        <b className="caps">FTL jump history</b>
+        <span className="num">
+          {jumps.length === 0
+            ? "No jumps logged yet"
+            : `${jumps.length === 1 ? "1 jump" : `${jumps.length} jumps`} logged · last ${fmtDateTime(last.at)}`}
+        </span>
+      </span>
+      <span className="st-jumplink-to caps num">
+        {LOG_ADDRESS} <ArrowRight size={14} aria-hidden />
+      </span>
+    </button>
   );
 }
 
 function StationPanel({ station }: { station: StationLive }) {
   const { planetIndex, electionEnd, tacticalActions: actions } = station;
-  const effects = useEffects().data?.stations.get(station.id32) ?? [];
+  const effects = [...(useEffects().data?.stations.get(station.id32) ?? [])].sort(
+    (a, b) => Number(!!actionIcon(a.name)) - Number(!!actionIcon(b.name)),
+  );
   const planets = useFreshPlanets().data;
   const campaigns = useCampaigns().data;
   const rate = usePlanetRate(planetIndex);
@@ -272,10 +301,12 @@ function StationPanel({ station }: { station: StationLive }) {
             {live.length > 0 && (
               <ul className="st-live" aria-label="Active tactical actions">
                 {live.map((a) => (
-                  <li key={a.id32}>
-                    <Zap size={14} aria-hidden />
-                    <b className="caps">{a.name}</b>
-                    <span className="caps">over {p.name}</span>
+                  <li key={a.id32} title={a.name}>
+                    <ActionIcon name={a.name} size={22} />
+                    <span className="st-live-name">
+                      <b className="caps">{a.name}</b>
+                      <span className="caps">Over {p.name}</span>
+                    </span>
                     <span className="num">
                       ends in <Countdown to={Date.parse(a.statusExpire)} />
                     </span>
@@ -287,6 +318,7 @@ function StationPanel({ station }: { station: StationLive }) {
               <ul className="st-effects" aria-label="Station effects">
                 {effects.map((e) => (
                   <li key={e.id} className="caps" title={e.description}>
+                    {actionIcon(e.name) && <ActionIcon name={e.name} size={14} />}
                     {e.name}
                   </li>
                 ))}
@@ -300,22 +332,27 @@ function StationPanel({ station }: { station: StationLive }) {
             <ActionCard key={a.id32} a={a} now={now} />
           ))}
         </div>
-        <div className="st-cols">
-          <Panel title="Destination vote" icon={Vote}>
-            <p className="st-note">
-              Helldivers vote in game on where the station jumps next, and the vote closes when the countdown above
-              runs out. The game publishes when it closes but not the votes, so the tally can only be seen in game.
-            </p>
-          </Panel>
-          <JumpHistory station={station.id32} />
-        </div>
+        <JumpHistoryLink station={station.id32} />
         <StarOfPeace />
       </div>
       <DssHolo
         state={state}
         readout={[
           ["Orbit", p.name],
-          ["Station", DSS_STATE_LABEL[state]],
+          [
+            "Station",
+            live.length > 0 ? (
+              <span className="st-holo-icons" aria-label={live.map((a) => a.name).join(", ")}>
+                {live.map((a) => (
+                  <span key={a.id32} title={a.name}>
+                    <ActionIcon name={a.name} size={22} />
+                  </span>
+                ))}
+              </span>
+            ) : (
+              DSS_STATE_LABEL[state]
+            ),
+          ],
           ["Next jump", jump > now ? <Countdown to={jump} /> : "Vote closing"],
         ]}
       />

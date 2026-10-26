@@ -49,6 +49,11 @@ export interface Region {
   size: string;
   /** Enemy regeneration in health per second, while the region is fought over. */
   regenPerSecond: number | null;
+  /**
+   * The share of the planet's health left when the region opens: it opens once the planet is (1 − factor)
+   * liberated, so 1 means open from the start. Absent from snapshots of older collectors.
+   */
+  availabilityFactor?: number | null;
   isAvailable: boolean;
   players: number;
   /** Progress trend in %/h from the collector; only on campaign planets, null while measuring. */

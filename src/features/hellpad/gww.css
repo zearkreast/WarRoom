@@ -895,8 +895,12 @@ button.gww-ad-open:focus-visible img {
   max-height: 96px;
   object-fit: contain;
 }
-.gww-banner .gww-wordmark {
-  font-size: 1.6rem;
+.gww-corp-logo .gww-wordmark {
+  max-width: 88%;
+  font-size: 1rem;
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: break-word;
 }
 .gww-slogan {
   margin-top: var(--s-3) !important;
@@ -1743,5 +1747,270 @@ button.gww-ad-open:focus-visible img {
   }
   .gww-pager-link {
     max-width: none;
+  }
+}
+
+/* ---------- Managed Democracy's own menu ---------- */
+.gww-sitenav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0;
+  border: 1px solid var(--line-strong);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--f-humans) 14%, var(--surface-2)), var(--surface-1));
+}
+.gww-sitenav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-5);
+  border-right: 1px solid var(--line);
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--f-humans);
+}
+.gww-sitenav-link {
+  padding: var(--s-3) var(--s-5);
+  background: none;
+  border: 0;
+  border-right: 1px solid var(--line);
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.gww-sitenav-link:hover {
+  color: var(--text-hi);
+}
+.gww-sitenav-link.on {
+  color: var(--text-hi);
+  box-shadow: inset 0 -2px 0 var(--site);
+  background: color-mix(in srgb, var(--site) 10%, transparent);
+}
+
+/* ---------- Holidays ---------- */
+.gww-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border: 1px solid color-mix(in srgb, var(--site) 60%, var(--line));
+  background: color-mix(in srgb, var(--site) 10%, var(--void));
+  color: var(--site);
+}
+.gww-date .caps {
+  font-size: var(--fs-kicker);
+  letter-spacing: 0.2em;
+}
+.gww-date b {
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--text-hi);
+}
+.gww-holidays {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gww-holiday-card {
+  --site: var(--cta);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--s-5);
+  width: 100%;
+  padding: var(--s-5);
+  text-align: left;
+  color: var(--text-dim);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--site) 9%, transparent), transparent 55%), var(--surface-1);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--site);
+  cursor: pointer;
+  transition: transform var(--t-reveal) var(--ease), border-color var(--t-reveal) var(--ease);
+}
+.gww-holiday-card:hover,
+.gww-holiday-card:focus-visible {
+  border-color: var(--site);
+  transform: translateY(-2px);
+}
+.gww-holiday-card.next {
+  box-shadow: 0 0 18px color-mix(in srgb, var(--site) 18%, transparent);
+}
+.gww-holiday-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.gww-holiday-when {
+  font-size: var(--fs-kicker);
+  letter-spacing: 0.16em;
+  color: var(--site);
+}
+.gww-holiday-story {
+  margin-top: var(--s-2);
+  font-size: var(--fs-body-s);
+  line-height: 1.5;
+  color: var(--text-dim);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.gww-holiday-in {
+  padding: 2px var(--s-3);
+  border: 1px solid var(--line-strong);
+  font-size: var(--fs-kicker);
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+.gww-holiday-in.soon {
+  color: var(--cta);
+  border-color: var(--cta);
+}
+.gww-lead .gww-holiday-in {
+  display: inline-block;
+  margin-left: var(--s-2);
+  vertical-align: middle;
+}
+@media (max-width: 720px) {
+  .gww-holiday-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .gww-holiday-in {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+/* ---------- Galactic logs ---------- */
+.gww-logbox summary {
+  align-items: center;
+}
+.gww-logbox summary b {
+  font-size: var(--fs-body);
+}
+.gww-logbox-icon {
+  display: inline-grid;
+  place-items: center;
+  color: var(--site);
+}
+.gww-logbox summary .num {
+  margin-left: auto;
+}
+.gww-logbox-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-5);
+}
+/* Too narrow here for the stay beside the route. */
+@media (min-width: 721px) {
+  .gww-logbox .st-hops li {
+    grid-template-columns: 130px 20px minmax(0, 1fr);
+    row-gap: var(--s-2);
+  }
+  .gww-logbox .st-hops li::before {
+    left: calc(130px + var(--s-5) + 9px);
+  }
+  .gww-logbox .st-hop-node {
+    grid-row: span 2;
+  }
+  .gww-logbox .st-hop-stay {
+    grid-column: 3;
+    justify-self: start;
+  }
+}
+.gww-more {
+  align-self: flex-start;
+}
+.gww-days-head,
+.gww-days li {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s-6);
+}
+.gww-days-head {
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-kicker);
+  letter-spacing: 0.16em;
+  color: var(--label);
+}
+.gww-days {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gww-days li {
+  padding: var(--s-3) 0;
+}
+.gww-days li + li {
+  border-top: 1px dashed var(--line);
+}
+.gww-day-date {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fs-body-s);
+  color: var(--text-hi);
+}
+.gww-day-date .caps {
+  font-size: var(--fs-kicker);
+  letter-spacing: 0.14em;
+  color: var(--cta);
+}
+.gww-day-stat {
+  --k: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.gww-day-stat.peak {
+  --k: var(--cta);
+}
+.gww-day-num {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+}
+.gww-day-num b {
+  color: var(--k);
+}
+.gww-day-stat.low .gww-day-num b {
+  color: var(--text-hi);
+}
+.gww-day-num .caps {
+  font-size: var(--fs-kicker);
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+}
+.gww-day-bar {
+  height: 4px;
+  background: var(--void);
+}
+.gww-day-bar i {
+  display: block;
+  height: 100%;
+  background: var(--k);
+}
+.gww-day-stat.peak .gww-day-bar i {
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cta) 50%, transparent);
+}
+@media (max-width: 720px) {
+  .gww-days-head,
+  .gww-days li {
+    grid-template-columns: 84px minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--s-4);
   }
 }
