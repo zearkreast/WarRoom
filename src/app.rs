@@ -10,7 +10,8 @@ use leptos::prelude::*;
 
 #[component]
 pub fn App() -> impl IntoView {
-    let view = ui().view;
+    // A memo, so setting the same view again (opening a Hellpad module) doesn't remount the page.
+    let view = Memo::new(move |_| ui().view.get());
     view! {
         <Shell>
             {move || match view.get() {
