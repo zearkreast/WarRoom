@@ -41,7 +41,22 @@ Add `?fixtures` to the browser URL (`http://localhost:1420/?fixtures`) to use th
 `src/test/fixtures/` instead of Supabase. This only works in dev mode.
 
 Android: `npm run tauri android init`, then `npm run tauri android dev`. This needs Android Studio and the SDK.
-The Android project (`src-tauri/gen/`) isn't kept in the repo; CI generates it for each build.
+The Android project (`src-tauri/gen/`) isn't kept in the repo; CI generates it for each build. After `init`,
+do what the "Generate the Android project" step of `android.yml` does: copy in the icons, `src-tauri/android/res`
+and `MainActivity.kt`, and add Firebase Messaging to `app/build.gradle.kts`.
+
+## Pushed news on Android
+
+The collector pushes new Strohmann News (Major Orders, dispatches, campaign launches and outcomes) through
+Firebase Cloud Messaging, so the Android app shows it even while closed. To set it up:
+
+1. In the [Firebase console](https://console.firebase.google.com), create a project and add an Android app with
+   the package `com.warcommand.tracker`. Download its `google-services.json` and paste the whole file into the
+   repository secret `GOOGLE_SERVICES_JSON`; APKs built after that subscribe to the news.
+2. Under Project settings → Service accounts, generate a private key and give it to the collector as
+   `FCM_SERVICE_ACCOUNT` (see [collector/README.md](collector/README.md)).
+
+Without the secret the APK has no pushes, and notifies only while it is open.
 
 ## Release a new version
 
@@ -62,6 +77,7 @@ not a GitHub pre-release: installed apps only look at the latest full release. I
 | `ANDROID_KEYSTORE_PASSWORD` | The keystore's password                                        |
 | `ANDROID_KEY_ALIAS`         | The key's alias in the keystore                                |
 | `ANDROID_KEY_PASSWORD`      | The key's password                                             |
+| `GOOGLE_SERVICES_JSON`      | Firebase's `google-services.json`, for pushed news (optional)  |
 
 Without the Android secrets each APK is signed with a throwaway key, and a newer APK won't install over an older
 one. Losing either signing key means installed apps can no longer take updates from new releases.
@@ -95,5 +111,8 @@ npm run collect:once     # every job once, then exits
 - `src/update/`: looks for a newer release and installs it (the Tauri updater on desktop, the release's APK
   on Android).
 - `src-tauri/app-icon.svg`: the source of every app icon; regenerate them with `npx tauri icon src-tauri/app-icon.svg`.
+- `src-tauri/android/`: what the generated Android project gets added: a `MainActivity.kt` that keeps the page
+  between the status and navigation bars and subscribes to pushed news, the notification icon, and
+  `firebase-values.mjs`, which turns `google-services.json` into the resources Firebase starts from.
 - `.github/workflows/`: `release.yml` (installers, APK and update manifest), `android.yml` (the APK, also built
   on pushes that touch `src-tauri/`) and `pages.yml` (the web version on GitHub Pages).

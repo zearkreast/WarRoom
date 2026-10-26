@@ -52,11 +52,16 @@ async function ensurePermission(): Promise<boolean> {
   return (await Notification.requestPermission()) === "granted";
 }
 
+/** Asks for OS notification permission up front, so the first alert isn't the one that asks. */
+export function requestNotifications() {
+  permission ??= ensurePermission().catch(() => false);
+}
+
 /** In-app toast always; an OS notification too when `system` is on and permission is granted. */
 export async function notify(kind: ToastKind, title: string, body: string, system: boolean, message?: string) {
   useToasts.getState().push({ kind, title, body, message });
   if (!system) return;
-  permission ??= ensurePermission().catch(() => false);
+  requestNotifications();
   if (!(await permission)) return;
   if (isTauri()) {
     const n = await import("@tauri-apps/plugin-notification");

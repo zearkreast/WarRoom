@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Campaign, EpisodeRaw, Planet, SpaceStation } from "../src/api/types.ts";
+import type { Assignment, Campaign, Dispatch, EpisodeRaw, Planet, SpaceStation } from "../src/api/types.ts";
 import {
   addOrderSamples,
   campaignTally,
@@ -17,10 +17,13 @@ import warJson from "../src/test/fixtures/war.json";
 import assignmentsJson from "../src/test/fixtures/assignments.json";
 import dispatchesJson from "../src/test/fixtures/dispatches.json";
 import stationsJson from "../src/test/fixtures/space-stations.json";
-import { createTasks, runTask } from "./collector.ts";
+import { dispatchTitle } from "../src/domain/format.ts";
+import type { EpisodeLive } from "../src/domain/snapshot.ts";
+import { campaignNews, createTasks, runTask } from "./collector.ts";
 import { RateLimitError, type Hd2Client } from "./hd2.ts";
 import { Recorder } from "./recorder.ts";
-import { createSupabase } from "./supabase.ts";
+import type { Push } from "./push.ts";
+import { createSupabase, type Supabase } from "./supabase.ts";
 
 const planets = planetsJson as unknown as Planet[];
 const campaigns = campaignsJson as unknown as Campaign[];
@@ -32,7 +35,7 @@ interface Call {
   body: unknown;
 }
 
-/** A Supabase stand-in that records every request and answers selects with `rows`. */
+/** A Supabase stand-in that records every request and answers selects with `rows`, by "table:kind" first. */
 function fakeSupabase(rows: Record<string, unknown[]> = {}) {
   const calls: Call[] = [];
   const db = createSupabase({
@@ -49,7 +52,9 @@ function fakeSupabase(rows: Record<string, unknown[]> = {}) {
         body: init.body ? JSON.parse(String(init.body)) : undefined,
       });
       const table = path.split("?")[0];
-      if (init.method === "GET") return new Response(JSON.stringify(rows[table] ?? []), { status: 200 });
+      const kind = /kind=eq\.(\w+)/.exec(path)?.[1];
+      if (init.method === "GET")
+        return new Response(JSON.stringify(rows[`${table}:${kind}`] ?? rows[table] ?? []), { status: 200 });
       if (table.startsWith("rpc/")) return new Response("3", { status: 200 });
       return new Response(null, { status: 201 });
     },
@@ -413,5 +418,69 @@ describe("galactic campaigns", () => {
       true,
     );
     expect(createTasks(fakeHd2(api), db, new Recorder(db)).some((x) => x.name === "episodes")).toBe(false);
+  });
+});
+
+describe("Strohmann News pushes", () => {
+  const assignments = assignmentsJson as unknown as Assignment[];
+  const newest = [...(dispatchesJson as unknown as Dispatch[])].sort((a, b) => b.id - a.id);
+  const recorded = () => {
+    const sent: { title: string; body: string }[] = [];
+    const push: Push = async (title, body) => void sent.push({ title, body });
+    return { sent, push };
+  };
+  const taskOf = (name: string, db: Supabase, push: Push) =>
+    createTasks(fakeHd2(api), db, new Recorder(db), () => 1_000_000, undefined, push).find((t) => t.name === name)!;
+
+  it("pushes a Major Order missing from the stored snapshot, once", async () => {
+    const { db } = fakeSupabase({ "snapshots:assignments": [{ data: [] }] });
+    const { sent, push } = recorded();
+    const task = taskOf("assignments", db, push);
+    expect((await runTask(task)).message).toBe("1 orders, 1/1 pushed");
+    expect((await runTask(task)).message).toBe("1 orders");
+    expect(sent).toEqual([{ title: "New Major Order", body: assignments[0].briefing }]);
+  });
+
+  it("pushes nothing on a fresh setup with nothing stored", async () => {
+    const { db } = fakeSupabase();
+    const { sent, push } = recorded();
+    await runTask(taskOf("assignments", db, push));
+    await runTask(taskOf("dispatches", db, push));
+    expect(sent).toEqual([]);
+  });
+
+  it("pushes the dispatches newer than the stored ones, oldest first", async () => {
+    const { db } = fakeSupabase({ "snapshots:dispatches": [{ data: newest.slice(2) }] });
+    const { sent, push } = recorded();
+    const task = taskOf("dispatches", db, push);
+    expect((await runTask(task)).message).toBe(`newest #${newest[0].id}, 2/2 pushed`);
+    expect((await runTask(task)).message).toBe("unchanged");
+    expect(sent).toEqual(
+      [newest[1], newest[0]].map((d) => ({ title: "New dispatch", body: dispatchTitle(d.message) })),
+    );
+  });
+
+  it("logs a failed push instead of failing the job, whose snapshot is already written", async () => {
+    const { db, calls } = fakeSupabase({ "snapshots:assignments": [{ data: [] }] });
+    const result = await runTask(
+      taskOf("assignments", db, async () => {
+        throw new Error("FCM send 503");
+      }),
+    );
+    expect(result).toMatchObject({ ok: true, message: "1 orders, 0/1 pushed" });
+    const kinds = calls.filter((c) => c.method === "POST").map((c) => (c.body as { kind: string }[])[0].kind);
+    expect(kinds).toContain("assignments");
+  });
+
+  it("words campaign launches and outcomes as the app does", () => {
+    const e = (id: number, title: string, status: EpisodeLive["status"]) => ({ id, title, status }) as EpisodeLive;
+    expect(campaignNews([e(1, "EPIC PURGE", "active"), e(2, "OLD", "lost")], [
+      e(1, "EPIC PURGE", "won"),
+      e(2, "OLD", "lost"),
+      e(3, "MEMORIAM ETERNAL", "active"),
+    ])).toEqual([
+      { title: "Galactic Campaign over", body: "EPIC PURGE won" },
+      { title: "New Galactic Campaign", body: "New campaign: MEMORIAM ETERNAL" },
+    ]);
   });
 });

@@ -77,7 +77,11 @@ function OnOff(props: { label: string; value: boolean; onChange(v: boolean): voi
 }
 
 const ALERTS: { key: keyof AlertSettings; title: string; text: string }[] = [
-  { key: "orders", title: "New Major Orders", text: "When High Command issues a new order." },
+  {
+    key: "orders",
+    title: "Major Orders and campaigns",
+    text: "When High Command issues a new order, and when a Galactic Campaign starts or ends.",
+  },
   { key: "dispatches", title: "New dispatches", text: "Messages from Super Earth." },
   { key: "captures", title: "Planets liberated or lost", text: "Whenever a planet changes hands." },
   { key: "defenses", title: "New defenses", text: "When an enemy attacks a Super Earth planet." },

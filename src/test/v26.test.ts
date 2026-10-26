@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Dispatch, EpisodeRaw, Planet } from "../api/types";
 import { rewardLabel } from "../data/campaignRewards";
-import { campaignEvents, campaignHeadline, campaignOf, campaignThreads } from "../domain/campaignNews";
+import { campaignAlerts, campaignEvents, campaignHeadline, campaignOf, campaignThreads } from "../domain/campaignNews";
 import { fmtAgeShort } from "../domain/format";
 import { BUCKET_MS, frontBuckets, latestRun, mergeActivity, type FrontRow } from "../domain/frontActivity";
 import { factionMarks } from "../domain/factionMarks";
@@ -110,6 +110,17 @@ describe("campaign news", () => {
     expect(events.every((e, i) => i === 0 || events[i - 1].at >= e.at)).toBe(true);
     const lost = events.find((e) => e.type === "ended" && e.campaign.title === "BLAZING ELECTORATE")!;
     expect(campaignHeadline(lost)).toBe("BLAZING ELECTORATE failed");
+  });
+
+  it("alerts on campaign launches and outcomes once, never on the first load", () => {
+    const first = campaignAlerts(campaigns, []);
+    expect(first.fresh).toEqual([]);
+    expect(first.keys.length).toBe(campaignEvents(campaigns).filter((e) => e.type !== "order").length);
+    expect(campaignAlerts(campaigns, first.keys).fresh).toEqual([]);
+
+    const latest = campaignEvents(campaigns).find((e) => e.type !== "order")!;
+    const seen = first.keys.filter((k) => k !== latest.key);
+    expect(campaignAlerts(campaigns, seen).fresh.map((e) => e.key)).toEqual([latest.key]);
   });
 
   it("gathers a campaign's orders and dispatches on one thread, and leaves other dispatches alone", () => {

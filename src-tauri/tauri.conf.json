@@ -17,7 +17,8 @@
         "height": 900,
         "minWidth": 360,
         "minHeight": 560,
-        "backgroundColor": "#05080e"
+        "backgroundColor": "#05080e",
+        "backgroundThrottling": "disabled"
       }
     ],
     "security": {
@@ -51,6 +52,10 @@
       "windows": {
         "installMode": "passive"
       }
+    },
+    "notification": {
+      "icon": "ic_notification",
+      "iconColor": "#ffff5a"
     }
   }
 }

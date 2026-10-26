@@ -24,7 +24,9 @@ import {
   type SnapshotKind,
   type StationLive,
 } from "../src/domain/snapshot.ts";
+import { dispatchTitle } from "../src/domain/format.ts";
 import type { Hd2Client } from "./hd2.ts";
+import type { Push } from "./push.ts";
 import type { Recorder } from "./recorder.ts";
 import type { Supabase } from "./supabase.ts";
 
@@ -37,6 +39,7 @@ export interface Task {
 /**
  * Polling jobs: each fetches from the API, writes to Supabase, and returns a short status for the log.
  * `game` is the official game API, for data the community API doesn't carry (story campaigns).
+ * `push` sends new Strohmann News (Major Orders, dispatches, campaign launches and outcomes) to the app.
  */
 export function createTasks(
   hd2: Hd2Client,
@@ -44,9 +47,16 @@ export function createTasks(
   recorder: Recorder,
   now = Date.now,
   game?: Hd2Client,
+  push?: Push,
 ): Task[] {
   let lastStatic = "";
   let lastDispatches = "";
+  /**
+   * Major Orders and the newest dispatch already announced, or found stored after a restart. With nothing
+   * stored yet, whatever is there on the first run counts as announced, so a fresh setup pushes nothing.
+   */
+  let announcedOrders: Set<number> | null = null;
+  let announcedDispatch: number | null = null;
   /** Latest campaigns, so each war sample can split players by front. */
   let lastCampaigns: Campaign[] = [];
   /** Each station's planet as last seen; read back from the stored snapshot after a restart. */
@@ -58,6 +68,21 @@ export function createTasks(
     db.upsert("snapshots", [{ kind, data, fetched_at: new Date(now()).toISOString() }]);
 
   const changeNote = (n: number) => (n ? `, ${n} owner change${n > 1 ? "s" : ""}` : "");
+
+  // Keep the wording in step with the app's own alerts (src/sync.ts). A failed push is only logged: the
+  // snapshot is already written, so a retry wouldn't see the news as new.
+  const announce = async (items: { title: string; body: string }[]): Promise<string> => {
+    let sent = 0;
+    for (const { title, body } of items) {
+      try {
+        await push!(title, body);
+        sent++;
+      } catch (e) {
+        console.error(`push failed: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    return items.length ? `, ${sent}/${items.length} pushed` : "";
+  };
 
   const tasks: Task[] = [
     {
@@ -112,6 +137,10 @@ export function createTasks(
       everyMs: 300_000,
       async run() {
         const a = await hd2.get<Assignment[]>("/api/v1/assignments");
+        if (push && !announcedOrders) {
+          const rows = await db.select<{ data: Assignment[] }>("snapshots", "select=data&kind=eq.assignments");
+          announcedOrders = new Set((rows[0]?.data ?? a).map((x) => x.id));
+        }
         await snapshot("assignments", a);
         if (!orderSamples) {
           const rows = await db.select<{ data: OrderSample[] }>("snapshots", "select=data&kind=eq.order_samples");
@@ -119,7 +148,18 @@ export function createTasks(
         }
         orderSamples = addOrderSamples(orderSamples, a, now());
         await snapshot("order_samples", orderSamples);
-        return `${a.length} orders`;
+        let pushed = "";
+        if (announcedOrders) {
+          const fresh = a.filter((x) => !announcedOrders!.has(x.id));
+          pushed = await announce(
+            fresh.map((x) => ({
+              title: "New Major Order",
+              body: x.briefing ?? x.title ?? "High Command has issued new orders.",
+            })),
+          );
+          for (const x of fresh) announcedOrders.add(x.id);
+        }
+        return `${a.length} orders${pushed}`;
       },
     },
     {
@@ -127,12 +167,24 @@ export function createTasks(
       everyMs: 300_000,
       async run() {
         const d = newestDispatches(await hd2.get<Dispatch[]>("/api/v1/dispatches"));
+        if (push && announcedDispatch === null) {
+          const rows = await db.select<{ data: Dispatch[] }>("snapshots", "select=data&kind=eq.dispatches");
+          announcedDispatch = Math.max(0, ...(rows[0]?.data ?? d).map((x) => x.id));
+        }
         // Compared by text, not id: a dispatch stored in the wrong language is replaced once it comes in English.
         const json = JSON.stringify(d);
         if (json === lastDispatches) return "unchanged";
         await snapshot("dispatches", d);
         lastDispatches = json;
-        return `newest #${d[0]?.id ?? 0}`;
+        let pushed = "";
+        if (announcedDispatch !== null) {
+          const since = announcedDispatch;
+          // The newest three, like the app, sent oldest first so the newest ends up on top.
+          const fresh = d.filter((x) => x.id > since).slice(0, 3).reverse();
+          pushed = await announce(fresh.map((x) => ({ title: "New dispatch", body: dispatchTitle(x.message) })));
+          announcedDispatch = Math.max(since, ...d.map((x) => x.id));
+        }
+        return `newest #${d[0]?.id ?? 0}${pushed}`;
       },
     },
     {
@@ -193,11 +245,26 @@ export function createTasks(
         const active = list.filter((e) => e.status === "active").length;
         if (JSON.stringify(list) === JSON.stringify(episodes)) return `unchanged, ${active} active`;
         await snapshot("episodes", list);
+        const before = episodes;
         episodes = list;
-        return `${list.length} campaigns, ${active} active`;
+        // An empty archive is a fresh setup, not a dozen campaigns launching at once.
+        const pushed = push && before.length ? await announce(campaignNews(before, list)) : "";
+        return `${list.length} campaigns, ${active} active${pushed}`;
       },
     });
   return tasks;
+}
+
+/** Campaigns launched or ended between two archives, worded as the app's campaignHeadline() words them. */
+export function campaignNews(before: EpisodeLive[], after: EpisodeLive[]): { title: string; body: string }[] {
+  const was = new Map(before.map((e) => [e.id, e]));
+  return after.flatMap((e) => {
+    const old = was.get(e.id);
+    if (!old) return [{ title: "New Galactic Campaign", body: `New campaign: ${e.title}` }];
+    if (old.status === "active" && e.status !== "active")
+      return [{ title: "Galactic Campaign over", body: `${e.title} ${e.status === "won" ? "won" : "failed"}` }];
+    return [];
+  });
 }
 
 export interface RunResult {
