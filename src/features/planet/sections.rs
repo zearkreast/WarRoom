@@ -6,8 +6,7 @@ use crate::features::planets::fronts::{Front, FrontKind};
 use crate::js::{self, fmt_date, fmt_date_time};
 use crate::state::ui;
 use crate::ui::chart::{
-    Chart, Grid, HOUR, Plot, RefLine, Series, Tooltip, XAxis, YAxis, default_tooltip, fmt_hour_tick, hour_ticks,
-    series_rows,
+    Chart, Grid, HOUR, Plot, RefLine, Series, Tooltip, XAxis, YAxis, default_tooltip, hour_ticks, series_rows,
 };
 use crate::ui::emblems::{FactionEmblem, IconLike, SubfactionEmblem, icon_view};
 use crate::ui::hazard_icons::hazard_icon;
@@ -169,14 +168,7 @@ pub fn FrontLineSection(
         let (rows, _) = &*rows.get();
         let now = js::now();
         let domain = (rows.first().map_or(now, |r| r.at), rows.last().map_or(now, |r| r.at));
-        XAxis {
-            domain,
-            ticks: hour_ticks(domain.0, domain.1, 4.0),
-            fmt: Arc::new(fmt_hour_tick),
-            hide,
-            line: true,
-            stroke: crate::ui::chart::GRID.into(),
-        }
+        XAxis { hide, ..XAxis::time(domain, hour_ticks(domain.0, domain.1, 4.0)) }
     };
     let progress = Signal::derive(move || {
         let data = rows.get();
@@ -185,7 +177,7 @@ pub fn FrontLineSection(
             xs: rows.iter().map(|r| r.at).collect(),
             x: x_axis(true),
             y: vec![YAxis::new((0.0, 100.0), vec![0.0, 25.0, 50.0, 75.0, 100.0], Arc::new(|v| format!("{}%", js::num(v))))],
-            grid: Some(Grid { stroke: crate::ui::chart::GRID.into(), opacity: None }),
+            grid: Some(Grid { stroke: crate::ui::chart::GRID.into(), opacity: None, edges_only: false }),
             series: vec![
                 Series::line("percent", rows.iter().map(|r| r.percent).collect(), "var(--c-humans)", 2.0),
                 Series {
@@ -205,7 +197,7 @@ pub fn FrontLineSection(
             xs: rows.iter().map(|r| r.at).collect(),
             x: x_axis(false),
             y: vec![YAxis::auto(max, Arc::new(fmt_compact))],
-            grid: Some(Grid { stroke: crate::ui::chart::GRID.into(), opacity: None }),
+            grid: Some(Grid { stroke: crate::ui::chart::GRID.into(), opacity: None, edges_only: false }),
             series: vec![Series::area("players", values, "var(--cta)", 2.0, "url(#pd-players)")],
             ref_lines: vec![RefLine { x: *now_at, stroke: "var(--text-dim)".into(), label: None }],
         })

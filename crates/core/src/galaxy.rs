@@ -146,7 +146,7 @@ pub struct PolarEdge {
     pub b: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct PolarSectors {
     pub rings: Vec<PolarRing>,
     /// Union of each sector's runs, map units, in the order sectors first appear.

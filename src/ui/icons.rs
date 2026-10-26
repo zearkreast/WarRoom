@@ -119,8 +119,12 @@ pub fn Icon(
     #[prop(default = 2.0)] stroke_width: f64,
     #[prop(optional, into)] class: MaybeProp<String>,
     #[prop(optional, into)] label: MaybeProp<String>,
+    /// Line colour, like lucide's `color`.
+    #[prop(optional, into)]
+    color: MaybeProp<String>,
 ) -> impl IntoView {
     let label = label.get_untracked();
+    let stroke = color.get_untracked().unwrap_or_else(|| "currentColor".into());
     let class = match class.get_untracked() {
         Some(c) if !c.is_empty() => format!("{} {c}", icon.class),
         _ => icon.class.to_string(),
@@ -133,7 +137,7 @@ pub fn Icon(
             height=num(size)
             viewBox="0 0 24 24"
             fill="none"
-            stroke="currentColor"
+            stroke=stroke
             stroke-width=num(stroke_width)
             stroke-linecap="round"
             stroke-linejoin="round"

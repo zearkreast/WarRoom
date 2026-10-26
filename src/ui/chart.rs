@@ -52,6 +52,14 @@ pub struct XAxis {
     pub hide: bool,
     pub line: bool,
     pub stroke: String,
+    pub tick_fill: String,
+}
+
+impl XAxis {
+    /// A time axis styled like the app's charts.
+    pub fn time(domain: (f64, f64), ticks: Vec<f64>) -> Self {
+        XAxis { domain, ticks, fmt: Arc::new(fmt_hour_tick), hide: false, line: true, stroke: GRID.into(), tick_fill: LABEL.into() }
+    }
 }
 
 #[derive(Clone)]
@@ -63,13 +71,24 @@ pub struct YAxis {
     pub right: bool,
     pub line: bool,
     pub stroke: String,
+    pub tick_fill: String,
     pub tick_class: Option<String>,
 }
 
 impl YAxis {
     /// A left axis styled like the app's charts: ticks in label ink, a grid-coloured axis line.
     pub fn new(domain: (f64, f64), ticks: Vec<f64>, fmt: Fmt) -> Self {
-        YAxis { domain, ticks, fmt, width: 44.0, right: false, line: true, stroke: GRID.into(), tick_class: None }
+        YAxis {
+            domain,
+            ticks,
+            fmt,
+            width: 44.0,
+            right: false,
+            line: true,
+            stroke: GRID.into(),
+            tick_fill: LABEL.into(),
+            tick_class: None,
+        }
     }
 
     /// Recharts' automatic axis: `count` round ticks from zero past the data's highest value.
@@ -91,9 +110,15 @@ pub struct Series {
     pub stroke: String,
     pub stroke_width: f64,
     pub dash: Option<String>,
+    pub stroke_opacity: Option<f64>,
+    pub fill_opacity: f64,
     pub class: String,
     pub axis: usize,
     pub curve: Curve,
+    /// The dot that marks the hovered point.
+    pub active_dot: bool,
+    /// Draw across gaps instead of breaking the line.
+    pub connect_nulls: bool,
 }
 
 impl Series {
@@ -106,9 +131,13 @@ impl Series {
             stroke: stroke.into(),
             stroke_width,
             dash: None,
+            stroke_opacity: None,
+            fill_opacity: 0.6,
             class: String::new(),
             axis: 0,
             curve: Curve::Linear,
+            active_dot: true,
+            connect_nulls: false,
         }
     }
 
@@ -128,6 +157,8 @@ pub struct RefLine {
 pub struct Grid {
     pub stroke: String,
     pub opacity: Option<f64>,
+    /// Lines only at the plot's top and bottom, as Recharts draws when no Y axis has the grid's id.
+    pub edges_only: bool,
 }
 
 /// Everything one chart draws. Points are matched across series by index into `xs`.
@@ -270,7 +301,7 @@ fn y_axis_view(a: &YAxis, x: f64, f: &Frame, axis: usize, chart_h: f64) -> AnyVi
                                     y=num(at)
                                     class=class.clone()
                                     text-anchor=anchor
-                                    fill=LABEL
+                                    fill=a.tick_fill.clone()
                                     font-size="10"
                                 >
                                     <tspan x=num(text_x) dy="0.355em">{label}</tspan>
@@ -323,7 +354,7 @@ fn x_axis_view(a: &XAxis, f: &Frame, bottom: f64, chart_w: f64) -> AnyView {
                                     y=num(text_y)
                                     class="recharts-text recharts-cartesian-axis-tick-value"
                                     text-anchor="middle"
-                                    fill=LABEL
+                                    fill=a.tick_fill.clone()
                                     font-size="10"
                                 >
                                     <tspan x=num(at) dy="0.71em">{label}</tspan>
@@ -339,11 +370,14 @@ fn x_axis_view(a: &XAxis, f: &Frame, bottom: f64, chart_w: f64) -> AnyView {
 }
 
 fn series_view(s: &Series, xs: &[f64], f: &Frame) -> AnyView {
-    let pts: Vec<Option<(f64, f64)>> = xs
+    let mut pts: Vec<Option<(f64, f64)>> = xs
         .iter()
         .zip(&s.values)
         .map(|(x, v)| v.filter(|v| v.is_finite()).map(|v| (f.x(*x), f.y(s.axis, v))))
         .collect();
+    if s.connect_nulls {
+        pts.retain(Option::is_some);
+    }
     let line = line_path(&pts, s.curve);
     let dash = s.dash.clone();
     let curve = view! {
@@ -351,6 +385,7 @@ fn series_view(s: &Series, xs: &[f64], f: &Frame) -> AnyView {
             stroke=s.stroke.clone()
             stroke-width=num(s.stroke_width)
             stroke-dasharray=dash
+            stroke-opacity=s.stroke_opacity.map(num)
             fill="none"
             width=num(f.width)
             height=num(f.height)
@@ -378,7 +413,7 @@ fn series_view(s: &Series, xs: &[f64], f: &Frame) -> AnyView {
                     <g class="recharts-layer">
                         <path
                             fill=fill.clone()
-                            fill-opacity="0.6"
+                            fill-opacity=num(s.fill_opacity)
                             stroke="none"
                             width=num(f.width)
                             height=num(f.height)
@@ -488,6 +523,7 @@ pub fn Chart(
     #[prop(optional)] overlay: Option<Overlay>,
     #[prop(optional)] defs: Option<ViewFn>,
     #[prop(default = "var(--text-dim)".into(), into)] cursor: String,
+    #[prop(optional)] cursor_opacity: Option<f64>,
     #[prop(optional, into)] class: Option<String>,
 ) -> impl IntoView {
     let node = NodeRef::<html::Div>::new();
@@ -545,7 +581,10 @@ pub fn Chart(
         hover.track();
         if let Some(el) = tip_node.get() {
             let r = el.get_bounding_client_rect();
-            tip_size.set((r.width(), r.height()));
+            let size = (r.width(), r.height());
+            if tip_size.get_untracked() != size {
+                tip_size.set(size);
+            }
         }
     });
 
@@ -577,7 +616,11 @@ pub fn Chart(
             })
             .collect();
         let grid = p.grid.clone().map(|g| {
-            let ys: Vec<f64> = p.y.first().map(|a| a.ticks.iter().map(|t| f.y(0, *t)).collect()).unwrap_or_default();
+            let ys: Vec<f64> = if g.edges_only {
+                vec![f.top, f.top + f.height]
+            } else {
+                p.y.first().map(|a| a.ticks.iter().map(|t| f.y(0, *t)).collect()).unwrap_or_default()
+            };
             view! {
                 <g class="recharts-cartesian-grid">
                     <g class="recharts-cartesian-grid-horizontal">
@@ -681,6 +724,7 @@ pub fn Chart(
                     let dots = p
                         .series
                         .iter()
+                        .filter(|s| s.active_dot)
                         .filter_map(|s| {
                             let v = s.values.get(i).copied().flatten()?;
                             Some(view! {
@@ -701,6 +745,7 @@ pub fn Chart(
                     Some(view! {
                         <path
                             stroke=cursor.clone()
+                            stroke-opacity=cursor_opacity.map(num)
                             stroke-width="1"
                             fill="none"
                             pointer-events="none"
