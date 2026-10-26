@@ -12,7 +12,6 @@ use crate::ui::primitives::{Countdown, Empty, Loading, Meter, MeterSize, OutLink
 use leptos::prelude::*;
 use regex_lite::Regex;
 use std::sync::LazyLock;
-use wasm_bindgen::JsCast;
 use warroom_core::api::{Faction, TacticalAction};
 use warroom_core::biomes::regen_pct_per_hour;
 use warroom_core::data::manuals::WIKI_LICENCE;
@@ -25,6 +24,7 @@ use warroom_core::progress::tracked_percent;
 use warroom_core::snapshot::StationLive;
 use warroom_core::time::parse_ms;
 use warroom_core::war_history::fmt_long_duration;
+use wasm_bindgen::JsCast;
 
 static CLOSE_TWICE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(</span>)>+").unwrap());
 static HIGHLIGHT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<span[^>]*>(.*?)</span>").unwrap());
@@ -54,7 +54,14 @@ fn planet_text(text: &str) -> AnyView {
             Segment::Text(t) => t.into_any(),
             Segment::Link { kind, target, label } => {
                 let p = (kind == "planet")
-                    .then(|| planets.with_untracked(|p| p.as_ref()?.iter().find(|x| x.name.to_lowercase() == target.to_lowercase()).map(|p| (p.index, p.current_owner))))
+                    .then(|| {
+                        planets.with_untracked(|p| {
+                            p.as_ref()?
+                                .iter()
+                                .find(|x| x.name.to_lowercase() == target.to_lowercase())
+                                .map(|p| (p.index, p.current_owner))
+                        })
+                    })
                     .flatten();
                 match p {
                     None => label.into_any(),
@@ -101,11 +108,13 @@ fn point(text: &str) -> AnyView {
 fn timeline(events: &'static [Dated]) -> impl IntoView {
     let items = events
         .iter()
-        .map(|e| view! {
-            <li>
-                <span class="st-timeline-when caps num">{e.when}</span>
-                <p>{planet_text(e.text)}</p>
-            </li>
+        .map(|e| {
+            view! {
+                <li>
+                    <span class="st-timeline-when caps num">{e.when}</span>
+                    <p>{planet_text(e.text)}</p>
+                </li>
+            }
         })
         .collect_view();
     view! { <ol class="st-timeline">{items}</ol> }
@@ -115,9 +124,11 @@ fn sources(list: &'static [Source]) -> impl IntoView {
     let links = list
         .iter()
         .enumerate()
-        .map(|(i, s)| view! {
-            {(i > 0).then_some(", ")}
-            <OutLink href=s.url>{s.title}</OutLink>
+        .map(|(i, s)| {
+            view! {
+                {(i > 0).then_some(", ")}
+                <OutLink href=s.url>{s.title}</OutLink>
+            }
         })
         .collect_view();
     view! {
@@ -236,7 +247,9 @@ fn JumpHistory(station: i64) -> impl IntoView {
     let planets = queries().fresh_planets;
     let name = move |i: Option<i64>| match i {
         None => "—".to_string(),
-        Some(i) => planets.with(|p| p.as_ref().and_then(|p| p.iter().find(|p| p.index == i).map(|p| p.name.clone()))).unwrap_or_else(|| format!("Planet {i}")),
+        Some(i) => planets
+            .with(|p| p.as_ref().and_then(|p| p.iter().find(|p| p.index == i).map(|p| p.name.clone())))
+            .unwrap_or_else(|| format!("Planet {i}")),
     };
     let list = move || jumps.get().map(|j| (*j).clone()).unwrap_or_default();
     view! {
@@ -278,17 +291,22 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
     // Redrawn when an action starts or ends, not on every clock tick.
     let phases = Memo::new(move |_| {
         let n = now.get();
-        station.with(|s| s.as_ref().map(|s| s.tactical_actions.iter().map(|a| (is_active(a, n), is_cooling(a, n))).collect::<Vec<_>>()))
+        station.with(|s| {
+            s.as_ref()
+                .map(|s| s.tactical_actions.iter().map(|a| (is_active(a, n), is_cooling(a, n))).collect::<Vec<_>>())
+        })
     });
     move || {
-        phases.track();
+        phases.with(|_| ());
         let s = station.get()?;
         let now_v = now.get_untracked();
         let p = q.fresh_planets.with(|p| p.as_ref()?.iter().find(|x| x.index == s.planet_index).cloned())?;
         let effects = q.effects.with(|e| e.as_ref().and_then(|e| e.stations.get(&s.id32).cloned()).unwrap_or_default());
-        let front = q.campaigns.with(|c| c.as_ref().is_some_and(|c| c.iter().any(|c| c.planet.index == s.planet_index)));
+        let front =
+            q.campaigns.with(|c| c.as_ref().is_some_and(|c| c.iter().any(|c| c.planet.index == s.planet_index)));
         let rate = planet_rate(Some(s.planet_index));
-        let enemy = p.event.as_ref().map(|e| e.faction).or((p.current_owner != Faction::Humans).then_some(p.current_owner));
+        let enemy =
+            p.event.as_ref().map(|e| e.faction).or((p.current_owner != Faction::Humans).then_some(p.current_owner));
         let pct = if enemy.is_some() { tracked_percent(&p) } else { 100.0 };
         let jump = parse_ms(&s.election_end);
         let live: Vec<TacticalAction> = s.tactical_actions.iter().filter(|a| is_active(a, now_v)).cloned().collect();
@@ -296,7 +314,9 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
         let index = p.index;
         let face = enemy.unwrap_or(Faction::Humans);
         let sphere_planet = p.clone();
-        let jump_view = move || if jump > now.get() { view! { <Countdown to=jump /> }.into_any() } else { "Vote closing".into_any() };
+        let jump_view = move || {
+            if jump > now.get() { view! { <Countdown to=jump /> }.into_any() } else { "Vote closing".into_any() }
+        };
         Some(view! {
             <div class="st-layout">
                 <div class="st">
@@ -442,15 +462,29 @@ fn PastStation(s: &'static StationRecord) -> impl IntoView {
 pub fn StationsModule() -> impl IntoView {
     let q = queries();
     let chosen = RwSignal::new(None::<String>);
-    let live_ids = Memo::new(move |_| q.stations.with(|s| s.as_ref().map(|s| s.iter().map(|s| s.id32).collect::<Vec<_>>()).unwrap_or_default()));
+    let live_ids = Memo::new(move |_| {
+        q.stations.with(|s| s.as_ref().map(|s| s.iter().map(|s| s.id32).collect::<Vec<_>>()).unwrap_or_default())
+    });
     let options = Memo::new(move |_| {
         let mut out: Vec<(String, String, String, Faction, bool)> = live_ids
             .get()
             .iter()
             .enumerate()
-            .map(|(i, id)| (id.to_string(), if i == 0 { "DSS".into() } else { format!("Station {}", i + 1) }, "Online".into(), Faction::Humans, false))
+            .map(|(i, id)| {
+                (
+                    id.to_string(),
+                    if i == 0 { "DSS".into() } else { format!("Station {}", i + 1) },
+                    "Online".into(),
+                    Faction::Humans,
+                    false,
+                )
+            })
             .collect();
-        out.extend(PAST_STATIONS.iter().map(|s| (s.id.to_string(), s.short.to_string(), s.status.to_string(), s.faction, true)));
+        out.extend(
+            PAST_STATIONS
+                .iter()
+                .map(|s| (s.id.to_string(), s.short.to_string(), s.status.to_string(), s.faction, true)),
+        );
         out
     });
     let current = Memo::new(move |_| {

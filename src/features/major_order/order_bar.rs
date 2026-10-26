@@ -62,7 +62,9 @@ pub fn use_count_task(task: Memo<Option<TaskView>>) -> CountTask {
     let final_pct = Signal::derive(move || task.with(|t| t.as_ref().map_or(0.0, task_percent)));
     let pct = Signal::derive(move || {
         let s = shown.get();
-        task.with(|t| t.as_ref().map_or(0.0, |t| task_percent(&TaskView { current: s, done: s >= t.goal, ..t.clone() })))
+        task.with(|t| {
+            t.as_ref().map_or(0.0, |t| task_percent(&TaskView { current: s, done: s >= t.goal, ..t.clone() }))
+        })
     });
     let value_text = Signal::derive(move || {
         task.with(|t| {

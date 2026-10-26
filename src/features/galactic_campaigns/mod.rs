@@ -129,7 +129,11 @@ pub fn CampaignPanel() -> impl IntoView {
     let q = queries();
     let latest = Memo::new(move |_| {
         q.episodes.with(|d| {
-            d.as_ref().and_then(|d| d.iter().fold(None::<&EpisodeLive>, |m, e| if m.is_none_or(|m| e.start > m.start) { Some(e) } else { m }).cloned())
+            d.as_ref().and_then(|d| {
+                d.iter()
+                    .fold(None::<&EpisodeLive>, |m, e| if m.is_none_or(|m| e.start > m.start) { Some(e) } else { m })
+                    .cloned()
+            })
         })
     });
     move || {
@@ -137,7 +141,11 @@ pub fn CampaignPanel() -> impl IntoView {
             return None;
         }
         let latest = latest.get();
-        let title = if latest.as_ref().is_some_and(|e| e.status != EpisodeStatus::Active) { "Last campaign" } else { "Galactic campaign" };
+        let title = if latest.as_ref().is_some_and(|e| e.status != EpisodeStatus::Active) {
+            "Last campaign"
+        } else {
+            "Galactic campaign"
+        };
         Some(view! {
             <Panel class="cmp-panel" icon=icons::FLAG title=title>
                 {match latest {

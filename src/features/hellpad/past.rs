@@ -5,11 +5,11 @@ use crate::ui::emblems::FactionEmblem;
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Empty, Loading, Panel, Tile};
 use leptos::prelude::*;
-use wasm_bindgen::JsCast;
 use warroom_core::data::reward_label;
 use warroom_core::factions::faction_color;
 use warroom_core::format::js_round;
 use warroom_core::snapshot::{EpisodeLive, EpisodeStatus, campaign_record, campaign_tally};
+use wasm_bindgen::JsCast;
 
 const DAY_MS: f64 = 86_400_000.0;
 
@@ -26,16 +26,25 @@ fn status_class(s: EpisodeStatus) -> &'static str {
 }
 
 fn pick(id: i64) {
-    let Some(card) = js::document().query_selector(&format!("details.pc[data-campaign=\"{id}\"]")).ok().flatten() else { return };
+    let Some(card) = js::document().query_selector(&format!("details.pc[data-campaign=\"{id}\"]")).ok().flatten()
+    else {
+        return;
+    };
     let Ok(card) = card.dyn_into::<web_sys::HtmlElement>() else { return };
     let _ = card.set_attribute("open", "");
-    if let Some(summary) = card.query_selector("summary").ok().flatten().and_then(|s| s.dyn_into::<web_sys::HtmlElement>().ok()) {
+    if let Some(summary) =
+        card.query_selector("summary").ok().flatten().and_then(|s| s.dyn_into::<web_sys::HtmlElement>().ok())
+    {
         let opts = web_sys::FocusOptions::new();
         opts.set_prevent_scroll(true);
         let _ = summary.focus_with_options(&opts);
     }
     let opts = web_sys::ScrollIntoViewOptions::new();
-    opts.set_behavior(if js::prefers_reduced_motion() { web_sys::ScrollBehavior::Auto } else { web_sys::ScrollBehavior::Smooth });
+    opts.set_behavior(if js::prefers_reduced_motion() {
+        web_sys::ScrollBehavior::Auto
+    } else {
+        web_sys::ScrollBehavior::Smooth
+    });
     opts.set_block(web_sys::ScrollLogicalPosition::Start);
     card.scroll_into_view_with_scroll_into_view_options(&opts);
     // Restarts the highlight when the same block is picked twice.
@@ -94,7 +103,9 @@ fn record_strip(past: &[EpisodeLive]) -> AnyView {
 pub fn PastCampaignsModule() -> impl IntoView {
     let q = queries();
     let past = Memo::new(move |_| {
-        let mut list: Vec<EpisodeLive> = q.episodes.with(|d| d.iter().flat_map(|d| d.iter()).filter(|e| e.status != EpisodeStatus::Active).cloned().collect());
+        let mut list: Vec<EpisodeLive> = q
+            .episodes
+            .with(|d| d.iter().flat_map(|d| d.iter()).filter(|e| e.status != EpisodeStatus::Active).cloned().collect());
         list.sort_by(|a, b| b.start.total_cmp(&a.start));
         list
     });

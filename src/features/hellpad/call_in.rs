@@ -4,10 +4,10 @@ use crate::ui::please_wait::{PLEASE_WAIT_MS, PleaseWait};
 use leptos::html;
 use leptos::prelude::*;
 use send_wrapper::SendWrapper;
-use wasm_bindgen::JsCast;
-use wasm_bindgen::prelude::*;
 use warroom_core::gww_nav::GwwPage;
 use warroom_core::stratagems::{Arrow, CALL_IN, arrow_of, step};
+use wasm_bindgen::JsCast;
+use wasm_bindgen::prelude::*;
 
 fn arrow_name(a: Arrow) -> &'static str {
     match a {
@@ -68,7 +68,9 @@ impl CallIn {
                 h.clear();
             }
             let set_miss = self.set_miss;
-            self.flash.set_value(set_timeout_with_handle(move || set_miss.set(false), std::time::Duration::from_millis(400)).ok());
+            self.flash.set_value(
+                set_timeout_with_handle(move || set_miss.set(false), std::time::Duration::from_millis(400)).ok(),
+            );
         }
         self.done.set_value(next);
         self.set_at.set(next);
@@ -102,7 +104,8 @@ pub fn use_call_in() -> CallIn {
     CallIn { at, miss, waiting, set_at, set_miss, set_waiting, done: StoredValue::new(0), flash }
 }
 
-const USES_ARROWS: &str = "input, textarea, select, [contenteditable='true'], [role='slider'], [role='listbox'], [role='menu']";
+const USES_ARROWS: &str =
+    "input, textarea, select, [contenteditable='true'], [role='slider'], [role='listbox'], [role='menu']";
 
 /// The code shown steady; keying it in greys it, and each correct arrow lights up again.
 #[component]
@@ -142,11 +145,8 @@ pub fn CallInCode(c: CallIn) -> impl IntoView {
         let at = c.at.get();
         at > 0 && at < len
     };
-    let label = format!(
-        "{}: {}",
-        CALL_IN.name,
-        CALL_IN.code.iter().map(|a| arrow_name(*a)).collect::<Vec<_>>().join(", ")
-    );
+    let label =
+        format!("{}: {}", CALL_IN.name, CALL_IN.code.iter().map(|a| arrow_name(*a)).collect::<Vec<_>>().join(", "));
     view! {
         <div
             node_ref=boxed

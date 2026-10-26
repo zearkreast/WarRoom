@@ -66,7 +66,8 @@ fn item(
 
 pub fn dispatch_item(d: &Dispatch, now: Signal<f64>, unread: bool, featured: bool) -> AnyView {
     let kind = dispatch_kind(&d.message);
-    let body = (!body_echoes_title(&d.message)).then(|| view! { <MarkupText message=d.message.clone() class="ni-body" /> });
+    let body =
+        (!body_echoes_title(&d.message)).then(|| view! { <MarkupText message=d.message.clone() class="ni-body" /> });
     item(
         format!("ni-{}", kind.as_str()),
         parse_ms(&d.published),

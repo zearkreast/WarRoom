@@ -35,15 +35,24 @@ pub fn use_station_jumps(station: impl Fn() -> i64 + 'static) -> Query<Arc<Vec<S
         POLL_MS * 5.0,
         |key: String| async move {
             let station = key.split(':').nth(1).unwrap_or("0").to_string();
-            let rows = match source::select("station_jumps", &format!("select=*&station=eq.{station}&order=at.desc&limit=50")).await {
-                Err(e) if e.status == 404 => Vec::new(),
-                Err(e) => return Err(e.message),
-                Ok(rows) => rows,
-            };
-            let rows: Vec<Row> = warroom_core::api::from_value(serde_json::Value::Array(rows)).map_err(|e| e.to_string())?;
+            let rows =
+                match source::select("station_jumps", &format!("select=*&station=eq.{station}&order=at.desc&limit=50"))
+                    .await
+                {
+                    Err(e) if e.status == 404 => Vec::new(),
+                    Err(e) => return Err(e.message),
+                    Ok(rows) => rows,
+                };
+            let rows: Vec<Row> =
+                warroom_core::api::from_value(serde_json::Value::Array(rows)).map_err(|e| e.to_string())?;
             Ok(Arc::new(
                 rows.into_iter()
-                    .map(|r| StationJump { station: r.station, at: parse_ms(&r.at), from: r.from_planet, to: r.to_planet })
+                    .map(|r| StationJump {
+                        station: r.station,
+                        at: parse_ms(&r.at),
+                        from: r.from_planet,
+                        to: r.to_planet,
+                    })
                     .collect(),
             ))
         },

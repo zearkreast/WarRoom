@@ -119,7 +119,13 @@ fn shared() -> &'static Shared {
                 for a in q.assignments.get().iter().flat_map(|l| l.iter()) {
                     let ends = parse_ms(&a.expiration);
                     for t in &a.tasks {
-                        let planet = t.value_types.iter().position(|v| *v == 12).and_then(|i| t.values.get(i)).copied().unwrap_or(0.0);
+                        let planet = t
+                            .value_types
+                            .iter()
+                            .position(|v| *v == 12)
+                            .and_then(|i| t.values.get(i))
+                            .copied()
+                            .unwrap_or(0.0);
                         if planet > 0.0 && !(ends >= m.get(&(planet as i64)).copied().unwrap_or(f64::INFINITY)) {
                             m.insert(planet as i64, ends);
                         }

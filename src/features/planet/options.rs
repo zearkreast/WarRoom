@@ -86,9 +86,21 @@ pub fn PlanetOptions() -> impl IntoView {
             if on_map {
                 ("s", "Focus".into(), icons::CROSSHAIR.into(), Box::new(move || ui().focus(index)) as Run, false)
             } else {
-                ("s", "Show on map".into(), icons::MAP_PIN.into(), Box::new(move || ui().show_on_map(index)) as Run, false)
+                (
+                    "s",
+                    "Show on map".into(),
+                    icons::MAP_PIN.into(),
+                    Box::new(move || ui().show_on_map(index)) as Run,
+                    false,
+                )
             },
-            ("w", "Space station".into(), IconLike::Dss, Box::new(move || ui().open_module(Some(HellpadModule::Stations))), !has_station),
+            (
+                "w",
+                "Space station".into(),
+                IconLike::Dss,
+                Box::new(move || ui().open_module(Some(HellpadModule::Stations))),
+                !has_station,
+            ),
         ];
         Some(view! {
             <div class="po-scrim" on:click=move |_| close()>

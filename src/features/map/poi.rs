@@ -90,7 +90,9 @@ static IMAGES: LazyLock<Vec<(Regex, &'static str)>> = LazyLock::new(|| {
 /// The hover card's art for a planet: its first point of interest with a picture, else its anomaly's.
 pub fn poi_image(pois: &[PlanetEffect], anomaly: Option<Anomaly>) -> Option<String> {
     for e in pois {
-        if let Some(url) = IMAGES.iter().find(|(re, _)| re.is_match(&e.name)).and_then(|(_, f)| assets::url(&format!("poi/{f}"))) {
+        if let Some(url) =
+            IMAGES.iter().find(|(re, _)| re.is_match(&e.name)).and_then(|(_, f)| assets::url(&format!("poi/{f}")))
+        {
             return Some(url);
         }
     }
@@ -118,7 +120,17 @@ fn band(r0: f64, r1: f64, a0: f64, a1: f64) -> String {
 }
 
 fn dot(x: f64, y: f64, r: f64) -> String {
-    format!("M{},{}a{},{} 0 1 0 {},0a{},{} 0 1 0 {},0Z", num(x - r), num(y), num(r), num(r), num(2.0 * r), num(r), num(r), num(-2.0 * r))
+    format!(
+        "M{},{}a{},{} 0 1 0 {},0a{},{} 0 1 0 {},0Z",
+        num(x - r),
+        num(y),
+        num(r),
+        num(r),
+        num(2.0 * r),
+        num(r),
+        num(r),
+        num(-2.0 * r)
+    )
 }
 
 // The game's map logos, redrawn on a 24-unit grid as filled shapes.

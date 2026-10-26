@@ -11,13 +11,13 @@ use crate::ui::pointer_card::{CardRow, PointerAt, PointerCard, pointer_at};
 use crate::ui::primitives::{Panel, Tile};
 use leptos::prelude::*;
 use std::collections::HashSet;
-use wasm_bindgen::JsCast;
 use warroom_core::api::Faction;
 use warroom_core::faction_planets::LIST_SIZE;
 use warroom_core::factions::faction_label;
 use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, js_sum, sest_clock, sest_date, to_fixed, war_day};
 use warroom_core::snapshot::players_by_enemy;
 use warroom_core::war_history::fmt_long_duration;
+use wasm_bindgen::JsCast;
 
 const TOP_PLANETS: usize = 5;
 const OTHERS: &str = "Others";
@@ -61,13 +61,16 @@ fn Distribution() -> impl IntoView {
     let now = js::use_now(1000.0);
     let total = Memo::new(move |_| q.war.with(|w| w.as_ref().map_or(0.0, |w| w.statistics.player_count)));
     let list = Memo::new(move |_| {
-        let mut list: Vec<Front> = q
-            .campaigns
-            .with(|c| c.iter().flat_map(|c| c.iter()).map(|c| Front {
-                name: c.planet.name.clone(),
-                players: c.planet.statistics.player_count,
-                enemy: c.planet.event.as_ref().map_or(c.planet.current_owner, |e| e.faction),
-            }).collect());
+        let mut list: Vec<Front> = q.campaigns.with(|c| {
+            c.iter()
+                .flat_map(|c| c.iter())
+                .map(|c| Front {
+                    name: c.planet.name.clone(),
+                    players: c.planet.statistics.player_count,
+                    enemy: c.planet.event.as_ref().map_or(c.planet.current_owner, |e| e.faction),
+                })
+                .collect()
+        });
         list.sort_by(|a, b| b.players.total_cmp(&a.players));
         list
     });
@@ -76,7 +79,12 @@ fn Distribution() -> impl IntoView {
         let mut slices: Vec<Slice> = list.with(|l| {
             l.iter()
                 .take(TOP_PLANETS)
-                .map(|p| Slice { name: p.name.clone(), players: p.players, enemy: Some(p.enemy), color: chart_color(p.enemy).into() })
+                .map(|p| Slice {
+                    name: p.name.clone(),
+                    players: p.players,
+                    enemy: Some(p.enemy),
+                    color: chart_color(p.enemy).into(),
+                })
                 .collect()
         });
         let rest = others.with(|o| js_sum(o.iter().map(|p| p.players)));
@@ -85,7 +93,8 @@ fn Distribution() -> impl IntoView {
         }
         slices
     });
-    let fronts = Memo::new(move |_| q.campaigns.with(|c| players_by_enemy(c.iter().flat_map(|c| c.iter()).map(|c| &c.planet))));
+    let fronts =
+        Memo::new(move |_| q.campaigns.with(|c| players_by_enemy(c.iter().flat_map(|c| c.iter()).map(|c| &c.planet))));
     let elsewhere = Memo::new(move |_| {
         let f = fronts.get();
         (total.get() - f.terminids - f.automaton - f.illuminate).max(0.0)
@@ -94,18 +103,32 @@ fn Distribution() -> impl IntoView {
         let f = fronts.get();
         let mut arcs: Vec<Arc_> = ENEMIES
             .iter()
-            .map(|e| Arc_ { key: e.as_str().into(), label: faction_label(Some(*e)).into(), value: enemy_value(*e, &f), color: chart_color(*e).into() })
+            .map(|e| Arc_ {
+                key: e.as_str().into(),
+                label: faction_label(Some(*e)).into(),
+                value: enemy_value(*e, &f),
+                color: chart_color(*e).into(),
+            })
             .collect();
-        arcs.push(Arc_ { key: ELSEWHERE.into(), label: "Elsewhere".into(), value: elsewhere.get(), color: "var(--faint)".into() });
+        arcs.push(Arc_ {
+            key: ELSEWHERE.into(),
+            label: "Elsewhere".into(),
+            value: elsewhere.get(),
+            color: "var(--faint)".into(),
+        });
         arcs
     });
 
     let active_arc = RwSignal::new(None::<String>);
     let hover_row = RwSignal::new(None::<String>);
     let card = RwSignal::new(None::<(String, PointerAt)>);
-    let row_slice = Memo::new(move |_| hover_row.with(|h| h.as_ref().and_then(|h| slices.with(|s| s.iter().find(|p| p.name == *h).cloned()))));
+    let row_slice = Memo::new(move |_| {
+        hover_row.with(|h| h.as_ref().and_then(|h| slices.with(|s| s.iter().find(|p| p.name == *h).cloned())))
+    });
     let arc = Memo::new(move |_| {
-        let key = active_arc.get().or_else(|| row_slice.with(|r| r.as_ref().and_then(|r| r.enemy.map(|e| e.as_str().to_string()))));
+        let key = active_arc
+            .get()
+            .or_else(|| row_slice.with(|r| r.as_ref().and_then(|r| r.enemy.map(|e| e.as_str().to_string()))));
         key.and_then(|k| arcs.with(|a| a.iter().find(|a| a.key == k).cloned()))
     });
     let pct_of_online = move |n: f64| fmt_pct(n / (if total.get() != 0.0 { total.get() } else { 1.0 }) * 100.0, 1);
@@ -128,7 +151,13 @@ fn Distribution() -> impl IntoView {
             l.iter()
                 .filter(|p| p.enemy.as_str() == kind)
                 .take(LIST_SIZE)
-                .map(|p| CardRow { key: p.name.clone(), name: p.name.clone(), value: Some(p.players), note: None, color: None })
+                .map(|p| CardRow {
+                    key: p.name.clone(),
+                    name: p.name.clone(),
+                    value: Some(p.players),
+                    note: None,
+                    color: None,
+                })
                 .collect()
         })
     };
@@ -140,21 +169,37 @@ fn Distribution() -> impl IntoView {
             let kills = s.terminid_kills + s.automaton_kills + s.illuminate_kills;
             let or1 = |n: f64| if n != 0.0 { n } else { 1.0 };
             vec![
-                ("Missions completed", format!("{} ({})", fmt_int(s.missions_won), fmt_pct(s.missions_won / or1(missions) * 100.0, 1))),
-                ("Missions failed", format!("{} ({})", fmt_int(s.missions_lost), fmt_pct(s.missions_lost / or1(missions) * 100.0, 1))),
+                (
+                    "Missions completed",
+                    format!("{} ({})", fmt_int(s.missions_won), fmt_pct(s.missions_won / or1(missions) * 100.0, 1)),
+                ),
+                (
+                    "Missions failed",
+                    format!("{} ({})", fmt_int(s.missions_lost), fmt_pct(s.missions_lost / or1(missions) * 100.0, 1)),
+                ),
                 ("Mission dive time", fmt_long_duration(s.mission_time / 1000.0)),
                 ("Shots fired", fmt_int(s.bullets_fired)),
                 ("Projectile hits", fmt_int(s.bullets_hit)),
                 (
                     "Hits to shot ratio",
-                    if s.bullets_fired != 0.0 { format!("{} : 1", to_fixed(s.bullets_hit / s.bullets_fired, 4)) } else { "—".into() },
+                    if s.bullets_fired != 0.0 {
+                        format!("{} : 1", to_fixed(s.bullets_hit / s.bullets_fired, 4))
+                    } else {
+                        "—".into()
+                    },
                 ),
-                ("Kill to death ratio", if s.deaths != 0.0 { format!("{} : 1", to_fixed(kills / s.deaths, 2)) } else { "—".into() }),
+                (
+                    "Kill to death ratio",
+                    if s.deaths != 0.0 { format!("{} : 1", to_fixed(kills / s.deaths, 2)) } else { "—".into() },
+                ),
                 ("Dead Terminids", fmt_int(s.terminid_kills)),
                 ("Dead Automatons", fmt_int(s.automaton_kills)),
                 ("Dead Illuminate", fmt_int(s.illuminate_kills)),
                 ("Helldivers KIA", fmt_int(s.deaths)),
-                ("Accidentals", format!("{} ({})", fmt_int(s.friendlies), fmt_pct(s.friendlies / or1(s.deaths) * 100.0, 1))),
+                (
+                    "Accidentals",
+                    format!("{} ({})", fmt_int(s.friendlies), fmt_pct(s.friendlies / or1(s.deaths) * 100.0, 1)),
+                ),
             ]
         })
     });
@@ -198,12 +243,19 @@ fn Distribution() -> impl IntoView {
     };
 
     let segments = Signal::derive(move || {
-        arcs.get().into_iter().map(|a| RingSegment { key: a.key, label: a.label, value: a.value, color: a.color }).collect::<Vec<_>>()
+        arcs.get()
+            .into_iter()
+            .map(|a| RingSegment { key: a.key, label: a.label, value: a.value, color: a.color })
+            .collect::<Vec<_>>()
     });
     let ring_label = move || {
         format!(
             "Helldivers by front: {}",
-            arcs.with(|a| a.iter().map(|a| format!("{} {}", a.label, fmt_compact(a.value))).collect::<Vec<_>>().join(", "))
+            arcs.with(|a| a
+                .iter()
+                .map(|a| format!("{} {}", a.label, fmt_compact(a.value)))
+                .collect::<Vec<_>>()
+                .join(", "))
         )
     };
     let share = move |n: f64| n / (if total.get() != 0.0 { total.get() } else { 1.0 }) * 100.0;

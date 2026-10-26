@@ -140,6 +140,9 @@ fn opens_a_typed_address_with_or_without_its_scheme_and_every_address_opens_a_pa
     assert_eq!(target_at("  GOV/Truth/ ").as_deref(), Some("ministry:truth"));
     assert_eq!(target_at("se://gww").as_deref(), Some("home"));
     assert_eq!(target_at("se://nowhere"), None);
+    assert_eq!(target_at("strohmann.news").as_deref(), Some("app:news"));
+    let all = addresses();
+    assert_eq!(all.iter().filter(|(a, _)| a == "se://strohmann.news").count(), 1);
     let dead: Vec<String> = addresses()
         .into_iter()
         .filter(|(a, _)| {

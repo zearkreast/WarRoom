@@ -12,14 +12,14 @@ use send_wrapper::SendWrapper;
 use std::cell::Cell;
 use std::rc::Rc;
 use std::sync::Arc;
-use wasm_bindgen::JsCast;
-use wasm_bindgen::prelude::*;
 use warroom_core::api::Faction;
 use warroom_core::faction_marks::{Overlay, faction_marks};
 use warroom_core::format::to_fixed;
 use warroom_core::galaxy::{project, supply_lines};
 use warroom_core::planets::{by_index, ownership_key};
 use warroom_core::regions::build_regions;
+use wasm_bindgen::JsCast;
+use wasm_bindgen::prelude::*;
 
 const SPIN_DEG_PER_S: f64 = 4.0;
 const DRAG_DEG_PER_PX: f64 = 0.35;
@@ -54,21 +54,22 @@ pub fn TheaterOfWar() -> impl IntoView {
     let owners = Memo::new(move |_| q.fresh_planets.with(|p| p.as_ref().map(|p| ownership_key(p)).unwrap_or_default()));
     let planets = Signal::derive(move || q.fresh_planets.get().unwrap_or_default());
     let by_owner = Memo::new(move |_| {
-        owners.track();
+        owners.with(|_| ());
         if overlay.get() != MapOverlay::Regions {
             return Vec::new();
         }
-        let mut groups: Vec<(Faction, String)> = planets.with_untracked(|p| build_regions(p)).into_iter().map(|r| (r.owner, r.path)).collect();
+        let mut groups: Vec<(Faction, String)> =
+            planets.with_untracked(|p| build_regions(p)).into_iter().map(|r| (r.owner, r.path)).collect();
         groups.sort_by_key(|(o, _)| ORDER.iter().position(|x| x == o).unwrap_or(ORDER.len()));
         groups
     });
     let marks = Memo::new(move |_| {
-        owners.track();
+        owners.with(|_| ());
         let o = core_overlay(overlay.get());
         q.geometry.with(|g| planets.with_untracked(|p| faction_marks(p, o, g.as_deref())))
     });
     let lanes = Memo::new(move |_| {
-        q.geometry.track();
+        q.geometry.with(|_| ());
         if overlay.get() != MapOverlay::Galaxy {
             return String::new();
         }
@@ -143,25 +144,28 @@ pub fn TheaterOfWar() -> impl IntoView {
     });
     on_cleanup(move || stop.set(true));
 
-    let right = move || view! {
-        <button
-            class="hud-btn icon tw-spin"
-            on:click=move |_| settings().set(|s| s.tw_spin = !s.tw_spin)
-            aria-pressed=move || (!spin.get()).to_string()
-            aria-label=move || if spin.get() { "Stop turning" } else { "Turn the disc" }
-            title=move || if spin.get() { "Stop turning" } else { "Turn the disc" }
-        >
-            {move || view! { <Icon icon=if spin.get() { icons::PAUSE } else { icons::PLAY } size=14.0 /> }}
-        </button>
-        <button class="hud-btn tw-open" on:click=move |_| ui().set_view(View::Map)>
-            "Open map "
-            <Icon icon=icons::ARROW_UP_RIGHT size=14.0 />
-        </button>
-    }
-    .into_any();
+    let right = move || {
+        view! {
+            <button
+                class="hud-btn icon tw-spin"
+                on:click=move |_| settings().set(|s| s.tw_spin = !s.tw_spin)
+                aria-pressed=move || (!spin.get()).to_string()
+                aria-label=move || if spin.get() { "Stop turning" } else { "Turn the disc" }
+                title=move || if spin.get() { "Stop turning" } else { "Turn the disc" }
+            >
+                {move || view! { <Icon icon=if spin.get() { icons::PAUSE } else { icons::PLAY } size=14.0 /> }}
+            </button>
+            <button class="hud-btn tw-open" on:click=move |_| ui().set_view(View::Map)>
+                "Open map "
+                <Icon icon=icons::ARROW_UP_RIGHT size=14.0 />
+            </button>
+        }
+        .into_any()
+    };
 
     let geo = Signal::derive(move || q.geometry.get().unwrap_or_default());
-    let gloom = Signal::derive(move || q.effects.with(|e| Arc::new(e.as_ref().map(|e| e.gloom.clone()).unwrap_or_default())));
+    let gloom =
+        Signal::derive(move || q.effects.with(|e| Arc::new(e.as_ref().map(|e| e.gloom.clone()).unwrap_or_default())));
     view! {
         <Show when=move || ready.get()>
             <Panel class="tw" title="Theater of war" icon=icons::MAP body_class="panel-body tw-body" right=right()>

@@ -89,7 +89,16 @@ fn latitude(t: f64) -> (String, String) {
 /// A meridian's visible half, at longitude `deg` from the line of sight.
 fn meridian(deg: f64) -> String {
     let rx = (R * (deg * PI / 180.0).sin()).abs();
-    format!("M{} {}A{} {} 0 0 {} {} {}", num(CX), num(CY - R), num(rx), num(R), if deg > 0.0 { 1 } else { 0 }, num(CX), num(CY + R))
+    format!(
+        "M{} {}A{} {} 0 0 {} {} {}",
+        num(CX),
+        num(CY - R),
+        num(rx),
+        num(R),
+        if deg > 0.0 { 1 } else { 0 },
+        num(CX),
+        num(CY + R)
+    )
 }
 
 const SEAMS: [f64; 6] = [-62.0, -38.0, -14.0, 12.0, 36.0, 60.0];
@@ -153,7 +162,14 @@ fn sphere_wire() -> impl IntoView {
 #[component]
 pub fn CssHolo(readout: Vec<(String, AnyView)>) -> impl IntoView {
     let id = unique_id("css-");
-    let debris: [(f64, f64, f64); 6] = [(70.0, 262.0, 6.0), (118.0, 280.0, 4.0), (92.0, 318.0, 5.0), (140.0, 330.0, 3.0), (58.0, 350.0, 3.0), (106.0, 372.0, 4.0)];
+    let debris: [(f64, f64, f64); 6] = [
+        (70.0, 262.0, 6.0),
+        (118.0, 280.0, 4.0),
+        (92.0, 318.0, 5.0),
+        (140.0, 330.0, 3.0),
+        (58.0, 350.0, 3.0),
+        (106.0, 372.0, 4.0),
+    ];
     view! {
         <Holo
             tone="var(--f-automaton)"

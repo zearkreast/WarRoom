@@ -33,7 +33,9 @@ pub fn order_state(id: i64) -> OrderState {
     let order = Memo::new(move |_| q.assignments.with(|l| l.as_ref()?.iter().find(|a| a.id == id).cloned()));
     let tasks = Memo::new(move |_| {
         let planets = q.fresh_planets.get();
-        Arc::new(order.with(|a| a.as_ref().map(|a| describe_assignment(a, planets.as_deref().map(|p| p.as_slice()))).unwrap_or_default()))
+        Arc::new(order.with(|a| {
+            a.as_ref().map(|a| describe_assignment(a, planets.as_deref().map(|p| p.as_slice()))).unwrap_or_default()
+        }))
     });
     let now = js::use_now(60_000.0);
     let outlooks = Memo::new(move |_| {
@@ -54,7 +56,8 @@ pub fn task_at(s: OrderState, i: usize) -> Signal<Option<(TaskView, TaskOutlook)
 #[component]
 fn PlanetTask(s: OrderState, i: usize) -> impl IntoView {
     let item = task_at(s, i);
-    let done = Signal::derive(move || item.with(|x| x.as_ref().is_some_and(|(_, o)| o.outlook == DeadlineOutlook::Done)));
+    let done =
+        Signal::derive(move || item.with(|x| x.as_ref().is_some_and(|(_, o)| o.outlook == DeadlineOutlook::Done)));
     let pct = Signal::derive(move || {
         if done.get() {
             return 100.0;
@@ -124,7 +127,8 @@ fn CountTaskRow(s: OrderState, i: usize) -> impl IntoView {
     let done = Signal::derive(move || task.with(|t| t.as_ref().is_some_and(|t| t.done)));
     let goal = move || task.with(|t| t.as_ref().map_or(0.0, |t| t.goal));
     let faction = move || task.with(|t| t.as_ref().and_then(|t| t.faction));
-    let tone = Signal::derive(move || faction().map_or("var(--cta)".to_string(), |f| faction_color(Some(f)).to_string()));
+    let tone =
+        Signal::derive(move || faction().map_or("var(--cta)".to_string(), |f| faction_color(Some(f)).to_string()));
     let label = move || task.with(|t| t.as_ref().map(|t| t.label.clone()).unwrap_or_default());
     view! {
         <li class=move || format!("mo-task {}", if done.get() { "done" } else { "" }) style=move || format!("--k: {};", tone.get())>
@@ -161,12 +165,16 @@ fn CountTaskRow(s: OrderState, i: usize) -> impl IntoView {
 }
 
 #[component]
-pub fn OrderCard(id: i64, #[prop(into)] name: Signal<Option<String>>, #[prop(optional)] compact: bool) -> impl IntoView {
+pub fn OrderCard(
+    id: i64,
+    #[prop(into)] name: Signal<Option<String>>,
+    #[prop(optional)] compact: bool,
+) -> impl IntoView {
     let s = order_state(id);
-    let slots = Memo::new(move |_| s.tasks.with(|t| t.iter().enumerate().map(|(i, t)| (i, t.is_planet)).collect::<Vec<_>>()));
-    let title = move || {
-        s.order.with(|a| a.as_ref().and_then(|a| a.title.clone()).unwrap_or_else(|| "Major Order".into()))
-    };
+    let slots =
+        Memo::new(move |_| s.tasks.with(|t| t.iter().enumerate().map(|(i, t)| (i, t.is_planet)).collect::<Vec<_>>()));
+    let title =
+        move || s.order.with(|a| a.as_ref().and_then(|a| a.title.clone()).unwrap_or_else(|| "Major Order".into()));
     let expires = Signal::derive(move || s.order.with(|a| a.as_ref().map_or(0.0, |a| parse_ms(&a.expiration))));
     view! {
         <Panel
@@ -213,11 +221,15 @@ pub fn OrderCard(id: i64, #[prop(into)] name: Signal<Option<String>>, #[prop(opt
 #[component]
 pub fn MajorOrderList(#[prop(optional)] compact: bool) -> impl IntoView {
     let q = queries();
-    let ids = Memo::new(move |_| q.assignments.with(|l| l.as_ref().map(|l| l.iter().map(|a| a.id).collect::<Vec<_>>())));
+    let ids =
+        Memo::new(move |_| q.assignments.with(|l| l.as_ref().map(|l| l.iter().map(|a| a.id).collect::<Vec<_>>())));
     let any = Memo::new(move |_| ids.with(|l| l.as_ref().is_some_and(|l| !l.is_empty())));
     let waiting = Memo::new(move |_| q.raw.loading.get() && ids.with(Option::is_none));
     let single = Signal::derive(move || ids.with(|l| l.as_ref().is_some_and(|l| l.len() == 1)));
-    let name = Signal::derive(move || if single.get() { order_name(q.episodes.get().as_deref().map(|e| e.as_slice())) } else { None });
+    let name =
+        Signal::derive(
+            move || if single.get() { order_name(q.episodes.get().as_deref().map(|e| e.as_slice())) } else { None },
+        );
     move || {
         if waiting.get() {
             return view! { <Loading what="orders" rows=2 /> }.into_any();

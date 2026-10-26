@@ -6,7 +6,9 @@ use crate::features::planet::sections::{
     SupplyLinesSection, WarHistorySection,
 };
 use crate::features::planet::tint::planet_tint;
-use crate::features::planets::fronts::{Front, FrontKind, build_front, major_order_planets, planet_rate, station_planets};
+use crate::features::planets::fronts::{
+    Front, FrontKind, build_front, major_order_planets, planet_rate, station_planets,
+};
 use crate::js::{self, num};
 use crate::state::{HellpadModule, settings, ui};
 use crate::ui::emblems::{DssIcon, FactionEmblem};
@@ -96,7 +98,9 @@ pub fn PlanetSphere(
 fn status_line(p: &Planet, front: Option<&Front>) -> String {
     let owner = faction_label(Some(p.current_owner));
     match front {
-        Some(f) if f.kind == FrontKind::Defense => format!("Defense campaign · {} attacking", faction_label(Some(f.enemy))),
+        Some(f) if f.kind == FrontKind::Defense => {
+            format!("Defense campaign · {} attacking", faction_label(Some(f.enemy)))
+        }
         Some(_) => format!("Liberation campaign · {owner} control"),
         None if p.current_owner == Faction::Humans => "Secured · Super Earth control".into(),
         None => format!("{owner} control"),
@@ -109,7 +113,9 @@ fn Hero(p: Signal<Planet>, front: Memo<Option<Front>>) -> impl IntoView {
     let mo = major_order_planets();
     let now = js::use_now(1000.0);
     let enemy_faction = Memo::new(move |_| {
-        front.with(|f| f.as_ref().map(|f| f.enemy)).or_else(|| p.with(|p| (p.current_owner != Faction::Humans).then_some(p.current_owner)))
+        front
+            .with(|f| f.as_ref().map(|f| f.enemy))
+            .or_else(|| p.with(|p| (p.current_owner != Faction::Humans).then_some(p.current_owner)))
     });
     let percent = Signal::derive(move || {
         if enemy_faction.get().is_none() {

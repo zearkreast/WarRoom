@@ -1,4 +1,4 @@
-use crate::features::hellpad::gww_module::{AboutModule, LegendModule};
+use crate::features::hellpad::gww::{AboutModule, LegendModule};
 use crate::state::{InfoDialog, ui};
 use crate::ui::primitives::KeyButton;
 use leptos::html;

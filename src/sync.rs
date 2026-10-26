@@ -36,7 +36,10 @@ pub fn start() {
                             format!("Super Earth took {} from the {}.", c.planet_name, faction_label(Some(c.from))),
                         )
                     } else {
-                        (format!("{} lost", c.planet_name), format!("The {} took {}.", faction_label(Some(c.to)), c.planet_name))
+                        (
+                            format!("{} lost", c.planet_name),
+                            format!("The {} took {}.", faction_label(Some(c.to)), c.planet_name),
+                        )
                     };
                     notify(if won { ToastKind::Capture } else { ToastKind::Loss }, &title, &body, alerts.system, None);
                 }
@@ -60,7 +63,13 @@ pub fn start() {
         }
         for p in fresh {
             let enemy = faction_label(p.event.as_ref().map(|e| e.faction));
-            notify(ToastKind::Defense, &format!("Defend {}", p.name), &format!("The {enemy} are attacking {}.", p.name), alerts.system, None);
+            notify(
+                ToastKind::Defense,
+                &format!("Defend {}", p.name),
+                &format!("The {enemy} are attacking {}.", p.name),
+                alerts.system,
+                None,
+            );
         }
     });
 
@@ -85,7 +94,13 @@ pub fn start() {
             }
             if s.alerts.dispatches {
                 for d in dispatches.iter().filter(|d| d.id > s.seen_dispatch).take(3) {
-                    notify(ToastKind::Dispatch, "New dispatch", &dispatch_title(&d.message), system, Some(d.message.clone()));
+                    notify(
+                        ToastKind::Dispatch,
+                        "New dispatch",
+                        &dispatch_title(&d.message),
+                        system,
+                        Some(d.message.clone()),
+                    );
                 }
             }
         }

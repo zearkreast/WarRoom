@@ -66,13 +66,17 @@ fn eta(c: &City) -> AnyView {
 fn CityRow(city: Memo<Option<City>>, enemy: Memo<Option<Faction>>, full: bool) -> impl IntoView {
     let fought = Memo::new(move |_| {
         enemy.get().is_some()
-            && city.with(|c| c.as_ref().is_some_and(|c| c.percent.is_some() && (c.state == CityState::Liberating || c.percent > Some(0.0))))
+            && city.with(|c| {
+                c.as_ref()
+                    .is_some_and(|c| c.percent.is_some() && (c.state == CityState::Liberating || c.percent > Some(0.0)))
+            })
     });
     let percent = Signal::derive(move || city.with(|c| c.as_ref().and_then(|c| c.percent).unwrap_or(0.0)));
     let shown = use_count_up(Signal::derive(move || if fought.get() { percent.get() } else { 0.0 }));
     move || {
         let c = city.get()?;
-        let contested = enemy.get().is_some() && matches!(c.state, CityState::Liberating | CityState::Locked | CityState::Held);
+        let contested =
+            enemy.get().is_some() && matches!(c.state, CityState::Liberating | CityState::Locked | CityState::Held);
         let res = c.resistance.map(resistance_level);
         let p = c.percent.unwrap_or(0.0);
         let rest = faction_color(enemy.get()).to_string();

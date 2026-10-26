@@ -12,13 +12,13 @@ use crate::ui::icons::{self, Icon, IconData};
 use crate::ui::primitives::{Countdown, LiveDot, StatusChip};
 use leptos::html;
 use leptos::prelude::*;
-use wasm_bindgen::JsCast;
 use warroom_core::data::manuals::MANUALS;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, js_round};
 use warroom_core::planet_index::control_shares;
 use warroom_core::snapshot::EpisodeStatus;
 use warroom_core::time::parse_ms;
+use wasm_bindgen::JsCast;
 
 struct ModuleInfo {
     title: &'static str,
@@ -29,7 +29,9 @@ struct ModuleInfo {
 fn module_info(m: HellpadModule) -> ModuleInfo {
     match m {
         HellpadModule::Planets => ModuleInfo { title: "Planets", path: "hp://planets", color: "var(--f-humans)" },
-        HellpadModule::Stations => ModuleInfo { title: "Space stations", path: "hp://stations", color: "var(--impact)" },
+        HellpadModule::Stations => {
+            ModuleInfo { title: "Space stations", path: "hp://stations", color: "var(--impact)" }
+        }
         HellpadModule::Gww => ModuleInfo { title: "G.W.W.", path: "hp://gww", color: "var(--cta)" },
         HellpadModule::Campaigns => ModuleInfo { title: "Past campaigns", path: "hp://archive", color: "var(--warn)" },
     }
@@ -96,7 +98,9 @@ fn StationReport() -> impl IntoView {
     let now = js::use_now(30_000.0);
     let report = Memo::new(move |_| {
         let s = q.stations.with(|s| s.as_ref().and_then(|s| s.first().cloned()))?;
-        let p = q.fresh_planets.with(|p| p.as_ref()?.iter().find(|p| p.index == s.planet_index).map(|p| (p.name.clone(), p.sector.clone())))?;
+        let p = q.fresh_planets.with(|p| {
+            p.as_ref()?.iter().find(|p| p.index == s.planet_index).map(|p| (p.name.clone(), p.sector.clone()))
+        })?;
         Some((p.0, p.1, parse_ms(&s.election_end)))
     });
     move || {
@@ -287,7 +291,9 @@ fn GwwTile() -> impl IntoView {
 fn PastTile() -> impl IntoView {
     let q = queries();
     let ended = Memo::new(move |_| {
-        q.episodes.with(|e| e.as_ref().map(|e| e.iter().filter(|e| e.status != EpisodeStatus::Active).cloned().collect::<Vec<_>>()))
+        q.episodes.with(|e| {
+            e.as_ref().map(|e| e.iter().filter(|e| e.status != EpisodeStatus::Active).cloned().collect::<Vec<_>>())
+        })
     });
     let last = Memo::new(move |_| {
         ended.with(|e| {
@@ -412,7 +418,11 @@ pub fn HellpadPage() -> impl IntoView {
                 (None, Some(l)) => format!(".hp-mod[data-module=\"{}\"]", module_key(l)),
                 (None, None) => return now,
             };
-            if let Some(el) = root.get().and_then(|r| r.query_selector(&to).ok().flatten()).and_then(|e| e.dyn_into::<web_sys::HtmlElement>().ok()) {
+            if let Some(el) = root
+                .get()
+                .and_then(|r| r.query_selector(&to).ok().flatten())
+                .and_then(|e| e.dyn_into::<web_sys::HtmlElement>().ok())
+            {
                 let opts = web_sys::FocusOptions::new();
                 opts.set_prevent_scroll(true);
                 let _ = el.focus_with_options(&opts);

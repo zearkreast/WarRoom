@@ -42,7 +42,9 @@ struct AtRow {
     at: String,
 }
 
-fn typed<T: serde::de::DeserializeOwned>(r: Result<Vec<serde_json::Value>, source::SourceError>) -> Result<Vec<T>, String> {
+fn typed<T: serde::de::DeserializeOwned>(
+    r: Result<Vec<serde_json::Value>, source::SourceError>,
+) -> Result<Vec<T>, String> {
     let rows = r.map_err(|e| e.message)?;
     warroom_core::api::from_value(serde_json::Value::Array(rows)).map_err(|e| e.to_string())
 }
@@ -66,8 +68,11 @@ const SAMPLE_LIMIT: usize = 1000;
 pub async fn samples(planet: i64, since_ms: f64) -> Result<Vec<Sample>, String> {
     let since = encode(&iso_string(since_ms));
     let rows: Vec<SampleRow> = typed(
-        source::select("samples", &format!("select=*&planet=eq.{planet}&at=gte.{since}&order=at.desc&limit={SAMPLE_LIMIT}"))
-            .await,
+        source::select(
+            "samples",
+            &format!("select=*&planet=eq.{planet}&at=gte.{since}&order=at.desc&limit={SAMPLE_LIMIT}"),
+        )
+        .await,
     )?;
     Ok(rows
         .into_iter()
@@ -95,8 +100,11 @@ pub async fn earliest(planet: Option<i64>) -> Result<Option<f64>, String> {
 /// Times of samples taken while the planet was under attack, oldest first.
 pub async fn defending_times(planet: i64) -> Result<Vec<f64>, String> {
     let rows: Vec<AtRow> = typed(
-        source::select("samples", &format!("select=at&planet=eq.{planet}&defending=is.true&order=at.asc&limit={SAMPLE_LIMIT}"))
-            .await,
+        source::select(
+            "samples",
+            &format!("select=at&planet=eq.{planet}&defending=is.true&order=at.asc&limit={SAMPLE_LIMIT}"),
+        )
+        .await,
     )?;
     Ok(rows.iter().map(|r| parse_ms(&r.at)).collect())
 }
@@ -110,8 +118,9 @@ pub async fn changes(planet: Option<i64>, limit: usize) -> Result<Vec<ChangeReco
 
 /// Changes newer than `after_id`, newest first.
 pub async fn changes_after(after_id: i64, limit: usize) -> Result<Vec<ChangeRecord>, String> {
-    let rows: Vec<ChangeRow> =
-        typed(source::select("owner_changes", &format!("select=*&id=gt.{after_id}&order=id.desc&limit={limit}")).await)?;
+    let rows: Vec<ChangeRow> = typed(
+        source::select("owner_changes", &format!("select=*&id=gt.{after_id}&order=id.desc&limit={limit}")).await,
+    )?;
     Ok(rows.into_iter().filter_map(to_change).collect())
 }
 

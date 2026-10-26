@@ -14,31 +14,46 @@ use leptos::html;
 use leptos::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, LazyLock};
-use wasm_bindgen::JsCast;
 use warroom_core::api::{Faction, Planet};
-use warroom_core::faction_planets::{CommunityPlanets, LIST_SIZE, ListedPlanet, busiest_planets, community_planets, super_earth_planets};
+use warroom_core::faction_planets::{
+    CommunityPlanets, LIST_SIZE, ListedPlanet, busiest_planets, community_planets, super_earth_planets,
+};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, fmt_pct, js_round};
-use warroom_core::planet_index::{PlanetFilter, SectorSort, control_shares, group_by_sector, matches_filter, matches_search};
+use warroom_core::planet_index::{
+    PlanetFilter, SectorSort, control_shares, group_by_sector, matches_filter, matches_search,
+};
 use warroom_core::progress::{liberation_percent, tracked_percent};
+use wasm_bindgen::JsCast;
 
 const ORDER: [Faction; 4] = [Faction::Humans, Faction::Terminids, Faction::Automaton, Faction::Illuminate];
 
 static COMMUNITY: LazyLock<CommunityPlanets> = LazyLock::new(community_planets);
 
 #[component]
-fn PlanetRow(planet: Memo<Option<Planet>>, active: Signal<bool>, mo: Signal<bool>, station: Signal<bool>, pinned: Signal<bool>) -> impl IntoView {
+fn PlanetRow(
+    planet: Memo<Option<Planet>>,
+    active: Signal<bool>,
+    mo: Signal<bool>,
+    station: Signal<bool>,
+    pinned: Signal<bool>,
+) -> impl IntoView {
     move || {
         let p = planet.get()?;
         let active = active.get();
-        let enemy = p.event.as_ref().map(|e| e.faction).or((p.current_owner != Faction::Humans).then_some(p.current_owner));
+        let enemy =
+            p.event.as_ref().map(|e| e.faction).or((p.current_owner != Faction::Humans).then_some(p.current_owner));
         let face = enemy.unwrap_or(p.current_owner);
         let tint = planet_tint(&p, &[]);
         let pct = if p.event.is_some() { tracked_percent(&p) } else { liberation_percent(p.health, p.max_health) };
         let status = if active {
             format!("{} campaign · {}", if p.event.is_some() { "Defense" } else { "Liberation" }, fmt_pct(pct, 1))
         } else {
-            let owner = if p.current_owner == Faction::Humans { "Secured".to_string() } else { format!("{} control", faction_label(Some(p.current_owner))) };
+            let owner = if p.current_owner == Faction::Humans {
+                "Secured".to_string()
+            } else {
+                format!("{} control", faction_label(Some(p.current_owner)))
+            };
             format!("{owner} · {}", if p.biome.name.is_empty() { "Unknown" } else { &p.biome.name })
         };
         let index = p.index;
@@ -120,7 +135,8 @@ fn GalacticControl(#[prop(into)] planets: Signal<Arc<Vec<Planet>>>, on_filter: C
             }
         })
     };
-    let focus = Memo::new(move |_| active.get().and_then(|a| shares.with(|s| s.iter().find(|s| s.faction == a).copied())));
+    let focus =
+        Memo::new(move |_| active.get().and_then(|a| shares.with(|s| s.iter().find(|s| s.faction == a).copied())));
     let pct = |p: f64| num(js_round(p));
     view! {
         <section class=move || format!("gc {}", if open.get() { "open" } else { "" })>
@@ -298,19 +314,33 @@ pub fn PlanetsModule() -> impl IntoView {
     let filter = RwSignal::new(PlanetFilter::All);
     let sort = RwSignal::new(SectorSort::Players);
     let list_ref = NodeRef::<html::Div>::new();
-    let active = Memo::new(move |_| q.campaigns.with(|c| c.iter().flat_map(|c| c.iter()).map(|c| c.planet.index).collect::<HashSet<_>>()));
+    let active = Memo::new(move |_| {
+        q.campaigns.with(|c| c.iter().flat_map(|c| c.iter()).map(|c| c.planet.index).collect::<HashSet<_>>())
+    });
     let planets = Signal::derive(move || q.fresh_planets.get().unwrap_or_default());
-    let by_index = Memo::new(move |_| planets.with(|p| Arc::new(p.iter().map(|p| (p.index, p.clone())).collect::<HashMap<_, _>>())));
+    let by_index = Memo::new(move |_| {
+        planets.with(|p| Arc::new(p.iter().map(|p| (p.index, p.clone())).collect::<HashMap<_, _>>()))
+    });
 
     let groups = Memo::new(move |_| {
         let (qs, f, s) = (query.get(), filter.get(), sort.get());
         active.with(|a| {
             pinned.with(|pn| {
                 planets.with(|p| {
-                    let shown: Vec<Planet> = p.iter().filter(|p| matches_search(p, &qs) && matches_filter(p, f, a, pn)).cloned().collect();
+                    let shown: Vec<Planet> =
+                        p.iter().filter(|p| matches_search(p, &qs) && matches_filter(p, f, a, pn)).cloned().collect();
                     group_by_sector(&shown, a, s)
                         .into_iter()
-                        .map(|g| (g.name, g.owner, g.hottest, g.active, g.players, g.planets.iter().map(|p| p.index).collect::<Vec<_>>()))
+                        .map(|g| {
+                            (
+                                g.name,
+                                g.owner,
+                                g.hottest,
+                                g.active,
+                                g.players,
+                                g.planets.iter().map(|p| p.index).collect::<Vec<_>>(),
+                            )
+                        })
                         .collect::<Vec<_>>()
                 })
             })
@@ -326,7 +356,10 @@ pub fn PlanetsModule() -> impl IntoView {
             active.with(|a| {
                 pinned.with(|pn| {
                     pinned_list.with(|l| {
-                        l.iter().filter(|i| m.get(i).is_some_and(|p| matches_search(p, &qs) && matches_filter(p, f, a, pn))).copied().collect::<Vec<_>>()
+                        l.iter()
+                            .filter(|i| m.get(i).is_some_and(|p| matches_search(p, &qs) && matches_filter(p, f, a, pn)))
+                            .copied()
+                            .collect::<Vec<_>>()
                     })
                 })
             })
@@ -334,7 +367,11 @@ pub fn PlanetsModule() -> impl IntoView {
     });
     let count = move |f: PlanetFilter| {
         let qs = query.get();
-        active.with(|a| pinned.with(|pn| planets.with(|p| p.iter().filter(|p| matches_search(p, &qs) && matches_filter(p, f, a, pn)).count())))
+        active.with(|a| {
+            pinned.with(|pn| {
+                planets.with(|p| p.iter().filter(|p| matches_search(p, &qs) && matches_filter(p, f, a, pn)).count())
+            })
+        })
     };
     let row = move |index: i64| {
         let planet = Memo::new(move |_| by_index.with(|m| m.get(&index).cloned()));

@@ -360,8 +360,14 @@ impl Settings {
 
 /// Runs `f` under an owner that is never disposed, for app-wide memos first asked for inside a component.
 pub fn global<T>(f: impl FnOnce() -> T) -> T {
+    let caller = Owner::current();
+    // new_root also makes the root the current owner, so the caller's owner is put back by hand.
     let owner = Owner::new_root(None);
     let out = owner.with(f);
+    match caller {
+        Some(c) => c.set(),
+        None => owner.clone().unset(),
+    }
     std::mem::forget(owner);
     out
 }

@@ -1,9 +1,9 @@
 use crate::api::queries::queries;
+use leptos::prelude::*;
 use warroom_core::api::{Assignment, Faction};
 use warroom_core::major_order::{DeadlineOutlook, TaskOutlook, TaskView, order_task_rates, task_outlook, task_percent};
 use warroom_core::progress::tracked_percent;
 use warroom_core::time::parse_ms;
-use leptos::prelude::*;
 
 /// Each task's outlook at the current pace: counts from the order's own readings, planets from their campaign.
 /// Reads the snapshots it needs, so calling it inside a reactive closure keeps it current.

@@ -69,15 +69,23 @@ pub fn address_of(p: &GwwPage) -> String {
     }
 }
 
-/// Every address on the G.W.W., with the link target it opens.
+/// Every address on the G.W.W., with the link target it opens. An address listed twice keeps its first place
+/// and its last target: Strohmann News is a corporation, but its address opens the tracker's news page.
 pub fn addresses() -> Vec<(String, String)> {
-    let mut out = vec![(HOME.to_string(), "home".to_string())];
-    out.extend(SITES.iter().map(|(id, a)| (a.to_string(), format!("site:{id}"))));
-    out.extend(DIR_ADDRESSES.iter().map(|(id, a)| (a.to_string(), format!("dir:{id}"))));
-    out.extend(MANUALS.iter().map(|m| (m.address.to_string(), format!("manual:{}", m.id))));
-    out.extend(MINISTRIES.iter().map(|m| (m.address.to_string(), format!("ministry:{}", m.id))));
-    out.extend(COMPANIES.iter().map(|c| (c.address.to_string(), format!("company:{}", c.id))));
-    out.push(("se://strohmann.news".into(), "app:news".into()));
+    let mut all = vec![(HOME.to_string(), "home".to_string())];
+    all.extend(SITES.iter().map(|(id, a)| (a.to_string(), format!("site:{id}"))));
+    all.extend(DIR_ADDRESSES.iter().map(|(id, a)| (a.to_string(), format!("dir:{id}"))));
+    all.extend(MANUALS.iter().map(|m| (m.address.to_string(), format!("manual:{}", m.id))));
+    all.extend(MINISTRIES.iter().map(|m| (m.address.to_string(), format!("ministry:{}", m.id))));
+    all.extend(COMPANIES.iter().map(|c| (c.address.to_string(), format!("company:{}", c.id))));
+    all.push(("se://strohmann.news".into(), "app:news".into()));
+    let mut out: Vec<(String, String)> = Vec::with_capacity(all.len());
+    for (address, target) in all {
+        match out.iter_mut().find(|(a, _)| *a == address) {
+            Some(seen) => seen.1 = target,
+            None => out.push((address, target)),
+        }
+    }
     out
 }
 

@@ -16,11 +16,11 @@ use crate::ui::icons::{self, Icon, IconData};
 use crate::ui::primitives::{Keycap, StatusChip};
 use crate::update::card::UpdateCard;
 use leptos::prelude::*;
-use wasm_bindgen::JsCast;
-use wasm_bindgen::prelude::*;
 use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, sest_clock, sest_date, war_day};
 use warroom_core::galaxy::human_control;
 use warroom_core::progress::liberation_percent;
+use wasm_bindgen::JsCast;
+use wasm_bindgen::prelude::*;
 
 #[component]
 pub fn Logo() -> impl IntoView {
@@ -103,7 +103,8 @@ fn StatusStrip() -> impl IntoView {
     let q = queries();
     let f = use_feed_status(1000.0);
     let (i, set_i) = signal(0usize);
-    let handle = set_interval_with_handle(move || set_i.update(|n| *n += 1), std::time::Duration::from_millis(8000)).ok();
+    let handle =
+        set_interval_with_handle(move || set_i.update(|n| *n += 1), std::time::Duration::from_millis(8000)).ok();
     on_cleanup(move || {
         if let Some(h) = handle {
             h.clear()

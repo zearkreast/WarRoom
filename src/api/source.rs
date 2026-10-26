@@ -5,8 +5,8 @@ use crate::config::{SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL};
 use crate::js::{self, get, obj};
 use crate::tauri;
 use serde_json::Value;
-use wasm_bindgen::JsValue;
 use warroom_core::snapshot::SnapshotKind;
+use wasm_bindgen::JsValue;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceError {
@@ -146,7 +146,10 @@ mod fixtures {
         vec![
             row(SnapshotKind::War, serde_json::from_str(fixture!("war.json")).unwrap()),
             row(SnapshotKind::Assignments, serde_json::from_str(fixture!("assignments.json")).unwrap()),
-            row(SnapshotKind::Campaigns, value(campaigns.iter().map(|c| to_campaign_live(c, None, |_| None)).collect::<Vec<_>>())),
+            row(
+                SnapshotKind::Campaigns,
+                value(campaigns.iter().map(|c| to_campaign_live(c, None, |_| None)).collect::<Vec<_>>()),
+            ),
             row(SnapshotKind::Planets, value(planets.iter().map(to_live).collect::<Vec<_>>())),
             row(SnapshotKind::PlanetsStatic, value(planets.iter().map(to_static).collect::<Vec<_>>())),
             row(SnapshotKind::Dispatches, value(newest_dispatches(&dispatches))),

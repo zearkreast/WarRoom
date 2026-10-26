@@ -3,11 +3,11 @@ use leptos::prelude::*;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use wasm_bindgen::{Clamped, JsCast};
 use warroom_core::api::{Faction, Planet};
 use warroom_core::factions::faction_color;
 use warroom_core::galaxy::{PolarSectors, Pt, Territory, project, sector_territory};
 use warroom_core::planets::ownership_key;
+use wasm_bindgen::{Clamped, JsCast};
 
 /// Paths per faction, in the order factions first appear.
 type ByFaction = Vec<(Faction, String)>;
@@ -75,7 +75,7 @@ pub fn SectorLayer(
 ) -> impl IntoView {
     let owners = Memo::new(move |_| planets.with(|p| ownership_key(p)));
     let territory = Memo::new(move |_| {
-        owners.track();
+        owners.with(|_| ());
         Arc::new(planets.with_untracked(|p| sector_territory(p).into_iter().collect::<HashMap<_, _>>()))
     });
     let shapes = Memo::new(move |_| geo.with(|g| territory.with(|t| shapes(g, t))));
@@ -209,7 +209,9 @@ fn gloom_noise() -> Option<web_sys::HtmlCanvasElement> {
         data[i * 4 + 2] = clamp_u8(60.0 + v * 50.0);
         data[i * 4 + 3] = clamp_u8(warroom_core::format::js_round(v.powf(1.3) * 240.0));
     }
-    let img = web_sys::ImageData::new_with_u8_clamped_array_and_sh(Clamped(&data), NOISE_SIZE as u32, NOISE_SIZE as u32).ok()?;
+    let img =
+        web_sys::ImageData::new_with_u8_clamped_array_and_sh(Clamped(&data), NOISE_SIZE as u32, NOISE_SIZE as u32)
+            .ok()?;
     ctx.put_image_data(&img, 0.0, 0.0).ok()?;
     NOISE.with(|n| *n.borrow_mut() = Some(canvas.clone()));
     Some(canvas)
@@ -244,12 +246,17 @@ fn gloom_image(spots: &[Pt], bx: (f64, f64, f64, f64)) -> Option<String> {
 /// The Gloom: a drifting amber cloud over the planets the game marks as in or on the edge of it, on
 /// every overlay. It is one pre-rendered image, so panning doesn't re-run a mask or filter.
 #[component]
-pub fn GloomLayer(#[prop(into)] planets: Signal<Arc<Vec<Planet>>>, #[prop(into)] gloom: Signal<Arc<HashSet<i64>>>) -> impl IntoView {
+pub fn GloomLayer(
+    #[prop(into)] planets: Signal<Arc<Vec<Planet>>>,
+    #[prop(into)] gloom: Signal<Arc<HashSet<i64>>>,
+) -> impl IntoView {
     // Planets don't move, so the image only needs redrawing when the set of Gloom planets changes,
     // not on every data refresh.
     let spots = Memo::new(move |_| {
         gloom.with(|g| {
-            planets.with(|p| p.iter().filter(|p| g.contains(&p.index)).map(|p| (p.index, project(p.position))).collect::<Vec<_>>())
+            planets.with(|p| {
+                p.iter().filter(|p| g.contains(&p.index)).map(|p| (p.index, project(p.position))).collect::<Vec<_>>()
+            })
         })
     });
     let image = Memo::new(move |_| {

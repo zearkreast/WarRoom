@@ -9,10 +9,10 @@ use leptos::prelude::*;
 use send_wrapper::SendWrapper;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
-use wasm_bindgen::prelude::*;
 use warroom_core::campaign_news::campaign_events;
 use warroom_core::format::{fmt_age_short, to_fixed};
 use warroom_core::ticker::{TickerItem, TickerKind, ticker_items};
+use wasm_bindgen::prelude::*;
 
 /// Scroll speed, so a long strip doesn't race and a short one doesn't crawl.
 const PX_PER_S: f64 = 45.0;
@@ -80,7 +80,9 @@ pub fn NewsTicker() -> impl IntoView {
 
     if reduced {
         let (step, set_step) = signal(0usize);
-        let handle = set_interval_with_handle(move || set_step.update(|n| *n += 1), std::time::Duration::from_millis(STEP_MS)).ok();
+        let handle =
+            set_interval_with_handle(move || set_step.update(|n| *n += 1), std::time::Duration::from_millis(STEP_MS))
+                .ok();
         on_cleanup(move || {
             if let Some(h) = handle {
                 h.clear()
@@ -118,7 +120,8 @@ pub fn NewsTicker() -> impl IntoView {
                 if !held.get() && !js::document().hidden() {
                     let lp = el.scroll_width() as f64 / 2.0;
                     offset.set(if lp > 0.0 { (offset.get() + PX_PER_S * dt) % lp } else { 0.0 });
-                    let _ = web_sys::HtmlElement::style(&el).set_property("transform", &format!("translateX({}px)", to_fixed(-offset.get(), 1)));
+                    let _ = web_sys::HtmlElement::style(&el)
+                        .set_property("transform", &format!("translateX({}px)", to_fixed(-offset.get(), 1)));
                 }
             }
             if let Some(f) = again.borrow().as_ref() {
@@ -132,7 +135,12 @@ pub fn NewsTicker() -> impl IntoView {
     let alive = SendWrapper::new(alive);
     on_cleanup(move || alive.set(false));
 
-    let (h1, h2, h3, h4) = (SendWrapper::new(held.clone()), SendWrapper::new(held.clone()), SendWrapper::new(held.clone()), SendWrapper::new(held));
+    let (h1, h2, h3, h4) = (
+        SendWrapper::new(held.clone()),
+        SendWrapper::new(held.clone()),
+        SendWrapper::new(held.clone()),
+        SendWrapper::new(held),
+    );
     let contents = move || {
         let list = items.get();
         let t = now.get();

@@ -15,7 +15,11 @@ use warroom_core::format::{fmt_int, js_number};
 use warroom_core::time::iso_string;
 
 #[component]
-fn Row(#[prop(into)] title: String, #[prop(into)] text: String, #[prop(optional)] children: Option<Children>) -> impl IntoView {
+fn Row(
+    #[prop(into)] title: String,
+    #[prop(into)] text: String,
+    #[prop(optional)] children: Option<Children>,
+) -> impl IntoView {
     view! {
         <div class="set-row">
             <div class="set-text">
@@ -44,7 +48,8 @@ fn update_text(p: &UpdatePhase) -> &'static str {
 fn UpdateRow() -> impl IntoView {
     let title = format!("Version {APP_VERSION}");
     if !tauri::is_tauri() {
-        return view! { <Row title=title text="The web version is always the latest; there is nothing to install." /> }.into_any();
+        return view! { <Row title=title text="The web version is always the latest; there is nothing to install." /> }
+            .into_any();
     }
     let state = update().state;
     (move || {
@@ -63,7 +68,11 @@ fn UpdateRow() -> impl IntoView {
 }
 
 #[component]
-fn OnOff(#[prop(into)] label: String, #[prop(into)] value: Signal<bool>, on_change: impl Fn(bool) + Clone + Send + Sync + 'static) -> impl IntoView {
+fn OnOff(
+    #[prop(into)] label: String,
+    #[prop(into)] value: Signal<bool>,
+    on_change: impl Fn(bool) + Clone + Send + Sync + 'static,
+) -> impl IntoView {
     view! {
         <Stepper
             label=label
@@ -75,7 +84,11 @@ fn OnOff(#[prop(into)] label: String, #[prop(into)] value: Signal<bool>, on_chan
 }
 
 const ALERTS: [(&str, &str, &str); 5] = [
-    ("orders", "Major Orders and campaigns", "When High Command issues a new order, and when a Galactic Campaign starts or ends."),
+    (
+        "orders",
+        "Major Orders and campaigns",
+        "When High Command issues a new order, and when a Galactic Campaign starts or ends.",
+    ),
     ("dispatches", "New dispatches", "Messages from Super Earth."),
     ("captures", "Planets liberated or lost", "Whenever a planet changes hands."),
     ("defenses", "New defenses", "When an enemy attacks a Super Earth planet."),
@@ -132,12 +145,18 @@ pub fn SettingsPage() -> impl IntoView {
 
     let copy_diagnostics = move |_| {
         let w = js::window();
-        let dim = |v: Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue>| v.ok().and_then(|v| v.as_f64()).unwrap_or(0.0);
+        let dim =
+            |v: Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue>| v.ok().and_then(|v| v.as_f64()).unwrap_or(0.0);
         let info = s.untracked(|d| Diagnostics {
             version: APP_VERSION,
             last_data: last_update.get_untracked().map(iso_string),
             user_agent: js::user_agent(),
-            viewport: format!("{}x{}@{}", num(dim(w.inner_width())), num(dim(w.inner_height())), js_number(w.device_pixel_ratio())),
+            viewport: format!(
+                "{}x{}@{}",
+                num(dim(w.inner_width())),
+                num(dim(w.inner_height())),
+                js_number(w.device_pixel_ratio())
+            ),
             settings: DiagnosticSettings {
                 popups: d.popups,
                 map_overlay: d.map_overlay,

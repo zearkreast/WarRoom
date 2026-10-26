@@ -125,7 +125,9 @@ pub fn init() {
         updated_at: RwSignal::new(0.0),
     };
     let statics_by_index = Memo::new(move |_| {
-        raw.planets_static.get().map(|list| Arc::new(list.iter().map(|p| (p.index, p.clone())).collect::<HashMap<_, _>>()))
+        raw.planets_static
+            .get()
+            .map(|list| Arc::new(list.iter().map(|p| (p.index, p.clone())).collect::<HashMap<_, _>>()))
     });
     let planets = memo(move || {
         let statics = statics_by_index.get()?;
@@ -184,7 +186,12 @@ pub fn init() {
         let live = raw.effects.get()?;
         Some(WarEffects {
             planets: live.planets.iter().map(|p| (p.index, planet_effects(&p.ids))).collect(),
-            gloom: live.planets.iter().filter(|p| p.ids.iter().any(|id| GLOOM_IDS.contains(id))).map(|p| p.index).collect(),
+            gloom: live
+                .planets
+                .iter()
+                .filter(|p| p.ids.iter().any(|id| GLOOM_IDS.contains(id)))
+                .map(|p| p.index)
+                .collect(),
             stations: live.stations.iter().map(|s| (s.id, planet_effects(&s.ids))).collect(),
         })
     });

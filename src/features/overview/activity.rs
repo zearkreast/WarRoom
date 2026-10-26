@@ -141,7 +141,11 @@ fn mix(a: &[PlotPoint], b: &[PlotPoint], k: f64) -> Vec<PlotPoint> {
         .collect()
 }
 
-fn extreme(points: &[ActivityPoint], value: impl Fn(&ActivityPoint) -> f64, pick: impl Fn(f64, f64) -> bool) -> Option<ActivityPoint> {
+fn extreme(
+    points: &[ActivityPoint],
+    value: impl Fn(&ActivityPoint) -> f64,
+    pick: impl Fn(f64, f64) -> bool,
+) -> Option<ActivityPoint> {
     points.iter().fold(None, |m: Option<ActivityPoint>, p| match m {
         None => Some(*p),
         Some(m) if pick(value(p), value(&m)) => Some(*p),
@@ -182,14 +186,20 @@ pub fn WarActivity() -> impl IntoView {
     let rows = Memo::new(move |_| {
         let (Some(data), Some(last)) = (data.get(), q.last_update.get()) else { return Arc::new(Vec::new()) };
         let readings: Vec<Reading> = readings
-            .with(|r| r.as_ref().map(|r| r.iter().map(|s| Reading {
-                at: s.at,
-                impact: s.impact,
-                players: s.players,
-                terminids: s.terminids,
-                automatons: s.automatons,
-                illuminate: s.illuminate,
-            }).collect()))
+            .with(|r| {
+                r.as_ref().map(|r| {
+                    r.iter()
+                        .map(|s| Reading {
+                            at: s.at,
+                            impact: s.impact,
+                            players: s.players,
+                            terminids: s.terminids,
+                            automatons: s.automatons,
+                            illuminate: s.illuminate,
+                        })
+                        .collect()
+                })
+            })
             .unwrap_or_default();
         Arc::new(merge_activity(&data, &average_readings(&readings, READING_WINDOW_MS), last))
     });
@@ -221,7 +231,11 @@ pub fn WarActivity() -> impl IntoView {
     let domain = Memo::new(move |_| rows.with(|r| (r.first().map_or(0.0, |r| r.at), r.last().map_or(0.0, |r| r.at))));
     let span = move || {
         let (a, b) = domain.get();
-        if rows.with(|r| r.len()) < 2 || b - a >= FULL_DAY_MS { "last 24 h".to_string() } else { format!("since {}", fmt_time(a)) }
+        if rows.with(|r| r.len()) < 2 || b - a >= FULL_DAY_MS {
+            "last 24 h".to_string()
+        } else {
+            format!("since {}", fmt_time(a))
+        }
     };
     let flat_impact = Memo::new(move |_| impact_axis.get().map_or(0.0, |((a, b), _)| (a + b) / 2.0));
     let target = Memo::new(move |_| {
@@ -239,7 +253,8 @@ pub fn WarActivity() -> impl IntoView {
 
     // Toggling a series morphs the lines to their new place; data refreshes redraw at once.
     let shown = RwSignal::new(Arc::new(Vec::<PlotPoint>::new()));
-    let anim: StoredValue<Option<send_wrapper::SendWrapper<std::rc::Rc<std::cell::Cell<bool>>>>> = StoredValue::new(None);
+    let anim: StoredValue<Option<send_wrapper::SendWrapper<std::rc::Rc<std::cell::Cell<bool>>>>> =
+        StoredValue::new(None);
     Effect::new(move |_| {
         let to = target.get();
         if let Some(stop) = anim.get_value() {
@@ -306,7 +321,13 @@ pub fn WarActivity() -> impl IntoView {
                 class: format!("wa-series wa-front wa-front-{}{}", f.as_str(), off(SeriesKey::Front(f))),
                 curve: Curve::Monotone,
                 active_dot: false,
-                ..Series::area(faction_label(Some(f)), tops.iter().map(|v| Some(*v)).collect(), front_color(f), 1.0, &format!("url(#wa-front-{})", f.as_str()))
+                ..Series::area(
+                    faction_label(Some(f)),
+                    tops.iter().map(|v| Some(*v)).collect(),
+                    front_color(f),
+                    1.0,
+                    &format!("url(#wa-front-{})", f.as_str()),
+                )
             });
             base = tops;
         }
@@ -346,7 +367,11 @@ pub fn WarActivity() -> impl IntoView {
         }
         for f in STACK.iter().rev() {
             if !hidden.contains(&SeriesKey::Front(*f)) {
-                lines.push((format!("Fighting {}", faction_label(Some(*f))), fmt_int(front_value(&row, *f)), front_color(*f)));
+                lines.push((
+                    format!("Fighting {}", faction_label(Some(*f))),
+                    fmt_int(front_value(&row, *f)),
+                    front_color(*f),
+                ));
             }
         }
         if let Some(v) = row.impact.filter(|_| !hidden.contains(&SeriesKey::Impact)) {
@@ -409,7 +434,10 @@ pub fn WarActivity() -> impl IntoView {
     });
 
     let chips: Vec<(SeriesKey, String)> = std::iter::once((SeriesKey::Online, "Helldivers online".to_string()))
-        .chain([Faction::Terminids, Faction::Automaton, Faction::Illuminate].map(|f| (SeriesKey::Front(f), format!("Fighting {}", faction_label(Some(f))))))
+        .chain(
+            [Faction::Terminids, Faction::Automaton, Faction::Illuminate]
+                .map(|f| (SeriesKey::Front(f), format!("Fighting {}", faction_label(Some(f))))),
+        )
         .chain(std::iter::once((SeriesKey::Impact, "Galactic impact mod".to_string())))
         .collect();
     let state = Memo::new(move |_| {

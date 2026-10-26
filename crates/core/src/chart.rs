@@ -136,8 +136,20 @@ fn monotone(out: &mut String, pts: &[(f64, f64)], join: bool) {
     };
     let slope3 = |x0: f64, y0: f64, x1: f64, y1: f64, x2: f64, y2: f64| {
         let (h0, h1) = (x1 - x0, x2 - x1);
-        let d0 = if h0 != 0.0 { h0 } else if h1 < 0.0 { -0.0 } else { 0.0 };
-        let d1 = if h1 != 0.0 { h1 } else if h0 < 0.0 { -0.0 } else { 0.0 };
+        let d0 = if h0 != 0.0 {
+            h0
+        } else if h1 < 0.0 {
+            -0.0
+        } else {
+            0.0
+        };
+        let d1 = if h1 != 0.0 {
+            h1
+        } else if h0 < 0.0 {
+            -0.0
+        } else {
+            0.0
+        };
         let (s0, s1) = ((y1 - y0) / d0, (y2 - y1) / d1);
         let p = (s0 * h1 + s1 * h0) / (h0 + h1);
         let v = (sign(s0) + sign(s1)) * s0.abs().min(s1.abs()).min(0.5 * p.abs());
@@ -268,16 +280,25 @@ mod tests {
 
     #[test]
     fn paths_match_d3() {
-        assert_eq!(line_path(&pts(&[(0.0, 0.0), (1.0, 1.0), (2.0, 0.0)]), Curve::Monotone), "M0,0C0.333,0.5,0.667,1,1,1C1.333,1,1.667,0.5,2,0");
+        assert_eq!(
+            line_path(&pts(&[(0.0, 0.0), (1.0, 1.0), (2.0, 0.0)]), Curve::Monotone),
+            "M0,0C0.333,0.5,0.667,1,1,1C1.333,1,1.667,0.5,2,0"
+        );
         assert_eq!(
             line_path(&pts(&[(0.0, 0.0), (1.0, 1.0), (2.0, 0.0), (3.0, 5.0), (4.0, 5.0)]), Curve::Monotone),
             "M0,0C0.333,0.5,0.667,1,1,1C1.333,1,1.667,0,2,0C2.333,0,2.667,5,3,5C3.333,5,3.667,5,4,5"
         );
         assert_eq!(line_path(&pts(&[(0.0, 0.0), (1.0, 1.0)]), Curve::Monotone), "M0,0L1,1");
         assert_eq!(line_path(&pts(&[(0.0, 3.0)]), Curve::Monotone), "M0,3Z");
-        assert_eq!(line_path(&[Some((0.0, 1.0)), Some((1.0, 2.0)), None, Some((3.0, 4.0))], Curve::Linear), "M0,1L1,2M3,4Z");
         assert_eq!(
-            area_path(&[Some((0.0, 0.0, 10.0)), Some((1.0, 1.0, 10.0)), Some((2.0, 0.0, 10.0)), Some((3.0, 4.0, 10.0))], Curve::Monotone),
+            line_path(&[Some((0.0, 1.0)), Some((1.0, 2.0)), None, Some((3.0, 4.0))], Curve::Linear),
+            "M0,1L1,2M3,4Z"
+        );
+        assert_eq!(
+            area_path(
+                &[Some((0.0, 0.0, 10.0)), Some((1.0, 1.0, 10.0)), Some((2.0, 0.0, 10.0)), Some((3.0, 4.0, 10.0))],
+                Curve::Monotone
+            ),
             "M0,0C0.333,0.5,0.667,1,1,1C1.333,1,1.667,0,2,0C2.333,0,2.667,2,3,4L3,10C2.667,10,2.333,10,2,10C1.667,10,1.333,10,1,10C0.667,10,0.333,10,0,10Z"
         );
         assert_eq!(

@@ -20,7 +20,8 @@ fn CountRow(s: OrderState, i: usize) -> impl IntoView {
     let CountTask { shown, pct, final_pct, value_text } = use_count_task(task);
     let done = Signal::derive(move || task.with(|t| t.as_ref().is_some_and(|t| t.done)));
     let faction = move || task.with(|t| t.as_ref().and_then(|t| t.faction));
-    let tone = Signal::derive(move || faction().map_or("var(--cta)".to_string(), |f| faction_color(Some(f)).to_string()));
+    let tone =
+        Signal::derive(move || faction().map_or("var(--cta)".to_string(), |f| faction_color(Some(f)).to_string()));
     let label = move || task.with(|t| t.as_ref().map(|t| t.label.clone()).unwrap_or_default());
     let goal = move || task.with(|t| t.as_ref().map_or(0.0, |t| t.goal));
     view! {
@@ -59,7 +60,10 @@ fn TargetItem(s: OrderState, i: usize) -> impl IntoView {
     let planet = Memo::new(move |_| item.with(|x| x.as_ref().and_then(|(t, _)| t.planet.clone())));
     let outlook = Memo::new(move |_| item.with(|x| x.as_ref().map(|(_, o)| *o)));
     let done = Signal::derive(move || outlook.with(|o| o.is_some_and(|o| o.outlook == DeadlineOutlook::Done)));
-    let percent = Signal::derive(move || if done.get() { 100.0 } else { planet.with(|p| p.as_ref().map_or(0.0, tracked_percent)) });
+    let percent =
+        Signal::derive(
+            move || if done.get() { 100.0 } else { planet.with(|p| p.as_ref().map_or(0.0, tracked_percent)) },
+        );
     let shown = use_count_up(percent);
     let end = move || outlook.get().and_then(|o| o.end).filter(|_| !done.get());
     let owner = Signal::derive(move || faction_color(planet.with(|p| p.as_ref().map(|p| p.current_owner))).to_string());
@@ -109,14 +113,18 @@ fn OrderStrip(id: i64) -> impl IntoView {
     let open = Memo::new(move |_| settings().get(|s| s.mo_strip_open));
     let targets = Memo::new(move |_| {
         s.tasks.with(|t| {
-            t.iter().enumerate().filter_map(|(i, t)| t.planet.as_ref().filter(|_| t.is_planet).map(|p| (i, p.index))).collect::<Vec<_>>()
+            t.iter()
+                .enumerate()
+                .filter_map(|(i, t)| t.planet.as_ref().filter(|_| t.is_planet).map(|p| (i, p.index)))
+                .collect::<Vec<_>>()
         })
     });
     let counts = Memo::new(move |_| {
         s.tasks.with(|t| t.iter().enumerate().filter(|(_, t)| !t.is_planet).map(|(i, _)| i).collect::<Vec<_>>())
     });
     let verdict = Memo::new(move |_| order_verdict(&s.tasks.get(), &s.outlooks.get()));
-    let title = move || s.order.with(|a| a.as_ref().and_then(|a| a.title.clone()).unwrap_or_else(|| "Major Order".into()));
+    let title =
+        move || s.order.with(|a| a.as_ref().and_then(|a| a.title.clone()).unwrap_or_else(|| "Major Order".into()));
     let expires = Signal::derive(move || s.order.with(|a| a.as_ref().map_or(0.0, |a| parse_ms(&a.expiration))));
     let toggle = view! {
         <button
@@ -161,7 +169,8 @@ fn OrderStrip(id: i64) -> impl IntoView {
 #[component]
 pub fn MoStrip() -> impl IntoView {
     let q = queries();
-    let ids = Memo::new(move |_| q.assignments.with(|l| l.iter().flat_map(|l| l.iter()).map(|a| a.id).collect::<Vec<_>>()));
+    let ids =
+        Memo::new(move |_| q.assignments.with(|l| l.iter().flat_map(|l| l.iter()).map(|a| a.id).collect::<Vec<_>>()));
     view! {
         <For each=move || ids.get() key=|id| *id let:id>
             <OrderStrip id=id />

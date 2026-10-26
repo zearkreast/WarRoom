@@ -22,7 +22,9 @@ pub struct WarSample {
 
 const DAY_MS: f64 = 86_400_000.0;
 
-fn rows<T: serde::de::DeserializeOwned>(r: Result<Vec<serde_json::Value>, source::SourceError>) -> Result<Vec<T>, String> {
+fn rows<T: serde::de::DeserializeOwned>(
+    r: Result<Vec<serde_json::Value>, source::SourceError>,
+) -> Result<Vec<T>, String> {
     match r {
         // A table the backend doesn't have yet reads as empty.
         Err(e) if e.status == 404 => Ok(Vec::new()),
@@ -79,9 +81,10 @@ pub fn use_front_activity() -> (Memo<Option<Arc<Vec<FrontBucket>>>>, ReadSignal<
         let territory = sector_territory(&planets);
         let attacker = |i: i64| -> Option<Faction> {
             let p = planets.iter().find(|p| p.index == i)?;
-            p.event.as_ref().map(|e| e.faction).or_else(|| {
-                territory.iter().find(|(s, _)| *s == p.sector).and_then(|(_, t)| t.map(|t| t.faction))
-            })
+            p.event
+                .as_ref()
+                .map(|e| e.faction)
+                .or_else(|| territory.iter().find(|(s, _)| *s == p.sector).and_then(|(_, t)| t.map(|t| t.faction)))
         };
         Some(Arc::new(latest_run(&front_buckets(&rows, attacker)).to_vec()))
     });

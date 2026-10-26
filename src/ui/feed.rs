@@ -85,7 +85,11 @@ pub fn FeedNote() -> impl IntoView {
                 "Comms link down: showing the last data received.".to_string()
             } else {
                 let at = f.last_update.get().unwrap_or(0.0);
-                format!("Showing data from {} ({}): projections may be off.", fmt_date_time(at), fmt_ago(at, f.now.get()))
+                format!(
+                    "Showing data from {} ({}): projections may be off.",
+                    fmt_date_time(at),
+                    fmt_ago(at, f.now.get())
+                )
             };
             view! {
                 <p class=format!("feed-note caps {}", state.as_str()) role="status">

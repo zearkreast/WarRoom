@@ -88,20 +88,31 @@ pub fn NewsPage() -> impl IntoView {
         let f = filter.get();
         query.with(|q| {
             items.with(|l| {
-                l.iter().filter(|i| f.is_none_or(|k| i.kind == k) && matches_query(&i.text, q)).cloned().collect::<Vec<_>>()
+                l.iter()
+                    .filter(|i| f.is_none_or(|k| i.kind == k) && matches_query(&i.text, q))
+                    .cloned()
+                    .collect::<Vec<_>>()
             })
         })
     });
     let is_unread = move |i: &NewsItem| seen_at > 0.0 && i.at > seen_at;
     let unread = Memo::new(move |_| items.with(|l| l.iter().filter(|i| is_unread(i)).count()));
     let last = Memo::new(move |_| {
-        q.dispatches.with(|d| d.as_ref().and_then(|d| d.iter().fold(None::<&Dispatch>, |a, d| if a.is_none_or(|a| d.id > a.id) { Some(d) } else { a }).cloned()))
+        q.dispatches.with(|d| {
+            d.as_ref().and_then(|d| {
+                d.iter()
+                    .fold(None::<&Dispatch>, |a, d| if a.is_none_or(|a| d.id > a.id) { Some(d) } else { a })
+                    .cloned()
+            })
+        })
     });
     let page = Memo::new(move |_| {
         let n = shown.get();
         list.with(|l| Arc::new(l.iter().take(n).cloned().collect::<Vec<_>>()))
     });
-    let by_key = Memo::new(move |_| page.with(|p| Arc::new(p.iter().map(|i| (i.key.clone(), i.clone())).collect::<HashMap<_, _>>())));
+    let by_key = Memo::new(move |_| {
+        page.with(|p| Arc::new(p.iter().map(|i| (i.key.clone(), i.clone())).collect::<HashMap<_, _>>()))
+    });
     let featured = Memo::new(move |_| page.with(|p| p.first().map(|i| i.key.clone())));
     let days = Memo::new(move |_| {
         let now = now.get();

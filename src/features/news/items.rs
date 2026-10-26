@@ -58,33 +58,35 @@ static ITEMS: OnceLock<Memo<Arc<Vec<NewsItem>>>> = OnceLock::new();
 pub fn news_items() -> Memo<Arc<Vec<NewsItem>>> {
     *ITEMS.get_or_init(|| {
         let q = queries();
-        crate::state::global(|| Memo::new(move |_| {
-            let dispatches = q.dispatches.get();
-            let episodes = q.episodes.get();
-            let dispatches: &[Dispatch] = dispatches.as_deref().map_or(&[], Vec::as_slice);
-            // Dispatches about a campaign live on its thread, so its orders and outcomes read as one story.
-            let (threads, claimed) = campaign_threads(episodes.as_deref().map_or(&[], Vec::as_slice), dispatches);
-            let mut items: Vec<NewsItem> = dispatches
-                .iter()
-                .filter(|d| !claimed.contains(&d.id))
-                .map(|d| NewsItem {
-                    kind: NewsKind::Dispatch(dispatch_kind(&d.message)),
-                    at: parse_ms(&d.published),
-                    key: format!("d{}", d.id),
-                    text: plain_text(&d.message),
-                    body: NewsBody::Dispatch(d.clone()),
-                })
-                .collect();
-            items.extend(threads.into_iter().map(|t| NewsItem {
-                kind: NewsKind::Campaign,
-                at: t.at,
-                key: t.key.clone(),
-                text: thread_text(&t),
-                body: NewsBody::Thread(t),
-            }));
-            items.sort_by(|a, b| b.at.total_cmp(&a.at));
-            Arc::new(items)
-        }))
+        crate::state::global(|| {
+            Memo::new(move |_| {
+                let dispatches = q.dispatches.get();
+                let episodes = q.episodes.get();
+                let dispatches: &[Dispatch] = dispatches.as_deref().map_or(&[], Vec::as_slice);
+                // Dispatches about a campaign live on its thread, so its orders and outcomes read as one story.
+                let (threads, claimed) = campaign_threads(episodes.as_deref().map_or(&[], Vec::as_slice), dispatches);
+                let mut items: Vec<NewsItem> = dispatches
+                    .iter()
+                    .filter(|d| !claimed.contains(&d.id))
+                    .map(|d| NewsItem {
+                        kind: NewsKind::Dispatch(dispatch_kind(&d.message)),
+                        at: parse_ms(&d.published),
+                        key: format!("d{}", d.id),
+                        text: plain_text(&d.message),
+                        body: NewsBody::Dispatch(d.clone()),
+                    })
+                    .collect();
+                items.extend(threads.into_iter().map(|t| NewsItem {
+                    kind: NewsKind::Campaign,
+                    at: t.at,
+                    key: t.key.clone(),
+                    text: thread_text(&t),
+                    body: NewsBody::Thread(t),
+                }));
+                items.sort_by(|a, b| b.at.total_cmp(&a.at));
+                Arc::new(items)
+            })
+        })
     })
 }
 

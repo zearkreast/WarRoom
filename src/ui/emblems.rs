@@ -85,7 +85,14 @@ pub fn EmblemArt(
     let a = art_of(&slug)?;
     let [x, y, w, h] = a.bx;
     let s = size / w.max(h);
-    let transform = format!("translate({},{}) scale({}) translate({},{})", num(-(w * s) / 2.0), num(-(h * s) / 2.0), num(s), num(-x), num(-y));
+    let transform = format!(
+        "translate({},{}) scale({}) translate({},{})",
+        num(-(w * s) / 2.0),
+        num(-(h * s) / 2.0),
+        num(s),
+        num(-x),
+        num(-y)
+    );
     let tone = color.or_else(|| faction_art(&art).map(|_| faction_color(Faction::parse(&art)).to_string()));
     // --u: a 24-grid unit in the emblem's own units, for strokes drawn over it.
     let mut look = style.unwrap_or_default();
@@ -216,7 +223,10 @@ pub fn StationEmblem(
 
 /// The Hellpad's mark, the four stratagem arrows a Helldiver keys in on it; drawn like a Lucide icon.
 #[component]
-pub fn HellpadMark(#[prop(default = 24.0)] size: f64, #[prop(optional, into)] class: MaybeProp<String>) -> impl IntoView {
+pub fn HellpadMark(
+    #[prop(default = 24.0)] size: f64,
+    #[prop(optional, into)] class: MaybeProp<String>,
+) -> impl IntoView {
     let class = class.get_untracked();
     // Heavier lines at dock size, where the mast's would thin out to a hairline.
     let small = size < 40.0;
@@ -268,7 +278,9 @@ impl From<IconData> for IconLike {
 /// Draws an icon at `size` with `stroke_width` lines and an extra class.
 pub fn icon_view(icon: IconLike, size: f64, stroke_width: f64, class: Option<String>) -> AnyView {
     match icon {
-        IconLike::Lucide(data) => view! { <Icon icon=data size=size stroke_width=stroke_width class=class /> }.into_any(),
+        IconLike::Lucide(data) => {
+            view! { <Icon icon=data size=size stroke_width=stroke_width class=class /> }.into_any()
+        }
         IconLike::Dss => view! { <DssIcon size=size class=class /> }.into_any(),
         IconLike::Hellpad => view! { <HellpadMark size=size class=class /> }.into_any(),
     }

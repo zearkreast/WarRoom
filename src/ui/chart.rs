@@ -11,10 +11,10 @@ use send_wrapper::SendWrapper;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::Arc;
-use wasm_bindgen::JsCast;
-use wasm_bindgen::prelude::*;
 pub use warroom_core::chart::Curve;
 use warroom_core::chart::{area_path, line_path};
+use wasm_bindgen::JsCast;
+use wasm_bindgen::prelude::*;
 
 pub const HOUR: f64 = 3_600_000.0;
 
@@ -58,7 +58,15 @@ pub struct XAxis {
 impl XAxis {
     /// A time axis styled like the app's charts.
     pub fn time(domain: (f64, f64), ticks: Vec<f64>) -> Self {
-        XAxis { domain, ticks, fmt: Arc::new(fmt_hour_tick), hide: false, line: true, stroke: GRID.into(), tick_fill: LABEL.into() }
+        XAxis {
+            domain,
+            ticks,
+            fmt: Arc::new(fmt_hour_tick),
+            hide: false,
+            line: true,
+            stroke: GRID.into(),
+            tick_fill: LABEL.into(),
+        }
     }
 }
 
@@ -266,7 +274,8 @@ fn y_axis_view(a: &YAxis, x: f64, f: &Frame, axis: usize, chart_h: f64) -> AnyVi
     let _ = inner;
     let coords: Vec<(f64, String)> = a.ticks.iter().map(|t| (f.y(axis, *t), (a.fmt)(*t))).collect();
     let ticks = visible_ticks(&coords, 0.0, chart_h, true);
-    let class = format!("recharts-text recharts-cartesian-axis-tick-value {}", a.tick_class.clone().unwrap_or_default());
+    let class =
+        format!("recharts-text recharts-cartesian-axis-tick-value {}", a.tick_class.clone().unwrap_or_default());
     let side = if a.right { "right" } else { "left" };
     view! {
         <g class="recharts-layer recharts-cartesian-axis recharts-yAxis yAxis">
@@ -370,11 +379,8 @@ fn x_axis_view(a: &XAxis, f: &Frame, bottom: f64, chart_w: f64) -> AnyView {
 }
 
 fn series_view(s: &Series, xs: &[f64], f: &Frame) -> AnyView {
-    let mut pts: Vec<Option<(f64, f64)>> = xs
-        .iter()
-        .zip(&s.values)
-        .map(|(x, v)| v.filter(|v| v.is_finite()).map(|v| (f.x(*x), f.y(s.axis, v))))
-        .collect();
+    let mut pts: Vec<Option<(f64, f64)>> =
+        xs.iter().zip(&s.values).map(|(x, v)| v.filter(|v| v.is_finite()).map(|v| (f.x(*x), f.y(s.axis, v)))).collect();
     if s.connect_nulls {
         pts.retain(Option::is_some);
     }
@@ -397,7 +403,13 @@ fn series_view(s: &Series, xs: &[f64], f: &Frame) -> AnyView {
         None => view! { <g class=format!("recharts-layer recharts-line {}", s.class)>{curve}</g> }.into_any(),
         Some(fill) => {
             let (lo, hi) = f.y_domains.get(s.axis).copied().unwrap_or((0.0, 1.0));
-            let floor = if lo >= 0.0 && hi >= 0.0 { lo.min(hi) } else if lo <= 0.0 && hi <= 0.0 { lo.max(hi) } else { 0.0 };
+            let floor = if lo >= 0.0 && hi >= 0.0 {
+                lo.min(hi)
+            } else if lo <= 0.0 && hi <= 0.0 {
+                lo.max(hi)
+            } else {
+                0.0
+            };
             let area: Vec<Option<(f64, f64, f64)>> = xs
                 .iter()
                 .enumerate()
@@ -599,22 +611,21 @@ pub fn Chart(
         let (_, right, bottom, left) = margin;
         let mut left_x = left;
         let mut right_x = w - right;
-        let axes: Vec<AnyView> = p
-            .y
-            .iter()
-            .enumerate()
-            .map(|(i, a)| {
-                let x = if a.right {
-                    right_x -= a.width;
-                    right_x
-                } else {
-                    let x = left_x;
-                    left_x += a.width;
-                    x
-                };
-                y_axis_view(a, x, &f, i, height)
-            })
-            .collect();
+        let axes: Vec<AnyView> =
+            p.y.iter()
+                .enumerate()
+                .map(|(i, a)| {
+                    let x = if a.right {
+                        right_x -= a.width;
+                        right_x
+                    } else {
+                        let x = left_x;
+                        left_x += a.width;
+                        x
+                    };
+                    y_axis_view(a, x, &f, i, height)
+                })
+                .collect();
         let grid = p.grid.clone().map(|g| {
             let ys: Vec<f64> = if g.edges_only {
                 vec![f.top, f.top + f.height]
@@ -676,7 +687,9 @@ pub fn Chart(
         let labels = p
             .ref_lines
             .iter()
-            .filter(|r| r.label.is_some() && r.x >= f.x_domain.0.min(f.x_domain.1) && r.x <= f.x_domain.0.max(f.x_domain.1))
+            .filter(|r| {
+                r.label.is_some() && r.x >= f.x_domain.0.min(f.x_domain.1) && r.x <= f.x_domain.0.max(f.x_domain.1)
+            })
             .map(|r| {
                 let x = f.x(r.x) - 5.0;
                 let y = f.top + 5.0;

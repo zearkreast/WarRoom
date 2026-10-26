@@ -7,10 +7,10 @@ use leptos::task::spawn_local;
 use send_wrapper::SendWrapper;
 use std::cell::RefCell;
 use std::rc::Rc;
-use wasm_bindgen::prelude::*;
 use warroom_core::api::Faction;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_duration, js_round};
+use wasm_bindgen::prelude::*;
 
 /// Panel with a hatch-striped header strip: icon box, title, and an optional right slot.
 #[component]

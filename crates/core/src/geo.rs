@@ -75,7 +75,9 @@ pub fn topo_polygons(json: &str, object: &str) -> Result<MultiPolygon, String> {
         }
         points
     };
-    let parse_ids = |v: &serde_json::Value| -> Vec<i64> { v.as_array().map(|a| a.iter().filter_map(|x| x.as_i64()).collect()).unwrap_or_default() };
+    let parse_ids = |v: &serde_json::Value| -> Vec<i64> {
+        v.as_array().map(|a| a.iter().filter_map(|x| x.as_i64()).collect()).unwrap_or_default()
+    };
     let obj = topo.objects.get(object).ok_or("no such object")?;
     let mut out = Vec::new();
     for g in &obj.geometries {
@@ -110,12 +112,17 @@ pub fn graticule10() -> Vec<Vec<[f64; 2]>> {
         xs.push(xb);
         move |y: f64| xs.iter().map(|x| [*x, y]).collect::<Vec<_>>()
     };
-    let (minor_x, minor_y, major_x, major_y) = (meridian(y0, y1), parallel(x0, x1), meridian(big_y0, big_y1), parallel(big_x0, big_x1));
+    let (minor_x, minor_y, major_x, major_y) =
+        (meridian(y0, y1), parallel(x0, x1), meridian(big_y0, big_y1), parallel(big_x0, big_x1));
     let mut lines: Vec<Vec<[f64; 2]>> = Vec::new();
     lines.extend(range((big_x0 / big_dx).ceil() * big_dx, big_x1, big_dx).into_iter().map(&major_x));
     lines.extend(range((big_y0 / big_dy).ceil() * big_dy, big_y1, big_dy).into_iter().map(&major_y));
-    lines.extend(range((x0 / dx).ceil() * dx, x1, dx).into_iter().filter(|x| (x % big_dx).abs() > EPSILON).map(&minor_x));
-    lines.extend(range((y0 / dy).ceil() * dy, y1, dy).into_iter().filter(|y| (y % big_dy).abs() > EPSILON).map(&minor_y));
+    lines.extend(
+        range((x0 / dx).ceil() * dx, x1, dx).into_iter().filter(|x| (x % big_dx).abs() > EPSILON).map(&minor_x),
+    );
+    lines.extend(
+        range((y0 / dy).ceil() * dy, y1, dy).into_iter().filter(|y| (y % big_dy).abs() > EPSILON).map(&minor_y),
+    );
     lines
 }
 
@@ -358,7 +365,10 @@ impl<'a> Resample<'a> {
             let (x2, y2) = (p[0], p[1]);
             let (dx2, dy2) = (x2 - x0, y2 - y0);
             let dz = dy * dx2 - dx * dy2;
-            if dz * dz / d2 > DELTA2 || ((dx * dx2 + dy * dy2) / d2 - 0.5).abs() > 0.3 || a0 * a1 + b0 * b1 + c0 * c1 < COS_MIN_DISTANCE {
+            if dz * dz / d2 > DELTA2
+                || ((dx * dx2 + dy * dy2) / d2 - 0.5).abs() > 0.3
+                || a0 * a1 + b0 * b1 + c0 * c1 < COS_MIN_DISTANCE
+            {
                 let mid = (x2, y2, lambda2, sa / m, sb / m, c);
                 self.line_to(a, mid, depth);
                 self.out.point(x2, y2, 0);
@@ -673,7 +683,9 @@ fn rejoin(segments: &mut [Vec<[f64; 3]>], start_inside: bool, stream: &mut dyn S
         return;
     }
     let mut order: Vec<usize> = (0..clip.len()).collect();
-    order.sort_by(|a, b| compare_intersection(clip[*a].x, clip[*b].x).partial_cmp(&0.0).unwrap_or(std::cmp::Ordering::Equal));
+    order.sort_by(|a, b| {
+        compare_intersection(clip[*a].x, clip[*b].x).partial_cmp(&0.0).unwrap_or(std::cmp::Ordering::Equal)
+    });
     let mut sorted: Vec<Node> = order.iter().map(|i| clip[*i].clone()).collect();
     for (new_i, node) in sorted.iter().enumerate() {
         subject[node.other].other = new_i;

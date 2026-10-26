@@ -11,9 +11,9 @@ use leptos::task::spawn_local;
 use send_wrapper::SendWrapper;
 use std::cell::RefCell;
 use std::sync::OnceLock;
+use warroom_core::version::is_newer;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
-use warroom_core::version::is_newer;
 
 const LATEST_RELEASE: &str = "https://api.github.com/repos/zearkreast/WarRoom/releases/latest";
 const RECHECK_MS: f64 = 6.0 * 3_600_000.0;
@@ -75,13 +75,15 @@ fn set(phase: UpdatePhase) {
 
 async fn check_android() -> Result<UpdatePhase, String> {
     let init = js::obj(&[("headers", js::obj(&[("Accept", "application/vnd.github+json".into())]))]);
-    let res = js::wait(js::call(&js::window().into(), "fetch", &[LATEST_RELEASE.into(), init]).map_err(|e| error_text(&e))?)
-        .await
-        .map_err(|e| error_text(&e))?;
+    let res =
+        js::wait(js::call(&js::window().into(), "fetch", &[LATEST_RELEASE.into(), init]).map_err(|e| error_text(&e))?)
+            .await
+            .map_err(|e| error_text(&e))?;
     if !get(&res, "ok").is_truthy() {
         return Err(format!("GitHub answered {}", get(&res, "status").as_f64().unwrap_or(0.0)));
     }
-    let release = js::wait(js::call(&res, "json", &[]).map_err(|e| error_text(&e))?).await.map_err(|e| error_text(&e))?;
+    let release =
+        js::wait(js::call(&res, "json", &[]).map_err(|e| error_text(&e))?).await.map_err(|e| error_text(&e))?;
     let tag = get(&release, "tag_name").as_string().unwrap_or_default();
     let assets = js_sys::Array::from(&get(&release, "assets"));
     let apk = assets.iter().find(|a| get(a, "name").as_string().is_some_and(|n| n.ends_with("_android.apk")));

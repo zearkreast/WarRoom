@@ -176,7 +176,11 @@ pub fn FrontLineSection(
         Arc::new(Plot {
             xs: rows.iter().map(|r| r.at).collect(),
             x: x_axis(true),
-            y: vec![YAxis::new((0.0, 100.0), vec![0.0, 25.0, 50.0, 75.0, 100.0], Arc::new(|v| format!("{}%", js::num(v))))],
+            y: vec![YAxis::new(
+                (0.0, 100.0),
+                vec![0.0, 25.0, 50.0, 75.0, 100.0],
+                Arc::new(|v| format!("{}%", js::num(v))),
+            )],
             grid: Some(Grid { stroke: crate::ui::chart::GRID.into(), opacity: None, edges_only: false }),
             series: vec![
                 Series::line("percent", rows.iter().map(|r| r.percent).collect(), "var(--c-humans)", 2.0),
@@ -216,10 +220,7 @@ pub fn FrontLineSection(
         let f = front.get()?;
         let p = p.get();
         let (change, peak) = record.with(|r| {
-            (
-                r.samples.first().map(|s| f.percent - s.percent),
-                r.samples.iter().fold(0.0, |m: f64, s| m.max(s.players)),
-            )
+            (r.samples.first().map(|s| f.percent - s.percent), r.samples.iter().fold(0.0, |m: f64, s| m.max(s.players)))
         });
         let regen = regen_of(&p);
         let proj = f.rate.map(|r| (f.percent + r * 24.0).clamp(0.0, 100.0));
@@ -498,7 +499,16 @@ pub fn WarHistorySection(#[prop(into)] p: Signal<Planet>, record: ReadSignal<Pla
             // `now` only matters at load time; the record refreshes every 5 minutes.
             let now = js::now();
             let defenses = defense_events(&r.defending_at, &r.changes, event_end.map(|e| parse_ms(&e)), now);
-            Some((build_war_history(HistoryInput { changes: &r.changes, defenses: &defenses, current_owner: owner, record_start: start, now }), now))
+            Some((
+                build_war_history(HistoryInput {
+                    changes: &r.changes,
+                    defenses: &defenses,
+                    current_owner: owner,
+                    record_start: start,
+                    now,
+                }),
+                now,
+            ))
         })
     });
     move || {
@@ -622,17 +632,29 @@ pub fn DispatchSection(
                 p.name
             ),
             None if p.current_owner == Faction::Humans => {
-                format!("{} is secure under Super Earth control. Citizens are reminded that vigilance is mandatory.", p.name)
+                format!(
+                    "{} is secure under Super Earth control. Citizens are reminded that vigilance is mandatory.",
+                    p.name
+                )
             }
             None => format!("{} is held by the {owner}. No campaign is active here at present.", p.name),
         };
         lines.push((first, ""));
         if in_major_order.get() {
-            lines.push((format!("{} is a Major Order objective. High Command expects every Helldiver to answer the call.", p.name), "mo"));
+            lines.push((
+                format!(
+                    "{} is a Major Order objective. High Command expects every Helldiver to answer the call.",
+                    p.name
+                ),
+                "mo",
+            ));
         }
         if station.get() {
             lines.push((
-                format!("The Democracy Space Station is in orbit over {}, supporting Helldivers on the ground.", p.name),
+                format!(
+                    "The Democracy Space Station is in orbit over {}, supporting Helldivers on the ground.",
+                    p.name
+                ),
                 "dss",
             ));
         }
@@ -713,10 +735,22 @@ pub fn OperationsSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
         let hazards = p
             .hazards
             .iter()
-            .map(|h| env_row(view! { <Icon icon=hazard_icon(&h.name) size=16.0 /> }.into_any(), h.name.clone(), h.description.clone(), None))
+            .map(|h| {
+                env_row(
+                    view! { <Icon icon=hazard_icon(&h.name) size=16.0 /> }.into_any(),
+                    h.name.clone(),
+                    h.description.clone(),
+                    None,
+                )
+            })
             .collect_view();
         let biome = (!p.biome.name.is_empty()).then(|| {
-            env_row(view! { <Icon icon=icons::CLOUD_SUN size=16.0 /> }.into_any(), p.biome.name.clone(), p.biome.description.clone(), None)
+            env_row(
+                view! { <Icon icon=icons::CLOUD_SUN size=16.0 /> }.into_any(),
+                p.biome.name.clone(),
+                p.biome.description.clone(),
+                None,
+            )
         });
         let empty = p.biome.name.is_empty() && p.hazards.is_empty() && list.is_empty();
         view! {
@@ -801,7 +835,11 @@ pub fn SupplyLinesSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
             let planets = planets.as_deref().map(|p| p.as_slice()).unwrap_or_default();
             let by_index: HashMap<i64, &Planet> = planets.iter().map(|x| (x.index, x)).collect();
             let mut ids: Vec<i64> = Vec::new();
-            for i in waypoints.iter().copied().chain(planets.iter().filter(|x| x.waypoints.contains(&index)).map(|x| x.index)) {
+            for i in waypoints
+                .iter()
+                .copied()
+                .chain(planets.iter().filter(|x| x.waypoints.contains(&index)).map(|x| x.index))
+            {
                 if !ids.contains(&i) {
                     ids.push(i);
                 }

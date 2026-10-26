@@ -95,7 +95,11 @@ fn outlook_view(o: OutlookView) -> AnyView {
 }
 
 #[component]
-pub fn CampaignCard(id: i64, #[prop(into)] total_players: Signal<f64>, #[prop(into)] deadline: Signal<Option<f64>>) -> impl IntoView {
+pub fn CampaignCard(
+    id: i64,
+    #[prop(into)] total_players: Signal<f64>,
+    #[prop(into)] deadline: Signal<Option<f64>>,
+) -> impl IntoView {
     let all = fronts();
     let front = Memo::new(move |_| all.with(|l| l.iter().find(|f| f.campaign.id == id).cloned()));
     let look = Memo::new(move |_| {

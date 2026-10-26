@@ -109,7 +109,11 @@ pub fn BriefingPopup() -> impl IntoView {
             h.clear();
         }
         if briefing.is_some() {
-            let h = set_timeout_with_handle(move || set_ready.set(true), std::time::Duration::from_millis(PLEASE_WAIT_MS as u64)).ok();
+            let h = set_timeout_with_handle(
+                move || set_ready.set(true),
+                std::time::Duration::from_millis(PLEASE_WAIT_MS as u64),
+            )
+            .ok();
             timer.set_value(h);
         }
     });

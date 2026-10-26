@@ -65,7 +65,10 @@ pub fn SuperEarthGlobe(r: f64) -> impl IntoView {
                 for (c, el) in SUPER_EARTH_CITIES.iter().zip(&els) {
                     let Some(el) = el.get_untracked() else { continue };
                     let at = p.project(c.at);
-                    let _ = el.set_attribute("transform", &format!("translate({},{})", to_fixed(at[0], 1), to_fixed(at[1], 1)));
+                    let _ = el.set_attribute(
+                        "transform",
+                        &format!("translate({},{})", to_fixed(at[0], 1), to_fixed(at[1], 1)),
+                    );
                     let shown = distance(c.at, [-lon, -TILT]) < std::f64::consts::FRAC_PI_2;
                     let _ = el.set_attribute("style", if shown { "" } else { "visibility: hidden;" });
                 }

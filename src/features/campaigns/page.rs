@@ -63,7 +63,9 @@ pub fn CampaignsPage() -> impl IntoView {
             (Filter::Mo, "Major Order".to_string(), count(Filter::Mo)),
             (Filter::Defense, "Defense".to_string(), count(Filter::Defense)),
         ];
-        list.extend(Faction::ENEMIES.map(|e| (Filter::Enemy(e), faction_label(Some(e)).to_string(), count(Filter::Enemy(e)))));
+        list.extend(
+            Faction::ENEMIES.map(|e| (Filter::Enemy(e), faction_label(Some(e)).to_string(), count(Filter::Enemy(e)))),
+        );
         list.push((Filter::Pinned, "Pinned".to_string(), count(Filter::Pinned)));
         let current = filter.get();
         list.into_iter().filter(|(id, _, n)| *n > 0 || *id == Filter::All || *id == current).collect::<Vec<_>>()
@@ -71,7 +73,9 @@ pub fn CampaignsPage() -> impl IntoView {
     let none = Memo::new(move |_| shown.with(Vec::is_empty));
     let total_players = Signal::derive(move || q.war.with(|w| w.as_ref().map_or(0.0, |w| w.statistics.player_count)));
     let summary = move || {
-        all.with(|l| format!("{} fronts · {} Helldivers deployed", l.len(), fmt_int(js_sum(l.iter().map(|f| f.players)))))
+        all.with(|l| {
+            format!("{} fronts · {} Helldivers deployed", l.len(), fmt_int(js_sum(l.iter().map(|f| f.players))))
+        })
     };
 
     view! {
