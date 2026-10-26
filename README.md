@@ -41,7 +41,9 @@ Add `?fixtures` to the browser URL (`http://localhost:1420/?fixtures`) to use th
 `src/test/fixtures/` instead of Supabase. This only works in dev mode.
 
 Android: `npm run tauri android init`, then `npm run tauri android dev`. This needs Android Studio and the SDK.
-The Android project (`src-tauri/gen/`) isn't kept in the repo; CI generates it for each build.
+The Android project (`src-tauri/gen/`) isn't kept in the repo; CI generates it for each build. After `init`,
+copy `src-tauri/android/MainActivity.kt` over the generated one, as `android.yml` does, or the page runs under the
+status bar.
 
 ## Release a new version
 
@@ -95,5 +97,7 @@ npm run collect:once     # every job once, then exits
 - `src/update/`: looks for a newer release and installs it (the Tauri updater on desktop, the release's APK
   on Android).
 - `src-tauri/app-icon.svg`: the source of every app icon; regenerate them with `npx tauri icon src-tauri/app-icon.svg`.
+- `src-tauri/android/MainActivity.kt`: replaces the generated Android activity, so the page sits between the status
+  and navigation bars.
 - `.github/workflows/`: `release.yml` (installers, APK and update manifest), `android.yml` (the APK, also built
   on pushes that touch `src-tauri/`) and `pages.yml` (the web version on GitHub Pages).

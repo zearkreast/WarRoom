@@ -68,11 +68,13 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      # The Android project isn't kept in the repo; it is generated fresh, then given the app's icons.
+      # The Android project isn't kept in the repo; it is generated fresh, then given the app's icons
+      # and its own MainActivity.
       - name: Generate the Android project
         run: |
           npx tauri android init --ci
           cp -r src-tauri/icons/android/. src-tauri/gen/android/app/src/main/res/
+          cp src-tauri/android/MainActivity.kt "$(find src-tauri/gen/android/app/src/main -name MainActivity.kt)"
 
       - name: Build APK
         run: npx tauri android build --apk --target aarch64 --target armv7
