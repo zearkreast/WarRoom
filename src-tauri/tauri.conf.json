@@ -4,12 +4,13 @@
   "version": "0.3.0-beta",
   "identifier": "com.warcommand.tracker",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "trunk serve",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "trunk build --release",
     "frontendDist": "../dist"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "WarCommand Tracker",

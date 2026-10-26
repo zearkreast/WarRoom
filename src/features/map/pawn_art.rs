@@ -149,3 +149,17 @@ pub fn dss_info(actions: &[TacticalAction], now: f64) -> DssInfo {
         .collect();
     DssInfo { state: dss_state(actions, now), active }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn finds_every_hologram_and_action_badge() {
+        let missing: Vec<&str> = PAWNS.iter().copied().filter(|k| pawn_href(k).is_none()).collect();
+        assert!(missing.is_empty(), "{missing:?}");
+        for key in ["eagle_storm", "orbital_blockade", "heavy_ordnance"] {
+            assert!(assets::url(&format!("dss-actions/{key}.png")).is_some(), "{key}");
+        }
+    }
+}

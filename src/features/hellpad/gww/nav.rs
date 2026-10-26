@@ -158,3 +158,38 @@ fn rich(text: &str, nav: GwwNav) -> AnyView {
         .collect_view()
         .into_any()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use warroom_core::data::manuals::MANUALS;
+    use warroom_core::data::sites::{ADS, CITIZENS, COMPANIES, GOV, MINISTRIES};
+
+    #[test]
+    fn finds_every_picture_its_pages_name() {
+        let mut icons: Vec<&str> = Vec::new();
+        for m in MANUALS {
+            icons.extend(m.icon);
+            for s in m.sections {
+                icons.extend(s.kinds.unwrap_or(&[]).iter().map(|k| k.icon));
+                if let Some(t) = &s.table {
+                    icons.extend(t.rows.iter().filter_map(|r| r.icon));
+                }
+            }
+        }
+        icons.extend(MINISTRIES.iter().map(|m| m.icon));
+        icons.extend([GOV.icon, CITIZENS.icon]);
+        let missing: Vec<&str> = icons.into_iter().filter(|i| icon_url(i).is_none()).collect();
+        assert!(missing.is_empty(), "icons: {missing:?}");
+        let logos = COMPANIES.iter().flat_map(|c| [c.logo, c.showcase.as_ref().map(|s| s.image)]).flatten();
+        let missing: Vec<&str> = logos.filter(|l| logo_url(l).is_none()).collect();
+        assert!(missing.is_empty(), "logos: {missing:?}");
+        let placed = MINISTRIES
+            .iter()
+            .flat_map(|m| m.ads.unwrap_or(&[]))
+            .chain(COMPANIES.iter().flat_map(|c| c.ads.unwrap_or(&[])));
+        let missing: Vec<&str> =
+            ADS.iter().map(|a| a.file).chain(placed.copied()).filter(|a| ad_url(a).is_none()).collect();
+        assert!(missing.is_empty(), "adverts: {missing:?}");
+    }
+}

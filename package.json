@@ -2,54 +2,10 @@
   "name": "warcommand-tracker",
   "private": true,
   "version": "0.3.0-beta",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "tauri": "tauri",
-    "test": "vitest run",
-    "collect": "node collector/collect.ts",
-    "collect:once": "node collector/collect.ts --once"
-  },
-  "dependencies": {
-    "@fontsource-variable/archivo": "^5.3.0",
-    "@fontsource/chakra-petch": "^5.3.0",
-    "@tanstack/react-query": "^5.104.5",
-    "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-http": "^2.8.3",
-    "@tauri-apps/plugin-notification": "^2.7.0",
-    "@tauri-apps/plugin-opener": "^2",
-    "@tauri-apps/plugin-process": "^2.4.0",
-    "@tauri-apps/plugin-updater": "^2.14.0",
-    "d3-delaunay": "^6.0.4",
-    "d3-geo": "^3.1.1",
-    "d3-selection": "^3.0.0",
-    "d3-transition": "^3.0.1",
-    "d3-zoom": "^3.0.0",
-    "lucide-react": "^1.61.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "recharts": "^3.10.1",
-    "topojson-client": "^3.1.0",
-    "world-atlas": "^2.0.2",
-    "zustand": "^5.0.15"
+    "tauri": "tauri"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2",
-    "@types/d3-delaunay": "^6.0.4",
-    "@types/d3-geo": "^3.1.1",
-    "@types/d3-selection": "^3.0.12",
-    "@types/d3-transition": "^3.0.9",
-    "@types/d3-zoom": "^3.0.9",
-    "@types/node": "^26.6.5",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "@types/topojson-client": "^3.1.5",
-    "@types/topojson-specification": "^1.0.5",
-    "@vitejs/plugin-react": "^6.0.2",
-    "typescript": "~6.0.3",
-    "vite": "^8.0.16",
-    "vitest": "^5.0.5"
+    "@tauri-apps/cli": "^2"
   }
 }
