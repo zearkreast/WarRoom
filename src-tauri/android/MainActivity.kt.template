@@ -1,4 +1,5 @@
 // Replaces the MainActivity that `tauri android init` generates; the Android workflow copies it in.
+// Not named .kt, so CodeQL default setup doesn't try to scan Kotlin it can't build.
 // The package must match `identifier` in tauri.conf.json.
 package com.warcommand.tracker
 

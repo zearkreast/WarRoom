@@ -43,7 +43,8 @@ Add `?fixtures` to the browser URL (`http://localhost:1420/?fixtures`) to use th
 Android: `npm run tauri android init`, then `npm run tauri android dev`. This needs Android Studio and the SDK.
 The Android project (`src-tauri/gen/`) isn't kept in the repo; CI generates it for each build. After `init`,
 do what the "Generate the Android project" step of `android.yml` does: copy in the icons, `src-tauri/android/res`
-and `MainActivity.kt`, and add Firebase Messaging to `app/build.gradle.kts`.
+and `MainActivity.kt.template` (over the generated `MainActivity.kt`), and add Firebase Messaging to
+`app/build.gradle.kts`.
 
 ## Pushed news on Android
 
@@ -111,7 +112,7 @@ npm run collect:once     # every job once, then exits
 - `src/update/`: looks for a newer release and installs it (the Tauri updater on desktop, the release's APK
   on Android).
 - `src-tauri/app-icon.svg`: the source of every app icon; regenerate them with `npx tauri icon src-tauri/app-icon.svg`.
-- `src-tauri/android/`: what the generated Android project gets added: a `MainActivity.kt` that keeps the page
+- `src-tauri/android/`: what the generated Android project gets added: a `MainActivity.kt.template` that keeps the page
   between the status and navigation bars and subscribes to pushed news, the notification icon, and
   `firebase-values.mjs`, which turns `google-services.json` into the resources Firebase starts from.
 - `.github/workflows/`: `release.yml` (installers, APK and update manifest), `android.yml` (the APK, also built

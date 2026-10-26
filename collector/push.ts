@@ -2,7 +2,7 @@
 
 import { createSign } from "node:crypto";
 
-/** Keep in sync with NEWS_TOPIC and NEWS_CHANNEL in src-tauri/android/MainActivity.kt. */
+/** Keep in sync with NEWS_TOPIC and NEWS_CHANNEL in src-tauri/android/MainActivity.kt.template. */
 const TOPIC = "news";
 const CHANNEL = "news";
 /** FCM refuses messages over 4 KB; a Major Order briefing can come close. */
