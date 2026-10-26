@@ -79,7 +79,7 @@ jobs:
         run: |
           cargo tauri android init --ci
           cp -r src-tauri/icons/android/. src-tauri/android/res/. src-tauri/gen/android/app/src/main/res/
-          cp src-tauri/android/MainActivity.kt "$(find src-tauri/gen/android/app/src/main -name MainActivity.kt)"
+          cp src-tauri/android/MainActivity.kt.template "$(find src-tauri/gen/android/app/src/main -name MainActivity.kt)"
           echo 'dependencies { implementation("com.google.firebase:firebase-messaging:24.1.0") }' \
             >> src-tauri/gen/android/app/build.gradle.kts
 

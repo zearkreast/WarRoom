@@ -9,7 +9,7 @@ use ring::signature::{RSA_PKCS1_SHA256, RsaKeyPair};
 use serde::Deserialize;
 use serde_json::json;
 
-/// Keep in sync with NEWS_TOPIC and NEWS_CHANNEL in src-tauri/android/MainActivity.kt.
+/// Keep in sync with NEWS_TOPIC and NEWS_CHANNEL in src-tauri/android/MainActivity.kt.template.
 const TOPIC: &str = "news";
 const CHANNEL: &str = "news";
 /// FCM refuses messages over 4 KB; a Major Order briefing can come close.
