@@ -927,7 +927,6 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
         });
     }
 
-    // The zoom, resizes and touch, once the stage is in place.
     let ready = RwSignal::new(false);
     {
         let ctl = SendWrapper::new(ctl.clone());

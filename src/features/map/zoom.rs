@@ -186,7 +186,7 @@ impl Zoom {
         self.flight.borrow_mut().take();
     }
 
-    /// Jumps to `t`.
+    /// Jumps to `t`, stopping any flight.
     pub fn set(&self, t: Transform) {
         self.interrupt();
         self.emit(t, false);
@@ -202,7 +202,6 @@ impl Zoom {
         });
     }
 
-    /// Flies to `t` over `ms`.
     pub fn fly_to(self: &Rc<Self>, t: Transform, ms: f64) {
         self.fly(ms, move |_| t);
     }

@@ -41,12 +41,10 @@ pub fn call(obj: &JsValue, method: &str, args: &[JsValue]) -> Result<JsValue, Js
     Reflect::apply(&f, obj, &list)
 }
 
-/// Awaits a JS promise.
 pub async fn wait(promise: JsValue) -> Result<JsValue, JsValue> {
     wasm_bindgen_futures::JsFuture::from(js_sys::Promise::resolve(&promise)).await
 }
 
-/// Waits `ms` milliseconds.
 pub async fn sleep(ms: f64) {
     let promise = js_sys::Promise::new(&mut |resolve, _| {
         let _ = window().set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, ms as i32);
@@ -132,7 +130,7 @@ pub fn local_today(ms: f64) -> (i64, u32, u32) {
     (d.get_full_year() as i64, d.get_month() + 1, d.get_date())
 }
 
-/// A page-unique id for SVG defs, like React's useId.
+/// A page-unique id for SVG defs.
 pub fn unique_id(prefix: &str) -> String {
     use std::sync::atomic::{AtomicUsize, Ordering};
     static NEXT: AtomicUsize = AtomicUsize::new(0);

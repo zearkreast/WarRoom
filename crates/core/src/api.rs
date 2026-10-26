@@ -16,7 +16,7 @@ fn strip_nulls(v: &mut Value) {
     }
 }
 
-/// Reads JSON as leniently as the JavaScript app did: null or missing fields take their defaults.
+/// Reads JSON leniently: null or missing fields take their defaults.
 pub fn from_value<T: DeserializeOwned>(mut v: Value) -> Result<T, serde_json::Error> {
     strip_nulls(&mut v);
     serde_json::from_value(v)

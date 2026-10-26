@@ -32,7 +32,7 @@ fn log(msg: &str) {
     println!("[{}] {msg}", stamp());
 }
 
-/// Reads KEY=VALUE lines into the environment; variables already set win, as with Node's env files.
+/// Reads KEY=VALUE lines into the environment; variables already set win.
 fn load_env_file(path: &str) {
     let Ok(text) = std::fs::read_to_string(path) else { return };
     for line in text.lines() {

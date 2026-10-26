@@ -1,5 +1,4 @@
-//! Delaunay triangulation and clipped Voronoi cells, ported from delaunator 5 and d3-delaunay 6 so the
-//! map's territory shapes come out exactly as they did in the JavaScript app.
+//! Delaunay triangulation and clipped Voronoi cells, ported from delaunator 5 and d3-delaunay 6.
 
 const EPSILON: f64 = f64::EPSILON;
 

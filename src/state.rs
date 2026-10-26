@@ -228,7 +228,8 @@ impl MapDispatches {
     }
 }
 
-/// Everything the app remembers between launches, stored as the React app stored it.
+/// Everything the app remembers between launches, in the keys and shape earlier versions stored, so their
+/// settings carry over.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct SettingsData {

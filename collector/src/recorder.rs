@@ -169,7 +169,7 @@ impl Recorder {
     }
 }
 
-/// Typed rows from a select, read as leniently as the JavaScript collector read them.
+/// Typed rows from a select; null or missing fields take their defaults.
 pub fn rows<T: serde::de::DeserializeOwned>(list: Vec<Value>) -> Result<Vec<T>, String> {
     warroom_core::api::from_value(Value::Array(list)).map_err(|e| e.to_string())
 }

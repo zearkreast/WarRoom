@@ -124,7 +124,7 @@ fn StatusStrip() -> impl IntoView {
         }
         n
     });
-    // A new key restarts the line's fade-in, as when React remounts it.
+    // A new key restarts the line's fade-in.
     let key = Memo::new(move |_| match f.state.get() {
         FeedState::Stale => "stale".to_string(),
         _ => (i.get() % line_count.get().max(1)).to_string(),

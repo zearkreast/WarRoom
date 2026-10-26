@@ -89,7 +89,7 @@ where
         }
         let fetch = fetch.clone();
         spawn_local(async move {
-            // As react-query did: three retries, 1, 2 and 4 s apart, still loading meanwhile.
+            // Three retries, 1, 2 and 4 s apart, still loading meanwhile, so a blip doesn't read as an outage.
             for attempt in 0..=RETRIES {
                 match fetch(k.clone()).await {
                     Ok(v) => {

@@ -275,7 +275,6 @@ impl From<IconData> for IconLike {
     }
 }
 
-/// Draws an icon at `size` with `stroke_width` lines and an extra class.
 pub fn icon_view(icon: IconLike, size: f64, stroke_width: f64, class: Option<String>) -> AnyView {
     match icon {
         IconLike::Lucide(data) => {
