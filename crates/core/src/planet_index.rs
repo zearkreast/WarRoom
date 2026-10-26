@@ -68,7 +68,7 @@ pub fn group_by_sector<'a>(planets: &'a [Planet], active: &HashSet<i64>, sort: S
             SectorGroup {
                 name,
                 active: list.iter().filter(|p| active.contains(&p.index)).count(),
-                players: list.iter().map(|p| p.statistics.player_count).sum(),
+                players: crate::format::js_sum(list.iter().map(|p| p.statistics.player_count)),
                 owner: majority(list.iter().map(|p| p.current_owner)).unwrap_or_default(),
                 planets: sorted,
                 hottest: false,
@@ -116,7 +116,7 @@ pub fn control_shares(planets: &[Planet]) -> Vec<ControlShare> {
                 faction: f,
                 planets: owned.len(),
                 pct: owned.len() as f64 / total * 100.0,
-                players: owned.iter().map(|p| p.statistics.player_count).sum(),
+                players: crate::format::js_sum(owned.iter().map(|p| p.statistics.player_count)),
             }
         })
         .collect()

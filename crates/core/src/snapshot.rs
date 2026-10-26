@@ -248,7 +248,7 @@ pub fn add_order_samples(kept: &[OrderSample], orders: &[Assignment], at: f64) -
 
 pub fn newest_dispatches(d: &[Dispatch]) -> Vec<Dispatch> {
     let mut list = d.to_vec();
-    list.sort_by(|a, b| b.id.cmp(&a.id));
+    list.sort_by_key(|d| std::cmp::Reverse(d.id));
     list.truncate(DISPATCH_LIMIT);
     list
 }

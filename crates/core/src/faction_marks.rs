@@ -45,7 +45,7 @@ fn components<T: Clone>(items: &[T], linked: impl Fn(&T, &T) -> bool) -> Vec<Vec
 
 fn mean(pts: &[Pt]) -> Pt {
     let n = pts.len() as f64;
-    [pts.iter().map(|p| p[0]).sum::<f64>() / n, pts.iter().map(|p| p[1]).sum::<f64>() / n]
+    [crate::format::js_sum(pts.iter().map(|p| p[0])) / n, crate::format::js_sum(pts.iter().map(|p| p[1])) / n]
 }
 
 struct Cell<'a> {
@@ -94,7 +94,7 @@ fn sector_marks(planets: &[Planet], geo: &PolarSectors) -> Vec<FactionMark> {
                 .into_iter()
                 .map(|group| {
                     let own: Vec<&Cell> = cells.iter().filter(|c| group.contains(&c.sector)).collect();
-                    let area = own.iter().map(|c| c.area).sum();
+                    let area = crate::format::js_sum(own.iter().map(|c| c.area));
                     (group, own, area)
                 })
                 .collect();
@@ -105,8 +105,8 @@ fn sector_marks(planets: &[Planet], geo: &PolarSectors) -> Vec<FactionMark> {
                 }
             }
             let (group, own, area) = blob;
-            let x = own.iter().map(|c| c.at[0] * c.area).sum::<f64>() / area;
-            let y = own.iter().map(|c| c.at[1] * c.area).sum::<f64>() / area;
+            let x = crate::format::js_sum(own.iter().map(|c| c.at[0] * c.area)) / area;
+            let y = crate::format::js_sum(own.iter().map(|c| c.at[1] * c.area)) / area;
             let inside = sector_at(geo, x / GALAXY_SCALE, -y / GALAXY_SCALE).is_some_and(|s| group.contains(&s));
             let (fx, fy) = if inside {
                 (x, y)

@@ -47,7 +47,7 @@ pub fn describe_task(task: &AssignmentTask, progress: f64, planets: Option<&[Pla
     let faction = faction_id.filter(|f| *f != 0.0 && !f.is_nan()).and_then(|f| faction_by_id(f as i64));
     let label = task_label(task.kind);
     let planet = planet_index.and_then(|i| planets?.iter().find(|p| p.index as f64 == i));
-    if let Some(planet) = planet.filter(|_| matches!(task.kind, 11 | 12 | 13)) {
+    if let Some(planet) = planet.filter(|_| matches!(task.kind, 11..=13)) {
         return TaskView {
             is_planet: true,
             label,
@@ -74,7 +74,7 @@ pub fn task_percent(t: &TaskView) -> f64 {
     if t.done {
         100.0
     } else if t.goal > 0.0 {
-        ((t.current / t.goal) * 100.0).max(0.0).min(99.9)
+        ((t.current / t.goal) * 100.0).clamp(0.0, 99.9)
     } else {
         0.0
     }
@@ -215,9 +215,8 @@ pub fn deadline_outlook(percent: f64, rate: Option<f64>, now: f64, deadline: f64
     }
     match projected_at(percent, rate, now, deadline) {
         None => (DeadlineOutlook::Measuring, None),
-        Some(end) => (
-            if end >= 100.0 { DeadlineOutlook::OnTrack } else { DeadlineOutlook::Behind },
-            Some(end.max(0.0).min(100.0)),
-        ),
+        Some(end) => {
+            (if end >= 100.0 { DeadlineOutlook::OnTrack } else { DeadlineOutlook::Behind }, Some(end.clamp(0.0, 100.0)))
+        }
     }
 }

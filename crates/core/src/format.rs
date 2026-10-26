@@ -102,7 +102,7 @@ fn round_decimal(x: f64, digits: usize) -> f64 {
 fn group_thousands(int_digits: &str) -> String {
     let mut out = String::new();
     for (i, c) in int_digits.chars().enumerate() {
-        if i > 0 && (int_digits.len() - i) % 3 == 0 {
+        if i > 0 && (int_digits.len() - i).is_multiple_of(3) {
             out.push(',');
         }
         out.push(c);
@@ -134,6 +134,11 @@ fn number(n: f64, max_fraction: usize, min_grouped: usize) -> String {
     let i = if i.len() >= min_grouped { group_thousands(i) } else { i.to_string() };
     let body = if f.is_empty() { i } else { format!("{i}.{f}") };
     if negative { format!("-{body}") } else { body }
+}
+
+/// A sum in order from 0, as JavaScript's `reduce((n, x) => n + x, 0)` adds.
+pub fn js_sum(values: impl IntoIterator<Item = f64>) -> f64 {
+    values.into_iter().fold(0.0, |n, x| n + x)
 }
 
 /// `Math.round`: halves round up, towards +∞.

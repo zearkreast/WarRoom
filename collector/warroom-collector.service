@@ -1,4 +1,5 @@
-# systemd unit for running the collector without Docker (needs Node 22.18+ or 24).
+# systemd unit for running the collector without Docker. Build it first, from the repo:
+#   cargo build --profile collector -p warroom-collector
 # Install:  sudo cp collector/warroom-collector.service /etc/systemd/system/
 #           sudo systemctl enable --now warroom-collector
 # Logs:     journalctl -u warroom-collector -f
@@ -11,7 +12,7 @@ Wants=network-online.target
 # Change these to where you cloned the repo and the user that should run it.
 WorkingDirectory=/opt/WarRoom
 User=warroom
-ExecStart=/usr/bin/node --max-old-space-size=64 collector/collect.ts
+ExecStart=/opt/WarRoom/target/collector/warroom-collector
 Restart=always
 RestartSec=10
 NoNewPrivileges=true

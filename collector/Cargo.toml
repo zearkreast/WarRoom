@@ -1,8 +1,18 @@
 [package]
 name = "warroom-collector"
 version = "0.3.0-beta"
+description = "Polls the Helldivers 2 APIs and writes the war's history to Supabase for the WarRoom app"
 edition = "2024"
 publish = false
 
 [dependencies]
 warroom-core = { path = "../crates/core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+ureq = "3"
+ring = "0.17"
+base64 = "0.22"
+signal-hook = "0.3"
+
+[dev-dependencies]
+rsa = "0.9"

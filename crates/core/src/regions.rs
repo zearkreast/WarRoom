@@ -71,10 +71,10 @@ fn build_outlines(
 
     let mut edge_owners: HashMap<String, Vec<Option<&str>>> = HashMap::new();
     let mut cells: Vec<Vec<Pt>> = Vec::with_capacity(planet_sites);
-    for i in 0..planet_sites {
+    for (i, sector) in site_sector.iter().take(planet_sites).enumerate() {
         let poly = voronoi.cell_polygon(i).unwrap_or_default();
         for k in 0..poly.len().saturating_sub(1) {
-            edge_owners.entry(edge_key(poly[k], poly[k + 1])).or_default().push(site_sector[i].as_deref());
+            edge_owners.entry(edge_key(poly[k], poly[k + 1])).or_default().push(sector.as_deref());
         }
         cells.push(poly);
     }
@@ -176,5 +176,5 @@ fn to_path(ring: &[Pt]) -> String {
 
 fn centroid(pts: &[Pt]) -> Pt {
     let n = if pts.is_empty() { 1.0 } else { pts.len() as f64 };
-    [pts.iter().map(|p| p[0]).sum::<f64>() / n, pts.iter().map(|p| p[1]).sum::<f64>() / n]
+    [crate::format::js_sum(pts.iter().map(|p| p[0])) / n, crate::format::js_sum(pts.iter().map(|p| p[1])) / n]
 }

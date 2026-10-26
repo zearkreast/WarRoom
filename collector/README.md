@@ -3,8 +3,9 @@
 The only part of WarRoom that talks to the Helldivers 2 API. It polls the API and writes everything to
 Supabase; the app reads from Supabase and never calls the API itself.
 
-- No npm dependencies and no build step: Node runs the TypeScript sources directly.
-- About 40–60 MB of RAM, near-zero CPU, and about 2 API requests a minute.
+- A small Rust program that shares the app's data shapes and war logic (`crates/core`), so what it writes
+  is what the app reads.
+- Little memory, near-zero CPU, and about 2 API requests a minute.
 - Safe to restart: it reloads its state from Supabase. Running two at once is harmless too (duplicate
   readings are ignored).
 - Gentle on the API: one request at a time, 2.5 s apart, a fresh connection for each. A 429 pauses the
@@ -30,6 +31,9 @@ cp collector/.env.example collector/.env && nano collector/.env
 docker compose up -d --build
 ```
 
+The first build compiles the collector inside Docker and takes a few minutes; later updates reuse the
+compiled dependencies.
+
 Fill in `SUPABASE_SECRET_KEY` (Supabase → Project Settings → API Keys → Secret keys) and `SUPER_CONTACT`
 (an email or link the Helldivers API maintainers can reach you at).
 
@@ -54,14 +58,15 @@ fails is logged and not retried.
 
 ## Setup without Docker
 
-Needs Node 22.18+ or 24.
+Needs a Rust toolchain (https://rustup.rs). From the repo root:
 
 ```bash
-node collector/collect.ts           # runs until stopped
-node collector/collect.ts --once    # every job once, then exits; non-zero exit on failure
+cargo run --profile collector -p warroom-collector             # runs until stopped
+cargo run --profile collector -p warroom-collector -- --once   # every job once, then exits; non-zero exit on failure
 ```
 
-To keep it running with systemd, edit the paths and user in `collector/warroom-collector.service`, then:
+To keep it running with systemd, build it with `cargo build --profile collector -p warroom-collector`, edit
+the paths and user in `collector/warroom-collector.service`, then:
 
 ```bash
 sudo cp collector/warroom-collector.service /etc/systemd/system/

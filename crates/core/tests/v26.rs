@@ -212,7 +212,7 @@ fn alerts_on_campaign_launches_and_outcomes_once_never_on_the_first_load() {
     let latest = &not_orders[0];
     let seen: Vec<String> = keys.iter().filter(|k| **k != latest.key).cloned().collect();
     let fresh: Vec<String> = campaign_alerts(&campaigns, &seen).0.into_iter().map(|e| e.key).collect();
-    assert_eq!(fresh, [latest.key.clone()]);
+    assert_eq!(fresh, std::slice::from_ref(&latest.key));
 }
 
 fn dispatch(id: i64, published: f64, message: &str) -> Dispatch {

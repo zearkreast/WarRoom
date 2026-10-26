@@ -70,10 +70,10 @@ pub fn super_earth_planets(
     let find = |name: &str| held.iter().rev().find(|(n, _)| n == name).map(|(_, p)| *p);
     let mut list: Vec<ListedPlanet> = Vec::new();
     let add = |list: &mut Vec<ListedPlanet>, name: &str| {
-        if let Some(p) = find(name) {
-            if !list.iter().any(|l| l.planet == Some(p.index)) {
-                list.push(ListedPlanet { name: p.name.clone(), planet: Some(p.index), lore: None });
-            }
+        if let Some(p) = find(name)
+            && !list.iter().any(|l| l.planet == Some(p.index))
+        {
+            list.push(ListedPlanet { name: p.name.clone(), planet: Some(p.index), lore: None });
         }
     };
     add(&mut list, "SUPER EARTH");

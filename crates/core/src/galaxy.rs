@@ -439,7 +439,7 @@ pub fn majority<K: PartialEq + Copy>(items: impl IntoIterator<Item = K>) -> Opti
 }
 
 /// Groups items by key, keeping the order keys first appear in.
-pub fn group_by<'a, T, K: PartialEq + Clone>(items: &'a [T], key: impl Fn(&T) -> K) -> Vec<(K, Vec<&'a T>)> {
+pub fn group_by<T, K: PartialEq + Clone>(items: &[T], key: impl Fn(&T) -> K) -> Vec<(K, Vec<&T>)> {
     let mut out: Vec<(K, Vec<&T>)> = Vec::new();
     for item in items {
         let k = key(item);

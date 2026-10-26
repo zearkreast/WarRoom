@@ -73,10 +73,11 @@ pub fn defense_events(
         // Lost if Super Earth gave the planet up during (or right after) the event.
         e.held = !changes.iter().any(|c| c.from == Faction::Humans && c.at >= e.start && c.at <= e.end + EVENT_GAP_MS);
     }
-    if let Some(last) = events.last_mut() {
-        if active_event_end.is_some() && now - last.end <= EVENT_GAP_MS {
-            last.ongoing = true;
-        }
+    if let Some(last) = events.last_mut()
+        && active_event_end.is_some()
+        && now - last.end <= EVENT_GAP_MS
+    {
+        last.ongoing = true;
     }
     events
 }
@@ -111,7 +112,7 @@ pub fn build_war_history(opts: HistoryInput) -> WarHistory {
     }
 
     let total = (opts.now - opts.record_start).max(1.0);
-    let free: f64 = segments.iter().filter(|s| s.owner == Faction::Humans).map(|s| s.to - s.from).sum();
+    let free = crate::format::js_sum(segments.iter().filter(|s| s.owner == Faction::Humans).map(|s| s.to - s.from));
 
     // Battles are numbered in time order across captures and defenses.
     let mut battles: Vec<LogEntry> = Vec::new();

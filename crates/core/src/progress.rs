@@ -55,8 +55,8 @@ pub fn slope_per_hour(points: &[(f64, f64)]) -> Option<f64> {
         return None;
     }
     let t0 = points[0].0;
-    let mean_t = points.iter().map(|p| p.0 - t0).sum::<f64>() / n as f64;
-    let mean_v = points.iter().map(|p| p.1).sum::<f64>() / n as f64;
+    let mean_t = crate::format::js_sum(points.iter().map(|p| p.0 - t0)) / n as f64;
+    let mean_v = crate::format::js_sum(points.iter().map(|p| p.1)) / n as f64;
     let (mut num, mut den) = (0.0, 0.0);
     for &(at, value) in points {
         let dt = at - t0 - mean_t;
@@ -106,5 +106,5 @@ pub fn projected_at(percent: f64, rate: Option<f64>, now: f64, deadline: f64) ->
 }
 
 fn clamp(n: f64, lo: f64, hi: f64) -> f64 {
-    hi.min(lo.max(n))
+    n.clamp(lo, hi)
 }

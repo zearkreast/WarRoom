@@ -26,6 +26,31 @@ pub fn from_str<T: DeserializeOwned>(s: &str) -> Result<T, serde_json::Error> {
     from_value(serde_json::from_str(s)?)
 }
 
+/// Whole floats as integers, so JSON written from Rust reads byte for byte as JavaScript wrote it.
+pub fn js_value(mut v: Value) -> Value {
+    fn walk(v: &mut Value) {
+        match v {
+            Value::Number(n) => {
+                if let Some(f) =
+                    n.as_f64().filter(|f| n.is_f64() && f.fract() == 0.0 && f.abs() < 9_007_199_254_740_992.0)
+                {
+                    *v = Value::from(f as i64);
+                }
+            }
+            Value::Array(list) => list.iter_mut().for_each(walk),
+            Value::Object(map) => map.values_mut().for_each(walk),
+            _ => {}
+        }
+    }
+    walk(&mut v);
+    v
+}
+
+/// `JSON.stringify` of a value: whole floats written as integers.
+pub fn to_js_json<T: Serialize>(value: &T) -> String {
+    js_value(serde_json::to_value(value).expect("serializable")).to_string()
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Faction {
     #[default]

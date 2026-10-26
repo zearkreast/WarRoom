@@ -63,7 +63,7 @@ pub const RECENT_DISPATCH_MS: f64 = 72.0 * 3_600_000.0;
 pub fn recent_dispatches(list: &[Dispatch], now: f64) -> Vec<Dispatch> {
     let mut out: Vec<Dispatch> =
         list.iter().filter(|d| now - parse_ms(&d.published) <= RECENT_DISPATCH_MS).cloned().collect();
-    out.sort_by(|a, b| b.id.cmp(&a.id));
+    out.sort_by_key(|d| std::cmp::Reverse(d.id));
     out
 }
 
@@ -73,7 +73,7 @@ pub fn latest_dispatches(list: &[Dispatch], count: &str, now: f64) -> Vec<Dispat
         return recent_dispatches(list, now);
     }
     let mut out = list.to_vec();
-    out.sort_by(|a, b| b.id.cmp(&a.id));
+    out.sort_by_key(|d| std::cmp::Reverse(d.id));
     out.truncate(count.parse().unwrap_or(0));
     out
 }
