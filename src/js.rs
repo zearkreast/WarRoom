@@ -183,3 +183,12 @@ pub fn animation_loop(frame: impl Fn(f64) -> bool + 'static) -> std::rc::Rc<std:
 pub fn performance_now() -> f64 {
     window().performance().map_or_else(now, |p| p.now())
 }
+
+/// GET a same-origin file as text through the browser's fetch.
+pub async fn fetch_text(url: &str) -> Result<String, JsValue> {
+    let res = wait(call(&window().into(), "fetch", &[JsValue::from_str(url)])?).await?;
+    if !get(&res, "ok").as_bool().unwrap_or(false) {
+        return Err(JsValue::from_str(&format!("HTTP {} for {url}", get(&res, "status").as_f64().unwrap_or(0.0))));
+    }
+    Ok(wait(call(&res, "text", &[])?).await?.as_string().unwrap_or_default())
+}

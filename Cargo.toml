@@ -11,6 +11,7 @@ members = ["crates/core", "collector"]
 exclude = ["src-tauri"]
 
 [dependencies]
+futures = { version = "0.3", default-features = false, features = ["std", "async-await"] }
 warroom-core = { path = "crates/core" }
 leptos = { version = "0.8", features = ["csr"] }
 wasm-bindgen = "0.2"
@@ -36,6 +37,7 @@ features = [
   "Element",
   "Event",
   "EventTarget",
+  "FocusOptions",
   "History",
   "HtmlCanvasElement",
   "HtmlDialogElement",
@@ -84,3 +86,8 @@ opt-level = 3
 lto = true
 codegen-units = 1
 panic = "abort"
+
+# tachys 0.2.19 wraps every static SVG child in a stray <g> (breaking <clipPath> and child selectors);
+# the vendored copy carries the fix from tachys 0.3. Drop it on the move to leptos 0.9.
+[patch.crates-io]
+tachys = { path = "vendor/tachys" }

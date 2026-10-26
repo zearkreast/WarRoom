@@ -249,13 +249,13 @@ pub fn Tile(
     value: AnyView,
     #[prop(optional)] sub: Option<AnyView>,
     #[prop(optional)] icon: Option<IconData>,
-    #[prop(optional, into)] color: Option<String>,
+    #[prop(optional, into)] color: MaybeProp<String>,
     #[prop(optional, into)] rule: Option<String>,
 ) -> impl IntoView {
     view! {
         <div class="tile" style=rule.map(|r| format!("--rule: {r};"))>
             <div class="tile-label">{icon.map(|i| view! { <Icon icon=i size=12.0 stroke_width=2.0 /> })} {label}</div>
-            <div class="tile-value num" style=color.map(|c| format!("color: {c};"))>
+            <div class="tile-value num" style=move || color.get().map(|c| format!("color: {c};"))>
                 {value}
             </div>
             {sub.map(|s| view! { <div class="tile-sub">{s}</div> })}
