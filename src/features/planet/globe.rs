@@ -79,8 +79,12 @@ pub fn SuperEarthGlobe(r: f64) -> impl IntoView {
             }
             let t0 = js::performance_now();
             let frames = js::animation_loop(move |t| {
+                // Checked first: once the globe is gone, its city refs are disposed and reading them panics.
+                if stop.get() {
+                    return false;
+                }
                 draw(START + (t - t0) / 1000.0 * SPEED);
-                !stop.get()
+                true
             });
             let _ = frames;
         });

@@ -108,18 +108,19 @@ pub fn TheaterOfWar() -> impl IntoView {
         let stop = (*halt).clone();
         let io = io.map(SendWrapper::new);
         let frames = js::animation_loop(move |t| {
+            // Checked first: once the page is gone, `angle` and `drag` are disposed and reading them panics.
+            if stop.get() {
+                if let Some(io) = &io {
+                    io.disconnect();
+                }
+                return false;
+            }
             // Frames stop while the window is hidden; don't jump by the whole gap when they resume.
             let dt = ((t - last.get()) / 1000.0).min(0.1);
             last.set(t);
             let spinning = settings().untracked(|s| s.tw_spin);
             if !reduced && spinning && on_screen.get() && drag.with_value(Option::is_none) && !js::document().hidden() {
                 turn(angle.get_value() + SPIN_DEG_PER_S * dt);
-            }
-            if stop.get() {
-                if let Some(io) = &io {
-                    io.disconnect();
-                }
-                return false;
             }
             true
         });
