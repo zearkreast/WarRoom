@@ -13,7 +13,7 @@ use std::cell::Cell;
 use std::rc::Rc;
 use std::sync::Arc;
 use warroom_core::api::Faction;
-use warroom_core::faction_marks::{Overlay, faction_marks};
+use warroom_core::faction_marks::faction_marks;
 use warroom_core::format::to_fixed;
 use warroom_core::galaxy::{project, supply_lines};
 use warroom_core::planets::{by_index, ownership_key};
@@ -27,22 +27,6 @@ const KEY_STEP_DEG: f64 = 10.0;
 const ORDER: [Faction; 4] = [Faction::Humans, Faction::Terminids, Faction::Illuminate, Faction::Automaton];
 /// Hatch spacing in disc units; the disc is drawn at about a third of its size.
 const HATCH: f64 = 18.0;
-
-fn core_overlay(o: MapOverlay) -> Overlay {
-    match o {
-        MapOverlay::Regions => Overlay::Regions,
-        MapOverlay::Sectors => Overlay::Sectors,
-        MapOverlay::Galaxy => Overlay::Galaxy,
-    }
-}
-
-fn overlay_name(o: MapOverlay) -> &'static str {
-    match o {
-        MapOverlay::Regions => "regions",
-        MapOverlay::Sectors => "sectors",
-        MapOverlay::Galaxy => "galaxy",
-    }
-}
 
 /// The galaxy disc seen at an angle, drawn like the map's chosen overlay; it turns slowly and can be dragged round.
 #[component]
@@ -65,7 +49,7 @@ pub fn TheaterOfWar() -> impl IntoView {
     });
     let marks = Memo::new(move |_| {
         owners.with(|_| ());
-        let o = core_overlay(overlay.get());
+        let o = overlay.get().core();
         q.geometry.with(|g| planets.with_untracked(|p| faction_marks(p, o, g.as_deref())))
     });
     let lanes = Memo::new(move |_| {
@@ -174,7 +158,7 @@ pub fn TheaterOfWar() -> impl IntoView {
                     class="tw-stage"
                     tabindex="0"
                     role="img"
-                    aria-label=move || format!("Galaxy {} view. Drag or use the arrow keys to rotate.", overlay_name(overlay.get()))
+                    aria-label=move || format!("Galaxy {} view. Drag or use the arrow keys to rotate.", MapOverlay::as_str(overlay.get()))
                     on:pointerdown=move |e: web_sys::PointerEvent| {
                         if let Some(t) = e.current_target().and_then(|t| t.dyn_into::<web_sys::Element>().ok()) {
                             let _ = t.set_pointer_capture(e.pointer_id());

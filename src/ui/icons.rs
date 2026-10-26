@@ -404,6 +404,7 @@ pub fn Icon(
     /// Line colour, like lucide's `color`.
     #[prop(optional, into)]
     color: MaybeProp<String>,
+    #[prop(optional, into)] style: MaybeProp<String>,
 ) -> impl IntoView {
     let label = label.get_untracked();
     let stroke = color.get_untracked().unwrap_or_else(|| "currentColor".into());
@@ -426,6 +427,7 @@ pub fn Icon(
             class=class
             aria-hidden=hidden
             aria-label=label
+            style=style.get_untracked()
             inner_html=icon.body
         ></svg>
     }

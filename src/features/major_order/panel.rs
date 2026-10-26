@@ -75,7 +75,8 @@ fn PlanetTask(s: OrderState, i: usize) -> impl IntoView {
             <div class="mo-task-head">
                 {move || view! { <Icon icon=if done.get() { icons::CHECK_SQUARE } else { icons::SQUARE } size=16.0 class="mo-check" /> }}
                 <span>
-                    {move || format!("{} ", label.get())}
+                    {move || label.get()}
+                    " "
                     <button
                         class="link"
                         style=move || format!("color: {};", owner.get())

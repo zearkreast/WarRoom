@@ -138,6 +138,26 @@ pub enum MapOverlay {
     Galaxy,
 }
 
+impl MapOverlay {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            MapOverlay::Regions => "regions",
+            MapOverlay::Sectors => "sectors",
+            MapOverlay::Galaxy => "galaxy",
+        }
+    }
+
+    /// The overlay as the faction marks are placed for it.
+    pub fn core(self) -> warroom_core::faction_marks::Overlay {
+        use warroom_core::faction_marks::Overlay;
+        match self {
+            MapOverlay::Regions => Overlay::Regions,
+            MapOverlay::Sectors => Overlay::Sectors,
+            MapOverlay::Galaxy => Overlay::Galaxy,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MapQuality {
@@ -153,6 +173,25 @@ pub enum MapPlanets {
     #[default]
     Markers,
     Spheres,
+}
+
+impl MapQuality {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            MapQuality::Max => "max",
+            MapQuality::Normal => "normal",
+            MapQuality::Min => "min",
+        }
+    }
+}
+
+impl MapPlanets {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            MapPlanets::Markers => "markers",
+            MapPlanets::Spheres => "spheres",
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
