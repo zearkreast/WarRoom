@@ -17,6 +17,7 @@ import {
 } from "../../state";
 import { Panel, Stepper } from "../../ui/primitives";
 import { DISPATCH_OPTIONS, OVERLAY_OPTIONS, PLANET_OPTIONS, QUALITY_OPTIONS } from "../map/mapOptions";
+import { hasTray } from "../../tray";
 import { checkForUpdate, useUpdate } from "../../update/appUpdate";
 import "./settings.css";
 
@@ -194,6 +195,14 @@ export function SettingsPage() {
               <OnOff label={a.title} value={s.alerts[a.key]} onChange={(v) => s.setAlert(a.key, v)} />
             </Row>
           ))}
+          {hasTray() && (
+            <Row
+              title="Keep running in the tray"
+              text="Closing the window leaves the app in the tray, so alerts keep coming. Quit from the tray icon."
+            >
+              <OnOff label="Keep running in the tray" value={s.closeToTray} onChange={(v) => s.set("closeToTray", v)} />
+            </Row>
+          )}
           <div className="set-actions">
             <button
               className="hud-btn"

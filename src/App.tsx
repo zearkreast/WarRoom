@@ -8,10 +8,12 @@ import { Shell } from "./layout/Shell";
 import { useNavHistory } from "./navHistory";
 import { useUi } from "./state";
 import { useDataSync } from "./sync";
+import { useCloseToTray } from "./tray";
 
 export default function App() {
   useDataSync();
   useNavHistory();
+  useCloseToTray();
   const view = useUi((s) => s.view);
   return (
     <Shell>
