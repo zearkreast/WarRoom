@@ -26,7 +26,7 @@ export interface City {
   resistance: number | null;
   /** Net progress in %/h, measured by the collector. */
   rate: number | null;
-  /** The planet's liberation at which it opens, for a city that doesn't open from the start. */
+  /** The planet's liberation at which it opens; 0 for a city open from the start. */
   opensAt: number | null;
   /** Locked, and the planet hasn't reached `opensAt` yet. */
   waiting: boolean;
@@ -58,7 +58,7 @@ export function citiesOf(p: Planet): City[] {
     const percent = r.health == null || !r.maxHealth ? null : Math.max(0, 100 - (r.health / r.maxHealth) * 100);
     const live = stateOf(p, r.health, r.isAvailable);
     const f = r.availabilityFactor;
-    const opensAt = f != null && f > 0 && f < 1 ? (1 - f) * 100 : null;
+    const opensAt = f != null && f >= 0 && f <= 1 ? (1 - f) * 100 : null;
     const state = live === "liberating" ? live : (fate?.state ?? live);
     return {
       id: r.id,

@@ -895,32 +895,6 @@ button.gww-ad-open:focus-visible img {
   max-height: 96px;
   object-fit: contain;
 }
-.gww-corp-logo.fit,
-.gww-corp-logo.cover {
-  position: relative;
-  overflow: hidden;
-}
-.gww-corp-logo.fit::before {
-  content: "";
-  position: absolute;
-  inset: -16px;
-  background: var(--art) center / cover;
-  filter: blur(14px) brightness(0.75) saturate(1.2);
-}
-.gww-corp-logo .gww-logo.fit,
-.gww-corp-logo .gww-logo.cover {
-  position: absolute;
-  inset: 0;
-  max-width: none;
-  width: 100%;
-  height: 100%;
-  max-height: none;
-  object-fit: cover;
-}
-.gww-corp-logo .gww-logo.fit {
-  object-fit: contain;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
-}
 .gww-corp-logo .gww-wordmark {
   max-width: 88%;
   font-size: 1rem;

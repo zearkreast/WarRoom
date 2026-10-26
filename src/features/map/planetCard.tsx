@@ -43,7 +43,7 @@ function cardLook(p: Planet, effects?: PlanetEffect[]): CSSProperties {
   } as CSSProperties;
 }
 
-/** The planet's progress, with a mark where each city that doesn't start open opens. */
+/** The planet's progress, with a mark where each city opens; cities opening at the same point stand side by side. */
 export function LiberationBar({ p, pct, enemy }: { p: Planet; pct: number; enemy: Faction }) {
   const marks = p.event ? [] : citiesOf(p).filter((c) => c.opensAt != null);
   return (
@@ -58,11 +58,16 @@ export function LiberationBar({ p, pct, enemy }: { p: Planet; pct: number; enemy
       >
         <div className="hc-bar-fill" style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />
       </div>
-      {marks.map((c) => (
+      {marks.map((c, i) => (
         <span
           key={c.id}
           className={`hc-bar-mark ${c.waiting ? "" : "open"}`}
-          style={{ left: `${c.opensAt}%`, "--k": factionColor(c.holder) } as CSSProperties}
+          style={
+            {
+              left: `calc(${c.opensAt}% + ${marks.slice(0, i).filter((m) => Math.abs(m.opensAt! - c.opensAt!) < 4).length * 18}px)`,
+              "--k": factionColor(c.holder),
+            } as CSSProperties
+          }
           title={`${c.name} opens at ${fmtPct(c.opensAt!, 1)}`}
         >
           <CityMark stars={c.stars} state={c.waiting ? "locked" : "liberating"} size={16} holder={c.holder} />

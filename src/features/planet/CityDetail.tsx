@@ -86,7 +86,7 @@ function CityStatus({ c, enemy }: { c: City; enemy: Faction | undefined }) {
             sub="planet liberation when freed"
             color={c.boost == null ? undefined : "var(--good)"}
           />
-          {c.opensAt != null ? (
+          {c.opensAt ? (
             <Tile icon={Lock} label="Opens at" value={fmtPct(c.opensAt, 1)} sub="planet liberation" />
           ) : (
             <Tile icon={Shield} label="Held by" value={factionLabel(c.holder)} color={tone} />
@@ -159,7 +159,7 @@ function Body({ at }: { at: CityRef }) {
         </div>
       </section>
       <CityStatus c={c} enemy={enemy} />
-      {enemy && c.opensAt != null && (
+      {enemy && !!c.opensAt && (
         <Panel title={`${p.name} liberation`} icon={Compass} tone={factionColor(enemy)}>
           <div className="pd-stack">
             <LiberationBar p={p} pct={planetPct} enemy={enemy} />

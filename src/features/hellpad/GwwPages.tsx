@@ -106,27 +106,11 @@ export function ManualIcon({ m, size }: { m: Manual; size: number }) {
   );
 }
 
-/**
- * A company's own picture: its logo, else its widest advert. A shop sign is wider than its box, so it fits the
- * box's width over a blurred copy of itself; an advert is a picture and covers the box.
- */
-type ArtMode = "mark" | "fit" | "cover";
-
-function companyArt(c: Company): { src: string; mode: ArtMode } | undefined {
-  const logo = c.logo && logoUrl(c.logo);
-  if (logo) return { src: logo, mode: c.banner ? "fit" : "mark" };
-  const ads = ADS.filter((a) => c.ads?.includes(a.file));
-  const ad = ads.find((a) => a.shape === "wide") ?? ads[0];
-  const src = ad && adUrl(ad.file);
-  return src ? { src, mode: "cover" } : undefined;
-}
-
-/** On a page banner, which sits beside the name, a company with no picture shows nothing rather than its name again. */
-export function CompanyMark({ c, banner }: { c: Company; banner?: boolean }) {
-  const art = companyArt(c);
-  if (art) return <img className={`gww-logo ${art.mode}`} src={art.src} alt="" />;
-  if (banner) return null;
-  return (
+export function CompanyMark({ c }: { c: Company }) {
+  const url = c.logo && logoUrl(c.logo);
+  return url ? (
+    <img className="gww-logo" src={url} alt="" />
+  ) : (
     <span className="gww-wordmark caps" aria-hidden>
       {c.name}
     </span>
@@ -634,13 +618,9 @@ export function SiteTile(props: {
 
 export function CompanyTile({ c }: { c: Company }) {
   const { follow } = useGwwNav();
-  const art = companyArt(c);
   return (
     <button className="gww-site corp" style={{ "--site": c.color } as CSSProperties} onClick={(e) => follow(`company:${c.id}`, e)}>
-      <span
-        className={`gww-corp-logo ${art?.mode ?? ""}`}
-        style={art?.mode === "fit" ? ({ "--art": `url("${art.src}")` } as CSSProperties) : undefined}
-      >
+      <span className="gww-corp-logo">
         <CompanyMark c={c} />
       </span>
       <span className="gww-site-body">
@@ -847,7 +827,8 @@ export function CompanyPage({ c, headingRef }: { c: Company; headingRef: Heading
     <WithRail rail={ads.rail} here={here}>
       <article className="gww-page" style={{ "--site": c.color } as CSSProperties}>
         <Banner
-          icon={companyArt(c) && <CompanyMark c={c} banner />}
+          // The name is beside the banner's picture, so a company without a logo shows no picture there.
+          icon={c.logo && logoUrl(c.logo) ? <CompanyMark c={c} /> : undefined}
           corp
           crumbs={[{ label: "Corporations", target: "dir:corps" }, { label: c.trade }]}
           title={c.name}
@@ -1313,26 +1294,11 @@ export function DirPage({ id, headingRef, logText }: { id: keyof typeof DIRS; he
         </div>
       )}
       {id === "corps" && (
-        <>
-          <section className="gww-chapter">
-            <h3>Mega-corporations</h3>
-            <p className="gww-chapter-sub">The Federation's giants, each with a hand in the war effort.</p>
-            <div className="gww-sites">
-              {COMPANIES.filter((c) => !c.minor).map((c) => (
-                <CompanyTile key={c.id} c={c} />
-              ))}
-            </div>
-          </section>
-          <section className="gww-chapter">
-            <h3>Smaller corporations</h3>
-            <p className="gww-chapter-sub">Contractors, makers and the brands on the colony cities' signs and billboards.</p>
-            <div className="gww-sites">
-              {COMPANIES.filter((c) => c.minor).map((c) => (
-                <CompanyTile key={c.id} c={c} />
-              ))}
-            </div>
-          </section>
-        </>
+        <div className="gww-sites">
+          {COMPANIES.map((c) => (
+            <CompanyTile key={c.id} c={c} />
+          ))}
+        </div>
       )}
       <Related
         title="Elsewhere on the G.W.W."

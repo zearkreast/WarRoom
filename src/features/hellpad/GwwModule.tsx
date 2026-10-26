@@ -221,10 +221,8 @@ function Home({ logText }: { logText: string }) {
       ]),
     ),
   );
-  const companies = COMPANIES.filter(
-    (c) =>
-      (q || !c.minor) &&
-      hit(c.name, c.trade, c.summary, c.slogan ?? "", c.address, ...c.sections.map((s) => `${s.text ?? ""} ${(s.products ?? []).join(" ")}`)),
+  const companies = COMPANIES.filter((c) =>
+    hit(c.name, c.trade, c.summary, c.slogan ?? "", c.address, ...c.sections.map((s) => `${s.text ?? ""} ${(s.products ?? []).join(" ")}`)),
   );
   const read = useSettings((s) => s.gwwRead);
   const readCount = MANUALS.filter((m) => read.includes(m.id)).length;
@@ -282,7 +280,7 @@ function Home({ logText }: { logText: string }) {
           )}
           {!q && ads.banner && <AdBox ad={ads.banner} />}
           {companies.length > 0 && (
-            <Group title="Corporations" count={q ? companies.length : COMPANIES.length} all="dir:corps">
+            <Group title="Corporations" count={companies.length} all="dir:corps">
               {companies.map((c) => (
                 <CompanyTile key={c.id} c={c} />
               ))}
