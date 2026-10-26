@@ -7,6 +7,11 @@ export interface ChangelogEntry {
 /** Newest first. Shown in the Tracker Dispatch panel. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.3.2-beta",
+    date: "2026-10-26",
+    items: ["The app opens again: 0.3.1-beta closed as soon as it started."],
+  },
+  {
     version: "0.3.1-beta",
     date: "2026-10-26",
     items: [
