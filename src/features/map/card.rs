@@ -301,7 +301,7 @@ pub fn planet_panel(
                 <dl class="pp-stats">
                     <div>
                         <dt class="caps">"Helldivers"</dt>
-                        <dd class="num">{move || p.with(|p| fmt_int(p.statistics.player_count as f64))}</dd>
+                        <dd class="num">{move || p.with(|p| fmt_int(p.statistics.player_count))}</dd>
                     </div>
                     <div>
                         <dt class="caps">"Held by"</dt>

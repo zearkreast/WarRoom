@@ -15,7 +15,6 @@ mod tray;
 mod ui;
 mod update;
 
-use leptos::prelude::*;
 use wasm_bindgen::JsCast;
 
 fn escape(text: &str) -> String {

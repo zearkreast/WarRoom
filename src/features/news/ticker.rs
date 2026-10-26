@@ -116,13 +116,14 @@ pub fn NewsTicker() -> impl IntoView {
             }
             let dt = ((t - last.get()) / 1000.0).min(0.1);
             last.set(t);
-            if let Some(el) = track.get_untracked() {
-                if !held.get() && !js::document().hidden() {
-                    let lp = el.scroll_width() as f64 / 2.0;
-                    offset.set(if lp > 0.0 { (offset.get() + PX_PER_S * dt) % lp } else { 0.0 });
-                    let _ = web_sys::HtmlElement::style(&el)
-                        .set_property("transform", &format!("translateX({}px)", to_fixed(-offset.get(), 1)));
-                }
+            if let Some(el) = track.get_untracked()
+                && !held.get()
+                && !js::document().hidden()
+            {
+                let lp = el.scroll_width() as f64 / 2.0;
+                offset.set(if lp > 0.0 { (offset.get() + PX_PER_S * dt) % lp } else { 0.0 });
+                let _ = web_sys::HtmlElement::style(&el)
+                    .set_property("transform", &format!("translateX({}px)", to_fixed(-offset.get(), 1)));
             }
             if let Some(f) = again.borrow().as_ref() {
                 let _ = js::window().request_animation_frame(f.as_ref().unchecked_ref());

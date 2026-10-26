@@ -50,7 +50,7 @@ where
     let (data, set_data) = signal::<Option<T>>(None);
     let (loading, set_loading) = signal(false);
     let current = Rc::new(RefCell::new(None::<String>));
-    let effect = Effect::new(move |_| {
+    Effect::new(move |_| {
         let Some(k) = key() else { return };
         *current.borrow_mut() = Some(k.clone());
         let hit = cached::<T>(&k);
@@ -106,6 +106,5 @@ where
             }
         });
     });
-    on_cleanup(move || drop(effect));
     Query { data, loading }
 }

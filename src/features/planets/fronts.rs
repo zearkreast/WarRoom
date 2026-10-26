@@ -105,10 +105,10 @@ fn shared() -> &'static Shared {
                 let mut s = HashSet::new();
                 for a in q.assignments.get().iter().flat_map(|l| l.iter()) {
                     for t in &a.tasks {
-                        if let Some(i) = t.value_types.iter().position(|v| *v == 12) {
-                            if t.values.get(i).is_some_and(|v| *v > 0.0) {
-                                s.insert(t.values[i] as i64);
-                            }
+                        if let Some(i) = t.value_types.iter().position(|v| *v == 12)
+                            && t.values.get(i).is_some_and(|v| *v > 0.0)
+                        {
+                            s.insert(t.values[i] as i64);
                         }
                     }
                 }

@@ -324,7 +324,7 @@ fn Distribution() -> impl IntoView {
                                 card.set(Some((key, pointer_at(&e, &svg))));
                             }
                         })
-                        center=std::sync::Arc::new(move || center.clone().into_any())
+                        center=std::sync::Arc::new(move || center().into_any())
                     />
                     <ul
                         class="ov-legend"

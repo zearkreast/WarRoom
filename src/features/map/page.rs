@@ -36,7 +36,7 @@ fn TitleStack(#[prop(into)] hovered: Signal<Option<String>>) -> impl IntoView {
                     None => counts.push((p.current_owner, 1)),
                 }
             }
-            counts.sort_by(|a, b| b.1.cmp(&a.1));
+            counts.sort_by_key(|c| std::cmp::Reverse(c.1));
             Some((name, counts.first().map_or(Faction::Humans, |c| c.0)))
         })
     });

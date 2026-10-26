@@ -1,14 +1,12 @@
 use crate::js::{self, num};
 use crate::tauri;
-use crate::ui::emblems::{FactionEmblem, IconLike, icon_view};
+use crate::ui::emblems::{IconLike, icon_view};
 use crate::ui::icons::{self, Icon, IconData};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use send_wrapper::SendWrapper;
 use std::cell::RefCell;
 use std::rc::Rc;
-use warroom_core::api::Faction;
-use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_duration, js_round};
 use wasm_bindgen::prelude::*;
 
@@ -100,35 +98,6 @@ pub fn Meter(
 #[component]
 pub fn Keycap(#[prop(into)] k: String) -> impl IntoView {
     view! { <kbd class="keycap">{k}</kbd> }
-}
-
-#[component]
-pub fn HudButton(
-    icon: IconLike,
-    #[prop(into)] label: String,
-    #[prop(optional)] on_click: Option<Callback<()>>,
-    #[prop(optional, into)] active: Option<Signal<bool>>,
-    #[prop(optional, into)] key_hint: Option<String>,
-    #[prop(default = 18.0)] size: f64,
-) -> impl IntoView {
-    let title = match &key_hint {
-        Some(k) => format!("{label} ({k})"),
-        None => label.clone(),
-    };
-    view! {
-        <button
-            class=move || format!("hud-btn icon {}", if active.is_some_and(|a| a.get()) { "on" } else { "" })
-            on:click=move |_| {
-                if let Some(f) = on_click {
-                    f.run(())
-                }
-            }
-            aria-label=label
-            title=title
-        >
-            {icon_view(icon, size, 1.75, None)}
-        </button>
-    }
 }
 
 #[component]
@@ -263,16 +232,6 @@ pub fn Tile(
     }
 }
 
-#[component]
-pub fn FactionTag(faction: Faction) -> impl IntoView {
-    view! {
-        <span class="faction-tag" style=format!("color: {};", faction_color(Some(faction)))>
-            <FactionEmblem faction=faction.as_str() size=12.0 />
-            {faction_label(Some(faction))}
-        </span>
-    }
-}
-
 thread_local! {
     static LAYERS: RefCell<Vec<(u64, Rc<dyn Fn()>)>> = const { RefCell::new(Vec::new()) };
     static NEXT_LAYER: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
@@ -316,7 +275,7 @@ pub fn use_escape(close: impl Fn() + 'static) {
 pub fn use_escape_when(close: impl Fn() + Clone + 'static, open: impl Fn() -> bool + 'static) {
     let current = Rc::new(RefCell::new(None::<u64>));
     let c = current.clone();
-    let effect = Effect::new(move |_| {
+    Effect::new(move |_| {
         let is_open = open();
         let mut cur = c.borrow_mut();
         match (is_open, *cur) {
@@ -340,7 +299,6 @@ pub fn use_escape_when(close: impl Fn() + Clone + 'static, open: impl Fn() -> bo
     });
     let current = SendWrapper::new(current);
     on_cleanup(move || {
-        drop(effect);
         if let Some(id) = current.take().borrow_mut().take() {
             LAYERS.with_borrow_mut(|l| l.retain(|(i, _)| *i != id));
         }

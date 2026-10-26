@@ -129,7 +129,6 @@ fn set_place(p: Place) {
 mod browser {
     use super::*;
     use crate::js;
-    use leptos::prelude::*;
     use std::cell::RefCell;
     use wasm_bindgen::JsValue;
     use wasm_bindgen::prelude::*;

@@ -17,18 +17,6 @@ pub enum ToastKind {
     Defense,
 }
 
-impl ToastKind {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            ToastKind::Order => "order",
-            ToastKind::Dispatch => "dispatch",
-            ToastKind::Capture => "capture",
-            ToastKind::Loss => "loss",
-            ToastKind::Defense => "defense",
-        }
-    }
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Toast {
     pub id: u64,

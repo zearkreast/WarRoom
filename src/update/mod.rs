@@ -30,22 +30,6 @@ pub enum UpdatePhase {
     Error { version: Option<String>, message: String },
 }
 
-impl UpdatePhase {
-    /// The name the settings page keys its text by.
-    pub fn name(&self) -> &'static str {
-        match self {
-            UpdatePhase::Idle => "idle",
-            UpdatePhase::Checking => "checking",
-            UpdatePhase::Current => "current",
-            UpdatePhase::Available { .. } => "available",
-            UpdatePhase::Downloading { .. } => "downloading",
-            UpdatePhase::Installing { .. } => "installing",
-            UpdatePhase::HandedOff { .. } => "handed-off",
-            UpdatePhase::Error { .. } => "error",
-        }
-    }
-}
-
 #[derive(Clone, Copy)]
 pub struct Update {
     pub state: RwSignal<UpdatePhase>,
