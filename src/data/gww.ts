@@ -1,7 +1,7 @@
 /**
  * Training manuals in reading order, and the game's Training Manual Tips. Manual text is adapted from the
- * Helldivers Wiki in this app's words (credited in `sources`); the game's quotes are word for word. Text
- * links are written `[[kind:target|label]]` (domain/gwwText.ts).
+ * Helldivers Wiki in this app's words (credited in `sources`) and kept in-universe, like the sites in gwwSites.ts;
+ * the game's quotes are word for word. Text links are written `[[kind:target|label]]` (domain/gwwText.ts).
  */
 
 export interface Source {
@@ -113,24 +113,24 @@ export const MANUALS: Manual[] = [
     sections: [
       {
         heading: "The short version",
-        text: "Every mission won deals [[manual:impact|impact]] to the planet it was fought on. Each planet in a campaign has a health pool; empty it and the campaign ends in Super Earth's favour. Campaigns open only along [[manual:supply-lines|supply lines]], and every hour the enemy wins back part of each planet it holds: its [[manual:resistance|resistance]]. The war never resets and is steered by a human Game Master, with [[manual:campaigns|Major Orders]] telling its story.",
+        text: "Every mission won deals [[manual:impact|impact]] to the planet it was fought on. Each planet in a campaign has a health pool; empty it and the campaign ends in Super Earth's favour. Campaigns open only along [[manual:supply-lines|supply lines]], and every hour the enemy wins back part of each planet it holds: its [[manual:resistance|resistance]]. The war never resets, and High Command steers it with [[manual:campaigns|Major Orders]].",
       },
       {
         heading: "Field glossary",
         points: [
           "Impact: what a won mission deals to a planet. It grows with difficulty and is scaled by the impact modifier; see [[manual:impact|Impact and the impact modifier]].",
           "Impact modifier: a galaxy-wide multiplier that falls as more missions are completed, so the war moves at much the same pace however many Helldivers are online.",
-          "Planet health: the pool a campaign has to empty. The liberation percentage the game shows is drawn from it; see [[manual:liberation|Liberation campaigns]].",
+          "Planet health: the pool a campaign has to empty. The liberation percentage on the galactic map is drawn from it; see [[manual:liberation|Liberation campaigns]].",
           "Supply lines: the warp links between planets. A campaign needs a link to a Super Earth planet to open and to keep running.",
           "Enemy resistance: the share of a planet's health the enemy wins back every hour, also called decay.",
           "Defense: a campaign with a deadline and no resistance, opened when the enemy attacks a Super Earth planet; see [[manual:defense|Defense campaigns and gambits]].",
           "Gambit: winning a defense by liberating the planet the attack came from.",
-          "High-priority campaign: a story campaign with its own missions and rules; see [[manual:campaign-types|Campaign types]].",
+          "High-priority campaign: a campaign with its own missions and rules; see [[manual:campaign-types|Campaign types]].",
           "Regions: settlements, cities and megafactories with their own health and resistance; freeing one hits the whole planet hard. See [[manual:regions|Regions and cities]].",
         ],
       },
       {
-        heading: "Reading this tracker",
+        heading: "Following the war",
         points: [
           "[[app:campaigns|Active planets]]: every front, its rate per hour, and when it should fall or hold.",
           "[[app:map|Galaxy map]]: supply lines, attacks, points of interest and the Gloom.",
@@ -180,12 +180,12 @@ export const MANUALS: Manual[] = [
     chapter: "war",
     title: "Campaign types",
     address: "se://hc/manuals/campaign-types",
-    summary: "Liberation, defense, and the rarer kinds the game brings out for its story.",
+    summary: "Liberation, defense, and the rarer kinds High Command calls for.",
     icon: "campaign-high-priority",
     sections: [
       {
         heading: "Every planet you can fight on has a campaign",
-        text: "A planet is only playable while a campaign is active on it, and each kind plays by its own rules.",
+        text: "Helldivers can only deploy to a planet while a campaign is active on it, and each kind has its own rules.",
         kinds: [
           {
             icon: "campaign-liberation",
@@ -215,12 +215,12 @@ export const MANUALS: Manual[] = [
           {
             icon: "campaign-high-priority",
             name: "High-priority",
-            text: "Story campaigns with missions and rules of their own, cleared by following the [[manual:campaigns|Major Order]]. They usually open with a very high resistance that drops as milestones are reached, provided most Helldivers take part.",
+            text: "Campaigns with missions and rules of their own, cleared by following the [[manual:campaigns|Major Order]]. They usually open with a very high resistance that drops as milestones are reached, provided most Helldivers take part.",
           },
         ],
       },
       {
-        heading: "In this tracker",
+        heading: "Where to see it",
         text: "Cards on [[app:campaigns|Active planets]] say whether a front is a liberation or a defense; defenses carry their deadline, and Major Order targets their badge.",
       },
     ],
@@ -264,8 +264,8 @@ export const MANUALS: Manual[] = [
         text: "Liberation operations often come with one or two operation modifiers, depending on difficulty. Defense missions never have them, though weather and other planet conditions still apply.",
       },
       {
-        heading: "How this tracker reads it",
-        text: "Liberation here is worked out from the planet's health the way the game does it: the share of its maximum already taken. The rate per hour is the trend across the last hour of readings, with [[manual:resistance|resistance]] already taken off, and each card's projection assumes that rate holds.",
+        heading: "Reading the figures",
+        text: "Liberation is worked out from the planet's health as the galactic map does it: the share of its maximum already taken. The rate per hour is the trend across the last hour of readings, with [[manual:resistance|resistance]] already taken off, and each card's projection assumes that rate holds.",
       },
     ],
     quotes: ["The Galactic War is a united effort. Only by working together can we ensure planets don't fall to the enemy."],
@@ -282,7 +282,7 @@ export const MANUALS: Manual[] = [
     sections: [
       {
         heading: "Resistance is decay",
-        text: "Every hour the enemy wins back a fixed share of a planet's health. The game calls it Enemy Resistance; Helldivers call it decay. A front only moves while missions deal more per hour than it wins back. The share is of the planet's own health pool, so the same percentage can mean very different amounts on two planets.",
+        text: "Every hour the enemy wins back a fixed share of a planet's health. The galactic map calls it Enemy Resistance; Helldivers call it decay. A front only moves while missions deal more per hour than it wins back. The share is of the planet's own health pool, so the same percentage can mean very different amounts on two planets.",
         figure: "decay",
       },
       {
@@ -291,11 +291,11 @@ export const MANUALS: Manual[] = [
       },
       {
         heading: "It isn't difficulty",
-        text: "Resistance has nothing to do with how hard missions on the planet are or how many enemies they spawn. Arrowhead's support confirmed it.",
+        text: "Resistance has nothing to do with how hard missions on the planet are or how many enemies they field.",
       },
       {
         heading: "Sieges",
-        text: "An enemy planet completely surrounded by Super Earth planets is put under siege by the SEAF: its decay turns negative and it starts liberating itself, at between 0.5% and 1% an hour depending on the planet's health. Only a planet entirely on its own counts: cutting off a group of two or more planets does not start a siege. Sieges have been automatic since around 16 June 2025; before that Arrowhead set them by hand.",
+        text: "An enemy planet completely surrounded by Super Earth planets is put under siege by the SEAF: its decay turns negative and it starts liberating itself, at between 0.5% and 1% an hour depending on the planet's health. Only a planet entirely on its own counts: cutting off a group of two or more planets does not start a siege.",
         figure: "siege",
       },
       {
@@ -359,7 +359,7 @@ export const MANUALS: Manual[] = [
     sections: [
       {
         heading: "Holding a planet",
-        text: "When the enemy attacks a Super Earth planet along a [[manual:supply-lines|supply line]], the planet gets a defense campaign. It has its own health, set by the attack's strength and usually far below a liberation's million: the defense level shown when hovering the planet, times 50,000. There is no resistance while it runs.",
+        text: "When the enemy attacks a Super Earth planet along a [[manual:supply-lines|supply line]], the planet gets a defense campaign. It has its own health, set by the attack's strength and usually far below a liberation's million: the defense level the galactic map shows for the planet, times 50,000. There is no resistance while it runs.",
       },
       {
         heading: "Deadlines",
@@ -383,11 +383,11 @@ export const MANUALS: Manual[] = [
       },
       {
         heading: "Gambits",
-        text: "Every attack comes from an enemy planet. Liberate that planet before the deadline and the defense ends in Super Earth's favour: a gambit. It only works when the attacker's health and resistance are low enough to finish in time, and the game never points the attacker out, which makes gambits hard to rally behind. The [[manual:dss|Democracy Space Station]]'s Orbital Blockade doesn't win one for you; it only stops new attacks from its planet.",
+        text: "Every attack comes from an enemy planet. Liberate that planet before the deadline and the defense ends in Super Earth's favour: a gambit. It only works when the attacker's health and resistance are low enough to finish in time, and the galactic map never points the attacker out, which makes gambits hard to rally behind. The [[manual:dss|Democracy Space Station]]'s Orbital Blockade doesn't win one for you; it only stops new attacks from its planet.",
         figure: "supply-lines",
       },
       {
-        heading: "How this tracker shows it",
+        heading: "Where to see it",
         text: "Defense cards on [[app:campaigns|Active planets]] count down to the deadline and project where the defense will stand when time runs out. The attack line on the [[app:map|galaxy map]] points from the gambit to its target.",
       },
     ],
@@ -408,7 +408,7 @@ export const MANUALS: Manual[] = [
     sections: [
       {
         heading: "Mission influence",
-        text: "A won mission produces influence, set by its difficulty. Finishing a whole operation multiplies the last mission's influence by four. Only the main objective counts, and only missions started by their host; kicking players halfway doesn't create extra damage.",
+        text: "A won mission produces influence, set by its difficulty. Finishing a whole operation multiplies the last mission's influence by four. Only the main objective counts, and each mission counts once for its whole squad: sending Helldivers away halfway through adds nothing.",
         table: {
           head: ["Difficulty", "Mission", "Last of an operation", "Whole operation"],
           rows: DIFFICULTY_INFLUENCE.map(([icon, name, mission, last, whole]) => ({
@@ -420,7 +420,7 @@ export const MANUALS: Manual[] = [
       },
       {
         heading: "The modifier",
-        text: "Influence is multiplied by the galactic impact modifier, and the result, impact, comes off the planet's or the defense's health. The exact formula isn't public. The modifier falls as more missions are completed across the galaxy, so what moves a planet is the share of active Helldivers fighting on it, not their raw number.",
+        text: "Influence is multiplied by the galactic impact modifier, and the result, impact, comes off the planet's or the defense's health. High Command hasn't published the exact formula. The modifier falls as more missions are completed across the galaxy, so what moves a planet is the share of active Helldivers fighting on it, not their raw number.",
         figure: "impact-live",
       },
       {
@@ -447,16 +447,16 @@ export const MANUALS: Manual[] = [
     sections: [
       {
         heading: "Votes",
-        text: "Unless the story takes it out of service, Helldivers vote every four hours on the station's next planet, from the planets with the most Helldivers when the vote opened. Liberation runs 10% faster on the planet it orbits. The [[app:stations|space station page]] counts down to the next jump.",
+        text: "Unless High Command takes it out of service, Helldivers vote every four hours on the station's next planet, from the planets with the most Helldivers when the vote opened. Liberation runs 10% faster on the planet it orbits. The [[app:stations|space station page]] counts down to the next jump.",
       },
       {
         heading: "Tactical actions",
-        text: "Helldivers fund the station's tactical actions by donating resources such as samples. Only one action can run at a time, and donations made while one runs are lost. The game's estimate of when an action will be ready looks at a very short window, so it swings a lot.",
+        text: "Helldivers fund the station's tactical actions by donating resources such as samples. Only one action can run at a time, and donations made while one runs are lost. The station's estimate of when an action will be ready looks at a very short window, so it swings a lot.",
         kinds: [
           {
             icon: "heavy_ordnance",
             name: "Heavy Ordnance Distribution",
-            text: "Counts the liberation on its planet more than once, likely twice. That lowers the galaxy-wide [[manual:impact|modifier]], so in effect it moves impact from other planets to this one. It works on every kind of campaign, defenses included. Planetary Bombardment had the same effect and is now left to the Game Master.",
+            text: "Counts the liberation on its planet more than once, likely twice. That lowers the galaxy-wide [[manual:impact|modifier]], so in effect it moves impact from other planets to this one. It works on every kind of campaign, defenses included. Planetary Bombardment had the same effect and is now left to High Command.",
           },
           {
             icon: "eagle_storm",
@@ -510,7 +510,7 @@ export const MANUALS: Manual[] = [
       },
       {
         heading: "Ship modules",
-        text: "Six parts of the ship can be upgraded, five tiers each, paid for in samples and, from the fourth tier, Requisition Slips. An upgrade only helps the Helldiver who buys it, and it changes how the ship looks inside and out. The fourth tier arrived in April 2024 and the fifth in July 2024.",
+        text: "Six parts of the ship can be upgraded, five tiers each, paid for in samples and, from the fourth tier, Requisition Slips. An upgrade only helps the Helldiver who buys it, and it changes how the ship looks inside and out.",
         folds: [
           {
             title: "Patriotic Administration Center",
@@ -582,8 +582,8 @@ export const MANUALS: Manual[] = [
       },
     ],
     tips: [
-      "Each Helldiver's stratagems follow their own ship's modules, so in a squad the same orbital can come down faster for one player than another.",
-      "Key Call In Super Destroyer (its code is the Konami Code) into the Hellpad's masthead and it opens this page.",
+      "Each Helldiver's stratagems follow their own ship's modules, so in a squad the same orbital can come down faster for one Helldiver than another.",
+      "Key the Call In Super Destroyer code, ↑ ↑ ↓ ↓ ← → ← →, into the Hellpad's masthead and it opens this page.",
     ],
     related: ["manual:dss", "manual:campaigns", "app:stations"],
     sources: [WIKI.superDestroyer, WIKI.shipModules],
@@ -597,18 +597,18 @@ export const MANUALS: Manual[] = [
     sections: [
       {
         heading: "Galactic Campaigns",
-        text: "A Galactic Campaign is a named story told through a run of Major Orders, usually three over about two weeks. Winning most of its Major Orders earns the campaign's own reward: so far a stratagem, a weapon, armour, a cape or a tactical action.",
+        text: "A Galactic Campaign is a named operation fought through a run of Major Orders, usually three over about two weeks. Winning most of its Major Orders earns the campaign's own reward: so far a stratagem, a weapon, armour, a cape or a tactical action.",
       },
       {
         heading: "Major Orders",
-        text: "Each Major Order sets objectives for the whole community with a deadline and pays medals when it is won. A won or lost order also moves the campaign's story on, and the targets it names are where the fighting gathers.",
+        text: "Each Major Order sets objectives for every Helldiver with a deadline and pays medals when it is won. A won or lost order also decides what comes next in the campaign, and the targets it names are where the fighting gathers.",
       },
       {
         heading: "Strategic directives",
         text: "Shorter side orders appear between Major Orders, often to defend or take a single planet.",
       },
       {
-        heading: "In this tracker",
+        heading: "Where to see it",
         text: "[[app:overview|High Command overview]] shows the running campaign and the Major Order; [[app:past|Past campaigns]] keeps every ended one with its orders, briefings, result and reward.",
       },
     ],
@@ -633,7 +633,7 @@ export const MANUALS: Manual[] = [
       },
       {
         heading: "On the map",
-        text: "Planets the game marks as in the Gloom or on its border sit under an amber cloud in every overlay of the [[app:map|galaxy map]].",
+        text: "Planets High Command marks as in the Gloom or on its border sit under an amber cloud in every overlay of the [[app:map|galaxy map]].",
       },
     ],
     quotes: ["Watch out for alien storms. Super Earth scientists have officially classified many of them as dangerous. And freaky."],
@@ -657,7 +657,7 @@ export const MANUALS: Manual[] = [
           },
           {
             q: "Do defense campaigns decay?",
-            a: "No. A decay figure a companion app shows for a defense is cosmetic.",
+            a: "No. Any decay figure shown for a defense is cosmetic.",
           },
           {
             q: "Does cutting a planet's last supply line win it?",
@@ -681,11 +681,11 @@ export const MANUALS: Manual[] = [
           },
           {
             q: "What if we got everyone to…",
-            a: "No plan reaches the whole playerbase. Plans that need a reasonable majority, or a few Helldivers giving a lot, as with [[manual:dss|DSS]] donations, work better.",
+            a: "No plan reaches every Helldiver. Plans that need a reasonable majority, or a few Helldivers giving a lot, as with [[manual:dss|DSS]] donations, work better.",
           },
           {
             q: "Isn't a loss the fault of Helldivers who only fight one front?",
-            a: "The Game Master already accounts for Helldivers who only fight one faction. Blaming them changes nothing.",
+            a: "High Command already accounts for Helldivers who only fight one faction. Blaming them changes nothing.",
           },
         ],
       },

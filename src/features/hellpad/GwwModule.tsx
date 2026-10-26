@@ -22,7 +22,7 @@ import {
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { APP_NAME, APP_VERSION } from "../../config";
 import { CHAPTERS, MANUALS, TIPS, WIKI, WIKI_LICENCE } from "../../data/gww";
-import { ADS, COMPANIES, GOV, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
+import { ADS, COMPANIES, GOV, GWW_SOURCES, HOLIDAYS, MINISTRIES } from "../../data/gwwSites";
 import { FACTIONS, factionColor } from "../../domain/factions";
 import { nextYearly, plainText } from "../../domain/gwwText";
 import { useHistory } from "../../history/useHistory";
@@ -103,7 +103,7 @@ function AddressBar({ page }: { page: GwwPage }) {
 
 function logLine(count: number): string {
   const won = count === 1 ? "1 planet has" : `${count} planets have`;
-  return count ? `The war log and the FTL jumps. ${won} changed hands since tracking began.` : "The war log and the FTL jumps.";
+  return count ? `The war log and the FTL jumps. ${won} changed hands since records began.` : "The war log and the FTL jumps.";
 }
 
 function Group(props: { title: string; count: number; all?: string; children: ReactNode }) {
@@ -197,7 +197,7 @@ function Home({ logText }: { logText: string }) {
         target="app:news"
         address="se://strohmann.news"
         title="Strohmann News"
-        text="Dispatches and campaign news, in the tracker's news page."
+        text="Dispatches and Galactic Campaign news, as they come in."
         icon={<Newspaper size={26} strokeWidth={1.5} />}
         color="#f074d8"
         out
@@ -433,17 +433,20 @@ export function AboutModule() {
         </p>
         <h3>Credits</h3>
         <p>
-          The G.W.W.'s training manuals are adapted from the <OutLink href={WIKI.home.url}>{WIKI.home.title}</OutLink>,
-          chiefly <OutLink href={WIKI.mechanics.url}>{WIKI.mechanics.title}</OutLink>. Its government, ministry,
-          and corporation sites draw on the wiki's{" "}
-          <OutLink href={WIKI.government.url}>{WIKI.government.title}</OutLink>, ministry,{" "}
-          <OutLink href={WIKI.corporations.url}>{WIKI.corporations.title}</OutLink> and{" "}
-          <OutLink href={WIKI.minorCorporations.url}>{WIKI.minorCorporations.title}</OutLink> pages; each page names its
-          own sources at its foot. The wiki's text is shared under{" "}
+          The G.W.W.'s training manuals, sites and holiday pages are adapted from the{" "}
+          <OutLink href={WIKI.home.url}>{WIKI.home.title}</OutLink> and written to read as the Federation's own net, so
+          they carry no source lines; the wiki pages they draw on are listed below. The wiki's text is shared under{" "}
           <OutLink href={WIKI_LICENCE.url}>{WIKI_LICENCE.title}</OutLink>, and so are the pages adapted from it. Training
-          manual tips, slogans, poster and broadcast lines are quoted from the game, as collected on the wiki, its{" "}
-          <OutLink href={WIKI.tips.url}>{WIKI.tips.title}</OutLink> page among them.
+          manual tips, slogans, decrees, dispatches, carols, poster and broadcast lines are quoted from the game, as
+          collected on the wiki.
         </p>
+        <ul className="about-sources">
+          {GWW_SOURCES.map((s) => (
+            <li key={s.url}>
+              <OutLink href={s.url}>{s.title}</OutLink>
+            </li>
+          ))}
+        </ul>
         <p>
           The ministry, campaign and difficulty icons (vector tracings by the wiki's contributors), corporation logos,
           product pictures and city adverts are the game's, taken from the Helldivers Wiki, and belong to Arrowhead Game

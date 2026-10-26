@@ -236,8 +236,8 @@ function ImpactLive() {
         </text>
       </svg>
       <figcaption>
-        Live from this tracker: each dot is ten minutes of the last day, brighter for more recent. More Helldivers online,
-        lower modifier.
+        Live readings: each dot is ten minutes of the last day, brighter for more recent. More Helldivers online, lower
+        modifier.
       </figcaption>
     </figure>
   );

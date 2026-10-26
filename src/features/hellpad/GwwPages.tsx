@@ -29,7 +29,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefCallback } from "react";
-import { CHAPTERS, MANUALS, WIKI, WIKI_LICENCE, type Manual, type Section, type Source } from "../../data/gww";
+import { CHAPTERS, MANUALS, type Manual, type Section } from "../../data/gww";
 import {
   ADS,
   CITIZENS,
@@ -54,7 +54,7 @@ import { useWarDays } from "../../api/warSamples";
 import { useHistory } from "../../history/useHistory";
 import { useSettings, useUi } from "../../state";
 import { DssIcon, FactionEmblem, type IconLike } from "../../ui/emblems";
-import { Empty, Loading, OutLink, useMedia, useNow } from "../../ui/primitives";
+import { Empty, Loading, useMedia, useNow } from "../../ui/primitives";
 import { Figure } from "./GwwFigures";
 import { LivePanel } from "./GwwLive";
 import { adUrl, iconUrl, logoUrl } from "./gwwArt";
@@ -147,7 +147,7 @@ const KIND_LABEL: Record<string, string> = {
   holiday: "Holiday",
   site: "Super Earth",
   dir: "Directory",
-  app: "In the tracker",
+  app: "Off the G.W.W.",
 };
 
 /** Wide enough for a rail of adverts beside the page; keep in sync with the 1100px breakpoint in gww.css. */
@@ -512,28 +512,6 @@ function Ties({ ties, title }: { ties: Tie[]; title: string }) {
   );
 }
 
-function SourceLine({ sources, quoted }: { sources?: Source[]; quoted?: string }) {
-  return (
-    <footer className="gww-source">
-      {sources?.length ? (
-        <>
-          Adapted from the {WIKI.home.title}:{" "}
-          {sources.map((s, i) => (
-            <span key={s.url}>
-              {i > 0 && ", "}
-              <OutLink href={s.url}>{s.title}</OutLink>
-            </span>
-          ))}
-          , under <OutLink href={WIKI_LICENCE.url}>{WIKI_LICENCE.title}</OutLink>, which this page shares.
-        </>
-      ) : (
-        <>Written for this tracker.</>
-      )}
-      {quoted && <> {quoted}</>}
-    </footer>
-  );
-}
-
 function Pager({ list, at, noun }: { list: string[]; at: number; noun: string }) {
   const { follow } = useGwwNav();
   const prev = list[at - 1];
@@ -687,7 +665,7 @@ export function OfficialTiles({ logText }: { logText: string }) {
         target="app:news"
         address="se://strohmann.news"
         title="Strohmann News"
-        text="Dispatches and campaign news, in the tracker's news page."
+        text="Dispatches and Galactic Campaign news, as they come in."
         icon={<Newspaper size={26} strokeWidth={1.5} />}
         color="#f074d8"
         out
@@ -783,7 +761,6 @@ export function ManualPage({ m, headingRef }: { m: Manual; headingRef: HeadingRe
       ))}
       <Related targets={m.related} />
       <span ref={end} className="gww-end" aria-hidden />
-      <SourceLine sources={m.sources} quoted={m.quotes?.length ? "Training manual tips are quoted from the game." : undefined} />
       <Pager list={MANUALS.map(manualTarget)} at={at} noun="manual" />
     </article>
   );
@@ -811,7 +788,6 @@ export function MinistryPage({ m, headingRef }: { m: Ministry; headingRef: Headi
         {m.ties && <Ties ties={m.ties} title="Ties" />}
         <Ads ads={ads.inline} here={here} />
         <Related targets={m.related ?? []} />
-        <SourceLine sources={[m.source, WIKI.government]} quoted="Its tip and poster line are quoted from the game." />
         <Pager list={MINISTRIES.map((x) => `ministry:${x.id}`)} at={MINISTRIES.indexOf(m)} noun="ministry" />
       </article>
     </WithRail>
@@ -849,7 +825,6 @@ export function CompanyPage({ c, headingRef }: { c: Company; headingRef: Heading
         {c.ties && <Ties ties={c.ties} title="Ties" />}
         <Ads ads={ads.inline} here={here} />
         <Related targets={c.related ?? []} />
-        <SourceLine sources={[c.source]} quoted="Slogans and broadcast lines are quoted from the game." />
         <Pager list={COMPANIES.map((x) => `company:${x.id}`)} at={COMPANIES.indexOf(c)} noun="corporation" />
       </article>
     </WithRail>
@@ -913,10 +888,6 @@ export function GovPage({ site, headingRef }: { site: "gov" | "citizens"; headin
       ))}
       {site === "gov" && GOV.quotes.map((q) => <TrainingTip key={q} text={q} />)}
       <Related targets={s.related} />
-      <SourceLine
-        sources={s.sources}
-        quoted={site === "gov" ? "Training manual tips are quoted from the game." : "Ship broadcasts are quoted from the game."}
-      />
     </article>
   );
 }
@@ -976,7 +947,6 @@ export function HolidaysPage({ headingRef }: { headingRef: HeadingRef }) {
         })}
       </ol>
       <Related targets={HOLIDAYS_SITE.related} />
-      <SourceLine sources={HOLIDAYS.flatMap((h) => h.sources)} />
     </article>
   );
 }
@@ -1013,7 +983,6 @@ export function HolidayPage({ h, headingRef }: { h: Holiday; headingRef: Heading
         <SourcedQuote key={q.text} {...q} />
       ))}
       <Related targets={h.related} />
-      <SourceLine sources={h.sources} quoted={h.quotes.length ? "Decrees, carols, tips and broadcasts are quoted from the game." : undefined} />
       <Pager list={HOLIDAYS.map((x) => `holiday:${x.id}`)} at={HOLIDAYS.indexOf(h)} noun="holiday" />
     </article>
   );
@@ -1087,8 +1056,8 @@ function WarLog() {
       ) : list.length === 0 ? (
         <Empty>
           {show === "all"
-            ? "No planet has changed hands since tracking began."
-            : `No planet has been ${show === "won" ? "liberated" : "lost"} since tracking began.`}
+            ? "No planet has changed hands since records began."
+            : `No planet has been ${show === "won" ? "liberated" : "lost"} since records began.`}
         </Empty>
       ) : (
         (allDays ? days : days.slice(0, LOG_DAYS)).map((d) => (
@@ -1160,7 +1129,7 @@ function ActivityDays({ now }: { now: number }) {
   const today = Math.floor(now / 86_400_000) * 86_400_000;
   const hm = (ms: number) => sestClock(ms).slice(0, 5);
   if (isLoading) return <Loading what="the activity log" rows={2} />;
-  if (days.length === 0) return <Empty>No days logged yet. Each day is recorded from the next collector update on.</Empty>;
+  if (days.length === 0) return <Empty>No days logged yet. Logging starts with the next telemetry update.</Empty>;
   return (
     <>
       <div className="gww-days-head caps" aria-hidden>
@@ -1201,7 +1170,7 @@ function StationJumps({ station, name, now }: { station: number; name: string; n
       {isLoading ? (
         <Loading what="the jump log" rows={2} />
       ) : jumps.length === 0 ? (
-        <Empty>No jumps logged yet. Each jump is recorded from the next collector update on.</Empty>
+        <Empty>No jumps logged yet. Each jump is logged as telemetry comes in.</Empty>
       ) : (
         <JumpRoute jumps={jumps} now={now} />
       )}
@@ -1209,7 +1178,7 @@ function StationJumps({ station, name, now }: { station: number; name: string; n
   );
 }
 
-/** Every planet that changed hands and every station jump, as the collector logged them. */
+/** Every planet that changed hands, each day's Helldivers online and every station jump. */
 export function LogsPage({ headingRef }: { headingRef: HeadingRef }) {
   const { changes, ready } = useHistory();
   const stations = useSpaceStations().data ?? [];
@@ -1221,7 +1190,7 @@ export function LogsPage({ headingRef }: { headingRef: HeadingRef }) {
         icon={<History size={40} strokeWidth={1.5} />}
         crumbs={[{ label: "Super Earth", target: "dir:gov" }]}
         title={LOG_TITLE}
-        lead="The war log, Helldivers online day by day and the space stations' FTL jumps, since tracking began."
+        lead="The war log, Helldivers online day by day and the space stations' FTL jumps, since records began."
         headingRef={headingRef}
       />
       <LogBox
