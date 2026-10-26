@@ -11,7 +11,7 @@ members = ["crates/core", "collector"]
 exclude = ["src-tauri"]
 
 [workspace.package]
-version = "0.3.0-beta"
+version = "0.3.1-beta"
 
 [dependencies]
 futures = { version = "0.3", default-features = false, features = ["std", "async-await"] }

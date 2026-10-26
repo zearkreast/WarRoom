@@ -3,10 +3,17 @@
 #
 # Run it from the Actions tab (Release -> Run workflow), or push a tag like v0.2.7.
 # The release version and name come from src-tauri/tauri.conf.json.
+# With "ref" set to an older release's tag, its installers are rebuilt from that code and replace the
+# release's files; the APK is skipped, as the Android build can't check out another ref.
 name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Tag to build, for rebuilding an older release (empty: the branch run from)"
+        required: false
+        default: ""
   push:
     tags:
       - "v*"
@@ -38,6 +45,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -119,7 +128,7 @@ jobs:
   # Runs after the desktop builds so the release they create is there to attach the APK to.
   android:
     needs: build
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && !inputs.ref }}
     uses: ./.github/workflows/android.yml
     with:
       publish: true

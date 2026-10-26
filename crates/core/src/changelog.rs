@@ -8,6 +8,17 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.3.1-beta",
+        date: "2026-10-26",
+        items: &[
+            "Android: new Strohmann News arrives as a notification even while the app is closed: each new Major Order, the newest dispatches, and campaign launches and outcomes.",
+            "Alerts for Galactic Campaign launches and outcomes.",
+            "Desktop: closing the window keeps the app running in the tray so alerts keep coming; the tray icon brings it back and Quit ends it. Settings › Notifications can turn this off. A second launch brings the running copy forward.",
+            "Android: the page stays between the status and navigation bars.",
+            "Linux: the pre-release RPM installer is built again.",
+        ],
+    },
+    ChangelogEntry {
         version: "0.3.0-beta",
         date: "2026-10-26",
         items: &[
