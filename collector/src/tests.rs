@@ -46,6 +46,8 @@ type Calls = Rc<RefCell<Vec<Call>>>;
 struct FakeDb {
     rows: HashMap<String, Value>,
     calls: Calls,
+    /// Paths answered 404, as for a table whose migration isn't applied.
+    missing: Vec<&'static str>,
 }
 
 impl Transport for FakeDb {
@@ -58,6 +60,9 @@ impl Transport for FakeDb {
         let table = path.split('?').next().unwrap().to_string();
         let kind = path.split("kind=eq.").nth(1).map(|k| k.split('&').next().unwrap().to_string());
         let reply = |status, body: String| Ok(Response { status, headers: Vec::new(), body });
+        if self.missing.iter().any(|m| table == *m) {
+            return reply(404, "{}".into());
+        }
         if req.method == "GET" {
             let key = format!("{table}:{}", kind.unwrap_or_default());
             let rows = self.rows.get(&key).or_else(|| self.rows.get(&table)).cloned().unwrap_or(json!([]));
@@ -71,8 +76,16 @@ impl Transport for FakeDb {
 }
 
 fn fake_db(rows: &[(&str, Value)]) -> (Supabase, Calls) {
+    fake_db_missing(rows, &[])
+}
+
+fn fake_db_missing(rows: &[(&str, Value)], missing: &[&'static str]) -> (Supabase, Calls) {
     let calls = Calls::default();
-    let fake = FakeDb { rows: rows.iter().map(|(k, v)| (k.to_string(), v.clone())).collect(), calls: calls.clone() };
+    let fake = FakeDb {
+        rows: rows.iter().map(|(k, v)| (k.to_string(), v.clone())).collect(),
+        calls: calls.clone(),
+        missing: missing.to_vec(),
+    };
     (Supabase::new("https://x.supabase.co", "sb_secret_test", Box::new(fake)), calls)
 }
 
@@ -163,6 +176,41 @@ fn measures_a_regions_rate_from_the_readings_of_its_planet() {
 }
 
 #[test]
+fn stores_helldivers_on_a_planet_with_no_campaign_and_a_busy_city_at_most_every_few_minutes() {
+    let (db, calls) = fake_db(&[]);
+    let mut recorder = Recorder::default();
+    let mut idle = planets().into_iter().find(|x| !x.regions.is_empty()).unwrap();
+    idle.health = idle.max_health;
+    idle.event = None;
+    idle.statistics.player_count = 4321.0;
+    idle.regions[0].players = 12.0;
+    for m in [0.0, 1.0, 5.0] {
+        recorder.ingest(&db, std::slice::from_ref(&idle), m * 60_000.0).unwrap();
+    }
+    let calls = calls.borrow();
+    let rows = |path: &str| -> Vec<Value> {
+        calls.iter().filter(|c| c.path == path).flat_map(|c| c.body.as_array().unwrap().clone()).collect()
+    };
+    assert_eq!(rows("planet_players").iter().map(|r| r["players"].as_f64().unwrap()).collect::<Vec<_>>(), [4321.0; 3]);
+    assert!(rows("samples").is_empty());
+    let cities: Vec<String> = rows("region_samples").iter().map(|r| r["at"].as_str().unwrap().to_string()).collect();
+    assert_eq!(cities, [iso_string(0.0), iso_string(5.0 * 60_000.0)]);
+}
+
+#[test]
+fn skips_the_activity_writes_rather_than_failing_before_their_migration_is_applied() {
+    let missing = ["planet_players", "region_samples", "rpc/note_war_day"];
+    let (db, _) = fake_db_missing(&[], &missing);
+    let mut recorder = Recorder::default();
+    let mut idle = planets().remove(0);
+    idle.statistics.player_count = 10.0;
+    assert_eq!(recorder.ingest(&db, &[idle], 0.0).unwrap().samples, 0);
+    let (db, _) = fake_db_missing(&[], &missing);
+    let r = collector(db, 0.0).run(Job::War);
+    assert!(r.ok && r.message.contains("no war_days table yet"), "{}", r.message);
+}
+
+#[test]
 fn keeps_a_day_of_major_order_readings_only_for_running_orders() {
     let day = 24.0 * 3_600_000.0;
     let s = |id, at, p| OrderSample { id, at, progress: vec![p] };
@@ -245,6 +293,10 @@ fn writes_snapshots_samples_and_owners_on_a_first_run() {
     assert!(!calls.iter().any(|c| c.path == "owner_changes"));
     assert!(calls.iter().any(|c| c.path == "rpc/compact_samples"));
     assert!(calls.iter().any(|c| c.path == "rpc/compact_war_samples"));
+    assert_eq!(
+        calls.iter().find(|c| c.path == "rpc/note_war_day").unwrap().body,
+        json!({ "reading_at": iso_string(1_000_000.0), "online": raw(fixture!("war.json"))["statistics"]["playerCount"] })
+    );
 }
 
 #[test]

@@ -1,4 +1,4 @@
-use crate::supabase::Supabase;
+use crate::supabase::{Supabase, unless_missing};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
@@ -12,6 +12,8 @@ use warroom_core::time::{iso_string, parse_ms};
 const RATE_WINDOW_MS: f64 = 60.0 * 60_000.0;
 /// PostgREST returns at most 1000 rows per request by default.
 const PAGE: usize = 1000;
+/// A city is stored at most this often; the campaigns task reads its planet every minute.
+const REGION_EVERY_MS: f64 = 4.5 * 60_000.0;
 
 #[derive(Deserialize)]
 struct SampleRow {
@@ -37,6 +39,18 @@ fn to_row(s: &Sample) -> Value {
 pub struct IngestResult {
     pub samples: usize,
     pub changes: Vec<OwnerChange>,
+}
+
+/// A city worth a reading: Helldivers in it, or its liberation counting down.
+fn region_row(p: &Planet, r: &Region, at: f64) -> Option<Value> {
+    let percent = r
+        .health
+        .filter(|_| r.is_available && r.max_health != 0.0 && !r.max_health.is_nan())
+        .map(|h| 100.0 - (h / r.max_health) * 100.0);
+    if r.players <= 0.0 && percent.is_none() {
+        return None;
+    }
+    Some(json!({ "planet": p.index, "region": r.id, "at": iso_string(at), "players": r.players, "percent": percent }))
 }
 
 /// A region's liberation as a sample of its planet, so the planet's rate maths applies to it.
@@ -71,6 +85,7 @@ pub struct Recorder {
     owners: HashMap<i64, Faction>,
     recent: HashMap<i64, Vec<Sample>>,
     regions: HashMap<(i64, i64), Vec<Sample>>,
+    region_written: HashMap<(i64, i64), f64>,
 }
 
 impl Recorder {
@@ -136,15 +151,28 @@ impl Recorder {
         // A planet that just changed hands gets one sample even if it's no longer contested,
         // so its chart ends at the moment of capture.
         let changed: HashSet<i64> = changes.iter().map(|c| c.planet).collect();
-        let samples: Vec<Sample> =
-            planets.iter().filter(|p| is_active(p) || changed.contains(&p.index)).map(|p| to_sample(p, at)).collect();
+        let contested = |p: &Planet| is_active(p) || changed.contains(&p.index);
+        let samples: Vec<Sample> = planets.iter().filter(|p| contested(p)).map(|p| to_sample(p, at)).collect();
         for s in &samples {
             keep(&mut self.recent, s.planet, s.clone());
         }
+        let idle: Vec<Value> = planets
+            .iter()
+            .filter(|p| !contested(p) && p.statistics.player_count > 0.0)
+            .map(|p| json!({ "planet": p.index, "at": iso_string(at), "players": p.statistics.player_count }))
+            .collect();
+        let mut cities = Vec::new();
         for p in planets {
             for r in &p.regions {
+                let key = (p.index, r.id);
                 if let Some(s) = region_sample(p, r, at) {
-                    keep(&mut self.regions, (p.index, r.id), s);
+                    keep(&mut self.regions, key, s);
+                }
+                if let Some(row) = region_row(p, r, at)
+                    && at - self.region_written.get(&key).copied().unwrap_or(f64::NEG_INFINITY) >= REGION_EVERY_MS
+                {
+                    cities.push(row);
+                    self.region_written.insert(key, at);
                 }
             }
         }
@@ -165,6 +193,8 @@ impl Recorder {
             .collect();
         db.insert("owner_changes", &change_rows)?;
         db.upsert("planet_owners", &updated, None, false)?;
+        unless_missing(db.upsert("planet_players", &idle, None, true))?;
+        unless_missing(db.upsert("region_samples", &cities, None, true))?;
         Ok(IngestResult { samples: samples.len(), changes })
     }
 }

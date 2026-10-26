@@ -87,3 +87,17 @@ impl Supabase {
         self.call("POST", &format!("rpc/{function}"), Some(&args), None)
     }
 }
+
+/// A table or function the database doesn't have yet: its migration hasn't been applied.
+pub fn is_missing(e: &str) -> bool {
+    e.contains(" → 404:")
+}
+
+/// Runs a write that needs a newer migration; until it's applied, the write is skipped instead of failing its task.
+pub fn unless_missing<T>(write: Result<T, String>) -> Result<bool, String> {
+    match write {
+        Ok(_) => Ok(true),
+        Err(e) if is_missing(&e) => Ok(false),
+        Err(e) => Err(e),
+    }
+}

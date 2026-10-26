@@ -3,7 +3,7 @@
 use crate::hd2::{Api, ApiError};
 use crate::push::Push;
 use crate::recorder::Recorder;
-use crate::supabase::Supabase;
+use crate::supabase::{Supabase, unless_missing};
 use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -271,7 +271,14 @@ impl Collector {
         self.snapshot(SnapshotKind::War, raw)?;
         let sample = to_war_sample(&war, self.last_campaigns.iter().map(|c| &c.planet), (self.now)());
         self.db.upsert("war_samples", &[serde_json::to_value(sample).unwrap()], None, true)?;
-        Ok(format!("{} divers", warroom_core::format::js_number(war.statistics.player_count)))
+        let online = war.statistics.player_count;
+        // A reading of nobody online is an API blip, not the day's low.
+        let noted = online > 0.0
+            && unless_missing(
+                self.db.rpc("note_war_day", json!({ "reading_at": iso_string((self.now)()), "online": online })),
+            )?;
+        let missing = if online > 0.0 && !noted { ", no war_days table yet" } else { "" };
+        Ok(format!("{} divers{missing}", warroom_core::format::js_number(online)))
     }
 
     fn assignments(&mut self) -> Result<String, JobError> {
@@ -407,7 +414,9 @@ impl Collector {
     fn compact(&mut self) -> Result<String, JobError> {
         let removed = self.db.rpc("compact_samples", json!({}))?;
         let removed_war = self.db.rpc("compact_war_samples", json!({}))?;
-        Ok(format!("{removed} old samples and {removed_war} war samples thinned"))
+        let mut removed_activity = json!(0);
+        unless_missing(self.db.rpc("compact_activity", json!({})).map(|n| removed_activity = n))?;
+        Ok(format!("{removed} old samples, {removed_war} war samples and {removed_activity} activity readings thinned"))
     }
 
     fn episodes(&mut self) -> Result<String, JobError> {
