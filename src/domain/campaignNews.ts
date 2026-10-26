@@ -116,6 +116,16 @@ export function campaignEvents(list: EpisodeLive[], dispatches: Dispatch[] = [])
     .sort((a, b) => b.at - a.at);
 }
 
+/**
+ * Campaign launches and outcomes not alerted on yet, oldest first, and the keys to remember as seen. New
+ * orders are left to the Major Order alert, which comes sooner. With nothing seen yet, nothing is fresh.
+ */
+export function campaignAlerts(list: EpisodeLive[], seen: string[]): { fresh: CampaignEvent[]; keys: string[] } {
+  const events = campaignEvents(list).filter((ev) => ev.type !== "order");
+  const fresh = seen.length === 0 ? [] : events.filter((ev) => !seen.includes(ev.key)).reverse();
+  return { fresh, keys: events.map((ev) => ev.key) };
+}
+
 /** One-line headline for a campaign event, in the game's words. */
 export function campaignHeadline(ev: CampaignEvent): string {
   const { campaign: e, phase } = ev;

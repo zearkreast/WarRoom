@@ -108,6 +108,7 @@ interface SettingsState {
   /** Ids already alerted on, so a restart doesn't repeat them. */
   seenAssignments: number[];
   seenDispatch: number;
+  seenCampaignEvents: string[];
   /** App version whose changelog the user has opened. */
   seenChangelog: string;
   /** G.W.W. training manuals read to the end, by id. */
@@ -135,6 +136,7 @@ interface SettingsState {
   dismissHint(id: string): void;
   resetUnread(): void;
   markSeen(assignments: number[], dispatch: number): void;
+  markCampaignSeen(keys: string[]): void;
   markChangelog(version: string): void;
   markRead(manual: string): void;
   clearRead(): void;
@@ -158,6 +160,7 @@ export const useSettings = create<SettingsState>()(
       hintsSeen: [],
       seenAssignments: [],
       seenDispatch: 0,
+      seenCampaignEvents: [],
       seenChangelog: "",
       gwwRead: [],
       newsSeenAt: 0,
@@ -171,6 +174,7 @@ export const useSettings = create<SettingsState>()(
       dismissHint: (id) => set((s) => ({ hintsSeen: [...new Set([...s.hintsSeen, id])] })),
       resetUnread: () => set({ seenChangelog: "", hintsSeen: [] }),
       markSeen: (seenAssignments, seenDispatch) => set({ seenAssignments, seenDispatch }),
+      markCampaignSeen: (seenCampaignEvents) => set({ seenCampaignEvents }),
       markChangelog: (seenChangelog) => set({ seenChangelog }),
       markRead: (manual) => set((s) => (s.gwwRead.includes(manual) ? s : { gwwRead: [...s.gwwRead, manual] })),
       clearRead: () => set({ gwwRead: [] }),
