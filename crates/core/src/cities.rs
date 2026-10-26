@@ -1,5 +1,6 @@
 use crate::api::{Faction, Planet};
 use crate::data::{CityFateState, super_earth_city};
+use crate::progress::liberation_percent;
 use regex_lite::Regex;
 use std::sync::LazyLock;
 
@@ -48,6 +49,12 @@ pub struct City {
     pub resistance: Option<f64>,
     /// Net progress in %/h, measured by the collector.
     pub rate: Option<f64>,
+    /// The planet's liberation at which it opens; 0 for a city open from the start.
+    pub opens_at: Option<f64>,
+    /// Locked, and the planet hasn't reached `opens_at` yet.
+    pub waiting: bool,
+    /// Who holds it: Super Earth once it's liberated (or the planet is), else the planet's owner.
+    pub holder: Faction,
 }
 
 /// Hours until a city is liberated at its current net rate, or None if it isn't gaining.
@@ -108,6 +115,7 @@ pub fn cities_of(p: &Planet) -> Vec<City> {
                     None => live,
                 }
             };
+            let opens_at = r.availability_factor.filter(|f| (0.0..=1.0).contains(f)).map(|f| (1.0 - f) * 100.0);
             City {
                 id: r.id,
                 name: fate_name.map_or_else(|| r.name.clone(), String::from),
@@ -126,6 +134,11 @@ pub fn cities_of(p: &Planet) -> Vec<City> {
                     .filter(|_| nonzero(r.max_health))
                     .map(|regen| ((regen * 3600.0) / r.max_health) * 100.0),
                 rate: r.rate,
+                opens_at,
+                waiting: state == CityState::Locked
+                    && p.event.is_none()
+                    && opens_at.is_some_and(|at| liberation_percent(p.health, p.max_health) < at),
+                holder: if percent.is_some_and(|p| p >= 100.0) { Faction::Humans } else { p.current_owner },
             }
         })
         .collect()

@@ -1,7 +1,7 @@
 //! The G.W.W.'s pages and addresses, and the link targets that open them.
 
 use crate::data::manuals::MANUALS;
-use crate::data::sites::{CITIZENS, COMPANIES, GOV, MINISTRIES};
+use crate::data::sites::{CITIZENS, COMPANIES, GOV, HOLIDAYS, HOLIDAYS_SITE, MINISTRIES};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -17,6 +17,9 @@ pub enum GwwPage {
     Company {
         id: String,
     },
+    Holiday {
+        id: String,
+    },
     Site {
         id: String,
     },
@@ -30,7 +33,10 @@ pub enum GwwPage {
 }
 
 const HOME: &str = "se://gww";
-const SITES: [(&str, &str); 3] = [("gov", GOV.address), ("citizens", CITIZENS.address), ("log", "se://hc/war-log")];
+pub const LOG_ADDRESS: &str = "se://hc/logs";
+pub const LOG_TITLE: &str = "Galactic logs";
+const SITES: [(&str, &str); 4] =
+    [("gov", GOV.address), ("citizens", CITIZENS.address), ("holidays", HOLIDAYS_SITE.address), ("log", LOG_ADDRESS)];
 const DIR_ADDRESSES: [(&str, &str); 3] =
     [("manuals", "se://hc/manuals"), ("gov", "se://gov/directory"), ("corps", "se://corp")];
 
@@ -62,6 +68,7 @@ pub fn address_of(p: &GwwPage) -> String {
         GwwPage::Manual { id } => MANUALS.iter().find(|m| m.id == id).map_or(HOME, |m| m.address).into(),
         GwwPage::Ministry { id } => MINISTRIES.iter().find(|m| m.id == id).map_or(HOME, |m| m.address).into(),
         GwwPage::Company { id } => COMPANIES.iter().find(|c| c.id == id).map_or(HOME, |c| c.address).into(),
+        GwwPage::Holiday { id } => HOLIDAYS.iter().find(|h| h.id == id).map_or(HOME, |h| h.address).into(),
         GwwPage::Site { id } => lookup(&SITES, id).unwrap_or(HOME).into(),
         GwwPage::Dir { id } => lookup(&DIR_ADDRESSES, id).unwrap_or(HOME).into(),
         GwwPage::Missing { address } => address.clone(),
@@ -78,6 +85,7 @@ pub fn addresses() -> Vec<(String, String)> {
     all.extend(MANUALS.iter().map(|m| (m.address.to_string(), format!("manual:{}", m.id))));
     all.extend(MINISTRIES.iter().map(|m| (m.address.to_string(), format!("ministry:{}", m.id))));
     all.extend(COMPANIES.iter().map(|c| (c.address.to_string(), format!("company:{}", c.id))));
+    all.extend(HOLIDAYS.iter().map(|h| (h.address.to_string(), format!("holiday:{}", h.id))));
     all.push(("se://strohmann.news".into(), "app:news".into()));
     let mut out: Vec<(String, String)> = Vec::with_capacity(all.len());
     for (address, target) in all {
@@ -87,6 +95,16 @@ pub fn addresses() -> Vec<(String, String)> {
         }
     }
     out
+}
+
+/// Pages reached only through Managed Democracy: they open when typed, but aren't suggested.
+pub fn is_gov_subpage(target: &str) -> bool {
+    target == "site:citizens" || target == "site:holidays" || target.starts_with("holiday:")
+}
+
+/// The addresses the address bar suggests.
+pub fn suggested_addresses() -> Vec<String> {
+    addresses().into_iter().filter(|(_, t)| !is_gov_subpage(t)).map(|(a, _)| a).collect()
 }
 
 /// Typed addresses may skip the scheme or end in a slash.
@@ -120,7 +138,8 @@ pub fn page_of(target: &str) -> Option<GwwPage> {
         "manual" if MANUALS.iter().any(|m| m.id == id) => Some(GwwPage::Manual { id: id_s }),
         "ministry" if MINISTRIES.iter().any(|m| m.id == id) => Some(GwwPage::Ministry { id: id_s }),
         "company" if COMPANIES.iter().any(|c| c.id == id) => Some(GwwPage::Company { id: id_s }),
-        "site" if matches!(id, "log" | "gov" | "citizens") => Some(GwwPage::Site { id: id_s }),
+        "holiday" if HOLIDAYS.iter().any(|h| h.id == id) => Some(GwwPage::Holiday { id: id_s }),
+        "site" if matches!(id, "log" | "gov" | "citizens" | "holidays") => Some(GwwPage::Site { id: id_s }),
         "dir" if lookup(&DIRS, id).is_some() => Some(GwwPage::Dir { id: id_s }),
         _ => None,
     }
@@ -135,10 +154,12 @@ pub fn title_of(target: &str) -> String {
         Some(GwwPage::Manual { .. }) => MANUALS.iter().find(|m| m.id == id).unwrap().title.into(),
         Some(GwwPage::Ministry { .. }) => MINISTRIES.iter().find(|m| m.id == id).unwrap().name.into(),
         Some(GwwPage::Company { .. }) => COMPANIES.iter().find(|c| c.id == id).unwrap().name.into(),
+        Some(GwwPage::Holiday { .. }) => HOLIDAYS.iter().find(|h| h.id == id).unwrap().name.into(),
         Some(GwwPage::Site { id }) => match id.as_str() {
             "gov" => GOV.title.into(),
             "citizens" => CITIZENS.title.into(),
-            _ => "Galactic war log".into(),
+            "holidays" => HOLIDAYS_SITE.title.into(),
+            _ => LOG_TITLE.into(),
         },
         Some(GwwPage::Dir { id }) => lookup(&DIRS, &id).unwrap_or_default().into(),
         _ if target.starts_with("app:") => app_page_title(id).unwrap_or(id).into(),

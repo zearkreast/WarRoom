@@ -129,6 +129,8 @@ pub struct RegionLive {
     pub is_available: bool,
     pub players: f64,
     pub regen_per_second: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub availability_factor: Option<f64>,
     /// Progress trend in %/h; only on campaign planets.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rate: Option<f64>,
@@ -210,6 +212,7 @@ pub fn to_live(p: &Planet) -> PlanetLive {
                 is_available: r.is_available,
                 players: r.players,
                 regen_per_second: r.regen_per_second,
+                availability_factor: r.availability_factor,
                 rate: None,
             })
             .collect(),
@@ -305,6 +308,7 @@ pub fn to_planet(s: &PlanetStatic, l: &PlanetLive) -> Planet {
                     max_health: r.max_health,
                     size: r.size.clone(),
                     regen_per_second: l.and_then(|l| l.regen_per_second),
+                    availability_factor: l.and_then(|l| l.availability_factor),
                     is_available: l.is_some_and(|l| l.is_available),
                     players: l.map_or(0.0, |l| l.players),
                     rate: l.and_then(|l| l.rate),

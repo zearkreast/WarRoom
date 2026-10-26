@@ -194,7 +194,7 @@ fn GalacticControl(#[prop(into)] planets: Signal<Arc<Vec<Planet>>>, on_filter: C
                                 map.set(None);
                             }
                         })
-                        on_pointer_move=Callback::new(move |(key, e): (String, web_sys::PointerEvent)| {
+                        on_pointer_move=Callback::new(move |(key, e): (String, web_sys::MouseEvent)| {
                             let Some(f) = Faction::parse(&key) else { return };
                             let svg = e
                                 .current_target()

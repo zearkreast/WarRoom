@@ -61,6 +61,49 @@ pub fn use_war_samples() -> Query<Arc<Vec<WarSample>>> {
     )
 }
 
+/// A SEST day's busiest and quietest moment galaxy-wide.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct WarDay {
+    /// The day's start, SEST (UTC) midnight.
+    pub day: f64,
+    pub peak: f64,
+    pub peak_at: f64,
+    pub low: f64,
+    pub low_at: f64,
+}
+
+#[derive(serde::Deserialize)]
+struct WarDayRow {
+    day: String,
+    peak: f64,
+    peak_at: String,
+    low: f64,
+    low_at: String,
+}
+
+/// The last year of days, newest first. Empty while the `war_days` table doesn't exist yet (older backends).
+pub fn use_war_days() -> Query<Arc<Vec<WarDay>>> {
+    let last = queries().last_update;
+    use_query(
+        move || last.get().map(|end| format!("war_days:{}", (end / (POLL_MS * 5.0)).floor())),
+        POLL_MS * 5.0,
+        |_key: String| async move {
+            let list: Vec<WarDayRow> = rows(source::select("war_days", "select=*&order=day.desc&limit=366").await)?;
+            Ok(Arc::new(
+                list.into_iter()
+                    .map(|r| WarDay {
+                        day: parse_ms(&format!("{}T00:00:00Z", r.day)),
+                        peak: r.peak,
+                        peak_at: parse_ms(&r.peak_at),
+                        low: r.low,
+                        low_at: parse_ms(&r.low_at),
+                    })
+                    .collect(),
+            ))
+        },
+    )
+}
+
 /// Helldivers per front over the last 24 hours, or since the latest gap in the data. Summed in the
 /// database from planet samples the collector has always kept, so there is no warm-up. A defense counts
 /// for its attacker, or the enemy holding most of its sector.

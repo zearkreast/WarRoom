@@ -40,6 +40,13 @@ pub struct OptionsAnchor {
     pub y: f64,
 }
 
+/// A city: its planet, and its region id on that planet.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CityRef {
+    pub planet: i64,
+    pub region: i64,
+}
+
 /// What the app is showing. Not persisted; Back and Forward step through it (see nav_history).
 #[derive(Clone, Copy)]
 pub struct Ui {
@@ -51,6 +58,8 @@ pub struct Ui {
     pub focus_seq: RwSignal<u64>,
     /// Planet whose detail overlay is open.
     pub detail: RwSignal<Option<i64>>,
+    /// City whose overlay is open, over the planet's when both are.
+    pub city: RwSignal<Option<CityRef>>,
     pub options: RwSignal<Option<OptionsAnchor>>,
     pub dispatch_open: RwSignal<bool>,
     /// The About or Icons legend dialog, when one is open.
@@ -93,6 +102,12 @@ impl Ui {
 
     pub fn open_detail(&self, planet: Option<i64>) {
         self.detail.set(planet);
+        self.city.set(None);
+        self.options.set(None);
+    }
+
+    pub fn open_city(&self, city: Option<CityRef>) {
+        self.city.set(city);
         self.options.set(None);
     }
 
@@ -243,6 +258,8 @@ pub struct SettingsData {
     pub planets_control_open: bool,
     /// Whether the Major Order strip on Active planets is unfolded.
     pub mo_strip_open: bool,
+    /// Whether the Major Order on the High Command overview is unfolded.
+    pub overview_mo_open: bool,
     /// Whether the Theater of War disc turns by itself.
     pub tw_spin: bool,
     pub map_dispatches: MapDispatches,
@@ -274,6 +291,7 @@ impl Default for SettingsData {
             show_inactive: false,
             planets_control_open: true,
             mo_strip_open: false,
+            overview_mo_open: true,
             tw_spin: !js::prefers_reduced_motion(),
             map_dispatches: MapDispatches::Five,
             close_to_tray: true,
@@ -427,6 +445,7 @@ pub fn init() {
         selected_planet: RwSignal::new(None),
         focus_seq: RwSignal::new(0),
         detail: RwSignal::new(None),
+        city: RwSignal::new(None),
         options: RwSignal::new(None),
         dispatch_open: RwSignal::new(false),
         dialog: RwSignal::new(None),

@@ -27,7 +27,7 @@ const WIDTH: f64 = 260.0;
 const HEIGHT: f64 = 300.0;
 const OFFSET: f64 = 18.0;
 
-pub fn pointer_at(e: &web_sys::PointerEvent, anchor: &web_sys::Element) -> PointerAt {
+pub fn pointer_at(e: &web_sys::MouseEvent, anchor: &web_sys::Element) -> PointerAt {
     let r = anchor.get_bounding_client_rect();
     PointerAt {
         x: e.client_x() as f64,

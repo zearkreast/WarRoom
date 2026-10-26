@@ -33,6 +33,7 @@ fn key_of(p: &GwwPage) -> String {
         GwwPage::Manual { id } => format!("manual:{id}"),
         GwwPage::Ministry { id } => format!("ministry:{id}"),
         GwwPage::Company { id } => format!("company:{id}"),
+        GwwPage::Holiday { id } => format!("holiday:{id}"),
         GwwPage::Site { id } => format!("site:{id}"),
         GwwPage::Dir { id } => format!("dir:{id}"),
         GwwPage::Missing { address } => format!("missing:{address}"),
@@ -371,7 +372,7 @@ fn page_view(page: &GwwPage, heading: HeadingRef, log_text: Signal<String>) -> O
         GwwPage::Site { id } => gov_page(id, heading),
         GwwPage::Dir { id } => dir_page(id, heading, log_text),
         GwwPage::Missing { address } => missing_page(address.clone(), heading),
-        GwwPage::Home => return None,
+        GwwPage::Holiday { .. } | GwwPage::Home => return None,
     })
 }
 

@@ -49,6 +49,38 @@ fn typed<T: serde::de::DeserializeOwned>(
     warroom_core::api::from_value(serde_json::Value::Array(rows)).map_err(|e| e.to_string())
 }
 
+/// Tables added by a later migration read as empty until it's applied.
+fn unless_missing<T: serde::de::DeserializeOwned>(
+    r: Result<Vec<serde_json::Value>, source::SourceError>,
+) -> Result<Vec<T>, String> {
+    match r {
+        Err(e) if e.status == 404 => Ok(Vec::new()),
+        r => typed(r),
+    }
+}
+
+/// Helldivers somewhere at a moment.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PlayerReading {
+    pub at: f64,
+    pub players: f64,
+}
+
+/// A city's reading: its Helldivers, and its liberation while it's fought over.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CityReading {
+    pub at: f64,
+    pub players: f64,
+    pub percent: Option<f64>,
+}
+
+#[derive(Deserialize)]
+struct ReadingRow {
+    at: String,
+    players: f64,
+    percent: Option<f64>,
+}
+
 fn to_change(r: ChangeRow) -> Option<ChangeRecord> {
     Some(ChangeRecord {
         id: r.id,
@@ -87,6 +119,33 @@ pub async fn samples(planet: i64, since_ms: f64) -> Result<Vec<Sample>, String> 
                 defending: r.defending,
             })
         })
+        .collect())
+}
+
+/// Helldivers on the planet while it had no campaign, oldest first.
+pub async fn idle_players(planet: i64, since_ms: f64) -> Result<Vec<PlayerReading>, String> {
+    let since = encode(&iso_string(since_ms));
+    let rows: Vec<ReadingRow> = unless_missing(
+        source::select(
+            "planet_players",
+            &format!("select=at,players&planet=eq.{planet}&at=gte.{since}&order=at.desc&limit={SAMPLE_LIMIT}"),
+        )
+        .await,
+    )?;
+    Ok(rows.into_iter().rev().map(|r| PlayerReading { at: parse_ms(&r.at), players: r.players }).collect())
+}
+
+/// One city's readings, oldest first.
+pub async fn city_readings(planet: i64, region: i64, since_ms: f64) -> Result<Vec<CityReading>, String> {
+    let since = encode(&iso_string(since_ms));
+    let query = format!(
+        "select=at,players,percent&planet=eq.{planet}&region=eq.{region}&at=gte.{since}&order=at.desc&limit={SAMPLE_LIMIT}"
+    );
+    let rows: Vec<ReadingRow> = unless_missing(source::select("region_samples", &query).await)?;
+    Ok(rows
+        .into_iter()
+        .rev()
+        .map(|r| CityReading { at: parse_ms(&r.at), players: r.players, percent: r.percent })
         .collect())
 }
 

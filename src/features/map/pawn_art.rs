@@ -138,13 +138,19 @@ pub struct DssInfo {
     pub active: Vec<Art>,
 }
 
+/// A tactical action's icon, by its name or an effect named after it.
+pub fn action_icon(name: &str) -> Option<String> {
+    let key = ACTIONS.iter().find(|(re, _)| re.is_match(name)).map(|(_, k)| *k)?;
+    assets::url(&format!("dss-actions/{key}.png"))
+}
+
 pub fn dss_info(actions: &[TacticalAction], now: f64) -> DssInfo {
     let active = actions
         .iter()
         .filter(|a| a.status == 2 && parse_ms(&a.status_expire) > now)
         .filter_map(|a| {
             let key = ACTIONS.iter().find(|(re, _)| re.is_match(&a.name)).map(|(_, k)| *k)?;
-            Some(Art { key: key.into(), href: assets::url(&format!("dss-actions/{key}.png"))? })
+            Some(Art { key: key.into(), href: action_icon(&a.name)? })
         })
         .collect();
     DssInfo { state: dss_state(actions, now), active }

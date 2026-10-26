@@ -3,10 +3,10 @@ mod common;
 use common::*;
 use std::collections::HashSet;
 use warroom_core::data::manuals::{CHAPTERS, MANUALS, TIPS};
-use warroom_core::data::sites::{ADS, CITIZENS, COMPANIES, GOV, MINISTRIES};
+use warroom_core::data::sites::{ADS, CITIZENS, COMPANIES, GOV, HOLIDAYS, HOLIDAYS_SITE, MINISTRIES};
 use warroom_core::data::stations::{PAST_STATIONS, STAR_OF_PEACE};
 use warroom_core::data::{AdBy, Section};
-use warroom_core::gww_nav::{addresses, app_page_title, page_of, target_at};
+use warroom_core::gww_nav::{addresses, app_page_title, page_of, suggested_addresses, target_at};
 use warroom_core::gww_text::{Segment, links_in, next_yearly, parse_rich, plain_text};
 
 fn all_sections() -> Vec<&'static Section> {
@@ -17,6 +17,7 @@ fn all_sections() -> Vec<&'static Section> {
         .chain(COMPANIES.iter().flat_map(|c| c.sections))
         .chain(GOV.sections)
         .chain(CITIZENS.sections)
+        .chain(HOLIDAYS.iter().flat_map(|h| h.sections))
         .collect()
 }
 
@@ -89,11 +90,13 @@ fn gives_every_site_its_own_address_and_id() {
     let mut list: Vec<&str> = MANUALS.iter().map(|m| m.address).collect();
     list.extend(MINISTRIES.iter().map(|m| m.address));
     list.extend(COMPANIES.iter().map(|c| c.address));
-    list.extend([GOV.address, CITIZENS.address]);
+    list.extend(HOLIDAYS.iter().map(|h| h.address));
+    list.extend([GOV.address, CITIZENS.address, HOLIDAYS_SITE.address]);
     assert_eq!(list.iter().collect::<HashSet<_>>().len(), list.len());
     assert_eq!(MANUALS.iter().map(|m| m.id).collect::<HashSet<_>>().len(), MANUALS.len());
     assert_eq!(MINISTRIES.iter().map(|m| m.id).collect::<HashSet<_>>().len(), MINISTRIES.len());
     assert_eq!(COMPANIES.iter().map(|m| m.id).collect::<HashSet<_>>().len(), COMPANIES.len());
+    assert_eq!(HOLIDAYS.iter().map(|h| h.id).collect::<HashSet<_>>().len(), HOLIDAYS.len());
 }
 
 #[test]
@@ -141,6 +144,10 @@ fn opens_a_typed_address_with_or_without_its_scheme_and_every_address_opens_a_pa
     assert_eq!(target_at("se://gww").as_deref(), Some("home"));
     assert_eq!(target_at("se://nowhere"), None);
     assert_eq!(target_at("strohmann.news").as_deref(), Some("app:news"));
+    assert_eq!(target_at("se://gov/holidays/liberty-day").as_deref(), Some("holiday:liberty-day"));
+    assert!(
+        !suggested_addresses().iter().any(|a| a.starts_with("se://gov/citizens") || a.starts_with("se://gov/holidays"))
+    );
     let all = addresses();
     assert_eq!(all.iter().filter(|(a, _)| a == "se://strohmann.news").count(), 1);
     let dead: Vec<String> = addresses()

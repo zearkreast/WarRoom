@@ -1,5 +1,6 @@
 //! G.W.W. text links. Content writes `[[kind:target|label]]` inline:
-//! - `manual:`, `ministry:`, `company:` an id; `site:log`, `site:gov` or `site:citizens`; `dir:` a directory id;
+//! - `manual:`, `ministry:`, `company:`, `holiday:` an id; `site:log`, `site:gov`, `site:citizens` or
+//!   `site:holidays`; `dir:` a directory id;
 //! - `planet:` a planet's name;
 //! - `app:` a page outside the G.W.W., one of the app pages the G.W.W. navigation knows.
 
@@ -12,7 +13,7 @@ pub enum Segment {
     Link { kind: String, target: String, label: String },
 }
 
-const KINDS: [&str; 7] = ["manual", "ministry", "company", "site", "dir", "planet", "app"];
+const KINDS: [&str; 8] = ["manual", "ministry", "company", "holiday", "site", "dir", "planet", "app"];
 static LINK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[\[([a-z]+):([^|\]]+)\|([^\]]+)\]\]").unwrap());
 
 /// Splits text into plain runs and links; markup with an unknown kind stays as its label.

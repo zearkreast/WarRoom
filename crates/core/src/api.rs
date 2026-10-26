@@ -145,6 +145,10 @@ pub struct Region {
     pub size: String,
     /// Enemy regeneration in health per second, while the region is fought over.
     pub regen_per_second: Option<f64>,
+    /// The share of the planet's health left when the region opens: it opens once the planet is (1 − factor)
+    /// liberated, so 1 means open from the start. Absent from snapshots of older collectors.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub availability_factor: Option<f64>,
     pub is_available: bool,
     pub players: f64,
     /// Progress trend in %/h from the collector; only on campaign planets, null while measuring.

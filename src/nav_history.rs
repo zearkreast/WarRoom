@@ -1,6 +1,6 @@
 //! Makes the browser's and the phone's Back button step back through the app.
 
-use crate::state::{HellpadModule, InfoDialog, View, ui};
+use crate::state::{CityRef, HellpadModule, InfoDialog, View, ui};
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -14,6 +14,8 @@ pub struct Place {
     pub module: Option<HellpadModule>,
     pub gww: Vec<GwwPage>,
     pub detail: Option<i64>,
+    #[serde(default)]
+    pub city: Option<CityRef>,
     pub dialog: Option<InfoDialog>,
     pub dispatch_open: bool,
 }
@@ -107,6 +109,7 @@ pub fn place_now() -> Place {
         module: u.module.get_untracked(),
         gww: u.gww.get_untracked(),
         detail: u.detail.get_untracked(),
+        city: u.city.get_untracked(),
         dialog: u.dialog.get_untracked(),
         dispatch_open: u.dispatch_open.get_untracked(),
     }
@@ -121,6 +124,7 @@ fn set_place(p: Place) {
         u.gww.set(p.gww);
     }
     u.detail.set(p.detail);
+    u.city.set(p.city);
     u.dialog.set(p.dialog);
     u.dispatch_open.set(p.dispatch_open);
     u.options.set(None);
@@ -187,6 +191,7 @@ mod browser {
                 module: u.module.get(),
                 gww: u.gww.get(),
                 detail: u.detail.get(),
+                city: u.city.get(),
                 dialog: u.dialog.get(),
                 dispatch_open: u.dispatch_open.get(),
             };
@@ -218,6 +223,7 @@ mod tests {
             module: None,
             gww: vec![GwwPage::Home],
             detail: None,
+            city: None,
             dialog: None,
             dispatch_open: false,
         };

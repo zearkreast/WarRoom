@@ -195,11 +195,37 @@ pub struct Ad {
     pub by: AdBy,
 }
 
+/// The game's own words, with where they're from.
+pub struct Quote {
+    pub from: &'static str,
+    pub text: &'static str,
+}
+
 pub struct Holiday {
+    pub id: &'static str,
     pub name: &'static str,
     /// 1-12.
     pub month: u32,
     pub day: u32,
+    /// The days it's kept, as the calendar gives them.
+    pub when: &'static str,
+    pub address: &'static str,
+    pub color: &'static str,
+    /// One line for its card.
+    pub summary: &'static str,
+    /// The game's own words about it, quoted.
+    pub quotes: &'static [Quote],
+    pub sections: &'static [Section],
+    pub related: &'static [&'static str],
+    pub sources: &'static [Source],
+}
+
+pub struct HolidaysSite {
+    pub title: &'static str,
+    pub address: &'static str,
+    pub icon: &'static str,
+    pub summary: &'static str,
+    pub related: &'static [&'static str],
 }
 
 pub struct GovPage {

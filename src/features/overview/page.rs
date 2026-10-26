@@ -311,7 +311,7 @@ fn Distribution() -> impl IntoView {
                             }
                             active_arc.set(key);
                         })
-                        on_pointer_move=Callback::new(move |(key, e): (String, web_sys::PointerEvent)| {
+                        on_pointer_move=Callback::new(move |(key, e): (String, web_sys::MouseEvent)| {
                             if key == ELSEWHERE {
                                 card.set(None);
                                 return;
