@@ -147,7 +147,13 @@ pub fn notify(kind: ToastKind, title: &str, body: &str, system: bool, message: O
         if !permitted().await {
             return;
         }
-        let options = obj(&[("title", JsValue::from_str(&title)), ("body", JsValue::from_str(&body))]);
+        let mut fields = vec![("title", JsValue::from_str(&title)), ("body", JsValue::from_str(&body))];
+        if tauri::is_android() {
+            // tauri.conf.json can't carry these: a plugins.notification entry stops the app from starting.
+            fields
+                .extend([("icon", JsValue::from_str("ic_notification")), ("iconColor", JsValue::from_str("#ffff5a"))]);
+        }
+        let options = obj(&fields);
         if tauri::is_tauri() {
             let _ = tauri::call_api("notification", "sendNotification", &[options]).await;
         } else {
