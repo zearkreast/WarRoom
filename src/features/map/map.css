@@ -55,7 +55,7 @@
 .galaxy.moving .holo-sweep {
   animation-play-state: paused;
 }
-/* cameraRules.ts sets the transforms and sizes of .upright, .pbody and the labels each frame. */
+/* camera.rs sets the transforms and sizes of .upright, .pbody and the labels each frame. */
 .region-line {
   fill: none;
   stroke-width: 2.4;
@@ -328,8 +328,7 @@
 .holos {
   pointer-events: none;
 }
-/* The projector's foreshortening, the beam's height and the unit's lift follow the tilt: see
-   cameraRules.ts. */
+/* The projector's foreshortening, the beam's height and the unit's lift follow the tilt: see camera.rs. */
 .holo.back {
   transform: translateY(-7px);
 }

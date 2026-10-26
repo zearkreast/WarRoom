@@ -168,7 +168,7 @@
 
 /* ---------- Progress bar ---------- */
 .mo-bar {
-  /* Keep in sync with GROW_MS in OrderBar.tsx. */
+  /* Keep in sync with GROW_MS in order_bar.rs. */
   --mo-grow: 1.1s;
   --rest-mix: 18%;
   position: relative;
@@ -197,7 +197,7 @@
 .mo-bar.slim {
   height: 7px;
 }
-/* No width transition: OrderBar.tsx is given the width every frame of the count-up. */
+/* No width transition: order_bar.rs is given the width every frame of the count-up. */
 .mo-bar-fill {
   position: absolute;
   inset: 0 auto 0 0;

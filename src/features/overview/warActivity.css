@@ -10,7 +10,7 @@
   --wa-terminids: #f6b012;
   --wa-automaton: #ff5d5e;
   --wa-illuminate: #cb5dff;
-  /* Keep in sync with MORPH_MS in WarActivity.tsx. */
+  /* Keep in sync with MORPH_MS in activity.rs. */
   --wa-morph: 700ms;
 }
 

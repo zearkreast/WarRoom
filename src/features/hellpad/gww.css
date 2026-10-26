@@ -1688,7 +1688,7 @@ button.gww-ad-open:focus-visible img {
   }
 }
 
-/* Keep in sync with RAIL_QUERY in GwwPages.tsx, which drops the rails below this width. */
+/* Keep in sync with RAIL_QUERY in gww/pages.rs, which drops the rails below this width. */
 @media (max-width: 1100px) {
   .gww-home-grid {
     grid-template-columns: 1fr;

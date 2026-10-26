@@ -68,7 +68,7 @@ class MainActivity : TauriActivity() {
     /** --surface-0 in src/ui/theme.css, the top bar's and dock's colour. */
     val BAR_COLOR = Color.parseColor("#0b0f16")
 
-    /** Keep in sync with TOPIC and CHANNEL in collector/push.ts. */
+    /** Keep in sync with TOPIC and CHANNEL in collector/src/push.rs. */
     const val NEWS_TOPIC = "news"
     const val NEWS_CHANNEL = "news"
   }
