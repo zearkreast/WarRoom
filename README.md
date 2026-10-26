@@ -1,4 +1,5 @@
 # WarRoom
+[![Deploy to GitHub Pages](https://github.com/zearkreast/WarRoom/actions/workflows/pages.yml/badge.svg)](https://github.com/zearkreast/WarRoom/actions/workflows/pages.yml) [![Release](https://github.com/zearkreast/WarRoom/actions/workflows/release.yml/badge.svg)](https://github.com/zearkreast/WarRoom/actions/workflows/release.yml)
 
 A fan-made Helldivers 2 Galactic War companion. Not affiliated with Arrowhead Game Studios.
 
@@ -15,8 +16,9 @@ collector (VDS) ──► api.helldivers2.dev                 the only API calle
 - **Collector** (`collector/`): a Rust service that polls the API and writes to Supabase.
   See [collector/README.md](collector/README.md) for VDS setup.
 - **Database** (`supabase/migrations/`): snapshots of the current war, planet progress samples, every
-  ownership change, galaxy-wide war samples and the space station's FTL jumps. Shared by all users.
-  Apply the migrations in order (`0001` to `0004`).
+  ownership change, galaxy-wide war samples, each day's busiest and quietest moment, Helldivers on planets
+  and in cities outside the fronts, and the space station's FTL jumps. Shared by all users.
+  Apply the migrations in order (`0001` to `0005`).
 
 ## Download
 

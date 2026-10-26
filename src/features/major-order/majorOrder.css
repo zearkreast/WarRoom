@@ -281,3 +281,31 @@
     transform: scaleY(0);
   }
 }
+
+.mo.folded .panel-body {
+  display: none;
+}
+.mo-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mo-toggle:hover {
+  color: var(--cta);
+}
+.mo-chevron {
+  flex: none;
+  transition: transform var(--t-state) var(--ease);
+}
+.mo-toggle[aria-expanded="true"] .mo-chevron {
+  transform: rotate(90deg);
+}

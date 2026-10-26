@@ -115,9 +115,33 @@
     opacity: 0.15;
   }
 }
-@media (max-width: 860px) {
+@media (max-width: 720px) {
   .ov-heads {
-    grid-template-columns: 1fr 1fr;
+    gap: var(--s-4);
+    margin-bottom: var(--s-5);
+  }
+  .ov-heads b {
+    font-size: var(--fs-body);
+  }
+  .ov-heads .pd-key {
+    font-size: var(--fs-kicker);
+  }
+  .ov-chips {
+    gap: var(--s-2);
+  }
+  .ov-chips .filter-chip {
+    padding: 0 var(--s-3);
+    font-size: var(--fs-kicker);
+  }
+  /* Stacked drop-shadows across the whole plot stall a phone's redraws; one glow per line is enough. */
+  .wa .wa-online .recharts-line-curve {
+    filter: drop-shadow(0 0 3px var(--wa-online));
+  }
+  .wa .wa-impact .recharts-line-curve {
+    filter: drop-shadow(0 0 3px var(--wa-impact));
+  }
+  .wa .wa-front .recharts-area-curve {
+    filter: none;
   }
 }
 

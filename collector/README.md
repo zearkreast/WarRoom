@@ -87,7 +87,9 @@ listing them. A Major Order is dated when the collector first sees it on a runni
 the date of their announcement.
 
 After pulling a version that adds a migration, apply it in Supabase before restarting the collector; a missing
-table makes that one job fail, the others keep running.
+table makes that one job fail, the others keep running. The tables of `0005_activity.sql` (each day's peak and
+low, Helldivers on planets without a campaign, city readings) are the exception: until it is applied those
+writes are skipped and the jobs carry on.
 
 On the free plan, the history stays well under the 500 MB limit (about 140 MB a year). Free projects pause
 after a week without activity; a running collector keeps it active.
