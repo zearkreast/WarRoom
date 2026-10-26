@@ -47,6 +47,8 @@ import {
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtDate, fmtDateTime } from "../../domain/format";
 import { nextYearly, plainText } from "../../domain/gwwText";
+import { useSpaceStations } from "../../api/queries";
+import { useStationJumps } from "../../api/stations";
 import { useHistory } from "../../history/useHistory";
 import { useSettings, useUi } from "../../state";
 import { DssIcon, FactionEmblem, type IconLike } from "../../ui/emblems";
@@ -54,7 +56,8 @@ import { Empty, Loading, OutLink, useMedia, useNow } from "../../ui/primitives";
 import { Figure } from "./GwwFigures";
 import { LivePanel } from "./GwwLive";
 import { adUrl, iconUrl, logoUrl } from "./gwwArt";
-import { DIRS, Rich, titleOf, useGwwNav } from "./gwwNav";
+import { DIRS, LOG_ADDRESS, LOG_TITLE, Rich, titleOf, useGwwNav } from "./gwwNav";
+import { JumpRoute } from "./StationJumps";
 
 type HeadingRef = RefCallback<HTMLElement>;
 
@@ -101,11 +104,25 @@ export function ManualIcon({ m, size }: { m: Manual; size: number }) {
   );
 }
 
-export function CompanyMark({ c }: { c: Company }) {
+/** Initials for a company without a logo: of each word, or the capitals of a one-word name. */
+function monogram(name: string): string {
+  const words = name.split(/[\s.]+/).filter((w) => w && w.toLowerCase() !== "the");
+  if (words.length > 1) return words.map((w) => w[0]).join("").slice(0, 4).toUpperCase();
+  const caps = words[0].replace(/[^A-Z]/g, "");
+  return (caps.length >= 2 ? caps : words[0].slice(0, 2)).slice(0, 4).toUpperCase();
+}
+
+/** The banner sits beside the name, so a company without a logo shows its initials there, not its name again. */
+export function CompanyMark({ c, banner }: { c: Company; banner?: boolean }) {
   const url = c.logo && logoUrl(c.logo);
-  return url ? (
-    <img className="gww-logo" src={url} alt="" />
-  ) : (
+  if (url) return <img className="gww-logo" src={url} alt="" />;
+  if (banner)
+    return (
+      <span className="gww-monogram" aria-hidden>
+        {monogram(c.name)}
+      </span>
+    );
+  return (
     <span className="gww-wordmark caps" aria-hidden>
       {c.name}
     </span>
@@ -672,8 +689,8 @@ export function OfficialTiles({ logText }: { logText: string }) {
       />
       <SiteTile
         target="site:log"
-        address="se://hc/war-log"
-        title="Galactic war log"
+        address={LOG_ADDRESS}
+        title={LOG_TITLE}
         text={logText}
         icon={<History size={26} strokeWidth={1.5} />}
         color="var(--f-humans)"
@@ -822,7 +839,7 @@ export function CompanyPage({ c, headingRef }: { c: Company; headingRef: Heading
     <WithRail rail={ads.rail} here={here}>
       <article className="gww-page" style={{ "--site": c.color } as CSSProperties}>
         <Banner
-          icon={<CompanyMark c={c} />}
+          icon={<CompanyMark c={c} banner />}
           corp
           crumbs={[{ label: "Corporations", target: "dir:corps" }, { label: c.trade }]}
           title={c.name}
@@ -1032,11 +1049,28 @@ export function MissingPage({ address, headingRef }: { address: string; headingR
   );
 }
 
-export function WarLogPage({ headingRef }: { headingRef: HeadingRef }) {
+function LogBox(props: { title: string; note: ReactNode; icon: ReactNode; children: ReactNode }) {
+  return (
+    <details className="gww-fold gww-logbox" open>
+      <summary>
+        <span className="gww-logbox-icon" aria-hidden>
+          {props.icon}
+        </span>
+        <b>{props.title}</b>
+        <span className="caps num">{props.note}</span>
+      </summary>
+      <div className="gww-logbox-body">{props.children}</div>
+    </details>
+  );
+}
+
+const LOG_DAYS = 7;
+
+function WarLog() {
   const { changes, ready } = useHistory();
   const openOptions = useUi((s) => s.openOptions);
   const [show, setShow] = useState<"all" | "won" | "lost">("all");
-  const liberated = changes.filter((c) => c.to === "Humans").length;
+  const [allDays, setAllDays] = useState(false);
   const list = changes.filter((c) => show === "all" || (show === "won") === (c.to === "Humans"));
   const days: { day: string; items: typeof list }[] = [];
   for (const c of list) {
@@ -1045,23 +1079,7 @@ export function WarLogPage({ headingRef }: { headingRef: HeadingRef }) {
     days[days.length - 1].items.push(c);
   }
   return (
-    <article className="gww-page" style={{ "--site": "var(--f-humans)" } as CSSProperties}>
-      <Banner
-        icon={<History size={40} strokeWidth={1.5} />}
-        crumbs={[{ label: "Super Earth", target: "dir:gov" }]}
-        title="Galactic war log"
-        lead={
-          ready ? (
-            <span className="num">
-              <span style={{ color: "var(--f-humans)" }}>{liberated} liberated</span> ·{" "}
-              <span style={{ color: "var(--bad)" }}>{changes.length - liberated} lost</span> since tracking began
-            </span>
-          ) : (
-            "Every planet that changed hands since tracking began."
-          )
-        }
-        headingRef={headingRef}
-      />
+    <>
       <div className="gww-filter" role="group" aria-label="Show">
         {(
           [
@@ -1084,7 +1102,7 @@ export function WarLogPage({ headingRef }: { headingRef: HeadingRef }) {
             : `No planet has been ${show === "won" ? "liberated" : "lost"} since tracking began.`}
         </Empty>
       ) : (
-        days.map((d) => (
+        (allDays ? days : days.slice(0, LOG_DAYS)).map((d) => (
           <section key={d.day} className="gww-log-day">
             <h3 className="caps num">{d.day}</h3>
             <ol className="wl">
@@ -1118,7 +1136,69 @@ export function WarLogPage({ headingRef }: { headingRef: HeadingRef }) {
           </section>
         ))
       )}
-      <Related targets={["manual:liberation", "manual:defense", "app:past"]} />
+      {ready && days.length > LOG_DAYS && (
+        <button className="gww-chip gww-more" onClick={() => setAllDays((a) => !a)}>
+          {allDays ? "Show fewer days" : `Show all ${days.length} days`}
+        </button>
+      )}
+    </>
+  );
+}
+
+function StationJumps({ station, name, now }: { station: number; name: string; now: number }) {
+  const { data: jumps = [], isLoading } = useStationJumps(station);
+  return (
+    <LogBox
+      title={`${name} FTL jumps`}
+      note={jumps.length === 1 ? "1 jump" : `${jumps.length} jumps`}
+      icon={<DssIcon size={18} />}
+    >
+      {isLoading ? (
+        <Loading what="the jump log" rows={2} />
+      ) : jumps.length === 0 ? (
+        <Empty>No jumps logged yet. Each jump is recorded from the next collector update on.</Empty>
+      ) : (
+        <JumpRoute jumps={jumps} now={now} />
+      )}
+    </LogBox>
+  );
+}
+
+/** Every planet that changed hands and every station jump, as the collector logged them. */
+export function LogsPage({ headingRef }: { headingRef: HeadingRef }) {
+  const { changes, ready } = useHistory();
+  const stations = useSpaceStations().data ?? [];
+  const now = useNow(60_000);
+  const liberated = changes.filter((c) => c.to === "Humans").length;
+  return (
+    <article className="gww-page" style={{ "--site": "var(--f-humans)" } as CSSProperties}>
+      <Banner
+        icon={<History size={40} strokeWidth={1.5} />}
+        crumbs={[{ label: "Super Earth", target: "dir:gov" }]}
+        title={LOG_TITLE}
+        lead="The war log and the space stations' FTL jumps, since tracking began."
+        headingRef={headingRef}
+      />
+      <LogBox
+        title="War log"
+        icon={<Globe2 size={18} />}
+        note={
+          ready ? (
+            <>
+              <span style={{ color: "var(--f-humans)" }}>{liberated} liberated</span> ·{" "}
+              <span style={{ color: "var(--bad)" }}>{changes.length - liberated} lost</span>
+            </>
+          ) : (
+            "Planets that changed hands"
+          )
+        }
+      >
+        <WarLog />
+      </LogBox>
+      {stations.map((st, i) => (
+        <StationJumps key={st.id32} station={st.id32} name={i === 0 ? "DSS" : `Station ${i + 1}`} now={now} />
+      ))}
+      <Related targets={["manual:liberation", "manual:dss", "app:stations", "app:past"]} />
     </article>
   );
 }
@@ -1127,7 +1207,7 @@ export function DirPage({ id, headingRef, logText }: { id: keyof typeof DIRS; he
   const Icon = DIR_ICONS[id];
   const lead: Record<keyof typeof DIRS, string> = {
     manuals: "How the Second Galactic War works, in reading order.",
-    gov: "The Federation's own sites: its government, its ministries, its war log and its news.",
+    gov: "The Federation's own sites: its government, its ministries, its logs and its news.",
     corps: "The mega-corporations that arm, feed, heal and bank the Federation.",
   };
   return (

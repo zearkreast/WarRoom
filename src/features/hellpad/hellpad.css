@@ -978,8 +978,10 @@
 .st-action header .st-action-icon {
   filter: drop-shadow(0 0 5px color-mix(in srgb, var(--cta) 45%, transparent));
 }
+/* Recolours the yellow icon to roughly --warn; keep in sync with it. */
 .st-action.cooling header .st-action-icon {
-  filter: grayscale(0.6) brightness(0.75);
+  filter: grayscale(1) brightness(0.7) sepia(1) saturate(6) hue-rotate(-15deg)
+    drop-shadow(0 0 5px color-mix(in srgb, var(--warn) 45%, transparent));
 }
 
 /* Tactical action readiness. */
@@ -1153,7 +1155,7 @@
 }
 .st-live {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
   max-width: 760px;
 }
 .st-live li {
@@ -1192,6 +1194,9 @@
   grid-column: 2;
   color: var(--text-dim);
   font-size: var(--fs-label);
+}
+.st-effects .st-action-icon {
+  filter: grayscale(1) brightness(0.8);
 }
 .st-effects li {
   display: inline-flex;
@@ -1381,6 +1386,46 @@
   .st-hops li.now .st-hop-arrow {
     animation: none;
   }
+}
+.st-jumplink {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  width: 100%;
+  padding: var(--s-4) var(--s-6);
+  text-align: left;
+  color: var(--f-humans);
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--lip), var(--shadow-1);
+  cursor: pointer;
+}
+.st-jumplink:hover,
+.st-jumplink:focus-visible {
+  border-color: var(--f-humans);
+}
+.st-jumplink-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.st-jumplink-text b {
+  color: var(--text-hi);
+  letter-spacing: 0.08em;
+}
+.st-jumplink-text .num {
+  font-size: var(--fs-body-s);
+  color: var(--text-dim);
+}
+.st-jumplink-to {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-left: auto;
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
 }
 .st-holo-icons {
   display: inline-flex;

@@ -900,10 +900,24 @@ button.gww-ad-open:focus-visible img {
   font-size: 1rem;
   line-height: 1.25;
   text-align: center;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
-.gww-banner .gww-wordmark {
-  font-size: 1.6rem;
+.gww-monogram {
+  display: grid;
+  place-items: center;
+  min-width: 88px;
+  height: 88px;
+  padding: 0 var(--s-4);
+  font-family: var(--font-head);
+  font-stretch: 125%;
+  font-weight: 800;
+  font-size: 1.9rem;
+  letter-spacing: 0.06em;
+  color: var(--site);
+  background: color-mix(in srgb, var(--site) 8%, var(--void));
+  border: 2px solid var(--site);
+  box-shadow: inset 0 0 0 4px var(--void), inset 0 0 0 5px color-mix(in srgb, var(--site) 45%, transparent);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--site) 45%, transparent);
 }
 .gww-slogan {
   margin-top: var(--s-3) !important;
@@ -1891,4 +1905,46 @@ button.gww-ad-open:focus-visible img {
     grid-column: 2;
     justify-self: start;
   }
+}
+
+/* ---------- Galactic logs ---------- */
+.gww-logbox summary {
+  align-items: center;
+}
+.gww-logbox summary b {
+  font-size: var(--fs-body);
+}
+.gww-logbox-icon {
+  display: inline-grid;
+  place-items: center;
+  color: var(--site);
+}
+.gww-logbox summary .num {
+  margin-left: auto;
+}
+.gww-logbox-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-5);
+}
+/* Too narrow here for the stay beside the route. */
+@media (min-width: 721px) {
+  .gww-logbox .st-hops li {
+    grid-template-columns: 130px 20px minmax(0, 1fr);
+    row-gap: var(--s-2);
+  }
+  .gww-logbox .st-hops li::before {
+    left: calc(130px + var(--s-5) + 9px);
+  }
+  .gww-logbox .st-hop-node {
+    grid-row: span 2;
+  }
+  .gww-logbox .st-hop-stay {
+    grid-column: 3;
+    justify-self: start;
+  }
+}
+.gww-more {
+  align-self: flex-start;
 }

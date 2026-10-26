@@ -31,7 +31,7 @@ import { DssIcon, FactionEmblem } from "../../ui/emblems";
 import { Empty, OutLink, Panel, useMedia, useNow } from "../../ui/primitives";
 import type { Faction } from "../../api/types";
 import { iconUrl } from "./gwwArt";
-import { addressOf, GwwNavProvider, normalize, SUGGESTED_ADDRESSES, targetAt, useGwwNav } from "./gwwNav";
+import { addressOf, GwwNavProvider, LOG_ADDRESS, LOG_TITLE, normalize, SUGGESTED_ADDRESSES, targetAt, useGwwNav } from "./gwwNav";
 import {
   AdBox,
   CompanyPage,
@@ -40,6 +40,7 @@ import {
   GovPage,
   HolidayPage,
   HolidaysPage,
+  LogsPage,
   ManualPage,
   ManualTile,
   MinistryPage,
@@ -48,7 +49,6 @@ import {
   pickOne,
   RAIL_QUERY,
   SiteTile,
-  WarLogPage,
 } from "./GwwPages";
 import "./gww.css";
 
@@ -102,8 +102,8 @@ function AddressBar({ page }: { page: GwwPage }) {
 }
 
 function logLine(count: number): string {
-  if (count === 1) return "1 planet has changed hands since tracking began.";
-  return count ? `${count} planets have changed hands since tracking began.` : "Every planet that changed hands.";
+  const won = count === 1 ? "1 planet has" : `${count} planets have`;
+  return count ? `The war log and the FTL jumps. ${won} changed hands since tracking began.` : "The war log and the FTL jumps.";
 }
 
 function Group(props: { title: string; count: number; all?: string; children: ReactNode }) {
@@ -180,12 +180,12 @@ function Home({ logText }: { logText: string }) {
         color="var(--f-humans)"
       />
     ),
-    hit("Galactic war log", logText, "se://hc/war-log") && (
+    hit(LOG_TITLE, logText, LOG_ADDRESS, "war log", "FTL jumps") && (
       <SiteTile
         key="log"
         target="site:log"
-        address="se://hc/war-log"
-        title="Galactic war log"
+        address={LOG_ADDRESS}
+        title={LOG_TITLE}
         text={logText}
         icon={<History size={26} strokeWidth={1.5} />}
         color="var(--f-humans)"
@@ -318,7 +318,7 @@ function View({ page, logText, headingRef }: { page: GwwPage; logText: string; h
     if (h) return <HolidayPage h={h} headingRef={headingRef} />;
   }
   if (page.kind === "site") {
-    if (page.id === "log") return <WarLogPage headingRef={headingRef} />;
+    if (page.id === "log") return <LogsPage headingRef={headingRef} />;
     if (page.id === "holidays") return <HolidaysPage headingRef={headingRef} />;
     return <GovPage site={page.id} headingRef={headingRef} />;
   }

@@ -9,7 +9,9 @@ import { parseRich } from "../../domain/gwwText";
 import { useUi, type GwwPage } from "../../state";
 
 const HOME = "se://gww";
-const SITE_ADDRESS = { gov: GOV.address, citizens: CITIZENS.address, holidays: HOLIDAYS_SITE.address, log: "se://hc/war-log" };
+export const LOG_ADDRESS = "se://hc/logs";
+export const LOG_TITLE = "Galactic logs";
+const SITE_ADDRESS = { gov: GOV.address, citizens: CITIZENS.address, holidays: HOLIDAYS_SITE.address, log: LOG_ADDRESS };
 const DIR_ADDRESS = { manuals: "se://hc/manuals", gov: "se://gov/directory", corps: "se://corp" };
 
 export function addressOf(p: GwwPage): string {
@@ -91,7 +93,7 @@ export function titleOf(target: string): string {
   if (page?.kind === "company") return COMPANIES.find((c) => c.id === id)!.name;
   if (page?.kind === "holiday") return HOLIDAYS.find((h) => h.id === id)!.name;
   if (page?.kind === "site")
-    return { gov: GOV.title, citizens: CITIZENS.title, holidays: HOLIDAYS_SITE.title, log: "Galactic war log" }[page.id];
+    return { gov: GOV.title, citizens: CITIZENS.title, holidays: HOLIDAYS_SITE.title, log: LOG_TITLE }[page.id];
   if (page?.kind === "dir") return DIRS[page.id];
   if (target.startsWith("app:")) return APP_PAGES[id] ?? id;
   return id;

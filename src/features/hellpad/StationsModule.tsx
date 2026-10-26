@@ -1,4 +1,4 @@
-import { FileText, History, Sparkle, Timer, Zap } from "lucide-react";
+import { ArrowRight, FileText, History, Sparkle, Timer, Zap } from "lucide-react";
 import { Fragment, useState, type CSSProperties, type MouseEvent } from "react";
 import { useCampaigns, useEffects, useFreshPlanets, useSpaceStations } from "../../api/queries";
 import { useStationJumps } from "../../api/stations";
@@ -7,7 +7,7 @@ import { WIKI_LICENCE, type Source } from "../../data/gww";
 import { PAST_STATIONS, STAR_OF_PEACE, type StationEvent, type StationRecord } from "../../data/stations";
 import { regenPctPerHour } from "../../domain/biomes";
 import { factionColor } from "../../domain/factions";
-import { fmtAgo, fmtDateTime, fmtPct } from "../../domain/format";
+import { fmtDateTime, fmtPct } from "../../domain/format";
 import { parseRich } from "../../domain/gwwText";
 import { trackedPercent } from "../../domain/progress";
 import type { StationLive } from "../../domain/snapshot";
@@ -18,6 +18,7 @@ import { Countdown, Empty, Loading, OutLink, Panel, StatusChip, useNow } from ".
 import { actionIcon, dssState } from "../map/pawnArt";
 import { usePlanetRate } from "../planets/useFronts";
 import { PlanetSphere } from "../planet/PlanetDetail";
+import { LOG_ADDRESS } from "./gwwNav";
 import { CssHolo, DssHolo } from "./StationHolo";
 
 /** Splits the API's `<span data-ah="1">…</span>` highlights into plain and emphasised runs. */
@@ -222,60 +223,35 @@ function ActionCard({ a, now }: { a: TacticalAction; now: number }) {
   );
 }
 
-function JumpHistory({ station, now }: { station: number; now: number }) {
+function JumpHistoryLink({ station }: { station: number }) {
   const jumps = useStationJumps(station).data ?? [];
-  const planets = useFreshPlanets().data;
-  const openDetail = useUi((s) => s.openDetail);
-  const planet = (i: number | null) => (i == null ? undefined : planets?.find((p) => p.index === i));
-  const stop = (index: number | null) => {
-    const p = planet(index);
-    if (!p) return <span className="st-hop-planet dim caps">{index == null ? "Unknown" : `Planet ${index}`}</span>;
-    const owner = p.event?.faction ?? p.currentOwner;
-    return (
-      <button className="st-hop-planet caps" style={{ "--tone": factionColor(owner) } as CSSProperties} onClick={() => openDetail(p.index)}>
-        <FactionEmblem faction={owner} size={16} />
-        <b>{p.name}</b>
-        <span>{p.sector}</span>
-      </button>
-    );
-  };
+  // One state change, so Back steps straight back to the station.
+  const open = () =>
+    useUi.setState({ view: "hellpad", module: "gww", gww: [{ kind: "home" }, { kind: "site", id: "log" }], options: null, detail: null });
+  const last = jumps[0];
   return (
-    <Panel title="FTL jump history" icon={History} right={<span className="num">{jumps.length === 1 ? "1 jump" : `${jumps.length} jumps`}</span>}>
-      {jumps.length === 0 ? (
-        <Empty>No jumps logged yet. Each jump is recorded from the next collector update on.</Empty>
-      ) : (
-        <ol className="st-hops">
-          {jumps.map((j, i) => {
-            // Newest first, so the stay at a destination ends with the jump before it in the list.
-            const left = i === 0 ? now : jumps[i - 1].at;
-            return (
-              <li key={j.at} className={i === 0 ? "now" : ""}>
-                <div className="st-hop-when">
-                  <span className="num">{fmtDateTime(j.at)}</span>
-                  <span className="caps">{fmtAgo(j.at, now)}</span>
-                </div>
-                <i className="st-hop-node" aria-hidden />
-                <div className="st-hop-route">
-                  {stop(j.from)}
-                  <span className="st-hop-arrow" aria-label="to" />
-                  {stop(j.to)}
-                </div>
-                <span className="st-hop-stay caps num">
-                  {i === 0 ? "In orbit · " : "Stayed "}
-                  {fmtLongDuration(Math.max(0, (left - j.at) / 1000))}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-    </Panel>
+    <button className="st-jumplink" onClick={open}>
+      <History size={18} aria-hidden />
+      <span className="st-jumplink-text">
+        <b className="caps">FTL jump history</b>
+        <span className="num">
+          {jumps.length === 0
+            ? "No jumps logged yet"
+            : `${jumps.length === 1 ? "1 jump" : `${jumps.length} jumps`} logged · last ${fmtDateTime(last.at)}`}
+        </span>
+      </span>
+      <span className="st-jumplink-to caps num">
+        {LOG_ADDRESS} <ArrowRight size={14} aria-hidden />
+      </span>
+    </button>
   );
 }
 
 function StationPanel({ station }: { station: StationLive }) {
   const { planetIndex, electionEnd, tacticalActions: actions } = station;
-  const effects = useEffects().data?.stations.get(station.id32) ?? [];
+  const effects = [...(useEffects().data?.stations.get(station.id32) ?? [])].sort(
+    (a, b) => Number(!!actionIcon(a.name)) - Number(!!actionIcon(b.name)),
+  );
   const planets = useFreshPlanets().data;
   const campaigns = useCampaigns().data;
   const rate = usePlanetRate(planetIndex);
@@ -356,7 +332,7 @@ function StationPanel({ station }: { station: StationLive }) {
             <ActionCard key={a.id32} a={a} now={now} />
           ))}
         </div>
-        <JumpHistory station={station.id32} now={now} />
+        <JumpHistoryLink station={station.id32} />
         <StarOfPeace />
       </div>
       <DssHolo
