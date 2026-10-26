@@ -10,6 +10,8 @@ use std::collections::HashMap;
 use std::future::Future;
 use std::rc::Rc;
 
+const RETRIES: i32 = 3;
+
 struct Entry {
     at: f64,
     value: Rc<dyn Any>,
@@ -38,7 +40,7 @@ impl<T: Send + Sync + 'static> Clone for Query<T> {
 impl<T: Send + Sync + 'static> Copy for Query<T> {}
 
 /// Fetches `fetch(key)` whenever `key()` changes to Some, unless a cached result is younger than `stale_ms`.
-/// Failures keep whatever was shown.
+/// Failures are retried, then keep whatever was shown.
 pub fn use_query<T, F, Fut>(key: impl Fn() -> Option<String> + 'static, stale_ms: f64, fetch: F) -> Query<T>
 where
     T: Clone + Send + Sync + 'static,
@@ -87,8 +89,16 @@ where
         }
         let fetch = fetch.clone();
         spawn_local(async move {
-            if let Ok(v) = fetch(k.clone()).await {
-                CACHE.with_borrow_mut(|c| c.insert(k.clone(), Entry { at: js::now(), value: Rc::new(v) }));
+            // As react-query did: three retries, 1, 2 and 4 s apart, still loading meanwhile.
+            for attempt in 0..=RETRIES {
+                match fetch(k.clone()).await {
+                    Ok(v) => {
+                        CACHE.with_borrow_mut(|c| c.insert(k.clone(), Entry { at: js::now(), value: Rc::new(v) }));
+                        break;
+                    }
+                    Err(_) if attempt < RETRIES => js::sleep(1000.0 * 2f64.powi(attempt)).await,
+                    Err(_) => {}
+                }
             }
             let waiting = IN_FLIGHT.with_borrow_mut(|f| f.remove(&k)).unwrap_or_default();
             for w in waiting {

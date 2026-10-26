@@ -74,6 +74,10 @@ pub async fn fetch_json(url: &str, headers: &[(&str, &str)]) -> Result<Value, So
 
 /// Raw PostgREST select, for history tables.
 pub async fn select(table: &str, query: &str) -> Result<Vec<Value>, SourceError> {
+    #[cfg(debug_assertions)]
+    if fixtures_mode() {
+        return Ok(Vec::new());
+    }
     let url = format!("{}/rest/v1/{table}?{query}", SUPABASE_URL.trim_end_matches('/'));
     match fetch_json(&url, &[("apikey", SUPABASE_PUBLISHABLE_KEY), ("Accept", "application/json")]).await? {
         Value::Array(rows) => Ok(rows),
