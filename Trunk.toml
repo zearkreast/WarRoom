@@ -1,0 +1,10 @@
+[build]
+target = "index.html"
+dist = "dist"
+
+[watch]
+ignore = ["src-tauri", "collector", "crates/core/tests"]
+
+[serve]
+# Tauri's devUrl expects this port.
+port = 1420

@@ -37,3 +37,6 @@ src-tauri/target
 
 # Local agent instructions, not part of the repo
 CLAUDE.md
+
+# Rust workspace build output
+/target

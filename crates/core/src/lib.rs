@@ -1,0 +1,34 @@
+//! Galactic War data shapes and logic shared by the WarRoom app (compiled to WebAssembly) and the collector.
+
+pub mod api;
+pub mod biomes;
+pub mod campaign_filter;
+pub mod campaign_news;
+pub mod changelog;
+pub mod cities;
+pub mod collate;
+pub mod data;
+pub mod dispatch;
+pub mod effects;
+pub mod faction_marks;
+pub mod faction_planets;
+pub mod factions;
+pub mod format;
+pub mod front_activity;
+pub mod galaxy;
+pub mod gww_nav;
+pub mod gww_text;
+pub mod history;
+pub mod major_order;
+pub mod news_feed;
+pub mod planet_index;
+pub mod planets;
+pub mod progress;
+pub mod regions;
+pub mod snapshot;
+pub mod stratagems;
+pub mod ticker;
+pub mod time;
+pub mod version;
+pub mod voronoi;
+pub mod war_history;

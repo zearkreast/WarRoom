@@ -9,10 +9,31 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 29 8v8c0 7-5.5 12-13 14C8.5 28 3 23 3 16V8z' fill='%2304070b' stroke='%23ffff5a' stroke-width='2'/%3E%3Cpath d='m16 9 2.2 4.6 5 .6-3.7 3.4 1 5-4.5-2.5-4.5 2.5 1-5-3.7-3.4 5-.6z' fill='%23ffff5a'/%3E%3C/svg%3E"
     />
+    <link data-trunk rel="rust" href="Cargo.toml" data-bin="warroom" data-wasm-opt="s" />
+    <!-- Stylesheets in cascade order: later files override earlier ones. -->
+    <link data-trunk rel="css" href="src/ui/fonts.css" />
+    <link data-trunk rel="css" href="src/ui/theme.css" />
+    <link data-trunk rel="css" href="src/ui/ui.css" />
+    <link data-trunk rel="css" href="src/features/campaigns/campaigns.css" />
+    <link data-trunk rel="css" href="src/features/major-order/majorOrder.css" />
+    <link data-trunk rel="css" href="src/features/hellpad/gww.css" />
+    <link data-trunk rel="css" href="src/features/news/news.css" />
+    <link data-trunk rel="css" href="src/features/galactic-campaigns/campaign.css" />
+    <link data-trunk rel="css" href="src/ui/neonRing.css" />
+    <link data-trunk rel="css" href="src/features/planet/cities.css" />
+    <link data-trunk rel="css" href="src/features/planet/planet.css" />
+    <link data-trunk rel="css" href="src/features/hellpad/hellpad.css" />
+    <link data-trunk rel="css" href="src/features/map/layers.css" />
+    <link data-trunk rel="css" href="src/features/map/map.css" />
+    <link data-trunk rel="css" href="src/features/overview/warActivity.css" />
+    <link data-trunk rel="css" href="src/features/overview/overview.css" />
+    <link data-trunk rel="css" href="src/features/settings/settings.css" />
+    <link data-trunk rel="css" href="src/update/update.css" />
+    <link data-trunk rel="css" href="src/layout/shell.css" />
+    <link data-trunk rel="copy-dir" href="src/assets" />
   </head>
 
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

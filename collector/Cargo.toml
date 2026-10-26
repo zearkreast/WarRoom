@@ -1,0 +1,8 @@
+[package]
+name = "warroom-collector"
+version = "0.3.0-beta"
+edition = "2024"
+publish = false
+
+[dependencies]
+warroom-core = { path = "../crates/core" }
