@@ -69,6 +69,16 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      # RPM versions can't hold a hyphen and Tauri has no RPM-only version, so a pre-release such as
+      # 0.3.0-beta leaves the RPM out here and builds it in the last step.
+      - name: Read the version
+        id: version
+        if: runner.os == 'Linux'
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" == *-* ]]; then echo "args=--bundles appimage,deb" >> "$GITHUB_OUTPUT"; fi
+
       - name: Build and publish release
         uses: tauri-apps/tauri-action@v0
         env:
@@ -82,9 +92,21 @@ jobs:
           releaseBody: "Installers are listed under Assets below."
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.args }}
+          args: ${{ matrix.args }} ${{ steps.version.outputs.args }}
           # latest.json, which installed apps read to find and verify a new release.
           includeUpdaterJson: true
+
+      # 0.3.0-beta becomes version 0.3.0, release 0.1.beta: RPM sorts it before 0.3.0's release 1.
+      - name: Build and attach the pre-release RPM
+        if: steps.version.outputs.args != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          LABEL=${VERSION#*-}
+          npx tauri bundle --bundles rpm --config \
+            "{\"version\":\"${VERSION%%-*}\",\"bundle\":{\"createUpdaterArtifacts\":false,\"linux\":{\"rpm\":{\"release\":\"0.1.${LABEL//-/.}\"}}}}"
+          gh release upload "v$VERSION" src-tauri/target/release/bundle/rpm/*.rpm --clobber
 
   # Runs after the desktop builds so the release they create is there to attach the APK to.
   android:
