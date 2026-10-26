@@ -2,13 +2,18 @@
 // The package must match `identifier` in tauri.conf.json.
 package com.warcommand.tracker
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.firebase.FirebaseApp
+import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : TauriActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,10 +32,25 @@ class MainActivity : TauriActivity() {
       view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
       insets.inset(bars)
     }
+
+    // Strohmann News the collector pushes; Android shows them itself while the app is in the background.
+    // Firebase only starts when the build carries its config (android.yml writes it from a secret).
+    if (FirebaseApp.getApps(this).isNotEmpty()) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
+          NotificationChannel(NEWS_CHANNEL, "Strohmann News", NotificationManager.IMPORTANCE_HIGH),
+        )
+      }
+      FirebaseMessaging.getInstance().subscribeToTopic(NEWS_TOPIC)
+    }
   }
 
   private companion object {
     /** --surface-0 in src/ui/theme.css, the top bar's and dock's colour. */
     val BAR_COLOR = Color.parseColor("#0b0f16")
+
+    /** Keep in sync with TOPIC and CHANNEL in collector/push.ts. */
+    const val NEWS_TOPIC = "news"
+    const val NEWS_CHANNEL = "news"
   }
 }

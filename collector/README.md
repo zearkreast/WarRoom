@@ -39,6 +39,19 @@ Fill in `SUPABASE_SECRET_KEY` (Supabase → Project Settings → API Keys → Se
 
 The container is capped at 128 MB and its logs at 3 MB.
 
+## Pushed news (optional)
+
+With `FCM_SERVICE_ACCOUNT` set, the collector also pushes new Strohmann News to the Android app through Firebase
+Cloud Messaging: each new Major Order, the newest three new dispatches, and campaign launches and outcomes. Set
+up the Firebase project first (see "Pushed news on Android" in the main README), then:
+
+1. Firebase console → Project settings → Service accounts → Generate new private key.
+2. `base64 -w0 key.json` and put the output in `collector/.env` as `FCM_SERVICE_ACCOUNT=…`, then restart the
+   collector. Its start-up line says `pushes on`.
+
+What is already stored counts as announced, so a restart, or turning pushes on, sends nothing old. A push that
+fails is logged and not retried.
+
 ## Setup without Docker
 
 Needs Node 22.18+ or 24.

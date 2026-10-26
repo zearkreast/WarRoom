@@ -68,13 +68,30 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      # The Android project isn't kept in the repo; it is generated fresh, then given the app's icons
-      # and its own MainActivity.
+      # The Android project isn't kept in the repo; it is generated fresh, then given the app's icons,
+      # its own MainActivity and Firebase Messaging.
       - name: Generate the Android project
         run: |
           npx tauri android init --ci
-          cp -r src-tauri/icons/android/. src-tauri/gen/android/app/src/main/res/
+          cp -r src-tauri/icons/android/. src-tauri/android/res/. src-tauri/gen/android/app/src/main/res/
           cp src-tauri/android/MainActivity.kt "$(find src-tauri/gen/android/app/src/main -name MainActivity.kt)"
+          echo 'dependencies { implementation("com.google.firebase:firebase-messaging:24.1.0") }' \
+            >> src-tauri/gen/android/app/build.gradle.kts
+
+      # Without this secret the app still builds and runs; it just gets no pushed news.
+      - name: Firebase config
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::warning::No GOOGLE_SERVICES_JSON secret, so this APK gets no pushed Strohmann News."
+            exit 0
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" > "$RUNNER_TEMP/google-services.json"
+          node src-tauri/android/firebase-values.mjs "$RUNNER_TEMP/google-services.json" \
+            > src-tauri/gen/android/app/src/main/res/values/firebase.xml
+          # The page then leaves OS notifications for news to the pushes, so none arrives twice.
+          echo "VITE_NEWS_PUSH=1" >> "$GITHUB_ENV"
 
       - name: Build APK
         run: npx tauri android build --apk --target aarch64 --target armv7

@@ -11,6 +11,9 @@ import { detectNewDefenses } from "./domain/history";
 import { useHistory } from "./history/useHistory";
 import { useSettings } from "./state";
 
+/** Android builds with Firebase get Strohmann News pushed by the collector, so here it is only toasted. */
+const NEWS_PUSHED = import.meta.env.VITE_NEWS_PUSH === "1";
+
 /**
  * Watches the shared data for anything worth an alert. Mounted once at the app root.
  */
@@ -68,21 +71,23 @@ export function useDataSync() {
   }, [campaigns.data]);
 
   // New Major Orders and dispatches. The first load only seeds what's been seen.
+  // Strohmann News alerts: keep their wording in step with the collector's pushes (collector/collector.ts).
   useEffect(() => {
     if (!assignments.data || !dispatches.data) return;
     const s = useSettings.getState();
+    const system = s.alerts.system && !NEWS_PUSHED;
     const firstRun = s.seenAssignments.length === 0 && s.seenDispatch === 0;
     const latestDispatch = Math.max(0, ...dispatches.data.map((d) => d.id));
     if (!firstRun) {
       if (s.alerts.orders) {
         for (const a of assignments.data.filter((a) => !s.seenAssignments.includes(a.id))) {
           const briefing = a.briefing ?? a.title ?? "High Command has issued new orders.";
-          notify("order", "New Major Order", briefing, s.alerts.system, briefing);
+          notify("order", "New Major Order", briefing, system, briefing);
         }
       }
       if (s.alerts.dispatches) {
         for (const d of dispatches.data.filter((d) => d.id > s.seenDispatch).slice(0, 3)) {
-          notify("dispatch", "New dispatch", dispatchTitle(d.message), s.alerts.system, d.message);
+          notify("dispatch", "New dispatch", dispatchTitle(d.message), system, d.message);
         }
       }
     }
@@ -104,7 +109,7 @@ export function useDataSync() {
           "order",
           launched ? "New Galactic Campaign" : "Galactic Campaign over",
           campaignHeadline(ev),
-          s.alerts.system,
+          s.alerts.system && !NEWS_PUSHED,
           launched ? ev.campaign.description : undefined,
         );
       }

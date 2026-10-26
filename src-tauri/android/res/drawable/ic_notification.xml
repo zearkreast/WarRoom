@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app mark in one colour, as Android draws status bar icons: the shield and star of app-icon.svg. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    <path
+        android:pathData="M16 2 29 8v8c0 7-5.5 12-13 14C8.5 28 3 23 3 16V8z"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.2"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="m16 9 2.2 4.6 5 0.6-3.7 3.4 1 5-4.5-2.5-4.5 2.5 1-5-3.7-3.4 5-0.6z"
+        android:fillColor="#FFFFFFFF" />
+</vector>

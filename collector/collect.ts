@@ -9,6 +9,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { createTasks, runTask, type Task } from "./collector.ts";
 import { createHd2Client } from "./hd2.ts";
+import { createPush, parseServiceAccount } from "./push.ts";
 import { Recorder } from "./recorder.ts";
 import { createSupabase } from "./supabase.ts";
 
@@ -39,10 +40,13 @@ async function main(): Promise<number> {
     baseUrl: "https://api.live.prod.thehelldiversgame.com",
   });
   const recorder = new Recorder(db);
+  const push = env("FCM_SERVICE_ACCOUNT") ? createPush(parseServiceAccount(env("FCM_SERVICE_ACCOUNT"))) : undefined;
 
   await recorder.load();
-  log(`started (${recorder.knownPlanets} planets known)${once ? ", single run" : ""}`);
-  const tasks = createTasks(hd2, db, recorder, Date.now, game);
+  log(
+    `started (${recorder.knownPlanets} planets known, pushes ${push ? "on" : "off"})${once ? ", single run" : ""}`,
+  );
+  const tasks = createTasks(hd2, db, recorder, Date.now, game, push);
 
   if (once) {
     let failed = false;
