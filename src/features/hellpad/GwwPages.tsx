@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Building2,
+  CalendarDays,
   Check,
   CircleHelp,
   CloudFog,
@@ -33,19 +34,23 @@ import {
   CITIZENS,
   COMPANIES,
   GOV,
+  HOLIDAYS,
+  HOLIDAYS_SITE,
   MINISTRIES,
   type Ad,
   type Company,
+  type Holiday,
   type Ministry,
   type SiteSection,
   type Tie,
 } from "../../data/gwwSites";
 import { factionColor, factionLabel } from "../../domain/factions";
 import { fmtDate, fmtDateTime } from "../../domain/format";
+import { nextYearly, plainText } from "../../domain/gwwText";
 import { useHistory } from "../../history/useHistory";
 import { useSettings, useUi } from "../../state";
 import { DssIcon, FactionEmblem, type IconLike } from "../../ui/emblems";
-import { Empty, Loading, OutLink, useMedia } from "../../ui/primitives";
+import { Empty, Loading, OutLink, useMedia, useNow } from "../../ui/primitives";
 import { Figure } from "./GwwFigures";
 import { LivePanel } from "./GwwLive";
 import { adUrl, iconUrl, logoUrl } from "./gwwArt";
@@ -121,6 +126,7 @@ export function TargetIcon({ target, size = 20 }: { target: string; size?: numbe
     const src = c?.logo && logoUrl(c.logo);
     return src ? img(src) : <Building2 size={size} strokeWidth={1.5} aria-hidden />;
   }
+  if (kind === "holiday" || (kind === "site" && id === "holidays")) return <CalendarDays size={size} strokeWidth={1.5} aria-hidden />;
   if (kind === "site") {
     if (id === "log") return <History size={size} strokeWidth={1.5} aria-hidden />;
     return img(iconUrl(id === "citizens" ? CITIZENS.icon : GOV.icon));
@@ -133,6 +139,7 @@ const KIND_LABEL: Record<string, string> = {
   manual: "Training manual",
   ministry: "Ministry",
   company: "Corporation",
+  holiday: "Holiday",
   site: "Super Earth",
   dir: "Directory",
   app: "In the tracker",
@@ -222,6 +229,18 @@ function Broadcast({ text }: { text: string }) {
       <Radio size={16} aria-hidden />
       <p>
         <b className="caps">Ship broadcast</b>
+        <span>“{text}”</span>
+      </p>
+    </aside>
+  );
+}
+
+function SourcedQuote({ from, text }: { from: string; text: string }) {
+  return (
+    <aside className="gww-quote">
+      <Quote size={16} aria-hidden />
+      <p>
+        <b className="caps">{from}</b>
         <span>“{text}”</span>
       </p>
     </aside>
@@ -640,19 +659,6 @@ export function MinistryTile({ m }: { m: Ministry }) {
 
 const HUMANITY = MINISTRIES.find((m) => m.id === "humanity")!.color;
 
-export function CitizensTile() {
-  return (
-    <SiteTile
-      target="site:citizens"
-      address={CITIZENS.address}
-      title={CITIZENS.title}
-      text={CITIZENS.summary}
-      icon={<img src={iconUrl(CITIZENS.icon)} alt="" />}
-      color={HUMANITY}
-    />
-  );
-}
-
 export function OfficialTiles({ logText }: { logText: string }) {
   return (
     <>
@@ -664,7 +670,6 @@ export function OfficialTiles({ logText }: { logText: string }) {
         icon={<img src={iconUrl(GOV.icon)} alt="" />}
         color="var(--f-humans)"
       />
-      <CitizensTile />
       <SiteTile
         target="site:log"
         address="se://hc/war-log"
@@ -845,17 +850,52 @@ export function CompanyPage({ c, headingRef }: { c: Company; headingRef: Heading
   );
 }
 
+type GovSite = "gov" | "citizens" | "holidays";
+
+const GOV_TABS: [GovSite, string][] = [
+  ["gov", "Managed Democracy"],
+  ["citizens", "Citizen classes"],
+  ["holidays", "Holidays"],
+];
+
+/** Managed Democracy's own menu: its sub-sites are reached from here, not from the G.W.W. home. */
+function GovNav({ at }: { at: GovSite }) {
+  const { follow } = useGwwNav();
+  return (
+    <nav className="gww-sitenav" aria-label="Managed Democracy">
+      <span className="gww-sitenav-brand caps">
+        <img src={iconUrl(GOV.icon)} alt="" width={18} height={18} />
+        se://gov
+      </span>
+      {GOV_TABS.map(([id, label]) => (
+        <button
+          key={id}
+          className={`gww-sitenav-link caps ${id === at ? "on" : ""}`}
+          aria-current={id === at ? "page" : undefined}
+          onClick={(e) => follow(`site:${id}`, e)}
+        >
+          {label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+const govCrumbs = (site: GovSite): Crumb[] => [
+  { label: "Super Earth", target: "dir:gov" },
+  ...(site === "gov" ? [] : [{ label: GOV.title, target: "site:gov" }]),
+];
+
 /** Super Earth's own sites: Managed Democracy, and the Citizenship Classification Structure under it. */
 export function GovPage({ site, headingRef }: { site: "gov" | "citizens"; headingRef: HeadingRef }) {
   const prefix = `gww-${site}`;
   const s = site === "gov" ? GOV : CITIZENS;
-  const crumbs: Crumb[] = [{ label: "Super Earth", target: "dir:gov" }];
-  if (site === "citizens") crumbs.push({ label: GOV.title, target: "site:gov" });
   return (
     <article className="gww-page" style={{ "--site": site === "gov" ? "var(--f-humans)" : HUMANITY } as CSSProperties}>
+      <GovNav at={site} />
       <Banner
         icon={<img src={iconUrl(s.icon)} alt="" width={72} height={72} />}
-        crumbs={crumbs}
+        crumbs={govCrumbs(site)}
         title={s.title}
         lead={s.summary}
         headingRef={headingRef}
@@ -871,6 +911,104 @@ export function GovPage({ site, headingRef }: { site: "gov" | "citizens"; headin
         sources={s.sources}
         quoted={site === "gov" ? "Training manual tips are quoted from the game." : "Ship broadcasts are quoted from the game."}
       />
+    </article>
+  );
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function DateBadge({ h }: { h: Holiday }) {
+  return (
+    <span className="gww-date" aria-hidden>
+      <span className="caps">{MONTHS[h.month - 1]}</span>
+      <b className="num">{h.day}</b>
+    </span>
+  );
+}
+
+const countdown = (days: number) => (days === 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`);
+
+export function HolidaysPage({ headingRef }: { headingRef: HeadingRef }) {
+  const { follow } = useGwwNav();
+  const now = useNow(60 * 60_000);
+  const next = nextYearly(HOLIDAYS, new Date(now));
+  const until = (h: Holiday) => nextYearly([h], new Date(now))!.in;
+  return (
+    <article className="gww-page" style={{ "--site": "var(--cta)" } as CSSProperties}>
+      <GovNav at="holidays" />
+      <Banner
+        icon={<CalendarDays size={40} strokeWidth={1.5} />}
+        crumbs={govCrumbs("holidays")}
+        title={HOLIDAYS_SITE.title}
+        lead={HOLIDAYS_SITE.summary}
+        headingRef={headingRef}
+      />
+      <ol className="gww-holidays">
+        {HOLIDAYS.map((h) => {
+          const days = until(h);
+          return (
+            <li key={h.id}>
+              <button
+                className={`gww-holiday-card ${h === next ? "next" : ""} ${days === 0 ? "today" : ""}`}
+                style={{ "--site": h.color } as CSSProperties}
+                onClick={(e) => follow(`holiday:${h.id}`, e)}
+              >
+                <DateBadge h={h} />
+                <span className="gww-holiday-body">
+                  <span className="gww-address num">{h.address}</span>
+                  <b className="gww-site-title">{h.name}</b>
+                  <span className="caps gww-holiday-when">{h.when}</span>
+                  <span className="gww-site-text">{h.summary}</span>
+                  {h.sections[0]?.text && (
+                    <span className="gww-holiday-story">{plainText(h.sections[0].text)}</span>
+                  )}
+                </span>
+                <span className={`gww-holiday-in caps num ${days <= 1 ? "soon" : ""}`}>{countdown(days)}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+      <Related targets={HOLIDAYS_SITE.related} />
+      <SourceLine sources={HOLIDAYS.flatMap((h) => h.sources)} />
+    </article>
+  );
+}
+
+export function HolidayPage({ h, headingRef }: { h: Holiday; headingRef: HeadingRef }) {
+  const prefix = `gww-${h.id}`;
+  const now = useNow(60 * 60_000);
+  const days = nextYearly([h], new Date(now))!.in;
+  return (
+    <article className="gww-page" style={{ "--site": h.color } as CSSProperties}>
+      <GovNav at="holidays" />
+      <Banner
+        icon={<DateBadge h={h} />}
+        crumbs={[...govCrumbs("holidays"), { label: "Holidays", target: "site:holidays" }]}
+        title={h.name}
+        lead={
+          <>
+            {h.summary}{" "}
+            <span className={`gww-holiday-in caps num ${days <= 1 ? "soon" : ""}`}>
+              {h.when} · {countdown(days)}
+            </span>
+          </>
+        }
+        headingRef={headingRef}
+      />
+      {h.quotes.slice(0, 1).map((q) => (
+        <SourcedQuote key={q.text} {...q} />
+      ))}
+      <Toc sections={h.sections} prefix={prefix} />
+      {h.sections.map((sec, i) => (
+        <SectionBlock key={sec.heading} sec={sec} id={`${prefix}-${i}`} />
+      ))}
+      {h.quotes.slice(1).map((q) => (
+        <SourcedQuote key={q.text} {...q} />
+      ))}
+      <Related targets={h.related} />
+      <SourceLine sources={h.sources} quoted={h.quotes.length ? "Decrees, carols, tips and broadcasts are quoted from the game." : undefined} />
+      <Pager list={HOLIDAYS.map((x) => `holiday:${x.id}`)} at={HOLIDAYS.indexOf(h)} noun="holiday" />
     </article>
   );
 }
@@ -1028,11 +1166,26 @@ export function DirPage({ id, headingRef, logText }: { id: keyof typeof DIRS; he
         </div>
       )}
       {id === "corps" && (
-        <div className="gww-sites">
-          {COMPANIES.map((c) => (
-            <CompanyTile key={c.id} c={c} />
-          ))}
-        </div>
+        <>
+          <section className="gww-chapter">
+            <h3>Mega-corporations</h3>
+            <p className="gww-chapter-sub">The Federation's giants, each with a hand in the war effort.</p>
+            <div className="gww-sites">
+              {COMPANIES.filter((c) => !c.minor).map((c) => (
+                <CompanyTile key={c.id} c={c} />
+              ))}
+            </div>
+          </section>
+          <section className="gww-chapter">
+            <h3>Smaller corporations</h3>
+            <p className="gww-chapter-sub">Contractors, makers and the brands on the colony cities' signs and billboards.</p>
+            <div className="gww-sites">
+              {COMPANIES.filter((c) => c.minor).map((c) => (
+                <CompanyTile key={c.id} c={c} />
+              ))}
+            </div>
+          </section>
+        </>
       )}
       <Related
         title="Elsewhere on the G.W.W."

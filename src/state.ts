@@ -10,7 +10,8 @@ export type GwwPage =
   | { kind: "manual"; id: string }
   | { kind: "ministry"; id: string }
   | { kind: "company"; id: string }
-  | { kind: "site"; id: "log" | "gov" | "citizens" }
+  | { kind: "site"; id: "log" | "gov" | "citizens" | "holidays" }
+  | { kind: "holiday"; id: string }
   | { kind: "dir"; id: "manuals" | "gov" | "corps" }
   /** What the address bar opens for an address no site answers at. */
   | { kind: "missing"; address: string };

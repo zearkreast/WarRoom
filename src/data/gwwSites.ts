@@ -251,6 +251,8 @@ export interface Company {
   /** A Training Manual Tip about the company, quoted. */
   quote?: string;
   showcase?: { image: string; alt: string };
+  /** A smaller business: listed under the mega-corporations, and not on the G.W.W. home. */
+  minor?: boolean;
   sections: SiteSection[];
   ties?: Tie[];
   related?: string[];
@@ -512,6 +514,488 @@ export const COMPANIES: Company[] = [
     related: ["ministry:expansion"],
     source: wiki("Ulterior"),
   },
+  {
+    id: "martian-armory",
+    name: "Martian Armory",
+    address: "se://martian.armory",
+    trade: "Arms",
+    summary: "The weapons maker behind the arms made famous by the Obedient Democracy Support Troopers cartoon.",
+    color: "#6f9a4a",
+    sections: [
+      {
+        heading: "The armory",
+        text: "A megacorporation weapons producer for the Federation, supplying the Helldivers with weapons, several of them made famous by the Obedient Democracy Support Troopers cartoon.",
+        products: ["MA5C Assault Rifle", "M7S SMG", "M90A Shotgun", "M6C/SOCOM Pistol"],
+      },
+      {
+        heading: "From another war",
+        text: "Added with the Obedient Democracy Support Troopers Legendary Warbond, a Halo crossover. Unlike [[company:stahl-arms|Ståhl Arms]] in the Killzone crossover before it, Martian Armory does not exist in Halo canon; it is likely based on Misriah Armory.",
+      },
+    ],
+    related: ["company:stahl-arms", "company:morgunson"],
+    source: wiki("Martian Armory"),
+  },
+  {
+    id: "st-construction",
+    name: "ST Construction",
+    address: "se://st.construction",
+    trade: "Arms",
+    summary: "The armament maker of the 40-K weapons, active through both Galactic Wars.",
+    color: "#c8a03c",
+    minor: true,
+    sections: [
+      {
+        heading: "Armaments",
+        text: "An armament manufacturer within the Federation, active during both Galactic Wars. Some of the alloys in its weapons include metals mined from the fallen planet Chara. The Meltagun's armory description ends: “Produced by ST Construction.”",
+        products: [
+          "R/40-K Hot-Shot Marksman Rifle",
+          "P/40-K Bolt Pistol",
+          "40-K Meltagun",
+          "G/40-K Melta Mine",
+          "TG-8 Sharpshooter",
+          "TG-122 Demo-Trooper",
+        ],
+      },
+      {
+        heading: "Behind the name",
+        text: "A reference to the Standard Template Constructs of Warhammer 40,000: technological time capsules that preserve blueprints from its Dark Age of Technology.",
+      },
+    ],
+    related: ["company:morgunson", "company:martian-armory"],
+    source: wiki("Minor Corporations", "Minor_Corporations#ST_Construction"),
+  },
+  {
+    id: "battlefield-systems",
+    name: "Battlefield Systems",
+    address: "se://battlefield.systems",
+    trade: "Defense software",
+    summary: "The contractor that seemingly built the software tracking the Galactic War.",
+    color: "#5fb6c9",
+    minor: true,
+    sections: [
+      {
+        heading: "Battlefield tracking",
+        text: "A contracted defense service within the Federation, which seemingly developed the software used to track the [[manual:basics|Galactic War]].",
+      },
+      {
+        heading: "The duplicate count",
+        text: "During Major Order A1-5-2 in 2184, an event dispatch announced that a software issue had duplicated the enemy kills reported towards a previous Major Order: “Battlefield Systems regrets to inform all Helldivers that a software issue has resulted in duplicate reporting of enemies killed during a previous Major Order. The issue has since been resolved. Users should anticipate longer times to reach target numbers of enemies to kill or dismantle. With this issue resolved, rest assured that battlefield tracking will now return to perfect functioning.”",
+      },
+    ],
+    related: ["manual:campaigns", "company:force-sentiment"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Battlefield_Systems"),
+  },
+  {
+    id: "force-sentiment",
+    name: "Force Sentiment Surveys",
+    address: "se://force.sentiment",
+    trade: "Surveys",
+    summary: "The pollster that found unit morale at 100% during the Battle for Super Earth.",
+    color: "#9aa7ff",
+    minor: true,
+    sections: [
+      {
+        heading: "Morale, measured",
+        text: "Conducts surveys of the Federation's citizens. In the outcome of Major Order A2-5-4, during the Battle for [[planet:Super Earth|Super Earth]]: “Yet the spirit of our soldiers remains unbreakable. Even amidst such devastating sacrifice, Force Sentiment Surveys confirm that unit morale remains at 100%.”",
+      },
+    ],
+    related: ["company:battlefield-systems", "site:gov"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Force_Sentiment_Surveys"),
+  },
+  {
+    id: "terraforming",
+    name: "Super Earth Terraforming Company",
+    address: "se://terraforming.co",
+    trade: "Terraforming",
+    summary: "The surveyors who readied new planets for the Federation after the First Galactic War.",
+    color: "#c97a3c",
+    minor: true,
+    sections: [
+      {
+        heading: "The Great Expansion",
+        text: "Responsible for surveying new planets after the end of the First Galactic War, preparing them for assimilation into the Federation. The GS-11 Democracy's Deputy armour is “inspired by the trailblazing agents of the Super Earth Terraforming Company. These rugged adventurers surveyed hostile new planets during the post-GW1 Great Expansion era, preparing the untamed frontier for rapid and efficient assimilation.”",
+        products: ["GS-11 Democracy's Deputy"],
+      },
+    ],
+    related: ["ministry:expansion"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Super_Earth_Terraforming_Company"),
+  },
+  {
+    id: "sumy",
+    name: "SUMY Corp.",
+    address: "se://sumy.corp",
+    trade: "Frozen yogurt",
+    summary: "The frozen yogurt maker with its own Helldiver armour.",
+    color: "#e86fa8",
+    minor: true,
+    sections: [
+      {
+        heading: "Ambassador of the Brand",
+        text: "A frozen yogurt company within the Federation. As part of a highly successful marketing campaign for its products, it made the promotional TR-7 Ambassador of the Brand armour.",
+        products: ["TR-7 Ambassador of the Brand"],
+      },
+      { heading: "Behind the name", text: "Possibly a reference to Sony Interactive Entertainment, the game's publisher." },
+    ],
+    source: wiki("Minor Corporations", "Minor_Corporations#SUMY_Corp."),
+  },
+  {
+    id: "patriot-hut",
+    name: "Patriot Hut",
+    address: "se://patriot.hut",
+    trade: "Fast food",
+    summary: "The food chain advertised across the Super Earth Metropolis.",
+    color: "#e8462e",
+    minor: true,
+    slogan: "Free your mouth.",
+    sections: [
+      {
+        heading: "On the menu",
+        text: "A food chain advertised in the Super Earth Metropolis. Its billboards: “Free your mouth. Wow! Over four kinds of meat. Now available at Patriot Hut.” and “Flame-grilled Helldawgs. Comin' in hot! Wow! New all-beef bun! Patriot Hut.”",
+        products: ["Helldawgs"],
+      },
+    ],
+    ads: ["patriot-hut-helldawgs", "patriot-hut-burger"],
+    related: ["company:superwaffle", "company:bug-fest"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Patriot_Hut"),
+  },
+  {
+    id: "juicetice",
+    name: "Juicetice",
+    address: "se://juicetice.drinks",
+    trade: "Soft drinks",
+    summary: "Artificial energy juice drinks, made with real synthetic fruit juice.",
+    color: "#ff7a59",
+    minor: true,
+    slogan: "Juicetice: assault your senses!",
+    sections: [
+      {
+        heading: "The range",
+        text: "A soft drink company advertised in the Super Earth Metropolis: “Liberate your thirst. Juicetice. Made with real synthetic fruit juice!”",
+        products: ["Lemonizer", "Liberty Lime", "Berry Barrage"],
+      },
+      { heading: "Behind the name", text: "A play on the word “justice”." },
+    ],
+    ads: ["juicetice-lemon-lime", "juicetice-berry-barrage"],
+    related: ["company:freegum", "company:cornstitution"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Juicetice"),
+  },
+  {
+    id: "freegum",
+    name: "Freegum",
+    address: "se://freegum.co",
+    trade: "Chewing gum",
+    summary: "The chewing gum you can't get enough of.",
+    color: "#ff5c8a",
+    minor: true,
+    slogan: "You can't get enough!",
+    sections: [
+      {
+        heading: "Something to chew on",
+        text: "A chewing gum maker advertised in the Super Earth Metropolis. Its billboards: “Something to chew on… Freegum Strawberry flavor.”, “Freegum. Strawberry flavor. You need it right now!” and “Freegum. More! More! More!”",
+        products: ["Freegum Strawberry"],
+      },
+      { heading: "Behind the name", text: "A play on the word “freedom”." },
+    ],
+    ads: ["freegum", "freegum-strawberry"],
+    related: ["company:juicetice", "company:cornstitution"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Freegum"),
+  },
+  {
+    id: "cornstitution",
+    name: "Cornstitution",
+    address: "se://cornstitution.cereal",
+    trade: "Cereal",
+    summary: "The cereal brand. It's got corn!",
+    color: "#f2b632",
+    minor: true,
+    slogan: "It's got corn!",
+    sections: [
+      { heading: "Breakfast", text: "A cereal brand advertised in the Super Earth Metropolis." },
+      { heading: "Behind the name", text: "A play on the word “constitution”." },
+    ],
+    ads: ["cornstitution"],
+    related: ["company:superwaffle", "company:freegum"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Cornstitution"),
+  },
+  {
+    id: "superwaffle",
+    name: "Superwaffle Dispensary",
+    address: "se://superwaffle.dispensary",
+    trade: "Restaurants",
+    summary: "Waffles. Breakfast, all day, every day.",
+    color: "#f4c20d",
+    logo: "superwaffle",
+    minor: true,
+    slogan: "If you're hungry, we're open!",
+    showcase: { image: "superwaffle", alt: "Superwaffle Dispensary: if you're hungry, we're open! Breakfast, all day, every day." },
+    sections: [
+      {
+        heading: "Open 24/7",
+        text: "A 24/7 breakfast restaurant specializing in waffles, advertised in the Super Earth Metropolis.",
+      },
+      { heading: "Behind the name", text: "A reference to the round-the-clock waffle chain Waffle House." },
+    ],
+    related: ["company:patriot-hut", "company:cornstitution"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Superwaffle_Dispensary"),
+  },
+  {
+    id: "bug-fest",
+    name: "Bug Fest",
+    address: "se://bug.fest",
+    trade: "Restaurants",
+    summary: "Burgers, BBQ, kebabs and wok, in the colony cities.",
+    color: "#c9302c",
+    logo: "sign-bug-fest",
+    minor: true,
+    sections: [
+      {
+        heading: "Burger, BBQ, kebab, wok",
+        text: "A chain restaurant found in Super Earth's colonial cities. Its menu includes burgers, BBQ, kebabs and wok dishes; whether it has any connection to the Terminids is unclear.",
+      },
+      {
+        heading: "The party",
+        text: "Bug Fest sponsored the party on [[planet:Widow's Harbor|Widow's Harbor]].",
+      },
+    ],
+    related: ["company:patriot-hut", "company:superwaffle"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Bug_Fest"),
+  },
+  {
+    id: "democroffee",
+    name: "Democroffee",
+    address: "se://democroffee.cafe",
+    trade: "Cafés",
+    summary: "The colony cities' coffee, since 2184.",
+    color: "#a0673a",
+    logo: "sign-democroffee",
+    minor: true,
+    slogan: "Drink coffee now, wake up and smell the freedom.",
+    sections: [
+      {
+        heading: "It's coffee time",
+        text: "A café advertised in Super Earth's colonial cities, established in 2184. It serves coffee. Ahead of Liberty Day 2186, High Command asked the Helldivers whether they take their [[company:libertea|liber-tea]] or democroffee.",
+      },
+      { heading: "Behind the name", text: "A play on the word “democracy”." },
+    ],
+    ads: ["democroffee-coffee-time", "democroffee-drink-now"],
+    related: ["company:libertea", "holiday:liberty-day"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Democroffee_Cafe"),
+  },
+  {
+    id: "libertea",
+    name: "LiberTea",
+    address: "se://libertea.store",
+    trade: "Tea",
+    summary: "Tea flavoured tea, for calming, patriotic thoughts.",
+    color: "#5aa86b",
+    logo: "sign-libertea",
+    minor: true,
+    slogan: "Tea flavoured tea.",
+    sections: [
+      {
+        heading: "The LiberTea Store",
+        text: "A chain tea store found in Super Earth's colonial cities, selling tea products: among them a herbal tea for calming, patriotic thoughts, sold as a voter's paradise.",
+      },
+      { heading: "Behind the name", text: "A play on the word “liberty”." },
+    ],
+    ads: ["libertea", "libertea-tea"],
+    related: ["company:democroffee"],
+    source: wiki("Minor Corporations", "Minor_Corporations#LiberTea_Store"),
+  },
+  {
+    id: "seafood",
+    name: "SEAFood",
+    address: "se://seaf.food",
+    trade: "Seafood",
+    summary: "Caught fresh, likely with a great deal of high explosive.",
+    color: "#3d8fd1",
+    logo: "sign-seafood",
+    minor: true,
+    slogan: "Caught fresh.",
+    sections: [
+      {
+        heading: "Caught fresh",
+        text: "A chain seafood store or restaurant advertised in Super Earth's colonial cities. Going by its advertising in the megacities, its seafood is likely procured with large amounts of high explosives.",
+      },
+      {
+        heading: "Behind the name",
+        text: "“SEAF” and “food” together, and a pun on seafood. “Where there's a will, there's a whale” plays on “where there's a will, there's a way”.",
+      },
+    ],
+    ads: ["seafood-caught-fresh", "seafood-whale"],
+    related: ["company:patriot-hut"],
+    source: wiki("Minor Corporations", "Minor_Corporations#SEAFOOD"),
+  },
+  {
+    id: "super-clean",
+    name: "Super Clean",
+    address: "se://super.clean",
+    trade: "Cleaning products",
+    summary: "For oil stains, spores, bile and blood.",
+    color: "#4fc3e8",
+    logo: "sign-super-clean",
+    minor: true,
+    sections: [
+      {
+        heading: "Two ways to clean",
+        points: [
+          "Super Clean Laundry: either a chain laundromat in Super Earth's colonial cities or a brand of laundry detergent.",
+          "Super Clean Stain Remover: a stain removal spray for oil stains, spores, bile and blood. Used directly on human skin, it makes it melt.",
+        ],
+      },
+    ],
+    ads: ["super-clean", "super-clean-stain-remover"],
+    related: ["company:back-in-line"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Super_Clean_Laundry"),
+  },
+  {
+    id: "voting-voyager",
+    name: "Voting Voyager",
+    address: "se://voting.voyager",
+    trade: "Interstellar travel",
+    summary: "Interstellar travel experts. Believe the unbelievable.",
+    color: "#7b6cf0",
+    logo: "sign-voting-voyager",
+    minor: true,
+    slogan: "Believe the unbelievable.",
+    sections: [
+      {
+        heading: "Travel experts",
+        text: "An interstellar travel service advertised in Super Earth's colonial cities, claiming to be interstellar travel experts. It also advertises in the Super Earth Metropolis.",
+      },
+    ],
+    ads: ["voting-voyager"],
+    related: ["company:acar"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Voting_Voyager"),
+  },
+  {
+    id: "inka",
+    name: "INKA Interior",
+    address: "se://inka.interior",
+    trade: "Furniture",
+    summary: "Rebuilding your world one piece at a time.",
+    color: "#2f6fd6",
+    logo: "sign-inka",
+    minor: true,
+    slogan: "Rebuilding your world one piece at a time.",
+    sections: [
+      { heading: "Interior design", text: "A business advertised in Super Earth's cities, including the Super Earth Metropolis. It sells furniture." },
+      { heading: "Behind the name", text: "Possibly a reference to IKEA." },
+    ],
+    ads: ["inka-rebuilding"],
+    related: ["company:spearhead"],
+    source: wiki("Minor Corporations", "Minor_Corporations#INKA_Interior"),
+  },
+  {
+    id: "spearhead",
+    name: "Spearhead Real Estate",
+    address: "se://spearhead.homes",
+    trade: "Real estate",
+    summary: "Shield apartment complexes, with views to die for.",
+    color: "#d2a24c",
+    minor: true,
+    slogan: "Putting you first.",
+    sections: [
+      {
+        heading: "Book a viewing",
+        text: "A real estate company advertised on Super Earth: “Views to die for! Book a viewing for our new shield apartment complexes today. Putting You first: Spearhead Real Estate.”",
+      },
+    ],
+    ads: ["spearhead-real-estate"],
+    related: ["company:inka"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Spearhead_Real_Estate"),
+  },
+  {
+    id: "acar",
+    name: "ACAR",
+    address: "se://acar.auto",
+    trade: "Cars",
+    summary: "The car maker of the Super Earth Metropolis.",
+    color: "#e0e4ea",
+    minor: true,
+    slogan: "Drive anywhere.",
+    sections: [
+      {
+        heading: "Choose your path",
+        text: "A car manufacturer advertised in the Super Earth Metropolis, with the lines “Choose your path. ACAR.” and “Drive anywhere. ACAR.”",
+      },
+      { heading: "Behind the name", text: "A play on “a car”." },
+    ],
+    ads: ["acar-drive-anywhere"],
+    related: ["company:voting-voyager", "company:justos"],
+    source: wiki("Minor Corporations", "Minor_Corporations#ACAR"),
+  },
+  {
+    id: "justos",
+    name: "JustOS",
+    address: "se://just.os",
+    trade: "Smartphones",
+    summary: "The smartphone maker behind the Rectangle 8.",
+    color: "#9fb4c8",
+    minor: true,
+    slogan: "Introducing the Rectangle 8.",
+    sections: [{ heading: "The Rectangle 8", text: "A smartphone manufacturer advertised in the Super Earth Metropolis.", products: ["Rectangle 8"] }],
+    ads: ["justos-rectangle-8"],
+    related: ["company:acar"],
+    source: wiki("Minor Corporations", "Minor_Corporations#JustOS"),
+  },
+  {
+    id: "truth-cram",
+    name: "T. Ruth's Cram School",
+    address: "se://truth.cram",
+    trade: "Education",
+    summary: "Sustainable re-education. Admissions are open.",
+    color: "#e3c04a",
+    logo: "sign-truth-cram",
+    minor: true,
+    slogan: "Dare to dream.",
+    sections: [
+      {
+        heading: "Admissions open",
+        text: "A cram school franchise found in Super Earth's colonial cities. It offers sustainable re-education, and admissions are currently open.",
+      },
+      { heading: "Behind the name", text: "A play on the word “truth”." },
+    ],
+    ads: ["truth-cram-school"],
+    related: ["ministry:truth"],
+    source: wiki("Minor Corporations", "Minor_Corporations#T._Ruth's_Cram_School"),
+  },
+  {
+    id: "back-in-line",
+    name: "Back in Line",
+    address: "se://backinline.salon",
+    trade: "Hair salons",
+    summary: "All regulation styles.",
+    color: "#d0d6de",
+    logo: "sign-back-in-line",
+    minor: true,
+    sections: [
+      {
+        heading: "All regulation styles",
+        text: "A chain salon found in Super Earth's colonial cities. According to its sign, it offers every hairstyle approved by the Super Earth Government.",
+      },
+    ],
+    related: ["company:super-clean", "site:gov"],
+    source: wiki("Minor Corporations", "Minor_Corporations#Back_in_Line_Hair_Salon_All_Regulation_Styles"),
+  },
+  {
+    id: "hearty-hovel",
+    name: "The Hearty Hovel",
+    address: "se://hearty.hovel",
+    trade: "Food",
+    summary: "The food business behind the Fried Rib PizzaRito.",
+    color: "#c47b3a",
+    minor: true,
+    sections: [
+      {
+        heading: "The PizzaRito",
+        text: "A food-production business known for at least one product. From the game: “The Hearty Hovel debuts new Fried Rib PizzaRito. Initial reception is unanimously divisive.”",
+        products: ["Fried Rib PizzaRito"],
+      },
+    ],
+    related: ["company:patriot-hut"],
+    source: wiki("Minor Corporations", "Minor_Corporations#The_Hearty_Hovel"),
+  },
 ];
 
 /** `by` is the advertiser's site, as a link target; `brand` names an advertiser without one. */
@@ -529,42 +1013,278 @@ export const ADS: Ad[] = [
   { file: "humanity-franchisement", alt: "Ministry of Humanity: franchisement is freedom.", shape: "tall", by: "ministry:humanity" },
   { file: "expansion-work-songs", alt: "Ministry of Expansion: democratic work songs encouraged.", shape: "tall", by: "ministry:expansion" },
   { file: "helldivers-take-a-life", alt: "Join the Helldivers today: take a life, save a life.", shape: "wide", by: "ministry:defense" },
-  { file: "patriot-hut-helldawgs", alt: "Patriot Hut: flame-grilled Helldawgs, comin' in hot.", shape: "wide", brand: "Patriot Hut" },
-  { file: "patriot-hut-burger", alt: "Patriot Hut: free your mouth.", shape: "tall", brand: "Patriot Hut" },
-  { file: "libertea", alt: "LiberTea: a voter's paradise, a herbal tea for calming, patriotic thoughts.", shape: "tall", brand: "LiberTea" },
-  { file: "libertea-tea", alt: "LiberTea: tea flavoured tea.", shape: "wide", brand: "LiberTea" },
-  { file: "cornstitution", alt: "Cornstitution cereal: it's got corn!", shape: "wide", brand: "Cornstitution" },
-  { file: "freegum", alt: "Freegum: you can't get enough!", shape: "tall", brand: "Freegum" },
-  { file: "freegum-strawberry", alt: "Freegum strawberry flavour: you need it right now!", shape: "wide", brand: "Freegum" },
-  { file: "democroffee-coffee-time", alt: "Democroffee: it's coffee time.", shape: "tall", brand: "Democroffee" },
-  { file: "democroffee-drink-now", alt: "Democroffee: drink coffee now, wake up and smell the freedom.", shape: "tall", brand: "Democroffee" },
-  { file: "voting-voyager", alt: "Voting Voyager: believe the unbelievable.", shape: "wide", brand: "Voting Voyager" },
-  { file: "super-clean", alt: "Super Clean nuclear detergent.", shape: "tall", brand: "Super Clean" },
-  { file: "super-clean-stain-remover", alt: "Super Clean stain remover, for oil stains, spores, bile and blood.", shape: "wide", brand: "Super Clean" },
-  { file: "truth-cram-school", alt: "T. Ruth's Cram School: dare to dream.", shape: "tall", brand: "T. Ruth's Cram School" },
-  { file: "juicetice-lemon-lime", alt: "Juicetice Lemonizer and Liberty Lime: hurts so good.", shape: "wide", brand: "Juicetice" },
-  { file: "juicetice-berry-barrage", alt: "Juicetice Berry Barrage: coming in thirst place.", shape: "tall", brand: "Juicetice" },
-  { file: "acar-drive-anywhere", alt: "ACAR: drive anywhere.", shape: "wide", brand: "ACAR" },
-  { file: "seafood-caught-fresh", alt: "SEAFood: caught fresh.", shape: "tall", brand: "SEAFood" },
-  { file: "seafood-whale", alt: "SEAFood: where there's a will, there's a whale.", shape: "wide", brand: "SEAFood" },
-  { file: "inka-rebuilding", alt: "INKA Interior: rebuilding your world one piece at a time.", shape: "wide", brand: "INKA Interior" },
-  { file: "spearhead-real-estate", alt: "Spearhead Real Estate: views to die for. Putting you first.", shape: "tall", brand: "Spearhead Real Estate" },
-  { file: "justos-rectangle-8", alt: "JustOS: introducing the Rectangle 8.", shape: "wide", brand: "JustOS" },
+  { file: "patriot-hut-helldawgs", alt: "Patriot Hut: flame-grilled Helldawgs, comin' in hot.", shape: "wide", by: "company:patriot-hut" },
+  { file: "patriot-hut-burger", alt: "Patriot Hut: free your mouth.", shape: "tall", by: "company:patriot-hut" },
+  { file: "libertea", alt: "LiberTea: a voter's paradise, a herbal tea for calming, patriotic thoughts.", shape: "tall", by: "company:libertea" },
+  { file: "libertea-tea", alt: "LiberTea: tea flavoured tea.", shape: "wide", by: "company:libertea" },
+  { file: "cornstitution", alt: "Cornstitution cereal: it's got corn!", shape: "wide", by: "company:cornstitution" },
+  { file: "freegum", alt: "Freegum: you can't get enough!", shape: "tall", by: "company:freegum" },
+  { file: "freegum-strawberry", alt: "Freegum strawberry flavour: you need it right now!", shape: "wide", by: "company:freegum" },
+  { file: "democroffee-coffee-time", alt: "Democroffee: it's coffee time.", shape: "tall", by: "company:democroffee" },
+  { file: "democroffee-drink-now", alt: "Democroffee: drink coffee now, wake up and smell the freedom.", shape: "tall", by: "company:democroffee" },
+  { file: "voting-voyager", alt: "Voting Voyager: believe the unbelievable.", shape: "wide", by: "company:voting-voyager" },
+  { file: "super-clean", alt: "Super Clean nuclear detergent.", shape: "tall", by: "company:super-clean" },
+  { file: "super-clean-stain-remover", alt: "Super Clean stain remover, for oil stains, spores, bile and blood.", shape: "wide", by: "company:super-clean" },
+  { file: "truth-cram-school", alt: "T. Ruth's Cram School: dare to dream.", shape: "tall", by: "company:truth-cram" },
+  { file: "juicetice-lemon-lime", alt: "Juicetice Lemonizer and Liberty Lime: hurts so good.", shape: "wide", by: "company:juicetice" },
+  { file: "juicetice-berry-barrage", alt: "Juicetice Berry Barrage: coming in thirst place.", shape: "tall", by: "company:juicetice" },
+  { file: "acar-drive-anywhere", alt: "ACAR: drive anywhere.", shape: "wide", by: "company:acar" },
+  { file: "seafood-caught-fresh", alt: "SEAFood: caught fresh.", shape: "tall", by: "company:seafood" },
+  { file: "seafood-whale", alt: "SEAFood: where there's a will, there's a whale.", shape: "wide", by: "company:seafood" },
+  { file: "inka-rebuilding", alt: "INKA Interior: rebuilding your world one piece at a time.", shape: "wide", by: "company:inka" },
+  { file: "spearhead-real-estate", alt: "Spearhead Real Estate: views to die for. Putting you first.", shape: "tall", by: "company:spearhead" },
+  { file: "justos-rectangle-8", alt: "JustOS: introducing the Rectangle 8.", shape: "wide", by: "company:justos" },
 ];
 
 export interface Holiday {
+  id: string;
   name: string;
   /** 1-12. */
   month: number;
   day: number;
+  /** The days it's kept, as the calendar gives them. */
+  when: string;
+  address: string;
+  color: string;
+  /** One line for its card. */
+  summary: string;
+  /** The game's own words about it, quoted, each with where it's from. */
+  quotes: { from: string; text: string }[];
+  sections: SiteSection[];
+  related: string[];
+  sources: Source[];
 }
 
 export const HOLIDAYS: Holiday[] = [
-  { name: "Malevelon Creek Memorial Day", month: 4, day: 3 },
-  { name: "Avengement Day", month: 10, day: 14 },
-  { name: "Liberty Day", month: 10, day: 26 },
-  { name: "Festival of Reckoning", month: 12, day: 25 },
+  {
+    id: "malevelon-creek",
+    name: "Malevelon Creek Memorial Day",
+    month: 4,
+    day: 3,
+    when: "3 April",
+    address: "se://gov/holidays/malevelon-creek",
+    color: "#e0323c",
+    summary: "Three minutes of the lunch break, in remembrance of those who died freeing Malevelon Creek.",
+    quotes: [
+      {
+        from: "Presidential decree",
+        text: "The President of Super Earth has officially recognized this day as Malevelon Creek Memorial Day. Every year on this day, Super Earth citizens will unite for a full 3 minutes of their lunch break in solemn remembrance of those who gave their lives to free Malevelon Creek.",
+      },
+    ],
+    sections: [
+      {
+        heading: "The Creek",
+        text: "The day commemorates the countless Helldivers who died in the effort to liberate [[planet:Malevelon Creek|Malevelon Creek]], a jungle world fought over against the Automatons. The planet became the target of Major Order A1-4-1, and its liberation was won in mere hours.",
+      },
+      {
+        heading: "The decree",
+        text: "After the campaign, a presidential decree sent to every Super Destroyer as a dispatch set 3 April as Malevelon Creek Memorial Day, and every Helldiver was awarded the Fallen Hero's Vengeance cape.",
+        products: ["Fallen Hero's Vengeance"],
+      },
+      {
+        heading: "Remembrance",
+        text: "Every year on 3 April, citizens give three minutes of their lunch break to solemn remembrance. The day's posters read “Remember the Creek” and “Remember the Fallen”.",
+      },
+      {
+        heading: "The memorial",
+        text: "On 21 October 2186, in the run-up to [[holiday:liberty-day|Liberty Day]], construction of a Malevelon Creek Memorial & Interrogation Center for Human Rights was ordered. Its materials were to come from key planets on each front in Major Order A3-10-5, but only one of the objectives was reached.",
+      },
+      {
+        heading: "Behind the day",
+        text: "Players had dubbed the planet “space Vietnam”, for its thick jungle and the Automatons firing through it from every direction. Arrowhead Game Studios honoured the meme by making the Creek part of the game's official lore.",
+      },
+    ],
+    related: ["holiday:liberty-day", "site:gov"],
+    sources: [WIKI.malevelonDay],
+  },
+  {
+    id: "avengement",
+    name: "Avengement Day",
+    month: 10,
+    day: 14,
+    when: "14 October, on Seyshel Beach",
+    address: "se://gov/holidays/avengement",
+    color: "#9b6cf0",
+    summary: "Seyshel Beach's own holiday, for the day a small cohort of Helldivers set it free.",
+    quotes: [],
+    sections: [
+      {
+        heading: "Seyshel Beach",
+        text: "[[planet:Seyshel Beach|Seyshel Beach]] first fell to the Illuminate during their massive incursion on all three fronts. Once the invasions were stopped and the Helldivers' focus moved to [[planet:Oshaune|Oshaune]] and [[manual:gloom|the Gloom]], a small cohort of Helldivers stayed behind on the planet.",
+      },
+      {
+        heading: "New Alexandria",
+        text: "The planet had no real strategic significance, yet High Command congratulated the cohort on liberating its mega city, New Alexandria. After a slow battle of six weeks, Seyshel Beach was free.",
+      },
+      {
+        heading: "The holiday",
+        text: "Its citizens made 14 October, the day of its liberation, a planetary holiday to remember the planets lost to humanity's foes: Avengement Day. It is kept on Seyshel Beach only.",
+      },
+      { heading: "Behind the name", text: "New Alexandria is a reference to the city of the same name in Halo: Reach." },
+    ],
+    related: ["holiday:liberty-day", "site:gov"],
+    sources: [wiki("Seyshel Beach")],
+  },
+  {
+    id: "liberty-day",
+    name: "Liberty Day",
+    month: 10,
+    day: 26,
+    when: "26 October",
+    address: "se://gov/holidays/liberty-day",
+    color: "#ffd23f",
+    summary: "The Federation's most important holiday, for the day Managed Democracy was presented.",
+    quotes: [
+      { from: "Training manual tip", text: "Super Earth has many holidays, but the most important is October 26th-Liberty Day!" },
+      { from: "Ship ticker", text: "Humanity everywhere rejoices as we celebrate Liberty Day!" },
+      {
+        from: "Liberty Day broadcast",
+        text: "This Liberty Day, become the patriot your family needs. When your children sprint to the Liberty Day Pyre to pull presents from the flames, make sure they get the gift they deserve. The gift of Helldivers. Because Super Earth isn't just about the heroes on the front. It's about the heroes right here at home.",
+      },
+    ],
+    sections: [
+      {
+        heading: "The day",
+        text: "Kept every 26 October by all citizens of Super Earth, it marks the day the Democratic Council presented the first and final draft of [[site:gov|Managed Democracy]]. It is the most important holiday in the whole Federation.",
+      },
+      {
+        heading: "The Liberty Day Pyre",
+        text: "An annual tradition: the enemies of democracy are set ablaze, and beneath them lie presents for every child of Super Earth, of any [[site:citizens|class]], to pull from the flames.",
+      },
+      {
+        heading: "Liberty Day 2184",
+        text: "The first Liberty Day of the Second Galactic War brought new gear for the Helldivers.",
+        products: ["DP-00 Tactical armour", "R-2124 Constitution"],
+      },
+      {
+        heading: "Liberty Day 2185",
+        timeline: [
+          {
+            when: "Before",
+            text: "Less than two weeks ahead of the day, the Helldivers seized unsanctioned explosives from Automaton planets in Major Order A2-10-3.",
+          },
+          { when: "26 Oct 2185", text: "Every Helldiver got a single use of the CQC-1 One True Flag stratagem per mission." },
+          {
+            when: "26 Oct 2185",
+            text: "The seized explosives made possible a 24-Hour Pyrotechnics Display over [[planet:Super Earth|Super Earth]]'s atmosphere, and Helldivers were encouraged to warp there to see it.",
+          },
+          {
+            when: "Major Order",
+            text: "Kill 40 million enemies using only the R-2124 Constitution (A2-10-5). Its reward was the new Liberty Day cape, the Veridical Ideology.",
+          },
+        ],
+      },
+      {
+        heading: "Liberty Day 2186",
+        timeline: [
+          {
+            when: "6 Oct 2186",
+            text: "Celebratory mirthfulness drops below the regulatory threshold, and High Command authorizes the Liberty Day Party Planning Protocol: citizens are required to host Liberty Day parties and document their festivities. “Not being a party person” is not a recognized exemption.",
+          },
+          { when: "10 Oct 2186", text: "Super Destroyer Appreciation Day." },
+          {
+            when: "12 Oct 2186",
+            text: "High Command asks how the Helldivers take their [[company:libertea|liber-tea]], or [[company:democroffee|democroffee]].",
+          },
+          {
+            when: "21 Oct 2186",
+            text: "Construction of the [[holiday:malevelon-creek|Malevelon Creek]] Memorial & Interrogation Center for Human Rights is ordered. The [[ministry:truth|Ministry of Truth]] then orders enough kills to film combat footage for “Democratic Sniper”, its reenactment of the battle fought by Kurt Calhoun.",
+          },
+          {
+            when: "22 Oct 2186",
+            text: "High Command releases the Liberty Day 2186 Party Pack: printable bunting, a game like darts, a colouring page, decorations, a DIY Helldiver mask, event highlights and democratic trivia.",
+          },
+          {
+            when: "26 Oct 2186",
+            text: "Every Super Destroyer is decorated for the day with flags, rugs and party cups, and Helldivers get the temporary Eagle Fly By and Orbital Confetti stratagems: tactically useless, full of patriotism. A new game, Adopt a SEAF, has Helldivers look after their own SEAF soldier and send them on missions. At the end of the day every Helldiver receives the AR-23L Liberator.",
+          },
+        ],
+      },
+      {
+        heading: "Behind the day",
+        text: "26 October is the day Starship Troopers was published, in 1959. Arrowhead Game Studios has marked it every year since the first Helldivers.",
+      },
+    ],
+    related: ["site:gov", "holiday:malevelon-creek", "company:democroffee"],
+    sources: [WIKI.libertyDay],
+  },
+  {
+    id: "reckoning",
+    name: "Festival of Reckoning",
+    month: 12,
+    day: 25,
+    when: "25 to 28 December",
+    address: "se://gov/holidays/reckoning",
+    color: "#4fc3e8",
+    summary: "The winter holiday of “love, family, and the pursuit of peace”, and of the Dissident Execution Parade.",
+    quotes: [
+      {
+        from: "Carol: Here They Come a'Reckonin'",
+        text: "Oh, here they come a'Reckonin', O'er hill and vale, Children play, bombs away, Super Earth we hail! Here they come a'Reckonin', Justice justly served, Flowers grow, blood will flow, Peace on Super Earth!",
+      },
+      {
+        from: "Carol: O Come, And Report Them",
+        text: "O Come, and report them, dissidents and traitors, Inform, inform ye on Treachery! Come and report them, tell on all your neighbors! O come let us arrest them, traitors and scum!",
+      },
+      {
+        from: "Story: Wally, the White-Nosed Walrus",
+        text: "Wally was ostracized from the other walruses at the weapons factory, because of his odd white nose. He wasn't included in walrus games. But one day there was a terrible storm, and the factory shut down. Wally indicated to his superiors that several of the other walruses had made concerning comments about the righteousness of Super Earth's wars. They were arrested, the storm ended, and production continued, just in time. Wally's bravery had saved the Festival of Reckoning.",
+      },
+    ],
+    sections: [
+      {
+        heading: "The festival",
+        text: "Super Earth's winter holiday, dedicated to “love, family, and the pursuit of peace”. Citizens spend it with friends and family and take advantage of deep discounts on consumer goods, while the Helldivers' successes are televised for all to see. Each year the Reckoning Fund is set aside to finance extra ordnance for the Helldivers.",
+      },
+      {
+        heading: "The Dissident Execution Parade",
+        text: "A dissident execution parade is held every year. The record stands at 8,701 executions in one parade, set in 2185 over seven and a half hours; it closed with “All I want for The Festival of Reckoning is Vengeance”, sung by the [[planet:Hydrofall Prime|Hydrofall Prime]] Children's Choir.",
+      },
+      {
+        heading: "The Feast of the Electorate",
+        text: "The last day, 28 December, celebrates the first ever free and managed election.",
+      },
+      {
+        heading: "Reckoning 2184",
+        timeline: [
+          {
+            when: "25 Dec 2184",
+            text: "Helldivers get incendiary weaponry for the day, among it the Orbital Napalm Barrage and Eagle Napalm Airstrike, and the StA-X3 W.A.S.P. Launcher for good.",
+          },
+          {
+            when: "26 Dec 2184",
+            text: "Explosive weaponry: the Eagle 500kg Bomb, Eagle 110mm Rocket Pods, Orbital Laser, Orbital Railcannon Strike and Anti-Tank Mines.",
+          },
+          { when: "27 Dec 2184", text: "A large set of mixed weaponry, the Patriot Exosuit and MD-8 Gas Mines among it." },
+          { when: "28 Dec 2184", text: "The festival ends. During it, the Illuminate invade [[planet:Julheim|Julheim]]." },
+        ],
+      },
+      {
+        heading: "Reckoning 2185",
+        text: "With a record-breaking volume of vengeance owed that year, the [[ministry:prosperity|Ministry of Prosperity]] extended the festivities to 14 days. The Major Order: liberate more planets than are lost, for 100 Medals. Every few days a Minor Order set a kill count on one of three Icy Glaciers worlds, [[planet:Heeth|Heeth]], [[planet:Marfark|Marfark]] and [[planet:New Stockholm|New Stockholm]], where experimental stratagems were enabled, for 40 Medals each. At the end every Helldiver received the Reckoning's Cheer cape.",
+        points: [
+          "Orbital 120mm HE Barrage: from 18 December, a tighter radius, six shells a salvo and an Orbital EMS Strike before each.",
+          "Orbital Gatling Barrage: from 23 December, incendiary rounds that set the ground alight.",
+          "Orbital Walking Barrage: from 28 December, Orbital Smoke Strikes mixed into its salvos.",
+        ],
+      },
+      {
+        heading: "Behind the carols",
+        text: "“All I want for The Festival of Reckoning is Vengeance” parodies Mariah Carey's “All I Want for Christmas Is You”.",
+      },
+    ],
+    related: ["site:gov", "ministry:prosperity"],
+    sources: [wiki("Festival of Reckoning")],
+  },
 ];
+
+export const HOLIDAYS_SITE = {
+  title: "Super Earth Holidays",
+  address: "se://gov/holidays",
+  icon: "super-earth",
+  summary: "The days the Federation keeps, and the stories behind them.",
+  related: ["site:gov", "site:citizens"],
+};
 
 export const GOV = {
   title: "Managed Democracy",
@@ -594,29 +1314,10 @@ export const GOV = {
     },
     {
       heading: "Holidays",
+      text: "The days the Federation keeps; the stories behind them are on the [[site:holidays|Super Earth Holidays]] site.",
       table: {
         head: ["Day", "Holiday"],
-        rows: [
-          {
-            cells: [
-              "3 April",
-              "Malevelon Creek Memorial Day: three minutes of the lunch break in remembrance of those who died freeing [[planet:Malevelon Creek|Malevelon Creek]].",
-            ],
-          },
-          {
-            cells: [
-              "14 October",
-              "Avengement Day, on [[planet:Seyshel Beach|Seyshel Beach]] only: its citizens made the day of its liberation in 2185, after six weeks of fighting by a small cohort of Helldivers, a planetary holiday to remember the planets lost to humanity's foes.",
-            ],
-          },
-          { cells: ["26 October", "Liberty Day: the Federation's most important holiday, for the day Managed Democracy was presented."] },
-          {
-            cells: [
-              "25 to 28 December",
-              "Festival of Reckoning: the winter holiday of “love, family, and the pursuit of peace”, with deep discounts, televised Helldiver victories, a Reckoning Fund for extra ordnance and a dissident execution parade. Its last day is the Feast of the Electorate, for the first free and managed election.",
-            ],
-          },
-        ],
+        rows: HOLIDAYS.map((h) => ({ cells: [h.when, `[[holiday:${h.id}|${h.name}]]: ${h.summary}`] })),
         note: "In 2186 the Liberty Day preparations began on 6 October with the Liberty Day Party Planning Protocol, under which “not being a party person” is no exemption.",
       },
     },
@@ -629,7 +1330,7 @@ export const GOV = {
     "Managed Democracy is a cornerstone of advanced civilization.",
     "Super Earth has many holidays, but the most important is October 26th-Liberty Day!",
   ],
-  related: ["dir:gov", "ministry:defense", "ministry:truth", "site:log"],
+  related: ["site:citizens", "site:holidays", "dir:gov", "ministry:defense", "ministry:truth"],
   sources: [WIKI.government, WIKI.libertyDay, WIKI.malevelonDay, wiki("Festival of Reckoning"), wiki("Seyshel Beach"), WIKI.wallOfMartyrs],
 };
 

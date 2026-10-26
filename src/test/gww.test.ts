@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CHAPTERS, MANUALS, TIPS } from "../data/gww";
-import { ADS, CITIZENS, COMPANIES, GOV, MINISTRIES, type SiteSection } from "../data/gwwSites";
+import { ADS, CITIZENS, COMPANIES, GOV, HOLIDAYS, HOLIDAYS_SITE, MINISTRIES, type SiteSection } from "../data/gwwSites";
 import { PAST_STATIONS, STAR_OF_PEACE } from "../data/stations";
 import { linksIn, nextYearly, parseRich, plainText } from "../domain/gwwText";
 import { adUrl, iconUrl, logoUrl } from "../features/hellpad/gwwArt";
-import { ADDRESS_LIST, APP_PAGES, pageOf, targetAt } from "../features/hellpad/gwwNav";
+import { ADDRESS_LIST, APP_PAGES, pageOf, SUGGESTED_ADDRESSES, targetAt } from "../features/hellpad/gwwNav";
 import planetsJson from "./fixtures/planets.json";
 
 const allText = (): string[] => {
@@ -14,6 +14,7 @@ const allText = (): string[] => {
     ...COMPANIES.flatMap((c) => c.sections),
     ...GOV.sections,
     ...CITIZENS.sections,
+    ...HOLIDAYS.flatMap((h) => h.sections),
   ];
   return [
     ...sections.flatMap((s) => [
@@ -61,9 +62,9 @@ describe("galactic wide web", () => {
   });
 
   it("gives every site its own address and id", () => {
-    const addresses = [...MANUALS, ...MINISTRIES, ...COMPANIES, GOV, CITIZENS].map((s) => s.address);
+    const addresses = [...MANUALS, ...MINISTRIES, ...COMPANIES, ...HOLIDAYS, GOV, CITIZENS, HOLIDAYS_SITE].map((s) => s.address);
     expect(new Set(addresses).size).toBe(addresses.length);
-    for (const list of [MANUALS, MINISTRIES, COMPANIES]) expect(new Set(list.map((x) => x.id)).size).toBe(list.length);
+    for (const list of [MANUALS, MINISTRIES, COMPANIES, HOLIDAYS]) expect(new Set(list.map((x) => x.id)).size).toBe(list.length);
   });
 
   it("links only to pages, tracker views and planets that exist", () => {
@@ -94,6 +95,8 @@ describe("galactic wide web", () => {
     expect(targetAt("  GOV/Truth/ ")).toBe("ministry:truth");
     expect(targetAt("se://gww")).toBe("home");
     expect(targetAt("se://nowhere")).toBeUndefined();
+    expect(targetAt("se://gov/holidays/liberty-day")).toBe("holiday:liberty-day");
+    expect(SUGGESTED_ADDRESSES.filter((a) => a.startsWith("se://gov/citizens") || a.startsWith("se://gov/holidays"))).toEqual([]);
     expect(ADDRESS_LIST.filter((a) => {
       const t = targetAt(a)!;
       return t !== "home" && !t.startsWith("app:") && !pageOf(t);
