@@ -1,7 +1,7 @@
 # Changelog
 
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
-each entry, from `src/changelog.ts`.
+each entry, from `crates/core/src/changelog.rs`.
 
 ## [0.3.0-beta] - 2026-10-26
 

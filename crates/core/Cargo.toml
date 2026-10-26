@@ -1,6 +1,6 @@
 [package]
 name = "warroom-core"
-version = "0.3.0-beta"
+version.workspace = true
 description = "Galactic War data shapes and logic shared by the WarRoom app and collector"
 edition = "2024"
 publish = false

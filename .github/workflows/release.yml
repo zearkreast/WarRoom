@@ -59,14 +59,22 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ startsWith(matrix.platform, 'macos') && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ startsWith(matrix.platform, 'macos') && 'wasm32-unknown-unknown,aarch64-apple-darwin,x86_64-apple-darwin' || 'wasm32-unknown-unknown' }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "./src-tauri -> target"
+          workspaces: |
+            . -> target
+            ./src-tauri -> target
 
-      - name: Install frontend dependencies
+      # Tauri's beforeBuildCommand builds the web app with it.
+      - name: Install Trunk
+        uses: taiki-e/install-action@v2
+        with:
+          tool: trunk@0.22.1
+
+      - name: Install the Tauri CLI
         run: npm ci
 
       # RPM versions can't hold a hyphen and Tauri has no RPM-only version, so a pre-release such as

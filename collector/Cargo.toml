@@ -1,6 +1,6 @@
 [package]
 name = "warroom-collector"
-version = "0.3.0-beta"
+version.workspace = true
 description = "Polls the Helldivers 2 APIs and writes the war's history to Supabase for the WarRoom app"
 edition = "2024"
 publish = false

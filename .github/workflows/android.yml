@@ -58,14 +58,22 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android,armv7-linux-androideabi
+          targets: wasm32-unknown-unknown,aarch64-linux-android,armv7-linux-androideabi
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "./src-tauri -> target"
+          workspaces: |
+            . -> target
+            ./src-tauri -> target
 
-      - name: Install frontend dependencies
+      # Tauri's beforeBuildCommand builds the web app with it.
+      - name: Install Trunk
+        uses: taiki-e/install-action@v2
+        with:
+          tool: trunk@0.22.1
+
+      - name: Install the Tauri CLI
         run: npm ci
 
       # The Android project isn't kept in the repo; it is generated fresh, then given the app's icons,
@@ -91,7 +99,7 @@ jobs:
           node src-tauri/android/firebase-values.mjs "$RUNNER_TEMP/google-services.json" \
             > src-tauri/gen/android/app/src/main/res/values/firebase.xml
           # The page then leaves OS notifications for news to the pushes, so none arrives twice.
-          echo "VITE_NEWS_PUSH=1" >> "$GITHUB_ENV"
+          echo "WARROOM_NEWS_PUSH=1" >> "$GITHUB_ENV"
 
       - name: Build APK
         run: npx tauri android build --apk --target aarch64 --target armv7

@@ -5,6 +5,7 @@ WORKDIR /src
 COPY Cargo.toml Cargo.lock ./
 COPY crates crates
 COPY collector collector
+COPY vendor vendor
 # The workspace's root package is the app, which the collector doesn't need; a stub lets Cargo read the workspace.
 RUN mkdir src && echo 'fn main() {}' > src/main.rs
 # The caches keep downloaded crates and compiled dependencies between builds, so an update rebuilds only what changed.

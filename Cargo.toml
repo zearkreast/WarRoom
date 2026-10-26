@@ -1,6 +1,6 @@
 [package]
 name = "warroom"
-version = "0.3.0-beta"
+version.workspace = true
 description = "WarCommand Tracker: a Helldivers 2 Galactic War companion"
 edition = "2024"
 publish = false
@@ -9,6 +9,9 @@ publish = false
 members = ["crates/core", "collector"]
 # The Tauri shell is built by the Tauri CLI with its own lockfile.
 exclude = ["src-tauri"]
+
+[workspace.package]
+version = "0.3.0-beta"
 
 [dependencies]
 futures = { version = "0.3", default-features = false, features = ["std", "async-await"] }
