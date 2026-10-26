@@ -13,6 +13,8 @@ export type UpdatePhase =
   | { phase: "current" }
   | { phase: "available"; version: string; notes: string }
   | { phase: "downloading"; version: string; progress: number | null }
+  /** Android: the APK is saved and Android's installer has been opened on it. */
+  | { phase: "downloaded"; version: string }
   | { phase: "installing"; version: string }
   | { phase: "handed-off"; version: string }
   | { phase: "error"; version?: string; message: string };
@@ -34,6 +36,18 @@ const setState = (state: UpdatePhase) => useUpdate.setState({ state });
 
 /** The Android build has no updater: its update is the release's APK, installed by the system. */
 export const isAndroid = () => isTauri() && /android/i.test(navigator.userAgent);
+
+type ApkEvent =
+  | { type: "progress"; received: number; total: number }
+  | { type: "done" }
+  | { type: "error"; message: string };
+
+/** ApkUpdate in src-tauri/android/MainActivity.kt.template; builds before it had none. */
+interface AndroidBridge {
+  WarRoomApk?: { download(url: string): void; install(): void };
+  __warroomApk?: (e: ApkEvent) => void;
+}
+const bridge = () => (window as unknown as AndroidBridge).WarRoomApk;
 
 let pending: Update | null = null;
 let apkUrl: string | null = null;
@@ -72,9 +86,20 @@ export async function installUpdate() {
   try {
     if (isAndroid()) {
       if (!apkUrl) return;
-      const { openUrl } = await import("@tauri-apps/plugin-opener");
-      await openUrl(apkUrl);
-      return setState({ phase: "handed-off", version });
+      const apk = bridge();
+      if (!apk) {
+        const { openUrl } = await import("@tauri-apps/plugin-opener");
+        await openUrl(apkUrl);
+        return setState({ phase: "handed-off", version });
+      }
+      (window as unknown as AndroidBridge).__warroomApk = (e) => {
+        if (e.type === "progress")
+          setState({ phase: "downloading", version, progress: e.total > 0 ? e.received / e.total : null });
+        else if (e.type === "done") setState({ phase: "downloaded", version });
+        else setState({ phase: "error", version, message: e.message });
+      };
+      setState({ phase: "downloading", version, progress: null });
+      return apk.download(apkUrl);
     }
     if (!pending) return;
     let total = 0;
@@ -92,6 +117,11 @@ export async function installUpdate() {
   } catch (e) {
     setState({ phase: "error", version, message: String(e) });
   }
+}
+
+/** Android: opens the installer again on the downloaded APK, if it was closed without installing. */
+export function openInstaller() {
+  bridge()?.install();
 }
 
 /** Checks shortly after start-up, then every few hours while the app stays open. */

@@ -1,7 +1,7 @@
-import { Download, RotateCw, X } from "lucide-react";
+import { Download, PackageCheck, RotateCw, X } from "lucide-react";
 import { APP_VERSION } from "../config";
 import { CtaButton, Meter } from "../ui/primitives";
-import { checkForUpdate, installUpdate, isAndroid, useUpdate } from "./appUpdate";
+import { checkForUpdate, installUpdate, isAndroid, openInstaller, useUpdate } from "./appUpdate";
 import "./update.css";
 
 /** The first few lines of the release notes, without headings or Markdown marks. */
@@ -23,7 +23,8 @@ const summary = (notes: string) =>
 export function UpdateCard() {
   const { state, dismissed, dismiss } = useUpdate();
   if (dismissed) return null;
-  if (!["available", "downloading", "installing", "handed-off", "error"].includes(state.phase)) return null;
+  const shown = ["available", "downloading", "downloaded", "installing", "handed-off", "error"];
+  if (!shown.includes(state.phase)) return null;
   const version = "version" in state ? state.version : undefined;
   const busy = state.phase === "downloading" || state.phase === "installing";
   return (
@@ -59,6 +60,19 @@ export function UpdateCard() {
             {state.progress == null ? "Downloading…" : `Downloading ${Math.round(state.progress * 100)}%`}
           </span>
         </div>
+      )}
+      {state.phase === "downloaded" && (
+        <>
+          <p className="uc-notes">
+            Downloaded. Tap Install in Android&apos;s installer; the first time, Android asks you to allow installs from
+            WarCommand.
+          </p>
+          <div className="uc-actions">
+            <CtaButton icon={PackageCheck} onClick={openInstaller}>
+              Install
+            </CtaButton>
+          </div>
+        </>
       )}
       {state.phase === "installing" && <p className="uc-notes">Installing. The app restarts when it is done.</p>}
       {state.phase === "handed-off" && (
