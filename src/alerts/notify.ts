@@ -1,5 +1,6 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { create } from "zustand";
+import { isAndroid } from "../update/appUpdate";
 
 export type ToastKind = "order" | "dispatch" | "capture" | "loss" | "defense";
 
@@ -65,7 +66,8 @@ export async function notify(kind: ToastKind, title: string, body: string, syste
   if (!(await permission)) return;
   if (isTauri()) {
     const n = await import("@tauri-apps/plugin-notification");
-    n.sendNotification({ title, body });
+    // tauri.conf.json can't carry these: a plugins.notification entry stops the app from starting.
+    n.sendNotification(isAndroid() ? { title, body, icon: "ic_notification", iconColor: "#ffff5a" } : { title, body });
   } else {
     new Notification(title, { body });
   }

@@ -52,10 +52,6 @@
       "windows": {
         "installMode": "passive"
       }
-    },
-    "notification": {
-      "icon": "ic_notification",
-      "iconColor": "#ffff5a"
     }
   }
 }
