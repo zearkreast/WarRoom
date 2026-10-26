@@ -58,12 +58,6 @@ jobs:
             librsvg2-dev \
             patchelf
 
-      - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-
       # The crate uses Rust edition 2024, so the current stable toolchain is required.
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -84,6 +78,20 @@ jobs:
           tool: trunk@0.22.1
 
       - name: Install the Tauri CLI
+        uses: taiki-e/install-action@v2
+        with:
+          tool: tauri-cli@2.12.4
+
+      # Only for rebuilding a release from before the Rust app: its web app builds with npm.
+      - name: Setup Node
+        if: hashFiles('package-lock.json') != ''
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install the web app's packages
+        if: hashFiles('package-lock.json') != ''
         run: npm ci
 
       # RPM versions can't hold a hyphen and Tauri has no RPM-only version, so a pre-release such as
@@ -92,7 +100,7 @@ jobs:
         id: version
         if: runner.os == 'Linux'
         run: |
-          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          VERSION=$(jq -r .version src-tauri/tauri.conf.json)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           if [[ "$VERSION" == *-* ]]; then echo "args=--bundles appimage,deb" >> "$GITHUB_OUTPUT"; fi
 
@@ -109,6 +117,7 @@ jobs:
           releaseBody: "Installers are listed under Assets below."
           releaseDraft: false
           prerelease: false
+          tauriScript: cargo tauri
           args: ${{ matrix.args }} ${{ steps.version.outputs.args }}
           # latest.json, which installed apps read to find and verify a new release.
           includeUpdaterJson: true
@@ -121,7 +130,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           LABEL=${VERSION#*-}
-          npx tauri bundle --bundles rpm --config \
+          cargo tauri bundle --bundles rpm --config \
             "{\"version\":\"${VERSION%%-*}\",\"bundle\":{\"createUpdaterArtifacts\":false,\"linux\":{\"rpm\":{\"release\":\"0.1.${LABEL//-/.}\"}}}}"
           gh release upload "v$VERSION" src-tauri/target/release/bundle/rpm/*.rpm --clobber
 

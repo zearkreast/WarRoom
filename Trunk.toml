@@ -3,7 +3,7 @@ target = "index.html"
 dist = "dist"
 
 [watch]
-ignore = ["src-tauri", "collector", "crates/core/tests"]
+ignore = ["src-tauri", "collector", "crates/core/tests", "crates/firebase-values"]
 
 [serve]
 # Tauri's devUrl expects this port.

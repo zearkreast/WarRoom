@@ -17,6 +17,7 @@ on:
     branches-ignore: [main]
     paths:
       - "src-tauri/**"
+      - "crates/firebase-values/**"
       - ".github/workflows/android.yml"
 
 permissions:
@@ -49,12 +50,6 @@ jobs:
           sdkmanager --install "ndk;$NDK_VERSION" "build-tools;$BUILD_TOOLS" "platforms;android-34"
           echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
 
-      - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -74,13 +69,15 @@ jobs:
           tool: trunk@0.22.1
 
       - name: Install the Tauri CLI
-        run: npm ci
+        uses: taiki-e/install-action@v2
+        with:
+          tool: tauri-cli@2.12.4
 
       # The Android project isn't kept in the repo; it is generated fresh, then given the app's icons,
       # its own MainActivity and Firebase Messaging.
       - name: Generate the Android project
         run: |
-          npx tauri android init --ci
+          cargo tauri android init --ci
           cp -r src-tauri/icons/android/. src-tauri/android/res/. src-tauri/gen/android/app/src/main/res/
           cp src-tauri/android/MainActivity.kt "$(find src-tauri/gen/android/app/src/main -name MainActivity.kt)"
           echo 'dependencies { implementation("com.google.firebase:firebase-messaging:24.1.0") }' \
@@ -96,13 +93,13 @@ jobs:
             exit 0
           fi
           printf '%s' "$GOOGLE_SERVICES_JSON" > "$RUNNER_TEMP/google-services.json"
-          node src-tauri/android/firebase-values.mjs "$RUNNER_TEMP/google-services.json" \
+          cargo run -q -p firebase-values -- "$RUNNER_TEMP/google-services.json" \
             > src-tauri/gen/android/app/src/main/res/values/firebase.xml
           # The page then leaves OS notifications for news to the pushes, so none arrives twice.
           echo "WARROOM_NEWS_PUSH=1" >> "$GITHUB_ENV"
 
       - name: Build APK
-        run: npx tauri android build --apk --target aarch64 --target armv7
+        run: cargo tauri android build --apk --target aarch64 --target armv7
 
       - name: Sign APK
         env:
@@ -111,7 +108,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          VERSION=$(jq -r .version src-tauri/tauri.conf.json)
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           UNSIGNED=$(find src-tauri/gen/android/app/build/outputs/apk -name '*-unsigned.apk' | head -n 1)
           if [ -n "$KEYSTORE_B64" ]; then

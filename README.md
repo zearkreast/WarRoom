@@ -29,14 +29,14 @@ The app collects no personal data; see [PRIVACY.md](PRIVACY.md).
 
 ## Run the app
 
-It needs a Rust toolchain (https://rustup.rs), [Trunk](https://trunkrs.dev) and, for the desktop app, Node.js
-for the Tauri CLI:
+It needs a Rust toolchain (https://rustup.rs), [Trunk](https://trunkrs.dev) and, for the desktop and Android
+apps, the Tauri CLI:
 
 ```bash
 rustup target add wasm32-unknown-unknown
 cargo install trunk --locked
-npm install              # the Tauri CLI
-npm run tauri dev        # desktop app
+cargo install tauri-cli --version "^2" --locked
+cargo tauri dev          # desktop app
 trunk serve              # browser only, at http://localhost:1420
 cargo test --workspace   # unit tests (app, core and collector)
 ```
@@ -48,7 +48,7 @@ The app reads from the Supabase project set in `src/config.rs`. To point a build
 Add `?fixtures` to the browser URL (`http://localhost:1420/?fixtures`) to use the saved snapshots in
 `crates/core/tests/fixtures/` instead of Supabase. This only works in debug builds, as `trunk serve` makes.
 
-Android: `npm run tauri android init`, then `npm run tauri android dev`. This needs Android Studio and the SDK.
+Android: `cargo tauri android init`, then `cargo tauri android dev`. This needs Android Studio and the SDK.
 The Android project (`src-tauri/gen/`) isn't kept in the repo; CI generates it for each build. After `init`,
 do what the "Generate the Android project" step of `android.yml` does: copy in the icons, `src-tauri/android/res`
 and `MainActivity.kt`, and add Firebase Messaging to `app/build.gradle.kts`.
@@ -68,10 +68,9 @@ Without the secret the APK has no pushes, and notifies only while it is open.
 
 ## Release a new version
 
-1. Raise the version in all four places together: `src-tauri/tauri.conf.json`, `package.json`,
-   `src-tauri/Cargo.toml` and `[workspace.package]` in `Cargo.toml`. A pre-release such as `0.3.0-beta` also
-   needs a numbers-only `bundle.windows.wix.version` in `tauri.conf.json`, since MSI installers can't carry the
-   suffix.
+1. Raise the version in all three places together: `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and
+   `[workspace.package]` in `Cargo.toml`. A pre-release such as `0.3.0-beta` also needs a numbers-only
+   `bundle.windows.wix.version` in `tauri.conf.json`, since MSI installers can't carry the suffix.
 2. Add the version's entry to `crates/core/src/changelog.rs`; Tracker Dispatch shows it.
 3. Push a tag such as `v0.3.0-beta`, or run Release from the Actions tab.
 
@@ -123,9 +122,10 @@ cargo run --profile collector -p warroom-collector -- --once   # every job once,
   on Android).
 - `vendor/tachys/`: Leptos's renderer with a fix for static SVG it otherwise wraps in a stray `<g>`; drop it on
   the move to Leptos 0.9.
-- `src-tauri/app-icon.svg`: the source of every app icon; regenerate them with `npx tauri icon src-tauri/app-icon.svg`.
+- `src-tauri/app-icon.svg`: the source of every app icon; regenerate them with `cargo tauri icon src-tauri/app-icon.svg`.
 - `src-tauri/android/`: what the generated Android project gets added: a `MainActivity.kt` that keeps the page
-  between the status and navigation bars and subscribes to pushed news, the notification icon, and
-  `firebase-values.mjs`, which turns `google-services.json` into the resources Firebase starts from.
+  between the status and navigation bars and subscribes to pushed news, and the notification icon.
+- `crates/firebase-values/`: turns `google-services.json` into the resources Firebase starts from, for the
+  Android build.
 - `.github/workflows/`: `release.yml` (installers, APK and update manifest), `android.yml` (the APK, also built
   on pushes that touch `src-tauri/`) and `pages.yml` (tests, then the web version on GitHub Pages).

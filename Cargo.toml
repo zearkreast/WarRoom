@@ -6,7 +6,7 @@ edition = "2024"
 publish = false
 
 [workspace]
-members = ["crates/core", "collector"]
+members = ["crates/core", "crates/firebase-values", "collector"]
 # The Tauri shell is built by the Tauri CLI with its own lockfile.
 exclude = ["src-tauri"]
 
