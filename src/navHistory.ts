@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useUi, type GwwPage, type HellpadModule, type InfoDialog, type View } from "./state";
+import { useUi, type CityRef, type GwwPage, type HellpadModule, type InfoDialog, type View } from "./state";
 
 /** What Back and Forward step through: the screen, the Hellpad module, the G.W.W. page and the open overlay. */
 export interface Place {
@@ -7,6 +7,7 @@ export interface Place {
   module: HellpadModule | null;
   gww: GwwPage[];
   detail: number | null;
+  city?: CityRef | null;
   dialog: InfoDialog | null;
   dispatchOpen: boolean;
 }
@@ -25,11 +26,12 @@ export interface HistoryLike {
   back(): void;
 }
 
-const placeOf = ({ view, module, gww, detail, dialog, dispatchOpen }: Place): Place => ({
+const placeOf = ({ view, module, gww, detail, city = null, dialog, dispatchOpen }: Place): Place => ({
   view,
   module,
   gww,
   detail,
+  city,
   dialog,
   dispatchOpen,
 });
@@ -102,7 +104,12 @@ export function useNavHistory() {
       (p) => {
         // An unchanged G.W.W. page list keeps its identity, or the G.W.W. would take it for navigation.
         const { gww } = useUi.getState();
-        useUi.setState({ ...p, gww: JSON.stringify(gww) === JSON.stringify(p.gww) ? gww : p.gww, options: null });
+        useUi.setState({
+          ...p,
+          city: p.city ?? null,
+          gww: JSON.stringify(gww) === JSON.stringify(p.gww) ? gww : p.gww,
+          options: null,
+        });
       },
     );
     const stop = useUi.subscribe(sync.onChange);

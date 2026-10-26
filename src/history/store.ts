@@ -1,4 +1,4 @@
-import { getSource } from "../api/source";
+import { getSource, SourceError } from "../api/source";
 import { FACTION_BY_ID } from "../domain/factions";
 import type { OwnerChange } from "../domain/history";
 import type { Sample } from "../domain/progress";
@@ -6,6 +6,17 @@ import type { Sample } from "../domain/progress";
 /** An ownership change as stored by the collector; `id` increases with every new row. */
 export interface ChangeRecord extends OwnerChange {
   id: number;
+}
+
+/** Helldivers somewhere at a moment. */
+export interface PlayerReading {
+  at: number;
+  players: number;
+}
+
+/** A city's reading: its Helldivers, and its liberation while it's fought over. */
+export interface CityReading extends PlayerReading {
+  percent: number | null;
 }
 
 /**
@@ -21,6 +32,20 @@ export interface HistoryStore {
   defendingTimes(planet: number): Promise<number[]>;
   /** Changes newer than `afterId`, newest first. */
   changesAfter(afterId: number, limit: number): Promise<ChangeRecord[]>;
+  /** Helldivers on the planet while it had no campaign, oldest first. */
+  idlePlayers(planet: number, sinceMs: number): Promise<PlayerReading[]>;
+  /** One city's readings, oldest first. */
+  cityReadings(planet: number, region: number, sinceMs: number): Promise<CityReading[]>;
+}
+
+/** Tables added by a later migration read as empty until it's applied. */
+async function unlessMissing<T>(read: Promise<T[]>): Promise<T[]> {
+  try {
+    return await read;
+  } catch (e) {
+    if (e instanceof SourceError && e.status === 404) return [];
+    throw e;
+  }
 }
 
 interface SampleRow {
@@ -88,6 +113,26 @@ export const supabaseHistory: HistoryStore = {
       await getSource()
     ).select<ChangeRow>("owner_changes", `select=*${filter}&order=id.desc&limit=${limit}`);
     return rows.map(toChange);
+  },
+  async idlePlayers(planet, sinceMs) {
+    const since = encodeURIComponent(new Date(sinceMs).toISOString());
+    const rows = await unlessMissing(
+      (await getSource()).select<{ at: string; players: number }>(
+        "planet_players",
+        `select=at,players&planet=eq.${planet}&at=gte.${since}&order=at.desc&limit=${SAMPLE_LIMIT}`,
+      ),
+    );
+    return rows.reverse().map((r) => ({ at: Date.parse(r.at), players: r.players }));
+  },
+  async cityReadings(planet, region, sinceMs) {
+    const since = encodeURIComponent(new Date(sinceMs).toISOString());
+    const rows = await unlessMissing(
+      (await getSource()).select<{ at: string; players: number; percent: number | null }>(
+        "region_samples",
+        `select=at,players,percent&planet=eq.${planet}&region=eq.${region}&at=gte.${since}&order=at.desc&limit=${SAMPLE_LIMIT}`,
+      ),
+    );
+    return rows.reverse().map((r) => ({ at: Date.parse(r.at), players: r.players, percent: r.percent }));
   },
   async changesAfter(afterId, limit) {
     const rows = await (

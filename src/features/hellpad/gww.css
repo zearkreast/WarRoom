@@ -895,29 +895,25 @@ button.gww-ad-open:focus-visible img {
   max-height: 96px;
   object-fit: contain;
 }
+.gww-corp-logo:has(.gww-logo-ad) {
+  position: relative;
+  overflow: hidden;
+}
+.gww-corp-logo .gww-logo-ad {
+  position: absolute;
+  inset: 0;
+  max-width: none;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+}
 .gww-corp-logo .gww-wordmark {
   max-width: 88%;
   font-size: 1rem;
   line-height: 1.25;
   text-align: center;
   overflow-wrap: break-word;
-}
-.gww-monogram {
-  display: grid;
-  place-items: center;
-  min-width: 88px;
-  height: 88px;
-  padding: 0 var(--s-4);
-  font-family: var(--font-head);
-  font-stretch: 125%;
-  font-weight: 800;
-  font-size: 1.9rem;
-  letter-spacing: 0.06em;
-  color: var(--site);
-  background: color-mix(in srgb, var(--site) 8%, var(--void));
-  border: 2px solid var(--site);
-  box-shadow: inset 0 0 0 4px var(--void), inset 0 0 0 5px color-mix(in srgb, var(--site) 45%, transparent);
-  text-shadow: 0 0 14px color-mix(in srgb, var(--site) 45%, transparent);
 }
 .gww-slogan {
   margin-top: var(--s-3) !important;
@@ -1947,4 +1943,71 @@ button.gww-ad-open:focus-visible img {
 }
 .gww-more {
   align-self: flex-start;
+}
+.gww-days {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gww-days li {
+  display: grid;
+  grid-template-columns: 130px minmax(60px, 1fr) 110px 110px;
+  align-items: center;
+  gap: var(--s-5);
+  padding: var(--s-3) 0;
+}
+.gww-days li + li {
+  border-top: 1px dashed var(--line);
+}
+.gww-day-date {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fs-body-s);
+  color: var(--text-hi);
+}
+.gww-day-date .caps,
+.gww-day-stat .caps {
+  font-size: var(--fs-kicker);
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+}
+.gww-days li.today .gww-day-date .caps {
+  color: var(--cta);
+}
+.gww-day-range {
+  position: relative;
+  height: 8px;
+  background: var(--void);
+  border: 1px solid var(--line);
+}
+.gww-day-range i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 2px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cta) 25%, transparent), var(--cta));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cta) 45%, transparent);
+}
+.gww-day-stat {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+.gww-day-stat b {
+  color: var(--text-hi);
+}
+.gww-day-stat.peak b {
+  color: var(--cta);
+}
+@media (max-width: 720px) {
+  .gww-days li {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    row-gap: var(--s-2);
+  }
+  .gww-day-range {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 }

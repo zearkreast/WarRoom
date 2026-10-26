@@ -25,6 +25,7 @@ import {
   Rocket,
   Shield,
   TriangleAlert,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefCallback } from "react";
@@ -45,10 +46,11 @@ import {
   type Tie,
 } from "../../data/gwwSites";
 import { factionColor, factionLabel } from "../../domain/factions";
-import { fmtDate, fmtDateTime } from "../../domain/format";
+import { fmtDate, fmtDateTime, fmtInt, sestClock, sestDate } from "../../domain/format";
 import { nextYearly, plainText } from "../../domain/gwwText";
 import { useSpaceStations } from "../../api/queries";
 import { useStationJumps } from "../../api/stations";
+import { useWarDays } from "../../api/warSamples";
 import { useHistory } from "../../history/useHistory";
 import { useSettings, useUi } from "../../state";
 import { DssIcon, FactionEmblem, type IconLike } from "../../ui/emblems";
@@ -104,24 +106,21 @@ export function ManualIcon({ m, size }: { m: Manual; size: number }) {
   );
 }
 
-/** Initials for a company without a logo: of each word, or the capitals of a one-word name. */
-function monogram(name: string): string {
-  const words = name.split(/[\s.]+/).filter((w) => w && w.toLowerCase() !== "the");
-  if (words.length > 1) return words.map((w) => w[0]).join("").slice(0, 4).toUpperCase();
-  const caps = words[0].replace(/[^A-Z]/g, "");
-  return (caps.length >= 2 ? caps : words[0].slice(0, 2)).slice(0, 4).toUpperCase();
+/** A company's own picture: its logo, else its widest advert. */
+function companyArt(c: Company): { src: string; ad: boolean } | undefined {
+  const logo = c.logo && logoUrl(c.logo);
+  if (logo) return { src: logo, ad: false };
+  const ads = ADS.filter((a) => c.ads?.includes(a.file));
+  const ad = ads.find((a) => a.shape === "wide") ?? ads[0];
+  const src = ad && adUrl(ad.file);
+  return src ? { src, ad: true } : undefined;
 }
 
-/** The banner sits beside the name, so a company without a logo shows its initials there, not its name again. */
+/** On a page banner, which sits beside the name, a company with no picture shows nothing rather than its name again. */
 export function CompanyMark({ c, banner }: { c: Company; banner?: boolean }) {
-  const url = c.logo && logoUrl(c.logo);
-  if (url) return <img className="gww-logo" src={url} alt="" />;
-  if (banner)
-    return (
-      <span className="gww-monogram" aria-hidden>
-        {monogram(c.name)}
-      </span>
-    );
+  const art = companyArt(c);
+  if (art) return <img className={art.ad ? "gww-logo gww-logo-ad" : "gww-logo"} src={art.src} alt="" />;
+  if (banner) return null;
   return (
     <span className="gww-wordmark caps" aria-hidden>
       {c.name}
@@ -839,7 +838,7 @@ export function CompanyPage({ c, headingRef }: { c: Company; headingRef: Heading
     <WithRail rail={ads.rail} here={here}>
       <article className="gww-page" style={{ "--site": c.color } as CSSProperties}>
         <Banner
-          icon={<CompanyMark c={c} banner />}
+          icon={companyArt(c) && <CompanyMark c={c} banner />}
           corp
           crumbs={[{ label: "Corporations", target: "dir:corps" }, { label: c.trade }]}
           title={c.name}
@@ -1145,6 +1144,49 @@ function WarLog() {
   );
 }
 
+const ACTIVITY_DAYS = 14;
+
+function ActivityDays({ now }: { now: number }) {
+  const { data: days = [], isLoading } = useWarDays();
+  const [all, setAll] = useState(false);
+  const shown = all ? days : days.slice(0, ACTIVITY_DAYS);
+  const top = Math.max(1, ...shown.map((d) => d.peak));
+  const today = Math.floor(now / 86_400_000) * 86_400_000;
+  const hm = (ms: number) => sestClock(ms).slice(0, 5);
+  if (isLoading) return <Loading what="the activity log" rows={2} />;
+  if (days.length === 0) return <Empty>No days logged yet. Each day is recorded from the next collector update on.</Empty>;
+  return (
+    <>
+      <ol className="gww-days">
+        {shown.map((d) => (
+          <li key={d.day} className={d.day === today ? "today" : ""}>
+            <span className="gww-day-date num">
+              {sestDate(d.day)}
+              {d.day === today && <span className="caps">Today, so far</span>}
+            </span>
+            <span className="gww-day-range" aria-hidden>
+              <i style={{ left: `${(d.low / top) * 100}%`, width: `${((d.peak - d.low) / top) * 100}%` }} />
+            </span>
+            <span className="gww-day-stat peak num">
+              <b>{fmtInt(d.peak)}</b>
+              <span className="caps">Peak · {hm(d.peakAt)}</span>
+            </span>
+            <span className="gww-day-stat num">
+              <b>{fmtInt(d.low)}</b>
+              <span className="caps">Lowest · {hm(d.lowAt)}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+      {days.length > ACTIVITY_DAYS && (
+        <button className="gww-chip gww-more" onClick={() => setAll((a) => !a)}>
+          {all ? "Show fewer days" : `Show all ${days.length} days`}
+        </button>
+      )}
+    </>
+  );
+}
+
 function StationJumps({ station, name, now }: { station: number; name: string; now: number }) {
   const { data: jumps = [], isLoading } = useStationJumps(station);
   return (
@@ -1176,7 +1218,7 @@ export function LogsPage({ headingRef }: { headingRef: HeadingRef }) {
         icon={<History size={40} strokeWidth={1.5} />}
         crumbs={[{ label: "Super Earth", target: "dir:gov" }]}
         title={LOG_TITLE}
-        lead="The war log and the space stations' FTL jumps, since tracking began."
+        lead="The war log, Helldivers online day by day and the space stations' FTL jumps, since tracking began."
         headingRef={headingRef}
       />
       <LogBox
@@ -1194,6 +1236,9 @@ export function LogsPage({ headingRef }: { headingRef: HeadingRef }) {
         }
       >
         <WarLog />
+      </LogBox>
+      <LogBox title="Helldivers online" icon={<Users size={18} />} note="Each SEST day, midnight to midnight">
+        <ActivityDays now={now} />
       </LogBox>
       {stations.map((st, i) => (
         <StationJumps key={st.id32} station={st.id32} name={i === 0 ? "DSS" : `Station ${i + 1}`} now={now} />

@@ -1,4 +1,4 @@
-import { Award, CheckSquare, Square, Target } from "lucide-react";
+import { Award, CheckSquare, ChevronRight, Square, Target } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useAssignments, useEpisodes, useFreshPlanets } from "../../api/queries";
 import type { Assignment, Planet } from "../../api/types";
@@ -13,7 +13,7 @@ import {
   type TaskView,
 } from "../../domain/majorOrder";
 import { trackedPercent } from "../../domain/progress";
-import { useUi } from "../../state";
+import { useSettings, useUi } from "../../state";
 import { Countdown, Empty, Loading, Panel } from "../../ui/primitives";
 import { OrderBar, OutlookTag, useCountTask, useCountUp } from "./OrderBar";
 import { useOutlooks } from "./useOutlooks";
@@ -110,12 +110,17 @@ export function OrderCard({
   planets,
   name,
   compact,
+  foldable,
 }: {
   a: Assignment;
   planets: Planet[] | undefined;
   name?: string;
   compact?: boolean;
+  foldable?: boolean;
 }) {
+  const unfolded = useSettings((s) => s.overviewMoOpen);
+  const setSetting = useSettings((s) => s.set);
+  const open = !foldable || unfolded;
   const tasks = describeAssignment(a, planets);
   const outlooks = useOutlooks(a, tasks);
   const verdict = orderVerdict(tasks, outlooks);
@@ -123,13 +128,21 @@ export function OrderCard({
   const reward = a.rewards[0] ?? a.reward;
   return (
     <Panel
-      className="mo"
+      className={`mo ${open ? "" : "folded"}`}
       icon={Target}
       title={
-        <>
-          {a.title ?? "Major Order"}
-          {name && <span className="mo-name">{name}</span>}
-        </>
+        foldable ? (
+          <button className="mo-toggle" aria-expanded={open} onClick={() => setSetting("overviewMoOpen", !open)}>
+            <ChevronRight size={14} className="mo-chevron" aria-hidden />
+            {a.title ?? "Major Order"}
+            {name && <span className="mo-name">{name}</span>}
+          </button>
+        ) : (
+          <>
+            {a.title ?? "Major Order"}
+            {name && <span className="mo-name">{name}</span>}
+          </>
+        )
       }
       right={
         <span className="mo-ends">
@@ -166,7 +179,7 @@ export function OrderCard({
   );
 }
 
-export function MajorOrderList({ compact }: { compact?: boolean }) {
+export function MajorOrderList({ compact, foldable }: { compact?: boolean; foldable?: boolean }) {
   const { data, isLoading } = useAssignments();
   const planets = useFreshPlanets().data;
   const episodes = useEpisodes().data;
@@ -175,7 +188,14 @@ export function MajorOrderList({ compact }: { compact?: boolean }) {
   return (
     <>
       {data.map((a) => (
-        <OrderCard key={a.id} a={a} planets={planets} name={data.length === 1 ? orderName(episodes) : undefined} compact={compact} />
+        <OrderCard
+          key={a.id}
+          a={a}
+          planets={planets}
+          name={data.length === 1 ? orderName(episodes) : undefined}
+          compact={compact}
+          foldable={foldable}
+        />
       ))}
     </>
   );

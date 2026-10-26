@@ -4,6 +4,7 @@ import { resistanceLevel } from "../../domain/biomes";
 import { cityHoursLeft, citiesOf, sizeLabel, type City, type CityState } from "../../domain/cities";
 import { factionColor } from "../../domain/factions";
 import { fmtDuration, fmtInt, fmtPct } from "../../domain/format";
+import { useUi } from "../../state";
 import { OrderBar, useCountUp } from "../major-order/OrderBar";
 import "../major-order/majorOrder.css";
 import "./cities.css";
@@ -50,18 +51,33 @@ function Eta({ c }: { c: City }) {
   return <span className="muted">Measuring…</span>;
 }
 
-function CityRow({ c, enemy, full }: { c: City; enemy: Faction | undefined; full?: boolean }) {
+export function CityRow(props: { c: City; enemy: Faction | undefined; full?: boolean; onOpen?(): void }) {
+  const { c, enemy, full, onOpen } = props;
   const fought = !!enemy && c.percent != null && (c.state === "liberating" || c.percent > 0);
   const contested = !!enemy && (c.state === "liberating" || c.state === "locked" || c.state === "held");
   const shown = useCountUp(fought ? c.percent! : 0);
   const res = c.resistance != null ? resistanceLevel(c.resistance) : null;
   return (
-    <li className={`city ${c.state}`}>
+    <li
+      className={`city ${c.state} ${onOpen ? "openable" : ""}`}
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      aria-label={onOpen ? `${c.name}: open the city` : undefined}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (onOpen && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+    >
       <CityMark stars={c.stars} state={c.state} />
       <div className="city-main">
         <div className="city-head">
           <b className="caps">{c.name}</b>
-          <span className="city-state caps">{STATE_LABEL[c.state]}</span>
+          <span className="city-state caps">
+            {c.waiting ? `Opens at ${fmtPct(c.opensAt!, 1)}` : STATE_LABEL[c.state]}
+          </span>
         </div>
         <span className="city-size caps">
           {sizeLabel(c.size)}
@@ -141,13 +157,16 @@ function CityRow({ c, enemy, full }: { c: City; enemy: Faction | undefined; full
   );
 }
 
-/** A planet's cities: size class, standing, and while one is fought over its progress, pace and payoff. */
+export const enemyOfCities = (p: Planet) => p.event?.faction ?? (p.currentOwner === "Humans" ? undefined : p.currentOwner);
+
+/** A planet's cities: size class, standing, and while one is fought over its progress, pace and payoff. Each opens its own page. */
 export function CityList({ p, full }: { p: Planet; full?: boolean }) {
-  const enemy = p.event?.faction ?? (p.currentOwner === "Humans" ? undefined : p.currentOwner);
+  const openCity = useUi((s) => s.openCity);
+  const enemy = enemyOfCities(p);
   return (
     <ul className={`cities ${full ? "full" : ""}`}>
       {citiesOf(p).map((c) => (
-        <CityRow key={c.id} c={c} enemy={enemy} full={full} />
+        <CityRow key={c.id} c={c} enemy={enemy} full={full} onOpen={() => openCity({ planet: p.index, region: c.id })} />
       ))}
     </ul>
   );

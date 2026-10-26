@@ -1,4 +1,5 @@
 import type { Planet } from "../api/types";
+import { liberationPercent } from "./progress";
 import { SUPER_EARTH_CITIES } from "../data/cities";
 
 /** The game marks a region's size class with one to four stars over its icon. */
@@ -25,6 +26,10 @@ export interface City {
   resistance: number | null;
   /** Net progress in %/h, measured by the collector. */
   rate: number | null;
+  /** The planet's liberation at which it opens, for a city that doesn't open from the start. */
+  opensAt: number | null;
+  /** Locked, and the planet hasn't reached `opensAt` yet. */
+  waiting: boolean;
 }
 
 /** Hours until a city is liberated at its current net rate, or null if it isn't gaining. */
@@ -50,6 +55,9 @@ export function citiesOf(p: Planet): City[] {
     const fate = p.index === 0 ? SUPER_EARTH_CITIES[r.id] : undefined;
     const percent = r.health == null || !r.maxHealth ? null : Math.max(0, 100 - (r.health / r.maxHealth) * 100);
     const live = stateOf(p, r.health, r.isAvailable);
+    const f = r.availabilityFactor;
+    const opensAt = f != null && f > 0 && f < 1 ? (1 - f) * 100 : null;
+    const state = live === "liberating" ? live : (fate?.state ?? live);
     return {
       id: r.id,
       name: fate?.name ?? r.name,
@@ -59,12 +67,14 @@ export function citiesOf(p: Planet): City[] {
       // The API sends the string "null" for regions without one.
       description: r.description === "null" ? "" : (r.description ?? ""),
       note: fate?.note,
-      state: live === "liberating" ? live : (fate?.state ?? live),
+      state,
       percent,
       players: r.players,
       boost: p.maxHealth ? ((1.5 * r.maxHealth) / p.maxHealth) * 100 : null,
       resistance: r.regenPerSecond != null && r.maxHealth ? ((r.regenPerSecond * 3600) / r.maxHealth) * 100 : null,
       rate: r.rate ?? null,
+      opensAt,
+      waiting: state === "locked" && opensAt != null && !p.event && liberationPercent(p) < opensAt,
     };
   });
 }

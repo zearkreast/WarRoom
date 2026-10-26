@@ -11,6 +11,7 @@ import { DssIcon, FactionEmblem } from "../../ui/emblems";
 import { FeedTag } from "../../ui/feed";
 import { CtaButton, Loading, Overlay, useNow } from "../../ui/primitives";
 import { buildFront, useMajorOrderPlanets, usePlanetRate, useStationPlanets, type Front } from "../planets/useFronts";
+import { ActivitySection } from "./Activity";
 import {
   DispatchSection,
   OperationsSection,
@@ -186,6 +187,15 @@ function Body({ index }: { index: number }) {
       <Hero p={p} front={front} />
       {front && <LiberationSection p={p} front={front} />}
       {front && <FrontLineSection p={p} front={front} record={record} />}
+      {!front && (
+        <ActivitySection
+          title="Helldiver activity · last 24 h"
+          now={p.statistics.playerCount}
+          points={[...record.samples, ...record.idle].sort((a, b) => a.at - b.at)}
+          loading={record.loading}
+          empty={`No Helldivers recorded on ${p.name} in the last 24 hours. A reading is kept whenever any are there.`}
+        />
+      )}
       <ServiceRecordSection p={p} />
       <WarHistorySection p={p} record={record} />
       <div className="pd-cols">

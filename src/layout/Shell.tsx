@@ -25,6 +25,7 @@ import { NewsTicker } from "../features/news/NewsTicker";
 import { useUnreadNews } from "../features/news/useNewsItems";
 import { startUpdateChecks } from "../update/appUpdate";
 import { UpdateCard } from "../update/UpdateCard";
+import { CityDetail } from "../features/planet/CityDetail";
 import { PlanetDetail } from "../features/planet/PlanetDetail";
 import { PlanetOptions } from "../features/planet/PlanetOptions";
 import { AboutDialog } from "./AboutDialog";
@@ -271,6 +272,7 @@ function Toasts() {
 export function Shell({ children }: { children: ReactNode }) {
   const view = useUi((s) => s.view);
   const detail = useUi((s) => s.detail);
+  const city = useUi((s) => s.city);
   // On the page itself the items carry their own marks.
   const unread = useUnreadNews();
   const unreadNews = view === "news" ? 0 : unread;
@@ -298,6 +300,9 @@ export function Shell({ children }: { children: ReactNode }) {
       <PlanetOptions />
       <ErrorBoundary key={detail ?? -1} label="Planet details">
         <PlanetDetail />
+      </ErrorBoundary>
+      <ErrorBoundary key={`city-${city?.planet}-${city?.region}`} label="City details">
+        <CityDetail />
       </ErrorBoundary>
       <Toasts />
       <BriefingPopup />

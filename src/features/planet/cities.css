@@ -22,6 +22,14 @@
 .city.liberating {
   border-left-color: var(--f-humans);
 }
+.city.openable {
+  cursor: pointer;
+  transition: background var(--t-state);
+}
+.city.openable:hover,
+.city.openable:focus-visible {
+  background: color-mix(in srgb, var(--f-humans) 8%, var(--surface-2));
+}
 .city.destroyed {
   border-left-color: var(--bad);
 }
@@ -181,4 +189,7 @@
   .city-razed {
     stroke: CanvasText;
   }
+}
+.cities.full.city-detail-row {
+  grid-template-columns: 1fr;
 }

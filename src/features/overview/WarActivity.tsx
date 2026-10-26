@@ -30,7 +30,7 @@ import {
 import { fmtDateTime, fmtInt, fmtTime } from "../../domain/format";
 import { fmtHourTick, hourTicks } from "../../ui/chart";
 import { FactionEmblem } from "../../ui/emblems";
-import { Empty, Loading, Panel } from "../../ui/primitives";
+import { Empty, Loading, Panel, useMedia } from "../../ui/primitives";
 import "./warActivity.css";
 
 /** Chart fills per faction (dark-band steps of the faction hues). */
@@ -66,12 +66,16 @@ const IMPACT = "var(--wa-impact)";
 const MUTED = "var(--wa-muted)";
 const FULL_DAY_MS = 23.5 * 3_600_000;
 const STEP = 25_000;
-const READING_WINDOW_MS = 2 * 60_000;
+/** Readings are averaged into windows this long: about 240 points a day, 120 on a phone. */
+const READING_WINDOW_MS = 6 * 60_000;
+const NARROW_WINDOW_MS = 12 * 60_000;
+const NARROW = "(max-width: 720px)";
 // Keep in sync with --wa-morph in warActivity.css.
 const MORPH_MS = 700;
 // Keep in sync with --ease in theme.css, which the CSS fades use.
 const MORPH_EASE = "cubic-bezier(0.2,0.85,0.25,1)";
 const TICK = { fill: MUTED, fontSize: 10 } as const;
+const NARROW_TICK = { fill: MUTED, fontSize: 9 } as const;
 
 const fmtK = (v: number) => (v === 0 ? "0" : `${Math.round(v / 1000)}k`);
 
@@ -151,14 +155,18 @@ export function WarActivity() {
   const readings = useWarSamples().data;
   const war = useWar().data;
   const lastUpdate = useLastUpdate().data;
+  const narrow = useMedia(NARROW);
+  const tick = narrow ? NARROW_TICK : TICK;
   const [hidden, setHidden] = useState<Set<Series>>(new Set());
   // Chips toggled at least once, so their switch animation never plays on first paint.
   const [touched, setTouched] = useState<Set<Series>>(new Set());
   const [morphFor, setMorphFor] = useState<ActivityPoint[] | null>(null);
   const rows = useMemo(
     () =>
-      data && lastUpdate != null ? mergeActivity(data, averageReadings(readings ?? [], READING_WINDOW_MS), lastUpdate) : [],
-    [data, readings, lastUpdate],
+      data && lastUpdate != null
+        ? mergeActivity(data, averageReadings(readings ?? [], narrow ? NARROW_WINDOW_MS : READING_WINDOW_MS), lastUpdate)
+        : [],
+    [data, readings, lastUpdate, narrow],
   );
   // Morph until the data next changes: refreshes redraw at once, and the duration never switches mid-morph.
   const morphing = morphFor === rows;
@@ -175,7 +183,7 @@ export function WarActivity() {
   const lastImpact = [...rows].reverse().find((r) => r.impact != null);
   const top = Math.max(STEP, Math.ceil((peak ? total(peak) : 0) / STEP) * STEP);
   const domain: [number, number] = [rows[0]?.at ?? 0, rows[rows.length - 1]?.at ?? 0];
-  const ticks = hourTicks(domain[0], domain[1]);
+  const ticks = hourTicks(domain[0], domain[1], narrow ? 6 : 4);
   const span = rows.length < 2 || domain[1] - domain[0] >= FULL_DAY_MS ? "last 24 h" : `since ${fmtTime(domain[0])}`;
   const flatImpact = impactAxis ? (impactAxis.domain[0] + impactAxis.domain[1]) / 2 : 0;
   const plot = useMemo(() => {
@@ -228,7 +236,7 @@ export function WarActivity() {
               <span className="wa-corner tr" aria-hidden />
               <span className="wa-corner bl" aria-hidden />
               <span className="wa-corner br" aria-hidden />
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={narrow ? 220 : 280}>
                 <ComposedChart data={plot} margin={{ top: 20, right: 0, bottom: 0, left: 0 }}>
                   <defs>
                     {STACK.map((f) => (
@@ -246,20 +254,20 @@ export function WarActivity() {
                     domain={domain}
                     ticks={ticks}
                     tickFormatter={fmtHourTick}
-                    tick={TICK}
+                    tick={tick}
                     tickLine={false}
                     axisLine={false}
-                    height={30}
+                    height={narrow ? 24 : 30}
                   />
                   <YAxis
                     yAxisId="divers"
                     domain={[0, top]}
                     ticks={Array.from({ length: top / STEP + 1 }, (_, i) => i * STEP)}
                     tickFormatter={(v) => fmtK(Number(v))}
-                    tick={TICK}
+                    tick={tick}
                     tickLine={false}
                     axisLine={false}
-                    width={44}
+                    width={narrow ? 32 : 44}
                   />
                   {impactAxis && (
                     <YAxis
@@ -268,10 +276,10 @@ export function WarActivity() {
                       domain={impactAxis.domain}
                       ticks={impactAxis.ticks}
                       tickFormatter={(v) => Number(v).toFixed(4)}
-                      tick={{ ...TICK, className: `wa-axis-tick${off("impact")}` }}
+                      tick={{ ...tick, className: `wa-axis-tick${off("impact")}` }}
                       tickLine={false}
                       axisLine={false}
-                      width={56}
+                      width={narrow ? 42 : 56}
                     />
                   )}
                   <Tooltip content={tip} cursor={{ stroke: MUTED, strokeOpacity: 0.5, strokeWidth: 1 }} />

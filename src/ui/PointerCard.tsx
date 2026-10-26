@@ -1,5 +1,5 @@
 import { Users } from "lucide-react";
-import type { CSSProperties, PointerEvent, ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { fmtInt } from "../domain/format";
 
 /** Pointer position plus the centre of the chart it hovers, so the card opens away from it. */
@@ -24,7 +24,7 @@ const WIDTH = 260;
 const HEIGHT = 300;
 const OFFSET = 18;
 
-export function pointerAt(e: PointerEvent, anchor: Element): PointerAt {
+export function pointerAt(e: { clientX: number; clientY: number }, anchor: Element): PointerAt {
   const r = anchor.getBoundingClientRect();
   return { x: e.clientX, y: e.clientY, cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
 }

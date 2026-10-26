@@ -79,3 +79,46 @@ export function useFrontActivity() {
   }, [query.data, planets]);
   return { data, isLoading: query.isLoading };
 }
+
+/** A SEST day's busiest and quietest moment galaxy-wide. */
+export interface WarDay {
+  /** The day's start, SEST (UTC) midnight. */
+  day: number;
+  peak: number;
+  peakAt: number;
+  low: number;
+  lowAt: number;
+}
+
+interface WarDayRow {
+  day: string;
+  peak: number;
+  peak_at: string;
+  low: number;
+  low_at: string;
+}
+
+/** The last year of days, newest first. Empty while the `war_days` table doesn't exist yet (older backends). */
+export function useWarDays() {
+  const lastUpdate = useLastUpdate().data;
+  return useQuery({
+    queryKey: ["war_days", Math.floor((lastUpdate ?? 0) / (POLL_MS * 5))],
+    enabled: lastUpdate != null,
+    staleTime: POLL_MS * 5,
+    queryFn: async (): Promise<WarDay[]> => {
+      try {
+        const rows = await (await getSource()).select<WarDayRow>("war_days", "select=*&order=day.desc&limit=366");
+        return rows.map((r) => ({
+          day: Date.parse(`${r.day}T00:00:00Z`),
+          peak: r.peak,
+          peakAt: Date.parse(r.peak_at),
+          low: r.low,
+          lowAt: Date.parse(r.low_at),
+        }));
+      } catch (e) {
+        if (e instanceof SourceError && e.status === 404) return [];
+        throw e;
+      }
+    },
+  });
+}

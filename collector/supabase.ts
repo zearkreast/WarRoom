@@ -47,3 +47,17 @@ export function createSupabase(opts: SupabaseOptions) {
 }
 
 export type Supabase = ReturnType<typeof createSupabase>;
+
+/** A table or function the database doesn't have yet: its migration hasn't been applied. */
+export const isMissing = (e: unknown): boolean => e instanceof Error && / → 404:/.test(e.message);
+
+/** Runs a write that needs a newer migration; until it's applied, the write is skipped instead of failing its task. */
+export async function unlessMissing(write: Promise<unknown>): Promise<boolean> {
+  try {
+    await write;
+    return true;
+  } catch (e) {
+    if (isMissing(e)) return false;
+    throw e;
+  }
+}

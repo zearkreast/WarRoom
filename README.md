@@ -13,8 +13,9 @@ collector (VDS) ──► api.helldivers2.dev                 the only API calle
 - **Collector** (`collector/`): a dependency-free Node service that polls the API and writes to Supabase.
   See [collector/README.md](collector/README.md) for VDS setup.
 - **Database** (`supabase/migrations/`): snapshots of the current war, planet progress samples, every
-  ownership change, galaxy-wide war samples and the space station's FTL jumps. Shared by all users.
-  Apply the migrations in order (`0001` to `0004`).
+  ownership change, galaxy-wide war samples, each day's busiest and quietest moment, Helldivers on planets
+  and in cities outside the fronts, and the space station's FTL jumps. Shared by all users.
+  Apply the migrations in order (`0001` to `0005`).
 
 ## Download
 
