@@ -9,7 +9,7 @@ import { OrderBar, useCountUp } from "../major-order/OrderBar";
 import "../major-order/majorOrder.css";
 import "./cities.css";
 
-const STATE_LABEL: Record<CityState, string> = {
+export const STATE_LABEL: Record<CityState, string> = {
   liberating: "Liberating",
   locked: "Locked",
   held: "Enemy held",
@@ -28,9 +28,17 @@ function star(x: number, y: number, r: number) {
 }
 
 /** A city's icon as the game draws it: towers under one star per size class. */
-export function CityMark({ stars, state, size = 32 }: { stars: number; state: CityState; size?: number }) {
+export function CityMark(props: { stars: number; state: CityState; size?: number; holder?: Faction }) {
+  const { stars, state, size = 32, holder } = props;
   return (
-    <svg className={`city-mark ${state}`} width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+    <svg
+      className={`city-mark ${state}`}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      style={holder ? { color: factionColor(holder) } : undefined}
+      aria-hidden
+    >
       <g className="city-stars">
         {Array.from({ length: stars }, (_, i) => (
           <polygon key={i} points={star(12 + (i - (stars - 1) / 2) * 5.6, 3.2, 2.7)} />
@@ -71,7 +79,7 @@ export function CityRow(props: { c: City; enemy: Faction | undefined; full?: boo
         }
       }}
     >
-      <CityMark stars={c.stars} state={c.state} />
+      <CityMark stars={c.stars} state={c.state} holder={c.holder} />
       <div className="city-main">
         <div className="city-head">
           <b className="caps">{c.name}</b>

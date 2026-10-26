@@ -1,4 +1,4 @@
-import type { Planet } from "../api/types";
+import type { Faction, Planet } from "../api/types";
 import { liberationPercent } from "./progress";
 import { SUPER_EARTH_CITIES } from "../data/cities";
 
@@ -30,6 +30,8 @@ export interface City {
   opensAt: number | null;
   /** Locked, and the planet hasn't reached `opensAt` yet. */
   waiting: boolean;
+  /** Who holds it: Super Earth once it's liberated (or the planet is), else the planet's owner. */
+  holder: Faction;
 }
 
 /** Hours until a city is liberated at its current net rate, or null if it isn't gaining. */
@@ -75,6 +77,7 @@ export function citiesOf(p: Planet): City[] {
       rate: r.rate ?? null,
       opensAt,
       waiting: state === "locked" && opensAt != null && !p.event && liberationPercent(p) < opensAt,
+      holder: percent != null && percent >= 100 ? "Humans" : p.currentOwner,
     };
   });
 }

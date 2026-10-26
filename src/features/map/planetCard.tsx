@@ -62,10 +62,10 @@ export function LiberationBar({ p, pct, enemy }: { p: Planet; pct: number; enemy
         <span
           key={c.id}
           className={`hc-bar-mark ${c.waiting ? "" : "open"}`}
-          style={{ left: `${c.opensAt}%` }}
+          style={{ left: `${c.opensAt}%`, "--k": factionColor(c.holder) } as CSSProperties}
           title={`${c.name} opens at ${fmtPct(c.opensAt!, 1)}`}
         >
-          <CityMark stars={c.stars} state={c.waiting ? "locked" : "liberating"} size={16} />
+          <CityMark stars={c.stars} state={c.waiting ? "locked" : "liberating"} size={16} holder={c.holder} />
         </span>
       ))}
     </div>

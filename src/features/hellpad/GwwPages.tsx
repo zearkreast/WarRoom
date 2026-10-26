@@ -106,20 +106,25 @@ export function ManualIcon({ m, size }: { m: Manual; size: number }) {
   );
 }
 
-/** A company's own picture: its logo, else its widest advert. */
-function companyArt(c: Company): { src: string; ad: boolean } | undefined {
+/**
+ * A company's own picture: its logo, else its widest advert. A shop sign is wider than its box, so it fits the
+ * box's width over a blurred copy of itself; an advert is a picture and covers the box.
+ */
+type ArtMode = "mark" | "fit" | "cover";
+
+function companyArt(c: Company): { src: string; mode: ArtMode } | undefined {
   const logo = c.logo && logoUrl(c.logo);
-  if (logo) return { src: logo, ad: false };
+  if (logo) return { src: logo, mode: c.banner ? "fit" : "mark" };
   const ads = ADS.filter((a) => c.ads?.includes(a.file));
   const ad = ads.find((a) => a.shape === "wide") ?? ads[0];
   const src = ad && adUrl(ad.file);
-  return src ? { src, ad: true } : undefined;
+  return src ? { src, mode: "cover" } : undefined;
 }
 
 /** On a page banner, which sits beside the name, a company with no picture shows nothing rather than its name again. */
 export function CompanyMark({ c, banner }: { c: Company; banner?: boolean }) {
   const art = companyArt(c);
-  if (art) return <img className={art.ad ? "gww-logo gww-logo-ad" : "gww-logo"} src={art.src} alt="" />;
+  if (art) return <img className={`gww-logo ${art.mode}`} src={art.src} alt="" />;
   if (banner) return null;
   return (
     <span className="gww-wordmark caps" aria-hidden>
@@ -629,9 +634,13 @@ export function SiteTile(props: {
 
 export function CompanyTile({ c }: { c: Company }) {
   const { follow } = useGwwNav();
+  const art = companyArt(c);
   return (
     <button className="gww-site corp" style={{ "--site": c.color } as CSSProperties} onClick={(e) => follow(`company:${c.id}`, e)}>
-      <span className="gww-corp-logo">
+      <span
+        className={`gww-corp-logo ${art?.mode ?? ""}`}
+        style={art?.mode === "fit" ? ({ "--art": `url("${art.src}")` } as CSSProperties) : undefined}
+      >
         <CompanyMark c={c} />
       </span>
       <span className="gww-site-body">
@@ -1146,6 +1155,22 @@ function WarLog() {
 
 const ACTIVITY_DAYS = 14;
 
+function DayStat({ kind, value, at, top }: { kind: "peak" | "low"; value: number; at: string; top: number }) {
+  return (
+    <span className={`gww-day-stat ${kind}`}>
+      <span className="gww-day-num num">
+        <b>{fmtInt(value)}</b>
+        <span className="caps">
+          <span className="sr-only">{kind === "peak" ? "peak" : "lowest"} </span>at {at}
+        </span>
+      </span>
+      <span className="gww-day-bar" aria-hidden>
+        <i style={{ width: `${(value / top) * 100}%` }} />
+      </span>
+    </span>
+  );
+}
+
 function ActivityDays({ now }: { now: number }) {
   const { data: days = [], isLoading } = useWarDays();
   const [all, setAll] = useState(false);
@@ -1157,6 +1182,11 @@ function ActivityDays({ now }: { now: number }) {
   if (days.length === 0) return <Empty>No days logged yet. Each day is recorded from the next collector update on.</Empty>;
   return (
     <>
+      <div className="gww-days-head caps" aria-hidden>
+        <span>SEST day</span>
+        <span>Peak online</span>
+        <span>Lowest online</span>
+      </div>
       <ol className="gww-days">
         {shown.map((d) => (
           <li key={d.day} className={d.day === today ? "today" : ""}>
@@ -1164,20 +1194,12 @@ function ActivityDays({ now }: { now: number }) {
               {sestDate(d.day)}
               {d.day === today && <span className="caps">Today, so far</span>}
             </span>
-            <span className="gww-day-range" aria-hidden>
-              <i style={{ left: `${(d.low / top) * 100}%`, width: `${((d.peak - d.low) / top) * 100}%` }} />
-            </span>
-            <span className="gww-day-stat peak num">
-              <b>{fmtInt(d.peak)}</b>
-              <span className="caps">Peak · {hm(d.peakAt)}</span>
-            </span>
-            <span className="gww-day-stat num">
-              <b>{fmtInt(d.low)}</b>
-              <span className="caps">Lowest · {hm(d.lowAt)}</span>
-            </span>
+            <DayStat kind="peak" value={d.peak} at={hm(d.peakAt)} top={top} />
+            <DayStat kind="low" value={d.low} at={hm(d.lowAt)} top={top} />
           </li>
         ))}
       </ol>
+      <p className="gww-note">Each bar is the day's count against the busiest day listed.</p>
       {days.length > ACTIVITY_DAYS && (
         <button className="gww-chip gww-more" onClick={() => setAll((a) => !a)}>
           {all ? "Show fewer days" : `Show all ${days.length} days`}

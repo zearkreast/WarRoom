@@ -1,18 +1,19 @@
-import { Building2, Compass, Users } from "lucide-react";
+import { Building2, Compass, Flag, Gauge, Lock, Shield, Timer, TrendingUp, Users } from "lucide-react";
 import { useEffect, useState, type CSSProperties } from "react";
 import { useLastUpdate, usePlanet } from "../../api/queries";
-import { planetTint } from "../../domain/biomes";
-import { citiesOf, sizeLabel } from "../../domain/cities";
+import type { Faction } from "../../api/types";
+import { planetTint, resistanceLevel } from "../../domain/biomes";
+import { cityHoursLeft, citiesOf, sizeLabel, type City } from "../../domain/cities";
 import { factionColor, factionLabel } from "../../domain/factions";
-import { fmtInt, fmtPct } from "../../domain/format";
+import { fmtDuration, fmtInt, fmtPct } from "../../domain/format";
 import { trackedPercent } from "../../domain/progress";
 import type { CityReading } from "../../history/store";
 import { useHistory } from "../../history/useHistory";
 import { useUi, type CityRef } from "../../state";
-import { Empty, Loading, Overlay, Panel, useNow } from "../../ui/primitives";
+import { Empty, Loading, Meter, Overlay, Panel, Tile, useNow } from "../../ui/primitives";
 import { LiberationBar } from "../map/planetCard";
 import { ActivitySection, ProgressChart } from "./Activity";
-import { CityMark, CityRow, enemyOfCities } from "./Cities";
+import { CityMark, enemyOfCities, STATE_LABEL } from "./Cities";
 
 const DAY_MS = 86_400_000;
 const REFRESH_MS = 5 * 60_000;
@@ -34,6 +35,72 @@ function useCityReadings(at: CityRef): { loading: boolean; rows: CityReading[] }
     };
   }, [store, at.planet, at.region, tick, lastUpdate]);
   return state;
+}
+
+const signed = (n: number) => `${n >= 0 ? "+" : "−"}${fmtPct(Math.abs(n), 2)}/h`;
+
+/** Where the city stands: its liberation while it's fought over, and what freeing it is worth. */
+function CityStatus({ c, enemy }: { c: City; enemy: Faction | undefined }) {
+  const fought = !!enemy && c.percent != null && (c.state === "liberating" || c.percent > 0);
+  const res = c.resistance != null ? resistanceLevel(c.resistance) : null;
+  const hours = cityHoursLeft(c);
+  const tone = factionColor(c.holder);
+  const state = c.waiting ? `Opens at ${fmtPct(c.opensAt!, 1)}` : STATE_LABEL[c.state];
+  return (
+    <Panel title="City status" icon={Building2} tone={tone} right={<span style={{ color: tone }}>{state}</span>}>
+      <div className="pd-stack">
+        {fought && (
+          <Meter value={c.percent!} color="var(--f-humans)" rest={factionColor(enemy)} size="l" label="City liberated" />
+        )}
+        <div className="pd-tiles four">
+          <Tile
+            icon={Flag}
+            label="Liberated"
+            value={c.percent == null ? "—" : fmtPct(c.percent, 2)}
+            color={fought ? "var(--f-humans)" : undefined}
+          />
+          <Tile
+            icon={Gauge}
+            label="Resistance"
+            value={c.resistance == null ? "—" : `${fmtPct(c.resistance, 2)}/h`}
+            sub={res ? <span style={{ color: res.color }}>{res.label}</span> : undefined}
+          />
+          <Tile
+            icon={TrendingUp}
+            label="Progress"
+            value={!fought ? "—" : c.rate == null ? "Measuring…" : signed(c.rate)}
+            color={fought && c.rate != null ? (c.rate >= 0 ? "var(--good)" : "var(--bad)") : undefined}
+          />
+          <Tile
+            icon={Timer}
+            label="Liberated in"
+            value={hours != null ? fmtDuration(hours * 3_600_000) : fought && c.rate != null && c.rate < 0 ? "Losing ground" : "—"}
+          />
+        </div>
+        <div className="pd-tiles three">
+          <Tile icon={Users} label="Helldivers" value={fmtInt(c.players)} color="var(--cta)" />
+          <Tile
+            icon={TrendingUp}
+            label="Planet boost"
+            value={c.boost == null ? "—" : `+${fmtPct(c.boost, 1)}`}
+            sub="planet liberation when freed"
+            color={c.boost == null ? undefined : "var(--good)"}
+          />
+          {c.opensAt != null ? (
+            <Tile icon={Lock} label="Opens at" value={fmtPct(c.opensAt, 1)} sub="planet liberation" />
+          ) : (
+            <Tile icon={Shield} label="Held by" value={factionLabel(c.holder)} color={tone} />
+          )}
+        </div>
+        {(c.description || c.note) && (
+          <div className="cd-about">
+            {c.description && <p>{c.description}</p>}
+            {c.note && <p className="cd-note">{c.note}</p>}
+          </div>
+        )}
+      </div>
+    </Panel>
+  );
 }
 
 function Body({ at }: { at: CityRef }) {
@@ -70,7 +137,7 @@ function Body({ at }: { at: CityRef }) {
             <span>Cities</span>
           </nav>
           <div className="pd-name-row">
-            <CityMark stars={c.stars} state={c.state} size={46} />
+            <CityMark stars={c.stars} state={c.state} size={46} holder={c.holder} />
             <h1 className="pd-name">{c.name}</h1>
           </div>
           <div className="pd-status caps">
@@ -91,11 +158,7 @@ function Body({ at }: { at: CityRef }) {
           </div>
         </div>
       </section>
-      <Panel title="City status" icon={Building2}>
-        <ul className="cities full city-detail-row">
-          <CityRow c={c} enemy={enemy} full />
-        </ul>
-      </Panel>
+      <CityStatus c={c} enemy={enemy} />
       {enemy && c.opensAt != null && (
         <Panel title={`${p.name} liberation`} icon={Compass} tone={factionColor(enemy)}>
           <div className="pd-stack">

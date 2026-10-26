@@ -895,11 +895,20 @@ button.gww-ad-open:focus-visible img {
   max-height: 96px;
   object-fit: contain;
 }
-.gww-corp-logo:has(.gww-logo-ad) {
+.gww-corp-logo.fit,
+.gww-corp-logo.cover {
   position: relative;
   overflow: hidden;
 }
-.gww-corp-logo .gww-logo-ad {
+.gww-corp-logo.fit::before {
+  content: "";
+  position: absolute;
+  inset: -16px;
+  background: var(--art) center / cover;
+  filter: blur(14px) brightness(0.75) saturate(1.2);
+}
+.gww-corp-logo .gww-logo.fit,
+.gww-corp-logo .gww-logo.cover {
   position: absolute;
   inset: 0;
   max-width: none;
@@ -907,6 +916,10 @@ button.gww-ad-open:focus-visible img {
   height: 100%;
   max-height: none;
   object-fit: cover;
+}
+.gww-corp-logo .gww-logo.fit {
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
 }
 .gww-corp-logo .gww-wordmark {
   max-width: 88%;
@@ -1944,6 +1957,20 @@ button.gww-ad-open:focus-visible img {
 .gww-more {
   align-self: flex-start;
 }
+.gww-days-head,
+.gww-days li {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s-6);
+}
+.gww-days-head {
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-kicker);
+  letter-spacing: 0.16em;
+  color: var(--label);
+}
 .gww-days {
   display: flex;
   flex-direction: column;
@@ -1952,10 +1979,6 @@ button.gww-ad-open:focus-visible img {
   list-style: none;
 }
 .gww-days li {
-  display: grid;
-  grid-template-columns: 130px minmax(60px, 1fr) 110px 110px;
-  align-items: center;
-  gap: var(--s-5);
   padding: var(--s-3) 0;
 }
 .gww-days li + li {
@@ -1967,47 +1990,53 @@ button.gww-ad-open:focus-visible img {
   font-size: var(--fs-body-s);
   color: var(--text-hi);
 }
-.gww-day-date .caps,
-.gww-day-stat .caps {
+.gww-day-date .caps {
+  font-size: var(--fs-kicker);
+  letter-spacing: 0.14em;
+  color: var(--cta);
+}
+.gww-day-stat {
+  --k: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.gww-day-stat.peak {
+  --k: var(--cta);
+}
+.gww-day-num {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+}
+.gww-day-num b {
+  color: var(--k);
+}
+.gww-day-stat.low .gww-day-num b {
+  color: var(--text-hi);
+}
+.gww-day-num .caps {
   font-size: var(--fs-kicker);
   letter-spacing: 0.14em;
   color: var(--text-dim);
 }
-.gww-days li.today .gww-day-date .caps {
-  color: var(--cta);
-}
-.gww-day-range {
-  position: relative;
-  height: 8px;
+.gww-day-bar {
+  height: 4px;
   background: var(--void);
-  border: 1px solid var(--line);
 }
-.gww-day-range i {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  min-width: 2px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--cta) 25%, transparent), var(--cta));
-  box-shadow: 0 0 8px color-mix(in srgb, var(--cta) 45%, transparent);
+.gww-day-bar i {
+  display: block;
+  height: 100%;
+  background: var(--k);
 }
-.gww-day-stat {
-  display: flex;
-  flex-direction: column;
-  text-align: right;
-}
-.gww-day-stat b {
-  color: var(--text-hi);
-}
-.gww-day-stat.peak b {
-  color: var(--cta);
+.gww-day-stat.peak .gww-day-bar i {
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cta) 50%, transparent);
 }
 @media (max-width: 720px) {
+  .gww-days-head,
   .gww-days li {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    row-gap: var(--s-2);
-  }
-  .gww-day-range {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    grid-template-columns: 84px minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--s-4);
   }
 }

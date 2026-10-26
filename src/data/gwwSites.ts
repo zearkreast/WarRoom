@@ -244,6 +244,8 @@ export interface Company {
   summary: string;
   color: string;
   logo?: string;
+  /** The logo is a whole shop sign or advert, drawn edge to edge rather than as a mark. */
+  banner?: boolean;
   /** The company's slogan as the game gives it. */
   slogan?: string;
   /** A line from its Super Destroyer broadcast, quoted. */
@@ -725,6 +727,7 @@ export const COMPANIES: Company[] = [
     summary: "Waffles. Breakfast, all day, every day.",
     color: "#f4c20d",
     logo: "superwaffle",
+    banner: true,
     minor: true,
     slogan: "If you're hungry, we're open!",
     showcase: { image: "superwaffle", alt: "Superwaffle Dispensary: if you're hungry, we're open! Breakfast, all day, every day." },
@@ -746,6 +749,7 @@ export const COMPANIES: Company[] = [
     summary: "Burgers, BBQ, kebabs and wok, in the colony cities.",
     color: "#c9302c",
     logo: "sign-bug-fest",
+    banner: true,
     minor: true,
     sections: [
       {
@@ -768,6 +772,7 @@ export const COMPANIES: Company[] = [
     summary: "The colony cities' coffee, since 2184.",
     color: "#a0673a",
     logo: "sign-democroffee",
+    banner: true,
     minor: true,
     slogan: "Drink coffee now, wake up and smell the freedom.",
     sections: [
@@ -789,6 +794,7 @@ export const COMPANIES: Company[] = [
     summary: "Tea flavoured tea, for calming, patriotic thoughts.",
     color: "#5aa86b",
     logo: "sign-libertea",
+    banner: true,
     minor: true,
     slogan: "Tea flavoured tea.",
     sections: [
@@ -810,6 +816,7 @@ export const COMPANIES: Company[] = [
     summary: "Caught fresh, likely with a great deal of high explosive.",
     color: "#3d8fd1",
     logo: "sign-seafood",
+    banner: true,
     minor: true,
     slogan: "Caught fresh.",
     sections: [
@@ -834,6 +841,7 @@ export const COMPANIES: Company[] = [
     summary: "For oil stains, spores, bile and blood.",
     color: "#4fc3e8",
     logo: "sign-super-clean",
+    banner: true,
     minor: true,
     sections: [
       {
@@ -856,6 +864,7 @@ export const COMPANIES: Company[] = [
     summary: "Interstellar travel experts. Believe the unbelievable.",
     color: "#7b6cf0",
     logo: "sign-voting-voyager",
+    banner: true,
     minor: true,
     slogan: "Believe the unbelievable.",
     sections: [
@@ -876,6 +885,7 @@ export const COMPANIES: Company[] = [
     summary: "Rebuilding your world one piece at a time.",
     color: "#2f6fd6",
     logo: "sign-inka",
+    banner: true,
     minor: true,
     slogan: "Rebuilding your world one piece at a time.",
     sections: [
@@ -947,6 +957,7 @@ export const COMPANIES: Company[] = [
     summary: "Sustainable re-education. Admissions are open.",
     color: "#e3c04a",
     logo: "sign-truth-cram",
+    banner: true,
     minor: true,
     slogan: "Dare to dream.",
     sections: [
@@ -968,6 +979,7 @@ export const COMPANIES: Company[] = [
     summary: "All regulation styles.",
     color: "#d0d6de",
     logo: "sign-back-in-line",
+    banner: true,
     minor: true,
     sections: [
       {
