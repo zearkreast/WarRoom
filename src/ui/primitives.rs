@@ -16,25 +16,28 @@ use warroom_core::format::{fmt_duration, js_round};
 #[component]
 pub fn Panel(
     #[prop(optional, into)] title: Option<TextProp>,
+    /// Drawn inside the title after its text.
+    #[prop(optional)]
+    title_extra: Option<AnyView>,
     #[prop(optional, into)] icon: Option<IconLike>,
     #[prop(optional)] right: Option<AnyView>,
     /// Tints the header stripe and icon box. Defaults to the CTA yellow.
     #[prop(optional, into)]
     tone: Option<String>,
     #[prop(optional)] glass: bool,
-    #[prop(optional, into)] class: Option<String>,
+    #[prop(optional, into)] class: MaybeProp<String>,
     #[prop(optional, into)] body_class: Option<String>,
     children: Children,
 ) -> impl IntoView {
     let style = tone.map(|t| format!("--tone: {t};"));
-    let class = format!("panel {} {}", if glass { "glass" } else { "" }, class.unwrap_or_default());
+    let class = move || format!("panel {} {}", if glass { "glass" } else { "" }, class.get().unwrap_or_default());
     view! {
         <section class=class style=style>
             {title.map(|title| {
                 view! {
                     <header class="panel-head">
                         {icon.map(|i| view! { <span class="panel-icon">{icon_view(i, 14.0, 2.0, None)}</span> })}
-                        <h2 class="panel-title">{move || title.get()}</h2>
+                        <h2 class="panel-title">{move || title.get()} {title_extra}</h2>
                         {right.map(|r| view! { <div class="panel-right">{r}</div> })}
                     </header>
                 }

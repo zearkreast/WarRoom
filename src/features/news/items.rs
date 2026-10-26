@@ -58,7 +58,7 @@ static ITEMS: OnceLock<Memo<Arc<Vec<NewsItem>>>> = OnceLock::new();
 pub fn news_items() -> Memo<Arc<Vec<NewsItem>>> {
     *ITEMS.get_or_init(|| {
         let q = queries();
-        Memo::new(move |_| {
+        crate::state::global(|| Memo::new(move |_| {
             let dispatches = q.dispatches.get();
             let episodes = q.episodes.get();
             let dispatches: &[Dispatch] = dispatches.as_deref().map_or(&[], Vec::as_slice);
@@ -84,7 +84,7 @@ pub fn news_items() -> Memo<Arc<Vec<NewsItem>>> {
             }));
             items.sort_by(|a, b| b.at.total_cmp(&a.at));
             Arc::new(items)
-        })
+        }))
     })
 }
 

@@ -156,3 +156,30 @@ pub fn copy_text(text: &str) {
     let clipboard = window().navigator().clipboard();
     let _ = clipboard.write_text(text);
 }
+
+/// Calls `frame(now)` on every animation frame until it returns false or the returned flag is set.
+pub fn animation_loop(frame: impl Fn(f64) -> bool + 'static) -> std::rc::Rc<std::cell::Cell<bool>> {
+    use std::cell::{Cell, RefCell};
+    use std::rc::Rc;
+    let stop = Rc::new(Cell::new(false));
+    let tick: Rc<RefCell<Option<Closure<dyn Fn(f64)>>>> = Rc::new(RefCell::new(None));
+    let again = tick.clone();
+    let halt = stop.clone();
+    *tick.borrow_mut() = Some(Closure::new(move |t: f64| {
+        if halt.get() || !frame(t) {
+            again.borrow_mut().take();
+            return;
+        }
+        if let Some(f) = again.borrow().as_ref() {
+            let _ = window().request_animation_frame(f.as_ref().unchecked_ref());
+        }
+    }));
+    if let Some(f) = tick.borrow().as_ref() {
+        let _ = window().request_animation_frame(f.as_ref().unchecked_ref());
+    }
+    stop
+}
+
+pub fn performance_now() -> f64 {
+    window().performance().map_or_else(now, |p| p.now())
+}

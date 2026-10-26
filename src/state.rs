@@ -358,6 +358,14 @@ impl Settings {
     }
 }
 
+/// Runs `f` under an owner that is never disposed, for app-wide memos first asked for inside a component.
+pub fn global<T>(f: impl FnOnce() -> T) -> T {
+    let owner = Owner::new_root(None);
+    let out = owner.with(f);
+    std::mem::forget(owner);
+    out
+}
+
 struct Stores {
     ui: Ui,
     settings: Settings,
