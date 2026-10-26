@@ -1,4 +1,5 @@
 # WarRoom
+[![Deploy to GitHub Pages](https://github.com/zearkreast/WarRoom/actions/workflows/pages.yml/badge.svg)](https://github.com/zearkreast/WarRoom/actions/workflows/pages.yml) [![Release](https://github.com/zearkreast/WarRoom/actions/workflows/release.yml/badge.svg)](https://github.com/zearkreast/WarRoom/actions/workflows/release.yml)
 
 A fan-made Helldivers 2 Galactic War companion. Not affiliated with Arrowhead Game Studios.
 
