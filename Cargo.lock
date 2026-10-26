@@ -2027,9 +2027,12 @@ dependencies = [
 name = "warroom"
 version = "0.3.0-beta"
 dependencies = [
+ "any_spawner",
  "console_error_panic_hook",
  "js-sys",
  "leptos",
+ "regex-lite",
+ "send_wrapper",
  "serde",
  "serde_json",
  "warroom-core",

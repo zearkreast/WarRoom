@@ -18,7 +18,10 @@ wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
+regex-lite = "0.1"
 console_error_panic_hook = "0.1"
+send_wrapper = "0.6"
+any_spawner = { version = "0.3", features = ["wasm-bindgen"] }
 
 [dependencies.web-sys]
 version = "0.3"
@@ -35,11 +38,13 @@ features = [
   "EventTarget",
   "History",
   "HtmlCanvasElement",
+  "HtmlDialogElement",
   "HtmlElement",
   "HtmlImageElement",
   "KeyboardEvent",
   "Location",
   "MediaQueryList",
+  "MediaQueryListEvent",
   "MouseEvent",
   "Navigator",
   "Clipboard",
