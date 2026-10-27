@@ -36,7 +36,7 @@ pub fn detect_new_defenses<'a>(prev: Option<&[Planet]>, next: &'a [Planet]) -> V
     next.iter().filter(|p| p.event.as_ref().is_some_and(|e| !had.contains(&e.id))).collect()
 }
 
-/// Planets worth sampling every poll: contested ones. Quiet planets only need owner tracking.
+/// Planets worth sampling every poll even without a campaign: contested ones. Quiet ones only need owner tracking.
 pub fn is_active(p: &Planet) -> bool {
     p.event.is_some() || p.health < p.max_health
 }

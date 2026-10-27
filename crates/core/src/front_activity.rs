@@ -83,27 +83,34 @@ pub struct Reading {
 }
 
 /// War readings averaged over `window_ms`, stamped at the window's middle. The API's player count swings
-/// by thousands from one minute to the next, which turns a narrow chart's line into noise.
+/// by thousands from one minute to the next, which turns a narrow chart's line into noise. The fronts are
+/// averaged only over the readings that split them.
 pub fn average_readings(readings: &[Reading], window_ms: f64) -> Vec<Reading> {
-    let mut sums: BTreeMap<i64, (Reading, f64)> = BTreeMap::new();
+    let mut sums: BTreeMap<i64, (Reading, f64, f64)> = BTreeMap::new();
     for r in readings {
         let at = (r.at / window_ms).floor() * window_ms;
-        let s = sums.entry(at as i64).or_insert((Reading { at, ..Default::default() }, 0.0));
+        let s = sums.entry(at as i64).or_insert((Reading { at, ..Default::default() }, 0.0, 0.0));
         s.0.impact += r.impact;
         s.0.players += r.players;
-        s.0.terminids += r.terminids;
-        s.0.automatons += r.automatons;
-        s.0.illuminate += r.illuminate;
         s.1 += 1.0;
+        if r.terminids + r.automatons + r.illuminate > 0.0 {
+            s.0.terminids += r.terminids;
+            s.0.automatons += r.automatons;
+            s.0.illuminate += r.illuminate;
+            s.2 += 1.0;
+        }
     }
     sums.into_values()
-        .map(|(s, n)| Reading {
-            at: s.at + window_ms / 2.0,
-            impact: s.impact / n,
-            players: js_round(s.players / n),
-            terminids: js_round(s.terminids / n),
-            automatons: js_round(s.automatons / n),
-            illuminate: js_round(s.illuminate / n),
+        .map(|(s, n, split)| {
+            let split = split.max(1.0);
+            Reading {
+                at: s.at + window_ms / 2.0,
+                impact: s.impact / n,
+                players: js_round(s.players / n),
+                terminids: js_round(s.terminids / split),
+                automatons: js_round(s.automatons / split),
+                illuminate: js_round(s.illuminate / split),
+            }
         })
         .collect()
 }
