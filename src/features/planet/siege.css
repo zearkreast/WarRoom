@@ -37,6 +37,8 @@
   opacity: 0.85;
 }
 .siege.double .siege-ring {
+  /* Without fill-box, an SVG shape turns about its viewBox's corner instead of its own centre. */
+  transform-box: fill-box;
   transform-origin: center;
   animation: siege-turn 12s linear infinite;
 }
@@ -44,6 +46,12 @@
   to {
     transform: rotate(360deg);
   }
+}
+.siege.direct .siege-mark {
+  filter: none;
+}
+.siege.direct .siege-ring {
+  animation: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .siege.double .siege-ring {
