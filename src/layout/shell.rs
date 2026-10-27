@@ -1,3 +1,5 @@
+//! The shell: top bar, status strip with the news ticker, the dock, toasts and overlays.
+
 use crate::alerts::{ToastKind, toasts};
 use crate::api::queries::queries;
 use crate::config::APP_VERSION;
@@ -12,7 +14,7 @@ use crate::layout::briefing_popup::BriefingPopup;
 use crate::layout::dispatch_panel::DispatchPanel;
 use crate::state::{InfoDialog, Popups, View, settings, ui};
 use crate::ui::emblems::{AppMark, IconLike, icon_view};
-use crate::ui::feed::{FeedState, use_feed_status};
+use crate::ui::feed_status::{FeedState, use_feed_status};
 use crate::ui::icons::{self, Icon, IconData};
 use crate::ui::primitives::{Keycap, StatusChip};
 use crate::update::card::UpdateCard;

@@ -1,3 +1,5 @@
+//! App state: what is on screen (`Ui`, stepped through by Back) and the settings saved on this device.
+
 use crate::js;
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -22,7 +24,8 @@ pub enum HellpadModule {
     Planets,
     Stations,
     Gww,
-    Campaigns,
+    #[serde(rename = "campaigns")]
+    PastCampaigns,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

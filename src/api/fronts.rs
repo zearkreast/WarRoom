@@ -1,3 +1,5 @@
+//! Fronts: each planet with a campaign, with its progress, rate, deadlines and Major Order, pin and station flags.
+
 use crate::api::queries::{LiveCampaign, queries};
 use crate::state::{global, settings};
 use leptos::prelude::*;

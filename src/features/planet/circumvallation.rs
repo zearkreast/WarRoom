@@ -1,3 +1,5 @@
+//! The siege note on planets whose liberation would surround enemy planets.
+
 use crate::api::queries::queries;
 use crate::js::num;
 use leptos::prelude::*;

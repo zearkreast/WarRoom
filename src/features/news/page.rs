@@ -1,3 +1,5 @@
+//! The Strohmann News page: the latest dispatch, then the feed by day with search.
+
 use crate::alerts::{ToastKind, toasts};
 use crate::api::queries::queries;
 use crate::features::news::card::kind_label;

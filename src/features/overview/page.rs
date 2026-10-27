@@ -1,3 +1,5 @@
+//! The Overview page: Major Orders, Galactic Campaign, Theater of War, War Activity and control share.
+
 use crate::api::queries::queries;
 use crate::features::galactic_campaigns::CampaignPanel;
 use crate::features::major_order::panel::MajorOrderList;

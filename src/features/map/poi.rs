@@ -1,3 +1,5 @@
+//! Points of interest: which logo each wears, and the logos themselves.
+
 use crate::assets;
 use crate::js::num;
 use crate::ui::emblems::{EmblemArt, has_emblem};

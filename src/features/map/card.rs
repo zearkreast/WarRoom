@@ -1,11 +1,11 @@
 //! The map's hover card and the panel a clicked planet docks beside it.
 
+use crate::api::fronts::station_planets;
 use crate::features::map::poi::{PoiGlyph, PoiKind, poi_image, poi_kind, poi_origin};
 use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
 use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
 use crate::features::planet::cities::{CityList, CityMark};
 use crate::features::planet::tint::planet_tint;
-use crate::features::planets::fronts::station_planets;
 use crate::js::{self, num};
 use crate::state::{HellpadModule, settings, ui};
 use crate::ui::emblems::{DssIcon, SeafEmblem, SubfactionEmblem};

@@ -1,3 +1,5 @@
+//! Liberation and defense progress: percent from health, rates from samples, and projections.
+
 use crate::api::{Faction, Planet};
 
 /// A point-in-time reading of a planet, as stored by the history recorder.

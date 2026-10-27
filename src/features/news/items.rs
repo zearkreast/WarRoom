@@ -1,3 +1,5 @@
+//! The news feed's items, newest first, and which are unread.
+
 use crate::api::queries::queries;
 use crate::state::settings;
 use leptos::prelude::*;

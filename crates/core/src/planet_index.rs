@@ -1,3 +1,5 @@
+//! The Hellpad planet index: search, filters, sector groups and each faction's share of the galaxy.
+
 use crate::api::{Faction, Planet};
 use crate::collate::locale_cmp;
 use crate::galaxy::{group_by, majority};

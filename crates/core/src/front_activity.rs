@@ -1,3 +1,5 @@
+//! The War Activity chart's data: Helldivers per front in 15-minute buckets, merged with live readings.
+
 use crate::api::Faction;
 use crate::factions::faction_by_id;
 use crate::format::js_round;

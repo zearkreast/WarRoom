@@ -1,9 +1,9 @@
 //! Watches the shared data for anything worth an alert. Started once at the app root.
 
 use crate::alerts::{ToastKind, notify, request_notifications};
+use crate::api::history::history;
 use crate::api::queries::queries;
 use crate::config::{NEWS_PUSHED, POLL_MS};
-use crate::history::history;
 use crate::js;
 use crate::state::settings;
 use crate::tauri;
@@ -14,7 +14,7 @@ use warroom_core::api::{Faction, Planet};
 use warroom_core::campaign_news::{EventType, campaign_alerts, campaign_headline};
 use warroom_core::factions::faction_label;
 use warroom_core::format::dispatch_title;
-use warroom_core::history::detect_new_defenses;
+use warroom_core::owner_changes::detect_new_defenses;
 
 pub fn start() {
     // Not on the web, where browsers block or bury a permission prompt nobody clicked for.

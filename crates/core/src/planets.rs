@@ -1,3 +1,5 @@
+//! Corrections and lookups for the API's planet list: moved planets, placeholders, removed worlds.
+
 use crate::api::{Named, Planet, Position};
 use crate::snapshot::PlanetStatic;
 use std::collections::HashMap;

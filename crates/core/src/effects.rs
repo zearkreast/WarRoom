@@ -1,3 +1,5 @@
+//! Planet effects (named by the community list and local overrides) and which of them get a map pawn.
+
 use regex_lite::Regex;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
@@ -57,11 +59,11 @@ struct Named {
 
 /// The community's list of galactic effect names, by id.
 static NAMES: LazyLock<HashMap<i64, Named>> = LazyLock::new(|| {
-    let raw: HashMap<String, Named> = serde_json::from_str(include_str!("../data/planetEffects.json")).unwrap();
+    let raw: HashMap<String, Named> = serde_json::from_str(include_str!("../data/planet-effects.json")).unwrap();
     raw.into_iter().filter_map(|(k, v)| Some((k.parse().ok()?, v))).collect()
 });
 
-/// Names for galactic effect ids the community list (planetEffects.json) doesn't carry yet, and fixes
+/// Names for galactic effect ids the community list (planet-effects.json) doesn't carry yet, and fixes
 /// to the ones it gets wrong. Unnamed ids are left off the map and the planet page until added here.
 /// Ids seen without a name on 24 Oct 2026: 1272 (Mastia), 1315–1317 (Esker, Erson Sands, Socorro III),
 /// 1318–1320 (Zagon Prime, Omicron), 1327 (Grafmere), 1363 (Aurora Bay),

@@ -1,10 +1,11 @@
 # Builds the Tauri app for Windows, macOS, Linux and Android and publishes
 # the installers as a GitHub Release.
 #
-# Run it from the Actions tab (Release -> Run workflow), or push a tag like v0.2.7.
+# Run it from the Actions tab (Release -> Run workflow), or push a tag like v0.5.0.
 # The release version and name come from src-tauri/tauri.conf.json.
-# With "ref" set to an older release's tag, its installers are rebuilt from that code and replace the
-# release's files; the APK is skipped, as the Android build can't check out another ref.
+# With "ref" set to an older release's tag (v0.5.0 or later, the Rust app), its installers are rebuilt
+# from that code and replace the release's files; the APK is skipped, as the Android build can't check
+# out another ref.
 name: Release
 
 on:
@@ -81,18 +82,6 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: tauri-cli@2.12.4
-
-      # Only for rebuilding a release from before the Rust app: its web app builds with npm.
-      - name: Setup Node
-        if: hashFiles('package-lock.json') != ''
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install the web app's packages
-        if: hashFiles('package-lock.json') != ''
-        run: npm ci
 
       # RPM versions can't hold a hyphen and Tauri has no RPM-only version, so a pre-release such as
       # 0.3.0-beta leaves the RPM out here and builds it in the last step.

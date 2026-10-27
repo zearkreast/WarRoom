@@ -1,3 +1,5 @@
+//! How fresh the war data is, and the chips and notes that say so.
+
 use crate::api::queries::queries;
 use crate::js::{self, fmt_date_time};
 use crate::ui::primitives::{LiveDot, StatusChip};

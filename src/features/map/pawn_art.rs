@@ -1,3 +1,5 @@
+//! The holograms drawn beside planets for effects and the Democracy Space Station.
+
 use crate::assets;
 use regex_lite::Regex;
 use std::sync::LazyLock;

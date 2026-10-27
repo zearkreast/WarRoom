@@ -1,11 +1,11 @@
+use crate::api::history::{self, PlayerReading, history};
 use crate::api::queries::queries;
-use crate::history::{self, PlayerReading, history};
 use crate::js;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
-use warroom_core::history::OwnerChange;
+use warroom_core::owner_changes::OwnerChange;
 use warroom_core::progress::Sample;
 
 #[derive(Clone, Debug, Default, PartialEq)]

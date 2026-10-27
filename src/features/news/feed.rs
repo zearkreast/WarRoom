@@ -1,3 +1,5 @@
+//! Strohmann News items: dispatches and Galactic Campaign threads.
+
 use crate::features::news::card::{MarkupText, kind_label};
 use leptos::prelude::*;
 use warroom_core::api::Dispatch;

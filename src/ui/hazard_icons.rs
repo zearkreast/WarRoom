@@ -1,3 +1,5 @@
+//! An icon for each environmental hazard.
+
 use crate::ui::icons::{self, IconData};
 use regex_lite::Regex;
 use std::sync::LazyLock;

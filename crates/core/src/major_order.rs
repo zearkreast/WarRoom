@@ -1,3 +1,5 @@
+//! Major Orders: each task's target and progress, rates from recorded readings, and whether it makes the deadline.
+
 use crate::api::{Assignment, AssignmentTask, Faction, Planet};
 use crate::factions::{faction_by_id, faction_label};
 use crate::progress::{projected_at, projected_completion, slope_per_hour};

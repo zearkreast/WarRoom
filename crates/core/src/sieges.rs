@@ -1,3 +1,5 @@
+//! Circumvallation: enemy planets a front's liberation would leave surrounded by Super Earth.
+
 use crate::api::{Faction, Planet};
 use std::collections::{HashMap, HashSet};
 

@@ -1,3 +1,5 @@
+//! The Major Order cards and the list that holds them.
+
 use crate::api::queries::queries;
 use crate::features::major_order::order_bar::{CountTask, OrderBar, OutlookTag, use_count_task, use_count_up};
 use crate::features::major_order::outlooks::outlooks;

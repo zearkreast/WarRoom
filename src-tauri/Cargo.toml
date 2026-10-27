@@ -2,15 +2,11 @@
 name = "warcommand-tracker"
 version = "0.5.0"
 description = "WarCommand Tracker: a Helldivers 2 Galactic War companion"
-authors = ["you"]
+authors = ["zearkreast"]
 edition = "2024"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
-# The `_lib` suffix may seem redundant but it is necessary
-# to make the lib name unique and wouldn't conflict with the bin name.
-# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+# Not the bin's name: on Windows a lib and bin of one name collide (rust-lang/cargo#8519).
 name = "warcommand_tracker_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
@@ -31,8 +27,6 @@ tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 tauri-plugin-single-instance = "2"
 
-
-# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]
 codegen-units = 1
 lto = true

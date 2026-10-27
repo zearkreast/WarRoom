@@ -1,7 +1,9 @@
+//! The status strip's news ticker: captures, losses and dispatches from the last day.
+
 use crate::api::{Dispatch, Faction};
 use crate::campaign_news::{CampaignEvent, campaign_headline};
 use crate::format::dispatch_title;
-use crate::history::OwnerChange;
+use crate::owner_changes::OwnerChange;
 use crate::time::parse_ms;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

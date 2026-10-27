@@ -1,3 +1,5 @@
+//! Build-time settings: app name and version, the Supabase project, and how often to poll it.
+
 pub const APP_NAME: &str = "WarCommand Tracker";
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 

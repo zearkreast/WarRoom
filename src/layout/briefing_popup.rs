@@ -1,3 +1,5 @@
+//! The full-screen briefing a Major Order or dispatch toast opens into.
+
 use crate::alerts::{Toast, ToastKind, toasts};
 use crate::features::news::card::MarkupText;
 use crate::js::num;

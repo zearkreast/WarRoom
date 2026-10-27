@@ -1,3 +1,7 @@
+//! The planet detail overlay: sphere, header and every section.
+
+use crate::api::fronts::{Front, FrontKind, build_front, major_order_planets, planet_rate, station_planets};
+use crate::api::history::PlayerReading;
 use crate::api::queries::{self, queries};
 use crate::features::planet::activity::ActivitySection;
 use crate::features::planet::globe::SuperEarthGlobe;
@@ -7,14 +11,10 @@ use crate::features::planet::sections::{
     SupplyLinesSection, WarHistorySection,
 };
 use crate::features::planet::tint::planet_tint;
-use crate::features::planets::fronts::{
-    Front, FrontKind, build_front, major_order_planets, planet_rate, station_planets,
-};
-use crate::history::PlayerReading;
 use crate::js::{self, num};
 use crate::state::{HellpadModule, settings, ui};
 use crate::ui::emblems::{DssIcon, FactionEmblem};
-use crate::ui::feed::FeedTag;
+use crate::ui::feed_status::FeedTag;
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{CtaButton, Loading, Overlay};
 use leptos::prelude::*;

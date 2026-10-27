@@ -26,7 +26,7 @@ pub fn from_str<T: DeserializeOwned>(s: &str) -> Result<T, serde_json::Error> {
     from_value(serde_json::from_str(s)?)
 }
 
-/// Whole floats as integers, so JSON written from Rust reads byte for byte as JavaScript wrote it.
+/// Whole floats as integers (`5`, not `5.0`), the number format every stored snapshot uses.
 pub fn js_value(mut v: Value) -> Value {
     fn walk(v: &mut Value) {
         match v {

@@ -1,3 +1,5 @@
+//! Enemy territory outlines for the Regions overlay, from merged Voronoi cells.
+
 use crate::api::{Faction, Planet};
 use crate::format::to_fixed;
 use crate::galaxy::{GALAXY_SCALE, Pt, majority, project};

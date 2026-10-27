@@ -1,10 +1,12 @@
+//! The Active planets page: every front, filterable by enemy; stalled fronts stay hidden unless Settings shows them.
+
+use crate::api::fronts::{Front, FrontKind, fronts, major_order_deadlines};
 use crate::api::queries::queries;
 use crate::features::campaigns::card::CampaignCard;
 use crate::features::campaigns::mo_strip::MoStrip;
-use crate::features::planets::fronts::{Front, FrontKind, fronts, major_order_deadlines};
 use crate::state::settings;
 use crate::ui::emblems::FactionEmblem;
-use crate::ui::feed::FeedNote;
+use crate::ui::feed_status::FeedNote;
 use crate::ui::hint::Hint;
 use crate::ui::primitives::{Empty, Loading};
 use leptos::prelude::*;

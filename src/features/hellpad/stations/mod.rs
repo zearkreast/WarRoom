@@ -1,14 +1,19 @@
+//! The space stations module: each station's orbit, tactical actions, vote and jump log.
+
+pub mod holo;
+pub mod jumps;
+
+use crate::api::fronts::planet_rate;
 use crate::api::queries::queries;
 use crate::api::stations::use_station_jumps;
-use crate::features::hellpad::station_holo::{CssHolo, DssHolo};
 use crate::features::map::pawn_art::{DssState, action_icon, dss_state};
 use crate::features::planet::detail::PlanetSphere;
-use crate::features::planets::fronts::planet_rate;
 use crate::js::{self, fmt_date_time};
 use crate::state::{HellpadModule, OptionsAnchor, View, ui};
 use crate::ui::emblems::{FactionEmblem, IconLike, StationEmblem};
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Countdown, Empty, Loading, OutLink, Panel, StatusChip};
+use holo::{CssHolo, DssHolo};
 use leptos::prelude::*;
 use regex_lite::Regex;
 use std::sync::LazyLock;

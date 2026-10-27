@@ -1,3 +1,5 @@
+//! The Galaxy map page: title, overlay switch, dispatch drawer and the map.
+
 use crate::api::queries::queries;
 use crate::features::major_order::panel::MajorOrderList;
 use crate::features::map::galaxy::GalaxyMap;

@@ -1,4 +1,5 @@
-use crate::features::hellpad::gww::{AboutModule, LegendModule};
+use crate::layout::about::About;
+use crate::layout::legend::Legend;
 use crate::state::{InfoDialog, ui};
 use crate::ui::primitives::KeyButton;
 use leptos::html;
@@ -37,8 +38,8 @@ pub fn AboutDialog() -> impl IntoView {
                 u.dialog.get().map(|d| {
                     view! {
                         {match d {
-                            InfoDialog::About => view! { <AboutModule /> }.into_any(),
-                            InfoDialog::Legend => view! { <LegendModule /> }.into_any(),
+                            InfoDialog::About => view! { <About /> }.into_any(),
+                            InfoDialog::Legend => view! { <Legend /> }.into_any(),
                         }}
                         <div class="about-foot">
                             <KeyButton k="ESC" on_click=Callback::new(move |_| u.show_dialog(None))>

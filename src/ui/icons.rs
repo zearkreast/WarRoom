@@ -1,4 +1,4 @@
-//! Lucide icons (https://lucide.dev, ISC licence), drawn as lucide-react 1.61 draws them.
+//! Lucide icons (https://lucide.dev, ISC licence), with the markup and class names of Lucide 1.61's components.
 
 use crate::js::num;
 use leptos::prelude::*;
@@ -397,7 +397,7 @@ pub const ZOOM_OUT: IconData = IconData {
     body: r#"<circle cx="11" cy="11" r="8"></circle><line x1="21" x2="16.65" y1="21" y2="16.65"></line><line x1="8" x2="14" y1="11" y2="11"></line>"#,
 };
 
-/// An icon at `size` pixels with `stroke_width` lines, as lucide-react renders `<Icon size strokeWidth className />`.
+/// An icon at `size` pixels with `stroke_width` lines.
 #[component]
 pub fn Icon(
     icon: IconData,

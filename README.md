@@ -3,6 +3,11 @@
 
 A fan-made Helldivers 2 Galactic War companion. Not affiliated with Arrowhead Game Studios.
 
+WarRoom is the project; the app it ships is **WarCommand Tracker** (the name on installers and windows, and
+the Android package `com.warcommand.tracker`). It runs on Windows, macOS, Linux, Android and the web.
+
+## How it fits together
+
 ```
 collector (VDS) ──► api.helldivers2.dev                 the only API caller
       │        └──► api.live.prod.thehelldiversgame.com  (campaigns, planet effects)
@@ -10,15 +15,16 @@ collector (VDS) ──► api.helldivers2.dev                 the only API calle
       └──► Supabase ◄── app (desktop / mobile / web)     reads only
 ```
 
-- **App** (`src/`, `src-tauri/`): Tauri 2 + Leptos, in Rust compiled to WebAssembly, for Windows, macOS, Linux,
-  Android and the web.
-- **Core** (`crates/core/`): the data shapes and war logic the app and the collector share.
-- **Collector** (`collector/`): a Rust service that polls the API and writes to Supabase.
-  See [collector/README.md](collector/README.md) for VDS setup.
+- **App** (`src/`, `src-tauri/`): Leptos, written in Rust and compiled to WebAssembly, inside a Tauri 2 shell
+  on desktop and Android; the web version is the same page without the shell.
+- **Core** (`crates/core/`): the data shapes and war logic the app and the collector share, so what the
+  collector writes is what the app reads.
+- **Collector** (`collector/`): a small Rust service that polls the APIs and writes snapshots and history to
+  Supabase. See [collector/README.md](collector/README.md) for setting it up on a server.
 - **Database** (`supabase/migrations/`): snapshots of the current war, planet progress samples, every
   ownership change, galaxy-wide war samples, each day's busiest and quietest moment, Helldivers on planets
-  and in cities outside the fronts, and the space station's FTL jumps. Shared by all users.
-  Apply the migrations in order (`0001` to `0005`).
+  and in cities outside the fronts, and the space stations' FTL jumps. Shared by all users. Apply the
+  migrations in order (`0001` to `0005`).
 
 ## Download
 
@@ -29,7 +35,83 @@ in one press; on Android it downloads the new APK for the system to install.
 
 The app collects no personal data; see [PRIVACY.md](PRIVACY.md).
 
-## Run the app
+## Repository map
+
+```
+src/                     the app
+  main.rs                start-up: shared state, polling and alerts, then mounts the UI
+  app.rs                 the shell around whichever page is open
+  state.rs               what is on screen (Back steps through it) and the settings saved on the device
+  api/                   everything read from Supabase: snapshots, history, fronts, station jumps
+  alerts/                toasts and OS notifications, and the watcher that raises them
+  features/              one folder per page or shared panel (see "Pages" below)
+  layout/                the frame: top bar, status strip, dock, About and legend, briefing popup
+  ui/                    shared components: panels, meters, charts, icons, emblems
+  update/                finds and installs new releases
+  assets/                pictures, fonts and map data, served next to the page; the game's pictures come
+                         from the Helldivers Wiki and are credited in About
+  js.rs, tauri.rs        bridges to the browser and to the Tauri shell
+  nav_history.rs         makes Back and Forward step through the app
+src-tauri/               the Tauri shell for desktop and Android (built by the Tauri CLI, own Cargo.lock)
+  android/               what the generated Android project gets added (MainActivity, notification icon)
+  app-icon.svg           the source of every app icon: cargo tauri icon src-tauri/app-icon.svg
+crates/core/             shared data shapes and war logic
+  src/data/, data/       game knowledge the APIs don't carry: rewards, effect names, G.W.W. pages, station history
+  tests/                 one test file per module, and fixtures/ (saved API answers)
+crates/android-project/  patches the generated Android project: manifest entries and Firebase values
+collector/               the polling service, with its Dockerfile and systemd unit
+supabase/migrations/     the database schema
+vendor/tachys/           Leptos's renderer with a fix for static SVG; drop it on the move to Leptos 0.9
+index.html               Trunk's entry: the app, every stylesheet in cascade order, and the assets
+build.rs                 lists src/assets, so the app knows which pictures exist
+.github/workflows/       release.yml (installers, APK, update manifest), android.yml (the APK),
+                         pages.yml (tests, then the web version on GitHub Pages)
+```
+
+Where to start reading: `src/main.rs`, then `src/app.rs`, then `src/api/queries.rs` (polling and the data
+every page derives from), then a page under `src/features/`. For the war logic, `crates/core/src/lib.rs`
+lists the modules. Each file opens with a one-line summary of what it holds, or its main item carries one.
+
+### Pages
+
+| On screen               | `View`      | Code                                                                    |
+| ----------------------- | ----------- | ----------------------------------------------------------------------- |
+| Galaxy map              | `Map`       | `features/map/`, the map itself in `galaxy/`                            |
+| Active planets          | `Campaigns` | `features/campaigns/`                                                   |
+| Hellpad                 | `Hellpad`   | `features/hellpad/`: `planets`, `stations/`, `gww/`, `past_campaigns`   |
+| Overview (High Command) | `Overview`  | `features/overview/`                                                    |
+| Strohmann News          | `News`      | `features/news/`                                                        |
+| Settings                | `Settings`  | `features/settings/`                                                    |
+
+Panels several pages share: `features/major_order/`, `features/galactic_campaigns/`, and `features/planet/`
+(the planet detail overlay, cities, charts and the planet options menu).
+
+Each folder keeps its stylesheet beside its code, and `index.html` loads them in order. Class names carry a
+short prefix for their area: `cc-` campaign cards and `ms-` the Major Order strip (`campaigns.css`), `mo-`
+Major Orders, `hc-` and `map-` the map and its hover card, `pd-` planet detail and `po-` planet options
+(`planet.css`), `city-` and `cd-` cities, `hp-` Hellpad, `pi-` its planet index, `st-` space stations,
+`pc-` past campaigns and `cmp-` the Galactic Campaign panel, `gww-` the G.W.W., `ni-` and `news-` Strohmann
+News, `ov-` Overview, `tw-` the Theater of War, `wa-` War Activity, `nr-` the neon ring chart, `chart-`
+charts, and `top-`, `strip-`, `dock-` and `bp-` (briefing popup) the shell.
+
+### Words used in the code
+
+- **Front**: a planet being fought over right now, a liberation or a defense. The API calls these campaigns,
+  hence `View::Campaigns` for the Active planets page.
+- **Galactic Campaign**: the game's story arc of three Major Orders; the official API calls it an episode
+  (`EpisodeLive`).
+- **Major Order**: High Command's current objectives; the API calls them assignments.
+- **Dispatch**: a message from Super Earth. Strohmann News is where the app collects them.
+- **Hellpad**: the app's field terminal, a hub for the planet index, space stations, the G.W.W. and past
+  campaigns.
+- **G.W.W.** (Galactic War Web): an in-universe net of training manuals, ministries, corporations, holidays
+  and logs, adapted from the Helldivers Wiki. Pages are drawn in `features/hellpad/gww/`; their text is in
+  `crates/core/src/data/`.
+- **DSS**: the Democracy Space Station. **SEAF**: Super Earth Armed Forces.
+- **Circumvallation**: enemy planets a liberation would leave surrounded by Super Earth (`sieges.rs`).
+- **Snapshot**: the collector's latest copy of an API answer, stored in Supabase (`snapshot.rs`).
+
+## Develop
 
 It needs a Rust toolchain (https://rustup.rs), [Trunk](https://trunkrs.dev) and, for the desktop and Android
 apps, the Tauri CLI:
@@ -38,17 +120,18 @@ apps, the Tauri CLI:
 rustup target add wasm32-unknown-unknown
 cargo install trunk --locked
 cargo install tauri-cli --version "^2" --locked
-cargo tauri dev          # desktop app
 trunk serve              # browser only, at http://localhost:1420
-cargo test --workspace   # unit tests (app, core and collector)
+cargo tauri dev          # desktop app
+cargo test --workspace   # tests: core (crates/core/tests), collector (collector/src/tests.rs) and the app's few
 ```
 
 The app reads from the Supabase project set in `src/config.rs`. To point a build at another one, set
 `WARROOM_SUPABASE_URL` and `WARROOM_SUPABASE_PUBLISHABLE_KEY` in the environment it is built in (see
 `.env.example`). The publishable key is read-only by design.
 
-Add `?fixtures` to the browser URL (`http://localhost:1420/?fixtures`) to use the saved snapshots in
+Add `?fixtures` to the browser URL (`http://localhost:1420/?fixtures`) to use the saved API answers in
 `crates/core/tests/fixtures/` instead of Supabase. This only works in debug builds, as `trunk serve` makes.
+The core and collector tests read the same fixtures.
 
 Android: `cargo tauri android init`, then `cargo tauri android dev`. This needs Android Studio and the SDK.
 The Android project (`src-tauri/gen/`) isn't kept in the repo; CI generates it for each build. After `init`,
@@ -56,6 +139,14 @@ do what the "Generate the Android project" step of `android.yml` does: copy in t
 and `MainActivity.kt.template` (over the generated `MainActivity.kt`), run
 `cargo run -q -p android-project -- manifest` on `app/src/main/AndroidManifest.xml`, and add Firebase Messaging
 to `app/build.gradle.kts`.
+
+To run the collector locally:
+
+```bash
+cp collector/.env.example collector/.env   # then fill in the secret key and contact
+cargo run --profile collector -p warroom-collector             # runs until stopped
+cargo run --profile collector -p warroom-collector -- --once   # every job once, then exits
+```
 
 ## Pushed news on Android
 
@@ -72,11 +163,12 @@ Without the secret the APK has no pushes, and notifies only while it is open.
 
 ## Release a new version
 
-1. Raise the version in all three places together: `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and
-   `[workspace.package]` in `Cargo.toml`. A pre-release such as `0.3.0-beta` also needs a numbers-only
-   `bundle.windows.wix.version` in `tauri.conf.json`, since MSI installers can't carry the suffix.
-2. Add the version's entry to `crates/core/src/changelog.rs`; Tracker Dispatch shows it.
-3. Push a tag such as `v0.3.0-beta`, or run Release from the Actions tab.
+1. Raise the version in all three places together: `[workspace.package]` in `Cargo.toml`,
+   `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json` (`version` and `bundle.windows.wix.version`, which
+   must stay numbers only, as MSI installers can't carry a label such as `-beta`).
+2. Add the version's entry to `crates/core/src/changelog.rs` (Tracker Dispatch shows it in the app) and to
+   `CHANGELOG.md`.
+3. Push a tag such as `v0.5.0`, or run Release from the Actions tab.
 
 The Release workflow builds every desktop installer, then the APK (`android.yml`), and publishes them as one
 GitHub Release with `latest.json`, which installed apps read to find the update. Keep the release a full one,
@@ -93,47 +185,3 @@ not a GitHub pre-release: installed apps only look at the latest full release. I
 
 Without the Android secrets each APK is signed with a throwaway key, and a newer APK won't install over an older
 one. Losing either signing key means installed apps can no longer take updates from new releases.
-
-## Run the collector locally
-
-```bash
-cp collector/.env.example collector/.env   # then fill in the secret key and contact
-cargo run --profile collector -p warroom-collector             # runs until stopped
-cargo run --profile collector -p warroom-collector -- --once   # every job once, then exits
-```
-
-## Layout
-
-- `collector/`: API client (one queue, 2.5 s between requests, a fresh connection per request, backs
-  off while the API is unreachable or rate-limiting), recorder, polling jobs, Docker and systemd files.
-- `crates/core/src/`: pure logic shared by the app and the collector: liberation rates and ETAs, Major Order
-  tasks, galaxy sector geometry, planet effects, campaign news, owner-change detection, the snapshot format,
-  and the chart and globe maths the app draws with. Covered by tests in `crates/core/tests/`.
-- `crates/core/src/data/` and `crates/core/data/`: hand-kept data the APIs don't carry: campaign rewards,
-  effect names (from the community list at github.com/helldivers-2/json) and overrides, scorched planets, past
-  space stations, and the G.W.W. manuals and corporations.
-- `src/assets/`: biome landscapes, faction and sub-faction emblems, holograms, station and point-of-interest
-  pictures; the game's own come from the Helldivers Wiki and are credited in About. `build.rs` lists them so
-  the app knows which exist.
-- `src/api/`: reads snapshots from Supabase and rebuilds them into the planet and campaign shapes the UI uses.
-- `src/history/`: reads the shared sample and ownership history.
-- `src/features/`: overview (High Command), map, campaigns (Active planets), galactic campaigns, hellpad
-  (planets, space stations, G.W.W., past campaigns), planet detail, news, settings. Each keeps its styles in a
-  `.css` file beside it; `index.html` loads them in order.
-- `src/layout/`: the shell: top bar, status strip with the news ticker, the dock, the About and legend
-  dialogs, Tracker Dispatch, and the briefing popup alerts open into.
-- `src/update/`: looks for a newer release and installs it (the Tauri updater on desktop; on Android the
-  release's APK, downloaded in the app and handed to Android's installer).
-- `vendor/tachys/`: Leptos's renderer with a fix for static SVG it otherwise wraps in a stray `<g>`; drop it on
-  the move to Leptos 0.9.
-- `src-tauri/app-icon.svg`: the source of every app icon; regenerate them with
-  `cargo tauri icon src-tauri/app-icon.svg`.
-- `src-tauri/android/`: what the generated Android project gets added: a `MainActivity.kt.template` that keeps
-  the page between the status and navigation bars, subscribes to pushed news and downloads and installs update
-  APKs, and the notification icon.
-- `crates/android-project/`: adds to the generated Android project the manifest entries the in-app update
-  needs (the install permission and file provider), and turns `google-services.json` into the resources
-  Firebase starts from.
-- `.github/workflows/`: `release.yml` (installers, APK and update manifest), `android.yml` (the APK, also built
-  on pushes that touch `src-tauri/` or `crates/android-project/`) and `pages.yml` (tests, then the web version
-  on GitHub Pages).

@@ -1,3 +1,5 @@
+//! The desktop tray icon, and keeping the app running there when its window closes.
+
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};

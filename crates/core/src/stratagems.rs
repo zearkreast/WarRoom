@@ -1,3 +1,5 @@
+//! Stratagem codes keyed in with WASD or the arrow keys.
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Arrow {
     Up,

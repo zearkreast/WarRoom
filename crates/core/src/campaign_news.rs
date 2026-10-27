@@ -1,3 +1,5 @@
+//! Galactic Campaign news: launches, Major Orders and outcomes as events, threads with their dispatches, and alerts.
+
 use crate::api::Dispatch;
 use crate::format::dispatch_title;
 use crate::snapshot::{EpisodeLive, EpisodeStatus, issued_at, phase_name};

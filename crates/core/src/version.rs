@@ -1,3 +1,5 @@
+//! Version and release tag comparison for the update check.
+
 use std::cmp::Ordering;
 
 fn strip_v(v: &str) -> &str {

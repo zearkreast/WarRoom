@@ -1,3 +1,5 @@
+//! Strohmann News helpers: plain text, day groups and search.
+
 use crate::dispatch::dispatch_body;
 use crate::format::{dispatch_title, parse_markup, sest_date};
 

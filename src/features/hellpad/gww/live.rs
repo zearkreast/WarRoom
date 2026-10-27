@@ -1,6 +1,8 @@
+//! Live panels inside G.W.W. manuals, drawn from current war data.
+
+use crate::api::fronts::{Front, FrontKind, fronts};
 use crate::api::queries::queries;
 use crate::features::hellpad::gww::nav::use_gww_nav;
-use crate::features::planets::fronts::{Front, FrontKind, fronts};
 use crate::js;
 use crate::state::{OptionsAnchor, ui};
 use crate::ui::emblems::FactionEmblem;

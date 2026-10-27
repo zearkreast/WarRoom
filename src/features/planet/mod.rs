@@ -1,3 +1,5 @@
+//! The planet detail overlay and what opens from a planet: its sections, cities, charts and options.
+
 pub mod activity;
 pub mod circumvallation;
 pub mod cities;
