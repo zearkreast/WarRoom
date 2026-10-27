@@ -238,7 +238,7 @@ export function createTasks(
         const status = await game.get<WarStatusRaw>(`/api/WarSeason/${id}/Status`);
         const { time } = status;
         // Effects come from the status this job already reads, at no extra request.
-        const effects = JSON.stringify(toEffectsLive(status));
+        const effects = JSON.stringify(toEffectsLive(status, now()));
         if (effects !== lastEffects) {
           await snapshot("planet_effects", JSON.parse(effects));
           lastEffects = effects;

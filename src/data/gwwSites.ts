@@ -157,7 +157,7 @@ export const MINISTRIES: Ministry[] = [
         text: "The ministry holds that galactic colonisation is still in its early stages, however many planets have been settled since the first Galactic War. It keeps field offices in the colony cities, as the [[ministry:truth|Ministry of Truth]] does. Every planet it adds is one more node on the [[manual:supply-lines|supply lines]].",
       },
     ],
-    related: ["manual:supply-lines", "manual:liberation", "company:ulterior"],
+    related: ["manual:supply-lines", "manual:liberation"],
     ads: ["expansion-work-songs"],
     source: wiki("Ministry of Expansion"),
   },
@@ -206,7 +206,7 @@ export const MINISTRIES: Ministry[] = [
         text: "Grading is the Citizenship Classification Structure, which sorts citizens from Super-Class down to Class F; see [[site:gov|Managed Democracy]].",
       },
     ],
-    related: ["site:gov", "company:permacura", "company:ampudyne"],
+    related: ["site:gov", "company:permacura"],
     ads: ["humanity-franchisement"],
     source: wiki("Ministry of Humanity"),
   },
@@ -339,7 +339,7 @@ export const COMPANIES: Company[] = [
       },
     ],
     ties: [{ to: "ministry:unity", how: "Logos all but identical; ties unknown" }],
-    related: ["ministry:humanity", "company:ampudyne"],
+    related: ["ministry:humanity"],
     source: wiki("Permacura"),
   },
   {
@@ -364,24 +364,6 @@ export const COMPANIES: Company[] = [
     ],
     related: ["manual:dss", "app:past"],
     source: wiki("C.O.B. Genetics"),
-  },
-  {
-    id: "ampudyne",
-    name: "AmpuDyne",
-    address: "se://ampudyne.med",
-    trade: "Prosthetics",
-    summary: "Replacement limbs for the citizens the war leaves short of one.",
-    color: "#c9ced6",
-    slogan: "AmpuDyne: Let us give you a hand.",
-    broadcast: "Sometimes life deals you a bad hand. But AmpuDyne can deal you a better one.",
-    sections: [
-      {
-        heading: "A helping hand",
-        text: "Builds cybernetic prosthetics for wounded and dismembered citizens. Its broadcasts suggest signing your life over to its indentured labour force, where you'll get every replacement limb the job requires.",
-      },
-    ],
-    related: ["company:permacura", "ministry:humanity"],
-    source: wiki("AmpuDyne"),
   },
   {
     id: "trustor",
@@ -498,30 +480,13 @@ export const COMPANIES: Company[] = [
     source: wiki("Ståhl Arms"),
   },
   {
-    id: "ulterior",
-    name: "Ulterior",
-    address: "se://ulterior.corp",
-    trade: "Mining",
-    summary: "The miner Super Earth trusts with its Element 710.",
-    color: "#7f93a0",
-    slogan: "Ulterior: operating under the mantle.",
-    broadcast: "Super Earth runs on Element 710. And Element 710 runs on Ulterior Industries.",
-    sections: [
-      {
-        heading: "Under the mantle",
-        text: "Resources bring us together and allow us to thrive, its broadcasts say, which is why Super Earth trusts Ulterior with all its mining needs. The Element 710 it supplies fuels the Alcubierre drive of every [[manual:super-destroyers|Super Destroyer]].",
-      },
-    ],
-    related: ["ministry:expansion", "manual:super-destroyers"],
-    source: wiki("Ulterior"),
-  },
-  {
     id: "martian-armory",
     name: "Martian Armory",
     address: "se://martian.armory",
     trade: "Arms",
     summary: "The weapons maker behind the arms made famous by the Obedient Democracy Support Troopers cartoon.",
     color: "#6f9a4a",
+    logo: "martian-armory",
     sections: [
       {
         heading: "The armory",

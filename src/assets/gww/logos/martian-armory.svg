@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 2 120 146">
+  <defs>
+    <linearGradient id="ma-steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef2df"/>
+      <stop offset="1" stop-color="#93a96a"/>
+    </linearGradient>
+    <mask id="ma-cut" maskUnits="userSpaceOnUse" x="0" y="-20" width="120" height="200">
+      <rect y="-20" width="120" height="200" fill="#fff"/>
+      <path d="M37.0 55.1L43.0 46.1H77.0L83.0 55.1L77.0 64.1H43.0Z M37.0 90.1L43.0 81.1H77.0L83.0 90.1L77.0 99.1H43.0Z M37.0 125.1L43.0 116.1H77.0L83.0 125.1L77.0 134.1H43.0Z M56.5 55.1H63.5V90.1H56.5Z M56.5 90.1H63.5V125.1H56.5Z M56.5 38.1H63.5V55.1H56.5Z M56.5 125.1H63.5V138.1L60 144.1L56.5 138.1Z" fill="#000" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <g fill="url(#ma-steel)">
+    <path d="M6 4L44 40.1V70.1L13 40.6L6 27.0Z M114 4L76 40.1V70.1L107 40.6L114 27.0Z M6 39L44 75.1V105.1L13 75.7L6 62.0Z M114 39L76 75.1V105.1L107 75.7L114 62.0Z M6 74L44 110.1V140.1L13 110.7L6 97.0Z M114 74L76 110.1V140.1L107 110.7L114 97.0Z" mask="url(#ma-cut)"/>
+    <path d="M37.0 55.1L43.0 46.1H77.0L83.0 55.1L77.0 64.1H43.0Z M37.0 90.1L43.0 81.1H77.0L83.0 90.1L77.0 99.1H43.0Z M37.0 125.1L43.0 116.1H77.0L83.0 125.1L77.0 134.1H43.0Z M56.5 55.1H63.5V90.1H56.5Z M56.5 90.1H63.5V125.1H56.5Z M56.5 38.1H63.5V55.1H56.5Z M56.5 125.1H63.5V138.1L60 144.1L56.5 138.1Z"/>
+  </g>
+</svg>

@@ -448,9 +448,10 @@ export function AboutModule() {
           ))}
         </ul>
         <p>
-          The ministry, campaign and difficulty icons (vector tracings by the wiki's contributors), corporation logos,
-          product pictures and city adverts are the game's, taken from the Helldivers Wiki, and belong to Arrowhead Game
-          Studios and Sony Interactive Entertainment.
+          The ministry, campaign, difficulty and stratagem icons and the SEAF emblem (vector tracings by the wiki's
+          contributors), corporation logos, product pictures and city adverts are the game's, taken from the Helldivers
+          Wiki, and belong to Arrowhead Game Studios and Sony Interactive Entertainment. Martian Armory's logo is drawn
+          for the app.
         </p>
       </div>
     </Panel>

@@ -1,18 +1,21 @@
-import { Crosshair, FileText, MousePointerClick, Pin, PinOff, X } from "lucide-react";
+import { Crosshair, FileText, MousePointerClick, Pin, PinOff, Timer, X } from "lucide-react";
 import { useEffect, type CSSProperties } from "react";
 import type { Faction, Planet } from "../../api/types";
 import { biomeTint, planetTint, regenPctPerHour, resistanceLevel } from "../../domain/biomes";
 import { hasPawn, type PlanetEffect } from "../../domain/effects";
 import { factionColor, factionLabel } from "../../domain/factions";
-import { fmtInt, fmtPct } from "../../domain/format";
+import { fmtInt, fmtPct, fmtTimeLeft } from "../../domain/format";
 import { citiesOf } from "../../domain/cities";
 import { anomalyOf, type Landmark } from "../../domain/galaxy";
 import { liberationPercent, trackedPercent } from "../../domain/progress";
 import { useSettings, useUi } from "../../state";
-import { DssIcon, SubfactionEmblem } from "../../ui/emblems";
+import { DssIcon, SeafEmblem, SubfactionEmblem } from "../../ui/emblems";
+import { useNow } from "../../ui/primitives";
 import { CityList, CityMark } from "../planet/Cities";
+import { CircumvallationNote, useCircumvallation } from "../planet/Circumvallation";
 import { useStationPlanets } from "../planets/useFronts";
 import { PoiGlyph, poiImage, poiKind, poiOrigin } from "./poi";
+import { augmentedStratagem, stratagemIcon } from "./stratagemArt";
 
 export type Hover = { x: number; y: number } & (
   { planet: Planet; landmark?: never } | { landmark: Landmark; planet?: never }
@@ -77,6 +80,35 @@ export function LiberationBar({ p, pct, enemy }: { p: Planet; pct: number; enemy
   );
 }
 
+/** Arsenal augmentations: stratagems High Command adds to every loadout on the planet for a while. */
+function Augmentations({ list }: { list: PlanetEffect[] }) {
+  const now = useNow(60_000);
+  const live = list.filter((e) => e.until == null || e.until > now);
+  if (!live.length) return null;
+  return (
+    <ul className="hc-augments" aria-label="Arsenal augmentations">
+      {live.map((e) => {
+        const name = augmentedStratagem(e.name);
+        const icon = stratagemIcon(name);
+        return (
+          <li key={e.id}>
+            {icon ? <img src={icon} alt="" width={26} height={26} /> : <Crosshair size={18} aria-hidden />}
+            <span className="hc-aug-body">
+              <span className="caps">Arsenal augmentation</span>
+              <b className="caps">{name}</b>
+            </span>
+            {e.until != null && (
+              <span className="hc-aug-left caps num" title="Time left">
+                <Timer size={11} aria-hidden /> {fmtTimeLeft(e.until - now)}
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 /** What the map's hover card and planet panel both show: picture, name, what's there and the fight. */
 function PlanetSummary({ p, active, effects }: { p: Planet; active: boolean; effects?: PlanetEffect[] }) {
   const enemy = enemyOf(p);
@@ -95,9 +127,11 @@ function PlanetSummary({ p, active, effects }: { p: Planet; active: boolean; eff
   // Black holes and broken worlds list what they are too, as the game's tooltip does.
   const rows = [...(effects ?? []).filter((e) => e.kind === "look" && poiKind(e.name) === "anomaly"), ...pois];
   const chips = shown.filter((e) => e.kind !== "poi");
+  const augments = (effects ?? []).filter((e) => e.kind === "arsenal");
   const pct = enemy ? trackedPercent(p) : 100;
   const regen = regenPctPerHour(p);
   const res = resistanceLevel(regen);
+  const siege = useCircumvallation(p);
   return (
     <>
       <div className={`hc-art ${poiImage(pois, anomaly) ? "poi" : ""}`} />
@@ -126,11 +160,13 @@ function PlanetSummary({ p, active, effects }: { p: Planet; active: boolean; eff
               {e.kind === "subfaction" && enemy && (
                 <SubfactionEmblem name={e.name} faction={enemy} size={12} color="currentColor" />
               )}
+              {e.kind === "seaf" && <SeafEmblem size={13} color="var(--f-humans)" />}
               {e.name}
             </li>
           ))}
         </ul>
       )}
+      <Augmentations list={augments} />
       {enemy && (
         <div className="hc-progress">
           <LiberationBar p={p} pct={pct} enemy={enemy} />
@@ -147,6 +183,7 @@ function PlanetSummary({ p, active, effects }: { p: Planet; active: boolean; eff
           </b>
         </div>
       )}
+      {siege && <CircumvallationNote front={p} c={siege} className="hc-siege" />}
     </>
   );
 }
