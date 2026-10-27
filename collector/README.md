@@ -59,6 +59,10 @@ up the Firebase project first (see "Pushed news on Android" in the main README),
 What is already stored counts as announced, so a restart, or turning pushes on, sends nothing old. A push that
 fails is logged and not retried.
 
+Orders and campaign news go to one topic and dispatches to another, so the app's alert settings decide what a
+phone receives; older APKs on the single `news` topic still get everything. Update the collector before
+releasing an APK built from the same version, or new installs receive nothing until it is updated.
+
 ## Setup without Docker
 
 Needs a Rust toolchain (https://rustup.rs). From the repo root:

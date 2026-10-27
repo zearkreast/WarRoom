@@ -1,6 +1,6 @@
 //! Settings: interface, galaxy map, notifications and updates.
 
-use crate::alerts::{ToastKind, ask_permission, notify};
+use crate::alerts::{ToastKind, ask_permission, notify, web_permission};
 use crate::api::queries::queries;
 use crate::config::APP_VERSION;
 use crate::features::map::options::{dispatch_options, overlay_options, planet_options, quality_options};
@@ -145,6 +145,20 @@ pub fn SettingsPage() -> impl IntoView {
     let last_update = queries().last_update;
     let copied = RwSignal::new(false);
     let pinned = Memo::new(move |_| s.get(|s| s.pinned.len()));
+    let permission = RwSignal::new(web_permission());
+    let allow = move || {
+        ask_permission();
+        // The browser answers whenever the person does; check until it has.
+        leptos::task::spawn_local(async move {
+            for _ in 0..600 {
+                js::sleep(250.0).await;
+                if web_permission().as_deref() != Some("default") {
+                    break;
+                }
+            }
+            permission.set(web_permission());
+        });
+    };
 
     let copy_diagnostics = move |_| {
         let w = js::window();
@@ -253,14 +267,25 @@ pub fn SettingsPage() -> impl IntoView {
                         .iter()
                         .map(|(key, title, text)| {
                             let key = *key;
+                            // System notifications start On, so on the web nothing would ever ask the browser.
+                            let ask = move || {
+                                key == "system"
+                                    && permission.get().as_deref() == Some("default")
+                                    && s.get(|s| s.alerts.system)
+                            };
                             view! {
                                 <Row title=*title text=*text>
+                                    <Show when=ask>
+                                        <button class="hud-btn" on:click=move |_| allow()>
+                                            "Allow in this browser"
+                                        </button>
+                                    </Show>
                                     <OnOff
                                         label=*title
                                         value=Signal::derive(move || s.get(|s| alert_value(&s.alerts, key)))
                                         on_change=move |v| {
                                             if key == "system" && v {
-                                                ask_permission();
+                                                allow();
                                             }
                                             s.set(|s| *alert_flag(&mut s.alerts, key) = v)
                                         }

@@ -93,7 +93,14 @@ pub fn campaign_of<'a>(d: &Dispatch, list: &'a [EpisodeLive]) -> Option<&'a Epis
 fn events_of(e: &EpisodeLive, own: &[&Dispatch]) -> Vec<(CampaignEvent, Option<Dispatch>)> {
     let announced: Vec<&&Dispatch> = own.iter().filter(|d| NEW_ORDER.is_match(&dispatch_title(&d.message))).collect();
     let launch_told = announced.first().is_some_and(|d| published(d) <= e.start + 2.0 * HOUR);
-    let offset = if launch_told { 0 } else { e.phases.len().saturating_sub(announced.len()) };
+    // Count only what can pair up: an announcement can come out before its order reaches the campaign, and an
+    // order after the newest announcement still kept.
+    let newest_issued = e.phases.last().and_then(|p| p.issued);
+    let newest_told = announced.last().map(|d| published(d));
+    let told = announced.iter().filter(|d| newest_issued.is_none_or(|t| published(d) <= t + 2.0 * HOUR)).count();
+    let shown =
+        e.phases.iter().filter(|p| p.issued.is_none_or(|t| newest_told.is_some_and(|n| t <= n + 2.0 * HOUR))).count();
+    let offset = if launch_told { 0 } else { shown.saturating_sub(told) };
     let mut out = Vec::new();
     for (i, p) in e.phases.iter().enumerate() {
         let dispatch = i.checked_sub(offset).and_then(|k| announced.get(k)).map(|d| (**d).clone());

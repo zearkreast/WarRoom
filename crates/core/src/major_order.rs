@@ -8,6 +8,8 @@ use crate::snapshot::{EpisodeLive, EpisodeStatus, OrderSample, phase_name};
 // valueTypes observed in assignment tasks.
 const VT_FACTION: i64 = 1;
 const VT_GOAL: i64 = 3;
+/// 1 when the task names a planet; the planet slot then holds its index, which is 0 for Super Earth.
+const VT_LOCATION_TYPE: i64 = 11;
 const VT_PLANET: i64 = 12;
 
 // Task types with known meanings; anything else is shown generically.
@@ -48,8 +50,10 @@ pub fn describe_task(task: &AssignmentTask, progress: f64, planets: Option<&[Pla
     let goal = value_of(task, VT_GOAL).unwrap_or(1.0);
     let faction = faction_id.filter(|f| *f != 0.0 && !f.is_nan()).and_then(|f| faction_by_id(f as i64));
     let label = task_label(task.kind);
-    // The API fills the planet slot with 0 when a task has no planet.
-    let planet = planet_index.filter(|i| *i > 0.0).and_then(|i| planets?.iter().find(|p| p.index as f64 == i));
+    // Without a location type, a 0 in the planet slot means no planet.
+    let names_planet =
+        value_of(task, VT_LOCATION_TYPE).map_or_else(|| planet_index.is_some_and(|i| i > 0.0), |t| t == 1.0);
+    let planet = planet_index.filter(|_| names_planet).and_then(|i| planets?.iter().find(|p| p.index as f64 == i));
     if let Some(planet) = planet.filter(|_| matches!(task.kind, 11..=13)) {
         return TaskView {
             is_planet: true,

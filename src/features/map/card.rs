@@ -313,14 +313,21 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
                             {move || if defended.get() { "defended" } else { "liberated" }}
                         </span>
                     </div>
-                    <div class="hc-row caps">
-                        <span>"Resistance"</span>
-                        <b style=move || format!("color: {};", resistance_level(regen.get()).1)>
-                            {move || resistance_level(regen.get()).0}
-                            " "
-                            <span class="num">"("{move || to_fixed(regen.get(), 2)}"%)"</span>
-                        </b>
-                    </div>
+                    {move || {
+                        (!defended.get())
+                            .then(|| {
+                                view! {
+                                    <div class="hc-row caps">
+                                        <span>"Resistance"</span>
+                                        <b style=move || format!("color: {};", resistance_level(regen.get()).1)>
+                                            {move || resistance_level(regen.get()).0}
+                                            " "
+                                            <span class="num">"("{move || to_fixed(regen.get(), 2)}"%)"</span>
+                                        </b>
+                                    </div>
+                                }
+                            })
+                    }}
                 }
             })
         }}

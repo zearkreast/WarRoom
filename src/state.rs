@@ -406,6 +406,9 @@ impl Settings {
     }
 
     pub fn mark_seen(&self, assignments: Vec<i64>, dispatch: i64) {
+        if self.untracked(|d| d.seen_assignments == assignments && d.seen_dispatch == dispatch) {
+            return;
+        }
         self.change(|d| {
             d.seen_assignments = assignments;
             d.seen_dispatch = dispatch;
@@ -413,6 +416,9 @@ impl Settings {
     }
 
     pub fn mark_campaign_seen(&self, keys: Vec<String>) {
+        if self.untracked(|d| d.seen_campaign_events == keys) {
+            return;
+        }
         self.change(|d| d.seen_campaign_events = keys);
     }
 

@@ -161,6 +161,9 @@ Firebase Cloud Messaging, so the Android app shows it even while closed. To set 
 
 Without the secret the APK has no pushes, and notifies only while it is open.
 
+Update the collector before releasing an APK built from this version: its APKs leave the old `news` topic for
+one topic per alert setting, and only the updated collector sends to those.
+
 ## Release a new version
 
 1. Raise the version in all three places together: `[workspace.package]` in `Cargo.toml`,

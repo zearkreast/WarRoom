@@ -394,7 +394,7 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
                                         {rate.map_or("Rate measuring…".to_string(), |r| format!("{}{}% / h", if r > 0.0 { "+" } else { "" }, to_fixed(r, 2)))}
                                     </span>
                                 })}
-                                {enemy.map(|e| view! {
+                                {enemy.filter(|_| p.event.is_none()).map(|e| view! {
                                     <span class="num" style=format!("color: {};", faction_color(Some(e)))>
                                         <FactionEmblem faction=e.as_str() size=14.0 />
                                         {format!(" -{}% / h regen", to_fixed(regen_pct_per_hour(p.regen_per_second, p.max_health), 2))}

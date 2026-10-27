@@ -1,5 +1,6 @@
 mod common;
 use common::*;
+use warroom_core::api::Dispatch;
 use warroom_core::campaign_news::{
     EventType, campaign_alerts, campaign_events, campaign_headline, campaign_of, campaign_threads,
 };
@@ -59,6 +60,29 @@ fn gathers_a_campaigns_orders_and_dispatches_on_one_thread() {
 fn pairs_the_announcements_left_with_the_last_orders_once_the_first_has_dropped_out() {
     // The fixture's oldest dispatch is ARMORED EAGLE's second order announcement.
     let (threads, _) = campaign_threads(&campaigns_live(), &dispatches());
+    let t = threads.iter().find(|t| t.campaign.title == "ARMORED EAGLE").unwrap();
+    let orders: Vec<(usize, Option<i64>)> = t
+        .entries
+        .iter()
+        .filter_map(|x| {
+            let ev = x.event.as_ref().filter(|ev| ev.kind != EventType::Ended)?;
+            Some((ev.phase, x.dispatch.as_ref().map(|d| d.id)))
+        })
+        .collect();
+    assert_eq!(orders, [(0, None), (1, Some(3941)), (2, Some(3943))]);
+}
+
+#[test]
+fn an_announcement_ahead_of_its_order_leaves_the_earlier_pairs_alone() {
+    let mut list = campaigns_live();
+    let mut ds = dispatches();
+    let at = |id: i64, ds: &[Dispatch]| ms(&ds.iter().find(|d| d.id == id).unwrap().published);
+    let (first, second) = (at(3941, &ds), at(3943, &ds));
+    let e = list.iter_mut().find(|e| e.title == "ARMORED EAGLE").unwrap();
+    e.phases[1].issued = Some(first);
+    e.phases[2].issued = Some(second);
+    ds.push(dispatch(99_999, second + 3.0 * H, "<i=3>NEW MAJOR ORDER</i>\nThe next order."));
+    let (threads, _) = campaign_threads(&list, &ds);
     let t = threads.iter().find(|t| t.campaign.title == "ARMORED EAGLE").unwrap();
     let orders: Vec<(usize, Option<i64>)> = t
         .entries

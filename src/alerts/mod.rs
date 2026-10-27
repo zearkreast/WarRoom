@@ -147,6 +147,18 @@ pub fn ask_permission() {
     });
 }
 
+/// The browser's notification permission ("default", "granted" or "denied"); None in the app or without support.
+pub fn web_permission() -> Option<String> {
+    if tauri::is_tauri() {
+        return None;
+    }
+    let n = get(&js::window(), "Notification");
+    if n.is_undefined() {
+        return None;
+    }
+    get(&n, "permission").as_string()
+}
+
 async fn permitted() -> bool {
     if tauri::is_tauri() {
         request_notifications();
