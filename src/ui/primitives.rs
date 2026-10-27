@@ -77,7 +77,7 @@ pub fn Meter(
     };
     let class = format!("meter meter-{size} {}", if chevron { "chevron" } else { "" });
     let style = move || {
-        format!("--fill: {}; --rest: {};", color.get(), rest.map_or_else(|| "var(--line-strong)".into(), |r| r.get()))
+        format!("--meter: {}; --rest: {};", color.get(), rest.map_or_else(|| "var(--line-strong)".into(), |r| r.get()))
     };
     let mark = move || marker.and_then(|m| m.get()).filter(|m| *m > 0.0 && *m < 100.0);
     view! {

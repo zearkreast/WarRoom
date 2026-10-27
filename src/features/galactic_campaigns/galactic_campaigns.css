@@ -1,510 +1,512 @@
-/* ---------- Galactic Campaign ---------- */
-.cmp,
-.cmp-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-5);
-}
-.cmp-head {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--s-4);
-}
-.cmp-name {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
-  min-width: 0;
-}
-.cmp-title {
-  font-family: var(--font-head);
-  font-stretch: 125%;
-  font-weight: 800;
-  font-size: var(--fs-value);
-  letter-spacing: 0.04em;
-  color: var(--tone);
-  text-transform: uppercase;
-  overflow-wrap: anywhere;
-}
-.cmp-dates,
-.cmp-issued {
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--label);
-}
-.cmp-desc,
-.cmp-text {
-  margin: 0;
-  max-width: 70ch;
-  font-size: var(--fs-body);
-  line-height: 1.5;
-  color: var(--text);
-  white-space: pre-line;
-}
-.cmp-outro {
-  padding-top: var(--s-4);
-  border-top: 1px solid var(--line);
-  color: var(--text-dim);
-}
-
-.cmp-reward {
-  --state: var(--info);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--s-2) var(--s-4);
-  padding: var(--s-4) var(--s-5);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-}
-.cmp-reward.won {
-  --state: var(--good);
-}
-.cmp-reward.lost {
-  --state: var(--bad);
-}
-.cmp-label {
-  grid-column: 1 / -1;
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--label);
-}
-.cmp-reward-name {
-  font-size: var(--fs-value);
-  color: var(--text-hi);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.cmp-reward.lost .cmp-reward-name {
-  color: var(--text-dim);
-  text-decoration: line-through;
-  text-decoration-color: color-mix(in srgb, var(--bad) var(--strong), transparent);
-}
-.cmp-reward-kind {
-  align-self: center;
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--text-dim);
-}
-.cmp-rule {
-  grid-column: 1 / -1;
-  font-size: var(--fs-body-s);
-  color: var(--state);
-}
-
-.cmp-tally {
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--label);
-}
-.cmp-tally b {
-  font-size: var(--fs-body);
-  color: var(--text-hi);
-}
-
-.cmp-orders {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-}
-.cmp-orders details {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-}
-.cmp-orders details[open] {
-  border-color: var(--line-strong);
-}
-.cmp-orders summary {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: var(--s-4);
-  padding: var(--s-3) var(--s-4);
-  cursor: pointer;
-  list-style: none;
-}
-.cmp-orders summary::-webkit-details-marker {
-  display: none;
-}
-.cmp-orders summary:hover .cmp-mo-title {
-  color: var(--cta);
-}
-.cmp-orders details > :not(summary) {
-  margin: 0 var(--s-4) var(--s-4);
-}
-.cmp-orders details > .cmp-issued {
-  display: block;
-  margin-top: var(--s-2);
-}
-/* A Major Order not issued yet: a dashed slot that fills when the game names it. */
-.cmp-slot {
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  padding: var(--s-3) var(--s-4);
-  border: 1px dashed var(--line-strong);
-}
-.cmp-slot-text {
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--faint);
-}
-.cmp-mo {
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--label);
-}
-.cmp-mo-title {
-  min-width: 0;
-  font-size: var(--fs-body-s);
-  letter-spacing: 0.08em;
-  color: var(--text-hi);
-  text-transform: uppercase;
-}
-.cmp-medals {
-  font-size: var(--fs-label);
-  letter-spacing: 0.12em;
-  color: var(--text-dim);
-}
-
-@media (max-width: 760px) {
-  .cmp-orders summary {
+@layer features {
+  /* ---------- Galactic Campaign ---------- */
+  .cmp,
+  .cmp-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-5);
+  }
+  .cmp-head {
+    display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s-4);
+  }
+  .cmp-name {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+    min-width: 0;
+  }
+  .cmp-title {
+    font-family: var(--font-head);
+    font-stretch: 125%;
+    font-weight: 800;
+    font-size: var(--fs-value);
+    letter-spacing: 0.04em;
+    color: var(--tone);
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+  .cmp-dates,
+  .cmp-issued {
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--label);
+  }
+  .cmp-desc,
+  .cmp-text {
+    margin: 0;
+    max-width: 70ch;
+    font-size: var(--fs-body);
+    line-height: 1.5;
+    color: var(--text);
+    white-space: pre-line;
+  }
+  .cmp-outro {
+    padding-top: var(--s-4);
+    border-top: 1px solid var(--line);
+    color: var(--text-dim);
+  }
+
+  .cmp-reward {
+    --state: var(--info);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--s-2) var(--s-4);
+    padding: var(--s-4) var(--s-5);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+  }
+  .cmp-reward.won {
+    --state: var(--good);
+  }
+  .cmp-reward.lost {
+    --state: var(--bad);
+  }
+  .cmp-label {
+    grid-column: 1 / -1;
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--label);
+  }
+  .cmp-reward-name {
+    font-size: var(--fs-value);
+    color: var(--text-hi);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .cmp-reward.lost .cmp-reward-name {
+    color: var(--text-dim);
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--bad) var(--strong), transparent);
+  }
+  .cmp-reward-kind {
+    align-self: center;
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+  }
+  .cmp-rule {
+    grid-column: 1 / -1;
+    font-size: var(--fs-body-s);
+    color: var(--state);
+  }
+
+  .cmp-tally {
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--label);
+  }
+  .cmp-tally b {
+    font-size: var(--fs-body);
+    color: var(--text-hi);
+  }
+
+  .cmp-orders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .cmp-orders details {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+  }
+  .cmp-orders details[open] {
+    border-color: var(--line-strong);
+  }
+  .cmp-orders summary {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--s-4);
+    padding: var(--s-3) var(--s-4);
+    cursor: pointer;
+    list-style: none;
+  }
+  .cmp-orders summary::-webkit-details-marker {
+    display: none;
+  }
+  .cmp-orders summary:hover .cmp-mo-title {
+    color: var(--cta);
+  }
+  .cmp-orders details > :not(summary) {
+    margin: 0 var(--s-4) var(--s-4);
+  }
+  .cmp-orders details > .cmp-issued {
+    display: block;
+    margin-top: var(--s-2);
+  }
+  /* A Major Order not issued yet: a dashed slot that fills when the game names it. */
+  .cmp-slot {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    padding: var(--s-3) var(--s-4);
+    border: 1px dashed var(--line-strong);
+  }
+  .cmp-slot-text {
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--faint);
+  }
+  .cmp-mo {
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--label);
+  }
+  .cmp-mo-title {
+    min-width: 0;
+    font-size: var(--fs-body-s);
+    letter-spacing: 0.08em;
+    color: var(--text-hi);
+    text-transform: uppercase;
   }
   .cmp-medals {
-    display: none;
+    font-size: var(--fs-label);
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
   }
-}
 
-@media (max-width: 480px) {
-  /* The outcome chip drops under the dates so long names keep whole words. */
-  .cmp-head {
-    grid-template-columns: auto minmax(0, 1fr);
+  @media (max-width: 760px) {
+    .cmp-orders summary {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+    .cmp-medals {
+      display: none;
+    }
   }
-  .cmp-head > .status-chip {
-    grid-column: 2;
-    justify-self: start;
-  }
-}
 
-/* ---------- Archive ---------- */
-.pc-archive {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-6);
-}
-.pc-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
-  gap: var(--s-4);
-}
+  @media (max-width: 480px) {
+    /* The outcome chip drops under the dates so long names keep whole words. */
+    .cmp-head {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .cmp-head > .status-chip {
+      grid-column: 2;
+      justify-self: start;
+    }
+  }
 
-.pc-record {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-}
-.pc-record-head,
-.pc-record-ends {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--s-4);
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--label);
-}
-.pc-legend {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-3);
-  color: var(--text-dim);
-}
-.pc-legend i {
-  width: 10px;
-  height: 10px;
-  border-bottom: 2px solid var(--good);
-  background: var(--surface-3);
-}
-.pc-legend i.lost {
-  margin-left: var(--s-3);
-  border-color: var(--bad);
-  background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--bad) 45%, transparent) 0 2px, transparent 2px 4px),
-    var(--surface-3);
-}
-.pc-strip {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  gap: 3px;
-}
-.pc-strip li {
-  flex: 1 1 0;
-  min-width: 0;
-}
-.pc-seg {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 30px;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--tone) var(--edge), var(--line));
-  border-bottom: 2px solid var(--good);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--tone) 22%, transparent), transparent), var(--surface-2);
-  cursor: pointer;
-  transform-origin: bottom;
-  animation: pc-seg-in 420ms var(--ease) backwards;
-  animation-delay: min(calc(var(--i) * 35ms), 600ms);
-  transition:
-    background var(--t-state),
-    border-color var(--t-state),
-    transform var(--t-state) var(--ease);
-}
-.pc-seg.lost {
-  border-bottom-color: var(--bad);
-  background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--bad) 28%, transparent) 0 3px, transparent 3px 7px),
-    var(--surface-2);
-}
-.pc-seg.lost .emblem {
-  opacity: 0.6;
-}
-.pc-seg:hover {
-  border-color: var(--tone);
-  background-color: color-mix(in srgb, var(--tone) var(--fill), var(--surface-2));
-  transform: translateY(-2px);
-}
+  /* ---------- Archive ---------- */
+  .pc-archive {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-6);
+  }
+  .pc-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+    gap: var(--s-4);
+  }
 
-.pc-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-4);
-}
-.pc-list > li {
-  animation: pc-in 460ms var(--ease) backwards;
-  animation-delay: min(calc(var(--i) * 45ms), 500ms);
-}
-.pc {
-  scroll-margin-top: var(--s-6);
-  border: 1px solid var(--line);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--tone) var(--wash), transparent), transparent 45%), var(--surface-0);
-  box-shadow: inset 3px 0 0 -1px var(--tone);
-  transition: border-color var(--t-reveal) var(--ease);
-}
-.pc:hover,
-.pc[open] {
-  border-color: color-mix(in srgb, var(--tone) var(--edge), var(--line-strong));
-}
-.pc[data-flash] {
-  animation: pc-flash 1.4s var(--ease);
-}
-.pc > summary {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--s-4) var(--s-5);
-  padding: var(--s-5) var(--s-5) var(--s-5) var(--s-6);
-  cursor: pointer;
-  list-style: none;
-  transition: background-color var(--t-reveal) var(--ease);
-}
-.pc > summary::-webkit-details-marker {
-  display: none;
-}
-.pc > summary:hover {
-  background-color: color-mix(in srgb, var(--tone) 4%, transparent);
-}
-.pc > summary:hover .cmp-title {
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--tone) var(--strong), transparent);
-  text-underline-offset: 3px;
-}
-.pc[open] > summary {
-  border-bottom: 1px solid var(--line);
-}
-.pc > summary > :not(.pc-mark, .pc-chevron) {
-  grid-column: 1;
-}
-/* The enemy's emblem, large and faint behind the title row. */
-.pc-mark {
-  position: absolute;
-  z-index: -1;
-  top: 50%;
-  right: 64px;
-  opacity: 0.07;
-  transform: translateY(-50%) rotate(-12deg);
-  pointer-events: none;
-  transition:
-    opacity var(--t-reveal) var(--ease),
-    transform var(--t-value) var(--ease);
-}
-.pc > summary:hover .pc-mark,
-.pc[open] .pc-mark {
-  opacity: 0.12;
-  transform: translateY(-50%) rotate(-6deg) scale(1.06);
-}
-.pc.lost .pc-mark {
-  filter: grayscale(0.7);
-}
-.pc-chevron {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  color: var(--label);
-  transition:
-    transform var(--t-reveal) var(--ease),
-    color var(--t-state);
-}
-.pc > summary:hover .pc-chevron {
-  color: var(--tone);
-}
-.pc[open] .pc-chevron {
-  transform: rotate(90deg);
-  color: var(--tone);
-}
-/* The clip hides the separator dot that would lead a wrapped line; its inset leaves the pips' glow. */
-.pc-meta {
-  --gap: var(--s-6);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s-3) var(--gap);
-  margin-left: calc(-1 * var(--s-4));
-  padding-left: var(--s-4);
-  clip-path: inset(-8px -8px -8px 4px);
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--label);
-}
-.pc-meta > span {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-3);
-}
-.pc-meta > span + span::before {
-  content: "";
-  position: absolute;
-  top: calc(50% - 1.5px);
-  left: calc(var(--gap) / -2 - 1.5px);
-  width: 3px;
-  height: 3px;
-  background: var(--faint);
-}
-.pc-pips {
-  display: inline-flex;
-  gap: 2px;
-}
-.pc-pips i {
-  width: 12px;
-  height: 6px;
-  background: var(--line-strong);
-}
-.pc-pips i.won {
-  background: var(--good);
-  box-shadow: 0 0 4px color-mix(in srgb, var(--good) 45%, transparent);
-}
-.pc-pips i.lost {
-  background: var(--bad);
-}
-.pc-reward {
-  color: var(--text-dim);
-}
-.pc-reward svg {
-  color: var(--good);
-}
-.pc.lost .pc-reward svg {
-  color: var(--faint);
-}
-.pc.lost .pc-reward-name {
-  text-decoration: line-through;
-  text-decoration-color: color-mix(in srgb, var(--bad) var(--strong), transparent);
-}
-.pc > .cmp-body {
-  padding: var(--s-5) var(--s-5) var(--s-5) var(--s-6);
-}
-.pc[open] > .cmp-body {
-  animation: pc-open 320ms var(--ease);
-}
-
-@keyframes pc-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+  .pc-record {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
   }
-}
-@keyframes pc-seg-in {
-  from {
-    opacity: 0;
-    transform: scaleY(0.2);
+  .pc-record-head,
+  .pc-record-ends {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-4);
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--label);
   }
-}
-@keyframes pc-open {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
+  .pc-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-3);
+    color: var(--text-dim);
   }
-}
-@keyframes pc-flash {
-  0%,
-  35% {
-    border-color: var(--cta);
-    box-shadow:
-      inset 3px 0 0 -1px var(--tone),
-      0 0 0 1px var(--cta),
-      0 0 22px color-mix(in srgb, var(--cta) 30%, transparent);
-  }
-}
-
-@media (max-width: 480px) {
-  .pc > summary,
-  .pc > .cmp-body {
-    padding-left: var(--s-5);
-  }
-  .pc-mark {
-    right: 28px;
-  }
-}
-
-/* The staggered entrances would otherwise hold each row hidden for its delay. */
-@media (prefers-reduced-motion: reduce) {
-  .pc-list > li,
-  .pc-seg,
-  .pc[open] > .cmp-body {
-    animation: none;
-  }
-}
-
-@media (forced-colors: active) {
-  .pc-pips i,
   .pc-legend i {
-    forced-color-adjust: none;
-    background: Canvas;
-    border: 1px solid CanvasText;
-  }
-  .pc-pips i.won,
-  .pc-legend i.won {
-    background: CanvasText;
-  }
-  .pc-pips i.lost,
-  .pc-legend i.lost {
-    background: Canvas;
+    width: 10px;
+    height: 10px;
+    border-bottom: 2px solid var(--good);
+    background: var(--surface-3);
   }
   .pc-legend i.lost {
-    border-style: dashed;
+    margin-left: var(--s-3);
+    border-color: var(--bad);
+    background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--bad) 45%, transparent) 0 2px, transparent 2px 4px),
+      var(--surface-3);
+  }
+  .pc-strip {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 3px;
+  }
+  .pc-strip li {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .pc-seg {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 30px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--tone) var(--edge), var(--line));
+    border-bottom: 2px solid var(--good);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--tone) 22%, transparent), transparent), var(--surface-2);
+    cursor: pointer;
+    transform-origin: bottom;
+    animation: pc-seg-in 420ms var(--ease) backwards;
+    animation-delay: min(calc(var(--i) * 35ms), 600ms);
+    transition:
+      background var(--t-state),
+      border-color var(--t-state),
+      transform var(--t-state) var(--ease);
   }
   .pc-seg.lost {
-    border-bottom-style: dashed;
+    border-bottom-color: var(--bad);
+    background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--bad) 28%, transparent) 0 3px, transparent 3px 7px),
+      var(--surface-2);
   }
-  .pc-mark {
+  .pc-seg.lost .emblem {
+    opacity: 0.6;
+  }
+  .pc-seg:hover {
+    border-color: var(--tone);
+    background-color: color-mix(in srgb, var(--tone) var(--fill), var(--surface-2));
+    transform: translateY(-2px);
+  }
+
+  .pc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+  }
+  .pc-list > li {
+    animation: pc-in 460ms var(--ease) backwards;
+    animation-delay: min(calc(var(--i) * 45ms), 500ms);
+  }
+  .pc {
+    scroll-margin-top: var(--s-6);
+    border: 1px solid var(--line);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--tone) var(--wash), transparent), transparent 45%), var(--surface-0);
+    box-shadow: inset 3px 0 0 -1px var(--tone);
+    transition: border-color var(--t-reveal) var(--ease);
+  }
+  .pc:hover,
+  .pc[open] {
+    border-color: color-mix(in srgb, var(--tone) var(--edge), var(--line-strong));
+  }
+  .pc[data-flash] {
+    animation: pc-flash 1.4s var(--ease);
+  }
+  .pc > summary {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s-4) var(--s-5);
+    padding: var(--s-5) var(--s-5) var(--s-5) var(--s-6);
+    cursor: pointer;
+    list-style: none;
+    transition: background-color var(--t-reveal) var(--ease);
+  }
+  .pc > summary::-webkit-details-marker {
     display: none;
+  }
+  .pc > summary:hover {
+    background-color: color-mix(in srgb, var(--tone) 4%, transparent);
+  }
+  .pc > summary:hover .cmp-title {
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--tone) var(--strong), transparent);
+    text-underline-offset: 3px;
+  }
+  .pc[open] > summary {
+    border-bottom: 1px solid var(--line);
+  }
+  .pc > summary > :not(.pc-mark, .pc-chevron) {
+    grid-column: 1;
+  }
+  /* The enemy's emblem, large and faint behind the title row. */
+  .pc-mark {
+    position: absolute;
+    z-index: -1;
+    top: 50%;
+    right: 64px;
+    opacity: 0.07;
+    transform: translateY(-50%) rotate(-12deg);
+    pointer-events: none;
+    transition:
+      opacity var(--t-reveal) var(--ease),
+      transform var(--t-value) var(--ease);
+  }
+  .pc > summary:hover .pc-mark,
+  .pc[open] .pc-mark {
+    opacity: 0.12;
+    transform: translateY(-50%) rotate(-6deg) scale(1.06);
+  }
+  .pc.lost .pc-mark {
+    filter: grayscale(0.7);
+  }
+  .pc-chevron {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    color: var(--label);
+    transition:
+      transform var(--t-reveal) var(--ease),
+      color var(--t-state);
+  }
+  .pc > summary:hover .pc-chevron {
+    color: var(--tone);
+  }
+  .pc[open] .pc-chevron {
+    transform: rotate(90deg);
+    color: var(--tone);
+  }
+  /* The clip hides the separator dot that would lead a wrapped line; its inset leaves the pips' glow. */
+  .pc-meta {
+    --gap: var(--s-6);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-3) var(--gap);
+    margin-left: calc(-1 * var(--s-4));
+    padding-left: var(--s-4);
+    clip-path: inset(-8px -8px -8px 4px);
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--label);
+  }
+  .pc-meta > span {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-3);
+  }
+  .pc-meta > span + span::before {
+    content: "";
+    position: absolute;
+    top: calc(50% - 1.5px);
+    left: calc(var(--gap) / -2 - 1.5px);
+    width: 3px;
+    height: 3px;
+    background: var(--faint);
+  }
+  .pc-pips {
+    display: inline-flex;
+    gap: 2px;
+  }
+  .pc-pips i {
+    width: 12px;
+    height: 6px;
+    background: var(--line-strong);
+  }
+  .pc-pips i.won {
+    background: var(--good);
+    box-shadow: 0 0 4px color-mix(in srgb, var(--good) 45%, transparent);
+  }
+  .pc-pips i.lost {
+    background: var(--bad);
+  }
+  .pc-reward {
+    color: var(--text-dim);
+  }
+  .pc-reward svg {
+    color: var(--good);
+  }
+  .pc.lost .pc-reward svg {
+    color: var(--faint);
+  }
+  .pc.lost .pc-reward-name {
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--bad) var(--strong), transparent);
+  }
+  .pc > .cmp-body {
+    padding: var(--s-5) var(--s-5) var(--s-5) var(--s-6);
+  }
+  .pc[open] > .cmp-body {
+    animation: pc-open 320ms var(--ease);
+  }
+
+  @keyframes pc-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+  @keyframes pc-seg-in {
+    from {
+      opacity: 0;
+      transform: scaleY(0.2);
+    }
+  }
+  @keyframes pc-open {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+  @keyframes pc-flash {
+    0%,
+    35% {
+      border-color: var(--cta);
+      box-shadow:
+        inset 3px 0 0 -1px var(--tone),
+        0 0 0 1px var(--cta),
+        0 0 22px color-mix(in srgb, var(--cta) 30%, transparent);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .pc > summary,
+    .pc > .cmp-body {
+      padding-left: var(--s-5);
+    }
+    .pc-mark {
+      right: 28px;
+    }
+  }
+
+  /* The staggered entrances would otherwise hold each row hidden for its delay. */
+  @media (prefers-reduced-motion: reduce) {
+    .pc-list > li,
+    .pc-seg,
+    .pc[open] > .cmp-body {
+      animation: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .pc-pips i,
+    .pc-legend i {
+      forced-color-adjust: none;
+      background: Canvas;
+      border: 1px solid CanvasText;
+    }
+    .pc-pips i.won,
+    .pc-legend i.won {
+      background: CanvasText;
+    }
+    .pc-pips i.lost,
+    .pc-legend i.lost {
+      background: Canvas;
+    }
+    .pc-legend i.lost {
+      border-style: dashed;
+    }
+    .pc-seg.lost {
+      border-bottom-style: dashed;
+    }
+    .pc-mark {
+      display: none;
+    }
   }
 }

@@ -1,311 +1,313 @@
-.mo .panel-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-5);
-}
-.mo {
-  container-type: inline-size;
-}
-.mo .panel-title {
-  min-width: 0;
-}
-.mo-name {
-  color: var(--cta);
-}
-.mo-name::before {
-  content: "·";
-  margin: 0 var(--s-3);
-  color: var(--text-dim);
-}
-/* A narrow card has no room beside the countdown, so the name takes its own line rather than an ellipsis. */
-@container (max-width: 600px) {
+@layer features {
+  .mo .panel-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-5);
+  }
+  .mo {
+    container-type: inline-size;
+  }
   .mo .panel-title {
-    padding: var(--s-3) 0;
-    line-height: 1.3;
+    min-width: 0;
   }
   .mo-name {
-    display: block;
+    color: var(--cta);
   }
   .mo-name::before {
-    content: none;
+    content: "·";
+    margin: 0 var(--s-3);
+    color: var(--text-dim);
   }
-}
-.mo-ends {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-3);
-}
-.mo-ends b {
-  padding: 2px var(--s-3);
-  background: var(--cta);
-  color: var(--ink-on-cta);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.06em;
-}
-.mo-briefing {
-  margin: 0;
-  color: var(--text-hi);
-  font-size: var(--fs-body);
-  line-height: 1.5;
-  max-width: 70ch;
-}
-.mo-desc {
-  margin: 0;
-  color: var(--text-dim);
-  line-height: 1.5;
-  max-width: 70ch;
-}
-.mo-sub {
-  font-size: var(--fs-label);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--label);
-  padding-bottom: var(--s-3);
-  border-bottom: 1px solid var(--line);
-}
-.mo-tasks {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-5);
-}
-.mo-task {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-}
-.mo-task-head {
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  font-size: var(--fs-body);
-  color: var(--text-hi);
-  font-weight: 600;
-}
-.mo-task-head > span:first-of-type {
-  flex: 1;
-}
-.mo-check {
-  color: var(--text-dim);
-  flex: none;
-}
-.mo-task.done .mo-check {
-  color: var(--good);
-}
-.mo-pct {
-  font-weight: 700;
-  color: var(--text-hi);
-  text-shadow: 0 0 10px color-mix(in srgb, var(--k) 55%, transparent);
-}
-.mo-task.done .mo-pct {
-  color: var(--good);
-}
-.mo-task-foot {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--s-4);
-  font-size: var(--fs-body-s);
-  color: var(--text-dim);
-}
-.mo-task-foot b {
-  color: var(--text-hi);
-  font-weight: 600;
-}
-.mo-outlook {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-3);
-  margin-left: auto;
-  white-space: nowrap;
-}
-.mo-verdict {
-  padding: 0 var(--s-3);
-  border: 1px solid color-mix(in srgb, var(--tone) var(--edge), transparent);
-  background: color-mix(in srgb, var(--tone) var(--wash), transparent);
-  color: var(--tone);
-  font-size: var(--fs-label);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  line-height: 1.5;
-}
-.mo-verdict-line {
-  margin: 0;
-  font-size: var(--fs-body-s);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-.mo-reward {
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  padding: var(--s-4) var(--s-5);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--cta);
-}
-.mo-reward .caps {
-  flex: 1;
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--text-dim);
-}
-.mo-reward .caps b {
-  margin-left: var(--s-3);
-  color: var(--text-hi);
-}
-.mo-amount {
-  font-size: var(--fs-value);
-  color: var(--text-hi);
-}
+  /* A narrow card has no room beside the countdown, so the name takes its own line rather than an ellipsis. */
+  @container (max-width: 600px) {
+    .mo .panel-title {
+      padding: var(--s-3) 0;
+      line-height: 1.3;
+    }
+    .mo-name {
+      display: block;
+    }
+    .mo-name::before {
+      content: none;
+    }
+  }
+  .mo-ends {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-3);
+  }
+  .mo-ends b {
+    padding: 2px var(--s-3);
+    background: var(--cta);
+    color: var(--ink-on-cta);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.06em;
+  }
+  .mo-briefing {
+    margin: 0;
+    color: var(--text-hi);
+    font-size: var(--fs-body);
+    line-height: 1.5;
+    max-width: 70ch;
+  }
+  .mo-desc {
+    margin: 0;
+    color: var(--text-dim);
+    line-height: 1.5;
+    max-width: 70ch;
+  }
+  .mo-sub {
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--label);
+    padding-bottom: var(--s-3);
+    border-bottom: 1px solid var(--line);
+  }
+  .mo-tasks {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-5);
+  }
+  .mo-task {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .mo-task-head {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    font-size: var(--fs-body);
+    color: var(--text-hi);
+    font-weight: 600;
+  }
+  .mo-task-head > span:first-of-type {
+    flex: 1;
+  }
+  .mo-check {
+    color: var(--text-dim);
+    flex: none;
+  }
+  .mo-task.done .mo-check {
+    color: var(--good);
+  }
+  .mo-pct {
+    font-weight: 700;
+    color: var(--text-hi);
+    text-shadow: 0 0 10px color-mix(in srgb, var(--k) 55%, transparent);
+  }
+  .mo-task.done .mo-pct {
+    color: var(--good);
+  }
+  .mo-task-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-4);
+    font-size: var(--fs-body-s);
+    color: var(--text-dim);
+  }
+  .mo-task-foot b {
+    color: var(--text-hi);
+    font-weight: 600;
+  }
+  .mo-outlook {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-3);
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .mo-verdict {
+    padding: 0 var(--s-3);
+    border: 1px solid color-mix(in srgb, var(--tone) var(--edge), transparent);
+    background: color-mix(in srgb, var(--tone) var(--wash), transparent);
+    color: var(--tone);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    line-height: 1.5;
+  }
+  .mo-verdict-line {
+    margin: 0;
+    font-size: var(--fs-body-s);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .mo-reward {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    padding: var(--s-4) var(--s-5);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--cta);
+  }
+  .mo-reward .caps {
+    flex: 1;
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+  }
+  .mo-reward .caps b {
+    margin-left: var(--s-3);
+    color: var(--text-hi);
+  }
+  .mo-amount {
+    font-size: var(--fs-value);
+    color: var(--text-hi);
+  }
 
-/* Major Order panels keep the hot colour; every other panel head is neutral. */
-.panel.mo,
-.panel.mo-strip {
-  --tone: var(--cta);
-}
+  /* Major Order panels keep the hot colour; every other panel head is neutral. */
+  .panel.mo,
+  .panel.mo-strip {
+    --tone: var(--cta);
+  }
 
-/* ---------- Progress bar ---------- */
-.mo-bar {
-  /* Keep in sync with GROW_MS in order_bar.rs. */
-  --mo-grow: 1.1s;
-  --rest-mix: 18%;
-  position: relative;
-  height: 12px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--k) 35%, var(--line));
-  /* Quarter marks over the hatched remainder. */
-  background:
-    linear-gradient(
-      90deg,
-      transparent calc(25% - 1px),
-      var(--line-strong) 0 25%,
-      transparent 0 calc(50% - 1px),
-      var(--line-strong) 0 50%,
-      transparent 0 calc(75% - 1px),
-      var(--line-strong) 0 75%,
-      transparent 0
-    ),
-    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--rest) var(--rest-mix), transparent) 0 3px, transparent 3px 6px),
-    var(--void);
-}
-/* The remainder is the enemy's share, so it shows more strongly. */
-.mo-bar.versus {
-  --rest-mix: 34%;
-}
-.mo-bar.slim {
-  height: 7px;
-}
-/* No width transition: order_bar.rs is given the width every frame of the count-up. */
-.mo-bar-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  overflow: hidden;
-  /* Cut into 4px cells, brightening toward the leading edge; opaque, so the remainder's hatch stays out of it. */
-  background:
-    repeating-linear-gradient(90deg, transparent 0 4px, color-mix(in srgb, var(--void) 70%, transparent) 4px 5px),
-    linear-gradient(90deg, color-mix(in srgb, var(--k) 40%, var(--void)), var(--k));
-  box-shadow: 0 0 12px color-mix(in srgb, var(--k) var(--strong), transparent);
-}
-.mo-bar-sheen {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.5) 50%, transparent 70%);
-  transform: translateX(-100%);
-  animation: mo-sheen 2.8s var(--ease) var(--mo-grow) infinite;
-}
-.mo-bar-head {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  margin-left: -1px;
-  background: color-mix(in srgb, var(--k) 35%, #fff);
-  box-shadow:
-    0 0 4px 1px var(--k),
-    0 0 12px 2px color-mix(in srgb, var(--k) 60%, transparent);
-  animation: mo-pulse 1.6s ease-in-out var(--mo-grow) infinite;
-}
-/* Drawn only when the projection falls short, so it glows in the warning colour. */
-.mo-bar-mark {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  margin-left: -1px;
-  background: var(--text-hi);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--void) 60%, transparent),
-    0 0 6px 1px var(--bad);
-  animation: mo-mark-in 400ms var(--ease) var(--mo-grow) backwards;
-}
-/* Forced colours drop the gradients the bar is painted with. */
-@media (forced-colors: active) {
+  /* ---------- Progress bar ---------- */
   .mo-bar {
-    border-color: CanvasText;
+    /* Keep in sync with GROW_MS in order_bar.rs. */
+    --mo-grow: 1.1s;
+    --rest-mix: 18%;
+    position: relative;
+    height: 12px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--k) 35%, var(--line));
+    /* Quarter marks over the hatched remainder. */
+    background:
+      linear-gradient(
+        90deg,
+        transparent calc(25% - 1px),
+        var(--line-strong) 0 25%,
+        transparent 0 calc(50% - 1px),
+        var(--line-strong) 0 50%,
+        transparent 0 calc(75% - 1px),
+        var(--line-strong) 0 75%,
+        transparent 0
+      ),
+      repeating-linear-gradient(-45deg, color-mix(in srgb, var(--rest) var(--rest-mix), transparent) 0 3px, transparent 3px 6px),
+      var(--void);
   }
+  /* The remainder is the enemy's share, so it shows more strongly. */
+  .mo-bar.versus {
+    --rest-mix: 34%;
+  }
+  .mo-bar.slim {
+    height: 7px;
+  }
+  /* No width transition: order_bar.rs is given the width every frame of the count-up. */
   .mo-bar-fill {
-    forced-color-adjust: none;
-    background: Highlight;
+    position: absolute;
+    inset: 0 auto 0 0;
+    overflow: hidden;
+    /* Cut into 4px cells, brightening toward the leading edge; opaque, so the remainder's hatch stays out of it. */
+    background:
+      repeating-linear-gradient(90deg, transparent 0 4px, color-mix(in srgb, var(--void) 70%, transparent) 4px 5px),
+      linear-gradient(90deg, color-mix(in srgb, var(--k) 40%, var(--void)), var(--k));
+    box-shadow: 0 0 12px color-mix(in srgb, var(--k) var(--strong), transparent);
+  }
+  .mo-bar-sheen {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.5) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: mo-sheen 2.8s var(--ease) var(--mo-grow) infinite;
   }
   .mo-bar-head {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    margin-left: -1px;
+    background: color-mix(in srgb, var(--k) 35%, #fff);
+    box-shadow:
+      0 0 4px 1px var(--k),
+      0 0 12px 2px color-mix(in srgb, var(--k) 60%, transparent);
+    animation: mo-pulse 1.6s ease-in-out var(--mo-grow) infinite;
+  }
+  /* Drawn only when the projection falls short, so it glows in the warning colour. */
+  .mo-bar-mark {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    margin-left: -1px;
+    background: var(--text-hi);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--void) 60%, transparent),
+      0 0 6px 1px var(--bad);
+    animation: mo-mark-in 400ms var(--ease) var(--mo-grow) backwards;
+  }
+  /* Forced colours drop the gradients the bar is painted with. */
+  @media (forced-colors: active) {
+    .mo-bar {
+      border-color: CanvasText;
+    }
+    .mo-bar-fill {
+      forced-color-adjust: none;
+      background: Highlight;
+    }
+    .mo-bar-head {
+      display: none;
+    }
+    .mo-bar-mark {
+      forced-color-adjust: none;
+      background: CanvasText;
+    }
+  }
+  /* The mark's delay would otherwise hold it hidden after the count-up has been skipped. */
+  @media (prefers-reduced-motion: reduce) {
+    .mo-bar-mark {
+      animation: none;
+    }
+  }
+  /* Half the cycle sweeping, half resting. */
+  @keyframes mo-sheen {
+    50%,
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes mo-pulse {
+    50% {
+      opacity: 0.45;
+    }
+  }
+  @keyframes mo-mark-in {
+    from {
+      opacity: 0;
+      transform: scaleY(0);
+    }
+  }
+
+  .mo.folded .panel-body {
     display: none;
   }
-  .mo-bar-mark {
-    forced-color-adjust: none;
-    background: CanvasText;
+  .mo-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    text-align: left;
+    cursor: pointer;
   }
-}
-/* The mark's delay would otherwise hold it hidden after the count-up has been skipped. */
-@media (prefers-reduced-motion: reduce) {
-  .mo-bar-mark {
-    animation: none;
+  .mo-toggle:hover {
+    color: var(--cta);
   }
-}
-/* Half the cycle sweeping, half resting. */
-@keyframes mo-sheen {
-  50%,
-  100% {
-    transform: translateX(100%);
+  .mo-chevron {
+    flex: none;
+    transition: transform var(--t-state) var(--ease);
   }
-}
-@keyframes mo-pulse {
-  50% {
-    opacity: 0.45;
+  .mo-toggle[aria-expanded="true"] .mo-chevron {
+    transform: rotate(90deg);
   }
-}
-@keyframes mo-mark-in {
-  from {
-    opacity: 0;
-    transform: scaleY(0);
-  }
-}
-
-.mo.folded .panel-body {
-  display: none;
-}
-.mo-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-3);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.mo-toggle:hover {
-  color: var(--cta);
-}
-.mo-chevron {
-  flex: none;
-  transition: transform var(--t-state) var(--ease);
-}
-.mo-toggle[aria-expanded="true"] .mo-chevron {
-  transform: rotate(90deg);
 }

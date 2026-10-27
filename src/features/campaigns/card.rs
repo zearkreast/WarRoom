@@ -68,7 +68,7 @@ fn outlook_view(o: OutlookView) -> AnyView {
     if o.holding {
         return view! {
             <div class="cc-outlook holding caps">
-                <Icon icon=icons::USERS size=14.0 />
+                <Icon icon=icons::USERS size=16.0 />
                 " Holding for reinforcement"
             </div>
         }
@@ -76,16 +76,14 @@ fn outlook_view(o: OutlookView) -> AnyView {
     }
     view! {
         <div class="cc-outlook">
-            <span class="num cc-pct">
-                {fmt_pct(o.percent, 4)} " " <span class="caps">{if o.defense { "defended" } else { "liberated" }}</span>
-            </span>
             {match o.rate {
-                None => view! { <span class="muted caps">"Measuring rate…"</span> }.into_any(),
+                None => view! { <span class="cc-rate measuring caps">"Measuring rate…"</span> }.into_any(),
                 Some(r) => {
                     view! {
-                        <span class=format!("num cc-rate {}", if r > 0.0 { "good" } else { "bad" })>
-                            <Icon icon=if r < 0.0 { icons::TRENDING_DOWN } else { icons::TRENDING_UP } size=14.0 />
-                            {format!(" {}{}% / h", if r > 0.0 { "+" } else { "" }, to_fixed(r, 3))}
+                        <span class=format!("cc-rate {}", if r > 0.0 { "up" } else { "down" })>
+                            <Icon icon=if r < 0.0 { icons::TRENDING_DOWN } else { icons::TRENDING_UP } size=18.0 />
+                            <b class="num">{format!("{}{}%", if r > 0.0 { "+" } else { "" }, to_fixed(r, 2))}</b>
+                            <span class="caps">"per hour"</span>
                         </span>
                     }
                     .into_any()
@@ -94,6 +92,13 @@ fn outlook_view(o: OutlookView) -> AnyView {
         </div>
     }
     .into_any()
+}
+
+/// The game's own campaign-type glyph, tinted with the text colour.
+fn kind_icon(kind: FrontKind) -> impl IntoView {
+    let name = if kind == FrontKind::Defense { "campaign-defense" } else { "campaign-liberation" };
+    let url = crate::assets::url(&format!("gww/icons/{name}.svg")).unwrap_or_default();
+    view! { <span class="cc-kind-icon" style=format!("--icon: url({url});") aria-hidden="true"></span> }
 }
 
 #[component]
@@ -165,98 +170,111 @@ pub fn CampaignCard(
         let aria = format!("{}, {kind} against {}. Open options", l.name, faction_label(Some(l.enemy)));
         Some(view! {
             <article class="cc" style=l.style.clone()>
-                <div class="cc-above">
-                    <span class="cc-type caps">
-                        <Icon icon=if l.kind == FrontKind::Defense { icons::SHIELD_ALERT } else { icons::CROSSHAIR } size=13.0 />
-                        {format!(" {kind}")}
-                    </span>
-                    {move || {
-                        eta.get().map(|e| {
-                            view! {
-                                <span class=format!("cc-eta {}", if e.good { "good" } else { "bad" })>
-                                    {format!("{} ", e.label)}
-                                    <b><Countdown to=e.to /></b>
-                                    {e.late.then(|| view! { <span class="cc-late caps">"After MO deadline"</span> })}
-                                </span>
-                            }
-                        })
-                    }}
-                </div>
                 <button
-                    class=move || format!("cc-card {}", if in_mo.get() { "mo" } else { "" })
+                    class=move || format!("cc-card {}", if in_mo.get() { "is-mo" } else { "" })
                     on:click=move |e| {
                         ui().open_options(Some(OptionsAnchor::at(index, &e)))
                     }
                     aria-label=aria
                 >
-                    <header class="cc-head">
-                        <FactionEmblem faction=l.enemy.as_str() size=24.0 />
-                        <div class="cc-title">
-                            <h3 class="cc-name">{l.name.clone()}</h3>
-                            <div class="cc-sector caps">{format!("{} sector", l.sector)}</div>
-                        </div>
-                        <Show when=move || pinned.get()>
-                            <Icon icon=icons::PIN size=14.0 class="cc-pin" label="Pinned" />
-                        </Show>
-                    </header>
-                    <div class="cc-art">
-                        <div class="cc-badges">
-                            <Show when=move || in_mo.get()>
-                                <span class="cc-badge mo" title="Major Order target">
-                                    <Icon icon=icons::TARGET size=15.0 />
-                                </span>
-                            </Show>
-                            <Show when=move || station.get()>
-                                <span class="cc-badge dss" title="Democracy Space Station in orbit">
-                                    <DssIcon size=15.0 />
-                                </span>
-                            </Show>
-                        </div>
-                        <span class="cc-biome caps">{l.biome.clone()}</span>
-                        <div class="cc-hazards">
-                            {l
-                                .hazards
-                                .iter()
-                                .map(|h| {
+                    <div class="cc-in">
+                        <div class="cc-kicker caps">
+                            <span class="cc-type">{kind_icon(l.kind)} {kind.to_string()}</span>
+                            {move || {
+                                eta.get().map(|e| {
                                     view! {
-                                        <span class="cc-hazard" title=format!("{}: {}", h.name, h.description)>
-                                            <Icon icon=hazard_icon(&h.name) size=13.0 />
+                                        <span class=format!("cc-eta {}", if e.good { "is-good" } else { "is-bad" })>
+                                            {format!("{} ", e.label)}
+                                            <b><Countdown to=e.to /></b>
                                         </span>
                                     }
                                 })
-                                .collect_view()}
+                            }}
                         </div>
+                        <header class="cc-head">
+                            <FactionEmblem faction=l.enemy.as_str() size=28.0 />
+                            <div class="cc-title">
+                                <h3 class="cc-name">{l.name.clone()}</h3>
+                                <div class="cc-sector caps">{format!("{} sector", l.sector)}</div>
+                            </div>
+                            <div class="cc-pct">
+                                <b class="num">{move || outlook.get().map(|o| fmt_pct(o.percent, 2)).unwrap_or_default()}</b>
+                                <span class="caps">{if l.kind == FrontKind::Defense { "defended" } else { "liberated" }}</span>
+                            </div>
+                        </header>
+                        <div class="cc-art">
+                            <div class="cc-badges">
+                                <Show when=move || in_mo.get()>
+                                    <span class="cc-badge is-mo" title="Major Order target">
+                                        <Icon icon=icons::TARGET size=14.0 />
+                                        "MO"
+                                    </span>
+                                </Show>
+                                <Show when=move || station.get()>
+                                    <span class="cc-badge is-dss" title="Democracy Space Station in orbit">
+                                        <DssIcon size=14.0 />
+                                        "DSS"
+                                    </span>
+                                </Show>
+                                <Show when=move || pinned.get()>
+                                    <span class="cc-badge is-pin" title="Pinned">
+                                        <Icon icon=icons::PIN size=14.0 label="Pinned" />
+                                    </span>
+                                </Show>
+                                {move || {
+                                    eta.get().filter(|e| e.late).map(|_| view! { <span class="cc-badge is-late">"After MO deadline"</span> })
+                                }}
+                            </div>
+                            <span class="cc-biome caps">{l.biome.clone()}</span>
+                            <div class="cc-hazards">
+                                {l
+                                    .hazards
+                                    .iter()
+                                    .map(|h| {
+                                        view! {
+                                            <span class="cc-hazard" title=format!("{}: {}", h.name, h.description)>
+                                                <Icon icon=hazard_icon(&h.name) size=14.0 />
+                                            </span>
+                                        }
+                                    })
+                                    .collect_view()}
+                            </div>
+                        </div>
+                        <div class="cc-meter">
+                            <Meter
+                                value=percent
+                                color="var(--f-humans)".to_string()
+                                rest=enemy.clone()
+                                marker=projected
+                                size=MeterSize::L
+                                chevron=true
+                                label=format!("{} progress", l.name)
+                            />
+                        </div>
+                        {move || outlook.get().map(outlook_view)}
+                        <footer class="cc-foot">
+                            <span class="cc-share" title="Share of all Helldivers online">
+                                <span class="cc-foot-label caps">"Share"</span>
+                                <b class="num">{move || format!("{}%", to_fixed(share.get(), 0))}</b>
+                            </span>
+                            <span title="Helldivers deployed">
+                                <span class="cc-foot-label caps">"Divers"</span>
+                                <b class="num">{move || fmt_int(players.get())}</b>
+                            </span>
+                            <span title="Super Earth progress per hour, before enemy regeneration" style="--k: var(--f-humans);">
+                                <span class="cc-foot-label caps">"Impact"</span>
+                                <b class="num">
+                                    {move || {
+                                        rate.get().map_or("—".to_string(), |r| format!("{}%", to_fixed(r + regen.get().unwrap_or(0.0), 2)))
+                                    }}
+                                </b>
+                            </span>
+                            <span title="Enemy regeneration per hour" style=format!("--k: {enemy};")>
+                                <span class="cc-foot-label caps">"Regen"</span>
+                                <b class="num">{move || regen.get().map_or("—".to_string(), |r| format!("{}%", to_fixed(r, 2)))}</b>
+                            </span>
+                        </footer>
                     </div>
-                    <div class="cc-meter">
-                        <Meter
-                            value=percent
-                            color="var(--f-humans)".to_string()
-                            rest=enemy.clone()
-                            marker=projected
-                            size=MeterSize::L
-                            chevron=true
-                            label=format!("{} progress", l.name)
-                        />
-                    </div>
-                    {move || outlook.get().map(outlook_view)}
-                    <footer class="cc-foot num">
-                        <span class="cc-share" title="Share of all Helldivers online">
-                            <Meter value=share color="var(--info)".to_string() size=MeterSize::S />
-                            {move || format!("{}%", to_fixed(share.get(), 0))}
-                        </span>
-                        <span title="Helldivers deployed">
-                            <Icon icon=icons::USERS size=12.0 />
-                            {move || format!(" {}", fmt_int(players.get()))}
-                        </span>
-                        <span title="Super Earth progress per hour, before enemy regeneration" style="color: var(--f-humans);">
-                            <FactionEmblem faction="Humans" size=12.0 />
-                            {move || format!(" {}", rate.get().map_or("—".to_string(), |r| format!("{}%", to_fixed(r + regen.get().unwrap_or(0.0), 2))))}
-                        </span>
-                        <span title="Enemy regeneration per hour" style=format!("color: {enemy};")>
-                            <FactionEmblem faction=l.enemy.as_str() size=12.0 />
-                            {move || format!(" {}", regen.get().map_or("—".to_string(), |r| format!("{}%", to_fixed(r, 2))))}
-                        </span>
-                    </footer>
                 </button>
             </article>
         })

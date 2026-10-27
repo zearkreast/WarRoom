@@ -74,19 +74,28 @@ pub fn CampaignsPage() -> impl IntoView {
     });
     let none = Memo::new(move |_| shown.with(Vec::is_empty));
     let total_players = Signal::derive(move || q.war.with(|w| w.as_ref().map_or(0.0, |w| w.statistics.player_count)));
-    let summary = move || {
-        all.with(|l| {
-            format!("{} fronts · {} Helldivers deployed", l.len(), fmt_int(js_sum(l.iter().map(|f| f.players))))
-        })
-    };
+    let fronts_n = move || all.with(|l| l.len());
+    let divers = move || all.with(|l| fmt_int(js_sum(l.iter().map(|f| f.players))));
+    let defenses = move || all.with(|l| l.iter().filter(|f| f.kind == FrontKind::Defense).count());
 
     view! {
         <div class="page scroll starfield">
             <div class="page-inner">
                 <div class="page-head">
-                    <div>
-                        <h1 class="page-title">"Active planets"</h1>
-                        <p class="page-sub">{summary}</p>
+                    <h1 class="page-title">"Active planets"</h1>
+                    <div class="page-stats">
+                        <div class="page-stat">
+                            <b>{fronts_n}</b>
+                            <span>"Fronts"</span>
+                        </div>
+                        <div class="page-stat">
+                            <b>{defenses}</b>
+                            <span>"Defenses"</span>
+                        </div>
+                        <div class="page-stat">
+                            <b>{divers}</b>
+                            <span>"Helldivers deployed"</span>
+                        </div>
                     </div>
                 </div>
                 <FeedNote />
@@ -102,6 +111,7 @@ pub fn CampaignsPage() -> impl IntoView {
                             view! {
                                 <button
                                     class=move || format!("filter-chip {}", if filter.get() == id { "on" } else { "" })
+                                    aria-pressed=move || (filter.get() == id).to_string()
                                     on:click=move |_| filter.set(id)
                                 >
                                     {match id {

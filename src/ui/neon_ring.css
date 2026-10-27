@@ -1,215 +1,217 @@
-.nr {
-  position: relative;
-  flex: none;
-}
-.nr > svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.nr-dots {
-  fill: none;
-  stroke: var(--line-strong);
-  stroke-dasharray: 1 5;
-}
-.nr-track {
-  fill: none;
-  stroke: var(--surface-2);
-  stroke-width: 14;
-}
-.nr-arc {
-  fill: none;
-  stroke: var(--c);
-  stroke-width: 9;
-  stroke-linecap: butt;
-  cursor: pointer;
-  filter: drop-shadow(0 0 3px var(--c)) drop-shadow(0 0 10px color-mix(in srgb, var(--c) 45%, transparent));
-  transition:
-    stroke-width var(--t-reveal) var(--ease),
-    opacity var(--t-reveal),
-    filter var(--t-reveal);
-}
-.nr.has-active .nr-arc {
-  opacity: 0.32;
-  filter: none;
-}
-.nr.has-active .nr-arc.on {
-  opacity: 1;
-  stroke-width: 15;
-  filter: drop-shadow(0 0 4px var(--c)) drop-shadow(0 0 16px var(--c));
-}
-.nr-center {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-}
-.nr-center > * {
-  grid-area: 1 / 1;
-  animation: nr-swap var(--t-reveal) var(--ease);
-}
-@keyframes nr-swap {
-  from {
-    opacity: 0;
-    transform: scale(0.94);
-    filter: blur(3px);
+@layer features {
+  .nr {
+    position: relative;
+    flex: none;
   }
-}
+  .nr > svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .nr-dots {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-dasharray: 1 5;
+  }
+  .nr-track {
+    fill: none;
+    stroke: var(--surface-2);
+    stroke-width: 14;
+  }
+  .nr-arc {
+    fill: none;
+    stroke: var(--c);
+    stroke-width: 9;
+    stroke-linecap: butt;
+    cursor: pointer;
+    filter: drop-shadow(0 0 3px var(--c)) drop-shadow(0 0 10px color-mix(in srgb, var(--c) 45%, transparent));
+    transition:
+      stroke-width var(--t-reveal) var(--ease),
+      opacity var(--t-reveal),
+      filter var(--t-reveal);
+  }
+  .nr.has-active .nr-arc {
+    opacity: 0.32;
+    filter: none;
+  }
+  .nr.has-active .nr-arc.on {
+    opacity: 1;
+    stroke-width: 15;
+    filter: drop-shadow(0 0 4px var(--c)) drop-shadow(0 0 16px var(--c));
+  }
+  .nr-center {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+  .nr-center > * {
+    grid-area: 1 / 1;
+    animation: nr-swap var(--t-reveal) var(--ease);
+  }
+  @keyframes nr-swap {
+    from {
+      opacity: 0;
+      transform: scale(0.94);
+      filter: blur(3px);
+    }
+  }
 
-/* Idle hologram */
-.holo {
-  overflow: visible;
-  filter: drop-shadow(0 0 6px rgba(70, 164, 255, 0.55));
-}
-.holo-rim {
-  stroke: #9fd4ff;
-  stroke-width: 1;
-}
-.holo-line,
-.holo-meridian {
-  fill: none;
-  stroke: rgba(159, 212, 255, 0.45);
-  stroke-width: 0.8;
-}
-.holo-meridian {
-  animation: holo-turn 6s linear infinite;
-}
-.holo-orbit {
-  fill: none;
-  stroke: rgba(255, 255, 90, 0.35);
-  stroke-width: 0.8;
-  stroke-dasharray: 2 4;
-  transform: rotate(-18deg);
-}
-@keyframes holo-turn {
-  from {
-    transform: scaleX(1);
+  /* Idle hologram */
+  .holo {
+    overflow: visible;
+    filter: drop-shadow(0 0 6px rgba(70, 164, 255, 0.55));
   }
-  50% {
-    transform: scaleX(-1);
+  .holo-rim {
+    stroke: #9fd4ff;
+    stroke-width: 1;
   }
-  to {
-    transform: scaleX(1);
+  .holo-line,
+  .holo-meridian {
+    fill: none;
+    stroke: rgba(159, 212, 255, 0.45);
+    stroke-width: 0.8;
   }
-}
+  .holo-meridian {
+    animation: holo-turn 6s linear infinite;
+  }
+  .holo-orbit {
+    fill: none;
+    stroke: rgba(255, 255, 90, 0.35);
+    stroke-width: 0.8;
+    stroke-dasharray: 2 4;
+    transform: rotate(-18deg);
+  }
+  @keyframes holo-turn {
+    from {
+      transform: scaleX(1);
+    }
+    50% {
+      transform: scaleX(-1);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
 
-/* Faction text that replaces the hologram */
-.nr-readout {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  max-width: 150px;
-  text-align: center;
-}
-.nr-readout .caps {
-  font-size: var(--fs-label);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--text-hi);
-}
-.nr-readout b {
-  font-family: var(--font-head);
-  font-stretch: 125%;
-  font-size: var(--fs-title);
-  text-shadow: 0 0 12px currentColor;
-}
-.nr-readout .sub {
-  font-size: var(--fs-micro);
-  letter-spacing: 0.16em;
-  color: var(--label);
-  text-transform: uppercase;
-}
-.nr-readout .pl {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: var(--fs-label);
-  color: var(--cta);
-}
+  /* Faction text that replaces the hologram */
+  .nr-readout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    max-width: 150px;
+    text-align: center;
+  }
+  .nr-readout .caps {
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--text-hi);
+  }
+  .nr-readout b {
+    font-family: var(--font-head);
+    font-stretch: 125%;
+    font-size: var(--fs-title);
+    text-shadow: 0 0 12px currentColor;
+  }
+  .nr-readout .sub {
+    font-size: var(--fs-micro);
+    letter-spacing: 0.16em;
+    color: var(--label);
+    text-transform: uppercase;
+  }
+  .nr-readout .pl {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: var(--fs-label);
+    color: var(--cta);
+  }
 
-/* Faction map that follows the pointer */
-.fmap {
-  position: fixed;
-  z-index: 50;
-  width: 260px;
-  pointer-events: none;
-  background: color-mix(in srgb, var(--surface-1) 90%, transparent);
-  backdrop-filter: blur(11px);
-  border: 1px solid var(--k);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--k) var(--edge), transparent),
-    0 0 18px color-mix(in srgb, var(--k) var(--edge), transparent),
-    var(--shadow-2);
-  animation: nr-swap var(--t-state) var(--ease);
-}
-.fmap-head {
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  padding: var(--s-4) var(--s-5);
-  border-bottom: 1px solid var(--line);
-  background: repeating-linear-gradient(
-    -45deg,
-    color-mix(in srgb, var(--k) 18%, transparent) 0 3px,
-    transparent 3px 7px
-  );
-}
-.fmap-head b {
-  flex: 1;
-  font-size: var(--fs-body-s);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-hi);
-}
-.fmap-head .num {
-  font-size: var(--fs-body-s);
-  color: var(--k);
-  text-shadow: 0 0 8px var(--k);
-}
-.fmap ol {
-  list-style: none;
-  margin: 0;
-  padding: var(--s-3) var(--s-5) var(--s-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-}
-.fmap li {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  row-gap: 3px;
-  font-size: var(--fs-body-s);
-}
-.fmap-name {
-  color: var(--text-hi);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.fmap-val {
-  color: var(--text-dim);
-  font-variant-numeric: tabular-nums;
-}
-.fmap-bar {
-  grid-column: 1 / -1;
-  height: 3px;
-  background: var(--surface-3);
-}
-.fmap-bar span {
-  display: block;
-  height: 100%;
-  background: var(--k);
-  box-shadow: 0 0 6px var(--k);
-}
-.fmap-foot {
-  padding: 0 var(--s-5) var(--s-4);
-  font-size: var(--fs-micro);
-  letter-spacing: 0.14em;
-  color: var(--label);
-  text-transform: uppercase;
+  /* Faction map that follows the pointer */
+  .fmap {
+    position: fixed;
+    z-index: 50;
+    width: 260px;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--surface-1) 90%, transparent);
+    backdrop-filter: blur(11px);
+    border: 1px solid var(--k);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--k) var(--edge), transparent),
+      0 0 18px color-mix(in srgb, var(--k) var(--edge), transparent),
+      var(--shadow-2);
+    animation: nr-swap var(--t-state) var(--ease);
+  }
+  .fmap-head {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    padding: var(--s-4) var(--s-5);
+    border-bottom: 1px solid var(--line);
+    background: repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--k) 18%, transparent) 0 3px,
+      transparent 3px 7px
+    );
+  }
+  .fmap-head b {
+    flex: 1;
+    font-size: var(--fs-body-s);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-hi);
+  }
+  .fmap-head .num {
+    font-size: var(--fs-body-s);
+    color: var(--k);
+    text-shadow: 0 0 8px var(--k);
+  }
+  .fmap ol {
+    list-style: none;
+    margin: 0;
+    padding: var(--s-3) var(--s-5) var(--s-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .fmap li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    row-gap: 3px;
+    font-size: var(--fs-body-s);
+  }
+  .fmap-name {
+    color: var(--text-hi);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fmap-val {
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .fmap-bar {
+    grid-column: 1 / -1;
+    height: 3px;
+    background: var(--surface-3);
+  }
+  .fmap-bar span {
+    display: block;
+    height: 100%;
+    background: var(--k);
+    box-shadow: 0 0 6px var(--k);
+  }
+  .fmap-foot {
+    padding: 0 var(--s-5) var(--s-4);
+    font-size: var(--fs-micro);
+    letter-spacing: 0.14em;
+    color: var(--label);
+    text-transform: uppercase;
+  }
 }

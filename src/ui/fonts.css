@@ -1,5 +1,8 @@
 /* Chakra Petch and Archivo, from Fontsource (SIL Open Font License 1.1, see assets/fonts/). */
 
+/* Cascade order for every stylesheet; later layers win. */
+@layer tokens, base, primitives, features, shell;
+
 /* chakra-petch-thai-400-normal */
 @font-face {
   font-family: 'Chakra Petch';

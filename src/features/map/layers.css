@@ -1,59 +1,61 @@
-/* Sectors overlay, as the game's war table draws it: hatched enemy tiles split by dark seams. */
-.tf-fill {
-  stroke: none;
-}
-.tf-seam {
-  fill: none;
-  stroke: var(--ground);
-  stroke-width: 3;
-  stroke-linejoin: miter;
-  vector-effect: non-scaling-stroke;
-}
-.tf-cell {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1;
-  stroke-opacity: 0.7;
-  stroke-linejoin: miter;
-  vector-effect: non-scaling-stroke;
-}
-.tf-front {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-opacity: 0.95;
-  stroke-linecap: square;
-  stroke-linejoin: miter;
-  vector-effect: non-scaling-stroke;
-}
-/* Where an enemy's outright holdings meet its contested sectors. */
-.tf-split {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.2;
-  stroke-opacity: 0.55;
-  stroke-dasharray: 3 4;
-  vector-effect: non-scaling-stroke;
-}
-.sg-grid {
-  fill: none;
-  stroke: color-mix(in srgb, var(--f-humans) 10%, transparent);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-.sg-rim {
-  fill: none;
-  stroke: color-mix(in srgb, var(--f-humans) 40%, transparent);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
+@layer features {
+  /* Sectors overlay, as the game's war table draws it: hatched enemy tiles split by dark seams. */
+  .tf-fill {
+    stroke: none;
+  }
+  .tf-seam {
+    fill: none;
+    stroke: var(--ground);
+    stroke-width: 3;
+    stroke-linejoin: miter;
+    vector-effect: non-scaling-stroke;
+  }
+  .tf-cell {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1;
+    stroke-opacity: 0.7;
+    stroke-linejoin: miter;
+    vector-effect: non-scaling-stroke;
+  }
+  .tf-front {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-opacity: 0.95;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    vector-effect: non-scaling-stroke;
+  }
+  /* Where an enemy's outright holdings meet its contested sectors. */
+  .tf-split {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.2;
+    stroke-opacity: 0.55;
+    stroke-dasharray: 3 4;
+    vector-effect: non-scaling-stroke;
+  }
+  .sg-grid {
+    fill: none;
+    stroke: color-mix(in srgb, var(--f-humans) 10%, transparent);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  .sg-rim {
+    fill: none;
+    stroke: color-mix(in srgb, var(--f-humans) 40%, transparent);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
 
-.gloom {
-  opacity: 0.95;
-  pointer-events: none;
-  transition: opacity var(--t-reveal) var(--ease);
-}
-/* Close in, the planets under the cloud need to stay readable. */
-.z-planets .gloom {
-  opacity: 0.45;
+  .gloom {
+    opacity: 0.95;
+    pointer-events: none;
+    transition: opacity var(--t-reveal) var(--ease);
+  }
+  /* Close in, the planets under the cloud need to stay readable. */
+  .z-planets .gloom {
+    opacity: 0.45;
+  }
 }
