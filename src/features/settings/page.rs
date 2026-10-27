@@ -57,10 +57,10 @@ fn UpdateRow() -> impl IntoView {
     let state = update().state;
     (move || {
         let phase = state.get();
-        let checking = phase == UpdatePhase::Checking;
+        let blocked = phase == UpdatePhase::Checking || phase.underway();
         view! {
             <Row title=title.clone() text=update_text(&phase)>
-                <button class="hud-btn" on:click=move |_| check_for_update(true) disabled=checking>
+                <button class="hud-btn" on:click=move |_| check_for_update(true) disabled=blocked>
                     <Icon icon=icons::REFRESH_CW size=14.0 />
                     " Check now"
                 </button>

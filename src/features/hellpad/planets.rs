@@ -169,13 +169,14 @@ fn GalacticControl(#[prop(into)] planets: Signal<Arc<Vec<Planet>>>, on_filter: C
             <Show when=move || open.get()>
                 <div class="gc-body">
                     <NeonRing
-                        label=shares
-                            .with_untracked(|s| {
+                        label=Signal::derive(move || {
+                            shares.with(|s| {
                                 format!(
                                     "Planet control: {}",
                                     s.iter().map(|s| format!("{} {}%", faction_label(Some(s.faction)), pct(s.pct))).collect::<Vec<_>>().join(", ")
                                 )
                             })
+                        })
                         segments=Signal::derive(move || {
                             shares
                                 .get()

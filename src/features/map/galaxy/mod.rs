@@ -44,6 +44,12 @@ use wasm_bindgen::prelude::*;
 
 /// Hatch spacing in screen pixels; the pattern is counter-scaled on zoom to keep it.
 const HATCH: f64 = 7.0;
+
+thread_local! {
+    /// The last `focus_seq` handled, so a remounted map doesn't replay it.
+    static FOCUS_DONE: Cell<u64> = const { Cell::new(0) };
+}
+
 #[derive(Clone, Debug, PartialEq)]
 struct PlanetLook {
     x: f64,
@@ -157,8 +163,9 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
             c.as_ref().map(|c| c.iter().map(|c| c.planet.index).collect::<HashSet<i64>>()).unwrap_or_default()
         })
     });
+    let clock = js::use_now(30_000.0);
     let dss = Memo::new(move |_| {
-        let now = js::now();
+        let now = clock.get();
         q.stations.with(|s| {
             s.as_ref()
                 .map(|s| {
@@ -226,19 +233,24 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
             *ctl.zoom.borrow_mut() = Some(z.clone());
             ctl.fit();
             // A resize (a phone turned, a browser bar sliding away) keeps the middle in place instead of refitting.
-            let size: Rc<Cell<Option<(f64, f64)>>> = Rc::new(Cell::new(None));
+            let size: Rc<Cell<Option<(f64, f64)>>> = Rc::new(Cell::new(ctl.rect()));
             let weak = Rc::downgrade(&*ctl);
             let on_resize = Closure::<dyn Fn()>::new(move || {
                 let Some(c) = weak.upgrade() else { return };
                 let Some((w, h)) = c.rect() else { return };
-                let before = size.replace(Some((w, h)));
-                let Some((bw, bh)) = before else { return c.fit() };
                 if w == 0.0 || h == 0.0 {
                     return;
                 }
-                let t = c.t.get();
-                if let Some(z) = c.zoom() {
-                    z.set(Transform::at(t.x + (w - bw) / 2.0, t.y + (h - bh) / 2.0, t.k));
+                match size.replace(Some((w, h))) {
+                    // The observer's first delivery; setting the transform would cancel a flight just started.
+                    Some((bw, bh)) if bw == w && bh == h => {}
+                    Some((bw, bh)) if bw > 0.0 && bh > 0.0 => {
+                        let t = c.t.get();
+                        if let Some(z) = c.zoom() {
+                            z.set(Transform::at(t.x + (w - bw) / 2.0, t.y + (h - bh) / 2.0, t.k));
+                        }
+                    }
+                    _ => c.fit(),
                 }
             });
             if let Ok(ro) = web_sys::ResizeObserver::new(on_resize.as_ref().unchecked_ref()) {
@@ -258,9 +270,10 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
         let ctl = SendWrapper::new(ctl.clone());
         Effect::new(move |_| {
             let seq = u.focus_seq.get();
-            if !ready.get() || seq == 0 {
+            if !ready.get() || seq == 0 || FOCUS_DONE.get() >= seq {
                 return;
             }
+            FOCUS_DONE.set(seq);
             let Some(index) = u.selected_planet.get_untracked() else { return };
             let Some(p) =
                 fresh.with_untracked(|f| f.as_ref().and_then(|f| f.iter().find(|p| p.index == index).cloned()))

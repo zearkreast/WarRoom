@@ -6,7 +6,7 @@ use crate::features::map::poi::{PoiGlyph, poi_kind, poi_origin};
 use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
 use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
 use crate::features::planet::cities::CityList;
-use crate::features::planet::record::PlanetRecord;
+use crate::features::planet::record::{PlanetRecord, UNREACHABLE};
 use crate::js::{self, fmt_date, fmt_date_time};
 use crate::state::ui;
 use crate::ui::chart::{
@@ -215,11 +215,11 @@ pub fn FrontLineSection(
         let rows = series_rows(plot, i, |s, v| {
             (fmt_pct(v, 2), if s.name == "percent" { "Progress".into() } else { "Projection".into() })
         });
-        Some(default_tooltip(fmt_date_time(plot.xs[i]), rows))
+        Some(default_tooltip(fmt_date_time(*plot.xs.get(i)?), rows))
     });
     let players_tip: Tooltip = Arc::new(|plot, i| {
         let rows = series_rows(plot, i, |_, v| (fmt_int(v), "Helldivers".into()));
-        Some(default_tooltip(fmt_date_time(plot.xs[i]), rows))
+        Some(default_tooltip(fmt_date_time(*plot.xs.get(i)?), rows))
     });
     let heads = move || {
         let f = front.get()?;
@@ -270,6 +270,7 @@ pub fn FrontLineSection(
     };
     let enough = Memo::new(move |_| record.with(|r| r.samples.len() >= 2));
     let loading = Memo::new(move |_| record.with(|r| r.loading));
+    let error = Memo::new(move |_| record.with(|r| r.error));
     view! {
         <Panel title="Front line activity · last and next 24 h" icon=icons::LINE_CHART>
             <div class="pd-stack">
@@ -282,6 +283,8 @@ pub fn FrontLineSection(
                                 {move || {
                                     if loading.get() {
                                         "Loading telemetry…"
+                                    } else if error.get() {
+                                        UNREACHABLE
                                     } else {
                                         "Not enough readings yet; the chart fills in as the collector records this front."
                                     }
@@ -526,10 +529,18 @@ pub fn WarHistorySection(#[prop(into)] p: Signal<Planet>, record: ReadSignal<Pla
     });
     move || {
         let Some((h, now)) = history.get() else {
-            let loading = record.with(|r| r.loading);
+            let (loading, error) = record.with(|r| (r.loading, r.error));
             return view! {
                 <Panel title="War history" icon=icons::HISTORY>
-                    <Empty>{if loading { "Opening the war archive…" } else { "No record for this planet yet." }}</Empty>
+                    <Empty>
+                        {if loading {
+                            "Opening the war archive…"
+                        } else if error {
+                            UNREACHABLE
+                        } else {
+                            "No record for this planet yet."
+                        }}
+                    </Empty>
                 </Panel>
             }
             .into_any();

@@ -1,4 +1,4 @@
-//! Data that isn't a snapshot (history tables, database functions), fetched by key and kept for the session:
+//! Data that isn't a snapshot (history tables, database functions), fetched by key and kept for a while:
 //! returning to a page shows what was already loaded while a stale entry refreshes.
 
 use crate::js;
@@ -11,6 +11,8 @@ use std::future::Future;
 use std::rc::Rc;
 
 const RETRIES: i32 = 3;
+/// Every key carries a time bucket of at most 5 minutes, so an older entry is unlikely to be read again.
+const KEEP_MS: f64 = 15.0 * 60_000.0;
 
 struct Entry {
     at: f64,
@@ -93,7 +95,11 @@ where
             for attempt in 0..=RETRIES {
                 match fetch(k.clone()).await {
                     Ok(v) => {
-                        CACHE.with_borrow_mut(|c| c.insert(k.clone(), Entry { at: js::now(), value: Rc::new(v) }));
+                        CACHE.with_borrow_mut(|c| {
+                            let now = js::now();
+                            c.retain(|_, e| now - e.at < KEEP_MS);
+                            c.insert(k.clone(), Entry { at: now, value: Rc::new(v) });
+                        });
                         break;
                     }
                     Err(_) if attempt < RETRIES => js::sleep(1000.0 * 2f64.powi(attempt)).await,

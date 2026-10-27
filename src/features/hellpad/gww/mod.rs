@@ -148,7 +148,7 @@ fn TipTicker() -> impl IntoView {
 #[component]
 fn HolidayChip() -> impl IntoView {
     let nav = use_gww_nav();
-    let now = js::use_now(60.0 * 60_000.0);
+    let now = js::use_now(60_000.0);
     let days: Vec<(u32, u32)> = HOLIDAYS.iter().map(|h| (h.month, h.day)).collect();
     let next = Memo::new(move |_| {
         let (y, m, d) = js::local_today(now.get());

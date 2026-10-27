@@ -56,16 +56,21 @@ pub async fn fetch_json(url: &str, headers: &[(&str, &str)]) -> Result<Value, So
         js::wait(js::call(&js::window().into(), "fetch", &[JsValue::from_str(url), init]).unwrap_or(JsValue::UNDEFINED))
             .await
     };
+    let read = async {
+        let res = sent.map_err(|e| SourceError::new(0, tauri::error_text(&e)))?;
+        let status = get(&res, "status").as_f64().unwrap_or(0.0) as u16;
+        let text = js::wait(js::call(&res, "text", &[]).map_err(|e| SourceError::new(status, tauri::error_text(&e)))?)
+            .await
+            .map_err(|e| SourceError::new(status, tauri::error_text(&e)))?
+            .as_string()
+            .unwrap_or_default();
+        Ok::<_, SourceError>((status, text))
+    }
+    .await;
     if let Some(Ok(t)) = timer {
         t.clear();
     }
-    let res = sent.map_err(|e| SourceError::new(0, tauri::error_text(&e)))?;
-    let status = get(&res, "status").as_f64().unwrap_or(0.0) as u16;
-    let text = js::wait(js::call(&res, "text", &[]).map_err(|e| SourceError::new(status, tauri::error_text(&e)))?)
-        .await
-        .map_err(|e| SourceError::new(status, tauri::error_text(&e)))?
-        .as_string()
-        .unwrap_or_default();
+    let (status, text) = read?;
     if !(200..300).contains(&status) {
         return Err(SourceError::new(status, format!("HTTP {status} for {url}")));
     }

@@ -56,7 +56,7 @@ pub fn PlanetOptions() -> impl IntoView {
     let stations = station_planets();
     move || {
         let anchor = options.get()?;
-        let planet = queries::planet(Some(anchor.planet))?;
+        let planet = untrack(|| queries::planet(Some(anchor.planet)))?;
         let index = planet.index;
         let close = move || ui().open_options(None);
         let w = js::window();

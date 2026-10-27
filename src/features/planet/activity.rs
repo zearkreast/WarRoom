@@ -57,7 +57,7 @@ pub fn ActivityChart(
     });
     let tip: Tooltip = Arc::new(|plot, i| {
         let rows = series_rows(plot, i, |_, v| (fmt_int(v), "Helldivers".into()));
-        Some(default_tooltip(fmt_date_time(plot.xs[i]), rows))
+        Some(default_tooltip(fmt_date_time(*plot.xs.get(i)?), rows))
     });
     view! {
         <Chart
@@ -104,7 +104,7 @@ pub fn ProgressChart(
     });
     let tip: Tooltip = Arc::new(|plot, i| {
         let rows = series_rows(plot, i, |_, v| (fmt_pct(v, 2), "Liberated".into()));
-        Some(default_tooltip(fmt_date_time(plot.xs[i]), rows))
+        Some(default_tooltip(fmt_date_time(*plot.xs.get(i)?), rows))
     });
     view! { <Chart plot=plot height=height margin=(8.0, 8.0, 0.0, 0.0) tooltip=tip /> }
 }

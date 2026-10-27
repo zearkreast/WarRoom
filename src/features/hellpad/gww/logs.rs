@@ -204,7 +204,7 @@ fn activity_days(now: Memo<f64>) -> AnyView {
     let all = RwSignal::new(false);
     let hm = |ms: f64| sest_clock(ms).chars().take(5).collect::<String>();
     (move || {
-        if q.loading.get() {
+        if q.loading.get() && q.data.with(Option::is_none) {
             return view! { <Loading what="the activity log" rows=2 /> }.into_any();
         }
         let days = q.data.get().unwrap_or_default();
@@ -258,11 +258,13 @@ fn StationJumps(station: i64, name: String, now: Memo<f64>) -> impl IntoView {
         n if n >= JUMP_LIMIT => format!("Latest {n} jumps"),
         n => format!("{n} jumps"),
     };
+    let waiting = Memo::new(move |_| q.loading.get() && q.data.with(Option::is_none));
+    let empty = Memo::new(move |_| jumps.with(|j| j.is_empty()));
     let body = move || {
-        if q.loading.get() {
+        if waiting.get() {
             return view! { <Loading what="the jump log" rows=2 /> }.into_any();
         }
-        if jumps.with(|j| j.is_empty()) {
+        if empty.get() {
             return view! { <Empty>"No jumps logged yet. Each jump is logged as telemetry comes in."</Empty> }
                 .into_any();
         }

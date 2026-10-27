@@ -32,6 +32,16 @@ pub enum UpdatePhase {
     Error { version: Option<String>, message: String },
 }
 
+impl UpdatePhase {
+    /// An update is downloading, installing or with Android's installer, so a new check would replace it.
+    pub fn underway(&self) -> bool {
+        matches!(
+            self,
+            Self::Downloading { .. } | Self::Installing { .. } | Self::Downloaded { .. } | Self::HandedOff { .. }
+        )
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct Update {
     pub state: RwSignal<UpdatePhase>,
@@ -132,7 +142,7 @@ async fn check_desktop() -> Result<UpdatePhase, String> {
 
 /// Looks for a newer release; the web build has nothing to install, so it never looks.
 pub fn check_for_update(manual: bool) {
-    if !is_tauri() {
+    if !is_tauri() || update().state.get_untracked().underway() {
         return;
     }
     if manual {
@@ -250,5 +260,17 @@ mod tests {
                 message: "The download is gone; download it again.".into()
             }
         );
+    }
+
+    #[test]
+    fn a_check_waits_for_an_update_underway() {
+        let v = || "99.0.0".to_string();
+        assert!(UpdatePhase::Downloading { version: v(), progress: None }.underway());
+        assert!(UpdatePhase::Installing { version: v() }.underway());
+        assert!(UpdatePhase::Downloaded { version: v() }.underway());
+        assert!(UpdatePhase::HandedOff { version: v() }.underway());
+        assert!(!UpdatePhase::Available { version: v(), notes: String::new() }.underway());
+        assert!(!UpdatePhase::Error { version: Some(v()), message: String::new() }.underway());
+        assert!(!UpdatePhase::Current.underway());
     }
 }

@@ -86,6 +86,11 @@ fn cubic_in_out(t: f64) -> f64 {
     }
 }
 
+/// `k` within `extent`, except that a step from below the minimum (a small window's fit) isn't raised to it.
+fn clamp(k: f64, from: f64, (least, most): (f64, f64)) -> f64 {
+    k.min(most).max(least.min(from))
+}
+
 fn noevent(e: &web_sys::Event) {
     e.prevent_default();
     e.stop_immediate_propagation();
@@ -161,10 +166,6 @@ impl Zoom {
         (self.on_zoom)(t);
     }
 
-    fn clamp(&self, k: f64) -> f64 {
-        k.min(self.extent.1).max(self.extent.0)
-    }
-
     fn pointer(&self, e: &web_sys::MouseEvent) -> Pt {
         let r = self.el.get_bounding_client_rect();
         [
@@ -198,7 +199,7 @@ impl Zoom {
         self.fly(ms, move |a| {
             let Some(z) = z.upgrade() else { return a };
             let (p, _) = z.centroid();
-            Transform { k: z.clamp(a.k * factor), ..a }.translate(p, a.invert(p))
+            Transform { k: clamp(a.k * factor, a.k, z.extent), ..a }.translate(p, a.invert(p))
         });
     }
 
@@ -264,7 +265,7 @@ impl Zoom {
             _ => 1.0,
         };
         let delta = -e.delta_y() * unit * if e.ctrl_key() { 10.0 } else { 1.0 };
-        let k = z.clamp(t.k * 2f64.powf(delta));
+        let k = clamp(t.k * 2f64.powf(delta), t.k, z.extent);
         let p = z.pointer(e);
         let (seq, wheeling) = z.wheel.get();
         if wheeling {
@@ -423,5 +424,14 @@ mod tests {
         assert!((x - 50.0).abs() < 1e-9 && y == 0.0);
         assert!((w - 141.42135623730948).abs() < 1e-6, "{w}");
         assert_eq!(i(1.0)[0].round(), 100.0);
+    }
+
+    #[test]
+    fn zooming_out_from_below_the_limit_stays_put() {
+        let extent = (0.5, 14.0);
+        assert_eq!(clamp(0.36 / 1.5, 0.36, extent), 0.36);
+        assert_eq!(clamp(0.36 * 1.5, 0.36, extent), 0.36 * 1.5);
+        assert_eq!(clamp(0.6 / 1.5, 0.6, extent), 0.5);
+        assert_eq!(clamp(20.0, 10.0, extent), 14.0);
     }
 }
