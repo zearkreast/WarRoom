@@ -175,7 +175,10 @@ export interface EpisodeRaw {
 
 /** The parts of the official game API's war status the collector keeps: effects on planets and stations. */
 export interface WarStatusRaw {
+  /** War time, in seconds; `expireTime` counts in the same clock. */
   time: number;
   planetActiveEffects: { index: number; galacticEffectId: number }[];
   spaceStations: { id32: number; planetIndex: number; activeEffectIds: number[] }[];
+  /** War events; one with effects grants them to its planets until it expires. */
+  globalEvents?: { effectIds: number[]; planetIndices: number[]; expireTime: number }[];
 }

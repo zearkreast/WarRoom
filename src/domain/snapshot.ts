@@ -416,17 +416,33 @@ export function campaignRecord(past: EpisodeLive[]): { won: number; orders: numb
 export interface EffectsLive {
   planets: { index: number; ids: number[] }[];
   stations: { id: number; ids: number[] }[];
+  /** Effects a war event grants its planets until `until` (epoch ms, to the minute). */
+  timed?: { ids: number[]; planets: number[]; until: number }[];
 }
 
-export function toEffectsLive(status: Pick<WarStatusRaw, "planetActiveEffects" | "spaceStations">): EffectsLive {
+/** `at` is when `status` was fetched, which places the events' expiry in real time. */
+export function toEffectsLive(status: Pick<WarStatusRaw, "time" | "planetActiveEffects" | "spaceStations" | "globalEvents">, at: number): EffectsLive {
   const byPlanet = new Map<number, number[]>();
   for (const e of status.planetActiveEffects ?? []) {
     const ids = byPlanet.get(e.index) ?? [];
     if (!ids.includes(e.galacticEffectId)) ids.push(e.galacticEffectId);
     byPlanet.set(e.index, ids);
   }
+  // To the minute, so the snapshot is only rewritten when an event changes.
+  const timed = (status.globalEvents ?? []).flatMap((g) =>
+    g.effectIds?.length && g.planetIndices?.length && g.expireTime > status.time
+      ? [
+          {
+            ids: [...g.effectIds].sort((a, b) => a - b),
+            planets: [...g.planetIndices].sort((a, b) => a - b),
+            until: Math.round((at + (g.expireTime - status.time) * 1000) / 60_000) * 60_000,
+          },
+        ]
+      : [],
+  );
   return {
     planets: [...byPlanet].sort(([a], [b]) => a - b).map(([index, ids]) => ({ index, ids: ids.sort((a, b) => a - b) })),
     stations: (status.spaceStations ?? []).map((s) => ({ id: s.id32, ids: [...s.activeEffectIds].sort((a, b) => a - b) })),
+    ...(timed.length ? { timed } : {}),
   };
 }

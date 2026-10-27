@@ -8,7 +8,7 @@ import { orderName, taskPercent, type TaskView } from "../domain/majorOrder";
 import { campaignRecord, toEffectsLive, type EpisodeLive, type EpisodeStatus } from "../domain/snapshot";
 import statusJson from "./fixtures/status-effects.json";
 
-const live = toEffectsLive(statusJson as unknown as WarStatusRaw);
+const live = toEffectsLive(statusJson as unknown as WarStatusRaw, 0);
 const on = (index: number) => planetEffects(live.planets.find((p) => p.index === index)?.ids ?? []);
 
 describe("planet effects", () => {
@@ -26,6 +26,24 @@ describe("planet effects", () => {
       expect.arrayContaining(["NEW HOPE CITY", "NEW ASPIRATION CITY", "NEW YEARNING CITY", "HELLDIVER TRAINING FACILITIES", "PANDORA BASE"]),
     );
     expect(pois.filter((n) => n === "TERMINID CONTROL SYSTEM+")).toHaveLength(14);
+  });
+
+  it("keeps the effects war events grant for a while, with when they end", () => {
+    const at = Date.parse("2026-10-26T23:57:00Z");
+    const status = {
+      time: 85_118_800,
+      planetActiveEffects: [],
+      spaceStations: [],
+      globalEvents: [
+        { effectIds: [], planetIndices: [], expireTime: 85_331_008 },
+        { effectIds: [1207], planetIndices: [123, 75], expireTime: 85_331_977 },
+        { effectIds: [1231], planetIndices: [75], expireTime: 85_000_000 },
+      ],
+    };
+    expect(toEffectsLive(status, at).timed).toEqual([
+      { ids: [1207], planets: [75, 123], until: Date.parse("2026-10-29T11:10:00Z") },
+    ]);
+    expect(toEffectsLive({ ...status, globalEvents: [] }, at).timed).toBeUndefined();
   });
 
   it("leaves out unnamed ids and bookkeeping like the campaign blocker", () => {

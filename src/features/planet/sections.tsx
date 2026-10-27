@@ -41,16 +41,18 @@ import type { EffectKind } from "../../domain/effects";
 import type { Faction, Planet } from "../../api/types";
 import { regenPctPerHour } from "../../domain/biomes";
 import { factionColor, factionLabel } from "../../domain/factions";
-import { fmtCompact, fmtDate, fmtDateTime, fmtInt, fmtPct } from "../../domain/format";
+import { fmtCompact, fmtDate, fmtDateTime, fmtInt, fmtPct, fmtTimeLeft } from "../../domain/format";
 import { liberationPercent } from "../../domain/progress";
 import { buildWarHistory, defenseEvents, fmtLongDuration, type LogEntry } from "../../domain/warHistory";
 import { useUi } from "../../state";
-import { DssIcon, FactionEmblem, type IconLike, SubfactionEmblem } from "../../ui/emblems";
+import { DssIcon, FactionEmblem, type IconLike, SeafEmblem, SubfactionEmblem } from "../../ui/emblems";
 import { hazardIcon } from "../../ui/hazardIcons";
-import { Countdown, Empty, Meter, Panel, Tile } from "../../ui/primitives";
+import { Countdown, Empty, Meter, Panel, Tile, useNow } from "../../ui/primitives";
 import type { Front } from "../planets/useFronts";
 import { PoiGlyph, poiKind, poiOrigin } from "../map/poi";
+import { augmentedStratagem, stratagemIcon } from "../map/stratagemArt";
 import { CityList } from "./Cities";
+import { CircumvallationNote, useCircumvallation } from "./Circumvallation";
 import type { PlanetRecord } from "./usePlanetRecord";
 
 export function LiberationSection({ p, front }: { p: Planet; front: Front }) {
@@ -579,7 +581,7 @@ export function DispatchSection(props: { p: Planet; front: Front | null; inMajor
 const EFFECT_ICON: Record<EffectKind, IconLike> = {
   subfaction: Skull,
   threat: TriangleAlert,
-  seaf: Shield,
+  seaf: SeafEmblem,
   poi: Landmark,
   dss: DssIcon,
   arsenal: Crosshair,
@@ -595,13 +597,19 @@ const EFFECT_ICON: Record<EffectKind, IconLike> = {
  * its standing effects, then the environment.
  */
 export function OperationsSection({ p }: { p: Planet }) {
-  const effects = (useEffects().data?.planets.get(p.index) ?? []).filter((e) => e.kind !== "poi");
+  const now = useNow(60_000);
+  const effects = (useEffects().data?.planets.get(p.index) ?? []).filter(
+    (e) => e.kind !== "poi" && (e.until == null || e.until > now),
+  );
   const enemy = p.event?.faction ?? (p.currentOwner === "Humans" ? undefined : p.currentOwner);
-  const row = (key: string, icon: ReactNode, name: string, text: string, tone?: string) => (
+  const row = (key: string, icon: ReactNode, name: string, text: string, tone?: string, left?: number, look = "") => (
     <div key={key} className="pd-env-row" style={tone ? ({ "--k": tone } as CSSProperties) : undefined}>
-      <span className={`pd-env-icon ${tone ? "toned" : ""}`}>{icon}</span>
+      <span className={`pd-env-icon ${tone ? "toned" : ""} ${look}`}>{icon}</span>
       <div>
-        <b className="caps">{name}</b>
+        <b className="caps">
+          {name}
+          {left != null && <span className="pd-env-left num"> · {fmtTimeLeft(left)} left</span>}
+        </b>
         {text && <p>{text}</p>}
       </div>
     </div>
@@ -611,14 +619,18 @@ export function OperationsSection({ p }: { p: Planet }) {
       <div className="pd-env">
         {effects.map((e) => {
           const Icon = EFFECT_ICON[e.kind];
+          const stratagem = e.kind === "arsenal" ? stratagemIcon(augmentedStratagem(e.name)) : undefined;
           const icon =
             e.kind === "subfaction" && enemy ? (
               <SubfactionEmblem name={e.name} faction={enemy} size={16} color="currentColor" />
+            ) : stratagem ? (
+              <img src={stratagem} alt="" width={20} height={20} />
             ) : (
               <Icon size={16} />
             );
           const tone = e.kind === "subfaction" && enemy ? factionColor(enemy) : e.kind === "seaf" ? "var(--f-humans)" : undefined;
-          return row(`e${e.id}`, icon, e.name, e.description, tone);
+          const left = e.until != null ? e.until - now : undefined;
+          return row(`e${e.id}`, icon, e.name, e.description, tone, left, stratagem ? "stratagem" : "");
         })}
         {p.hazards.map((h) => {
           const Icon = hazardIcon(h.name);
@@ -678,8 +690,10 @@ export function SupplyLinesSection({ p }: { p: Planet }) {
     return [...ids].flatMap((i) => (byIdx.get(i) ? [byIdx.get(i)!] : []));
   }, [planets, p]);
   const active = new Set((campaigns ?? []).map((c) => c.planet.index));
+  const siege = useCircumvallation(p);
   return (
     <Panel title="Supply lines" icon={Route} right={<span className="num">{linked.length}</span>}>
+      {siege && <CircumvallationNote front={p} c={siege} className="pd-siege" />}
       {linked.length === 0 ? (
         <Empty>No supply lines from this planet.</Empty>
       ) : (

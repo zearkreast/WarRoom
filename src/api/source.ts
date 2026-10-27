@@ -93,7 +93,7 @@ async function fixtureSource(): Promise<Source> {
     { kind: "planets_static", data: (planets as Planet[]).map(toStatic), fetched_at: at },
     { kind: "dispatches", data: newestDispatches(dispatches as Dispatch[]), fetched_at: at },
     { kind: "space_stations", data: (stations as SpaceStation[]).map(toStationLive), fetched_at: at },
-    { kind: "planet_effects", data: toEffectsLive(status as WarStatusRaw), fetched_at: at },
+    { kind: "planet_effects", data: toEffectsLive(status as WarStatusRaw, Date.now()), fetched_at: at },
   ];
   const ep = episodes as { episodes: EpisodeRaw[]; warTime: number; fetchedAt: number };
   rows.push({

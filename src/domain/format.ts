@@ -26,6 +26,12 @@ export function fmtDuration(ms: number): string {
   return `${m}m`;
 }
 
+/** Time left on something that ends, in days and hours once it's a day or more. */
+export function fmtTimeLeft(ms: number): string {
+  const h = Math.floor(ms / 3_600_000);
+  return h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : fmtDuration(ms);
+}
+
 export function fmtDate(ms: number): string {
   return new Date(ms).toLocaleDateString(LOCALE, { day: "numeric", month: "short", year: "numeric" });
 }

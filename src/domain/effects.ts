@@ -24,6 +24,8 @@ export interface PlanetEffect {
   kind: EffectKind;
   name: string;
   description: string;
+  /** When a timed effect, such as an arsenal augmentation, ends: epoch ms. */
+  until?: number;
 }
 
 const NAMES = { ...(LIST as Record<string, { name: string; description: string }>) };

@@ -136,13 +136,24 @@ export interface WarEffects {
   gloom: Set<number>;
   stations: Map<number, PlanetEffect[]>;
 }
-const buildEffects = memo(
-  (live: EffectsLive): WarEffects => ({
-    planets: new Map(live.planets.map((p) => [p.index, planetEffects(p.ids)])),
+const buildEffects = memo((live: EffectsLive): WarEffects => {
+  const ids = new Map(live.planets.map((p) => [p.index, [...p.ids]]));
+  const until = new Map<number, Map<number, number>>();
+  for (const t of live.timed ?? [])
+    for (const index of t.planets) {
+      ids.set(index, [...(ids.get(index) ?? []), ...t.ids]);
+      const ends = until.get(index) ?? new Map<number, number>();
+      for (const id of t.ids) ends.set(id, Math.max(ends.get(id) ?? 0, t.until));
+      until.set(index, ends);
+    }
+  const timed = (index: number, list: PlanetEffect[]) =>
+    list.map((e) => (until.get(index)?.has(e.id) ? { ...e, until: until.get(index)!.get(e.id) } : e));
+  return {
+    planets: new Map([...ids].map(([index, list]) => [index, timed(index, planetEffects(list))])),
     gloom: new Set(live.planets.filter((p) => p.ids.some((id) => GLOOM_IDS.has(id))).map((p) => p.index)),
     stations: new Map(live.stations.map((s) => [s.id, planetEffects(s.ids)])),
-  }),
-);
+  };
+});
 const selectEffects = (s: Snapshots) => {
   const live = s.data.planet_effects as EffectsLive | undefined;
   return live && buildEffects(live);

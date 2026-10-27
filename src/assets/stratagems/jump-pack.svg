@@ -1,0 +1,6 @@
+<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2">
+  <desc>Traced by Dogo314</desc>
+  <path style="fill:none" d="M276 306h256v256H276z" transform="translate(-276 -306)"/>
+  <path d="M668 1538h-40v-24h104v24h-40v96h-24zm-48 96h-24l24-44zm120 0v-44l24 44z" style="fill:#55b9d2" transform="translate(-552 -1470)"/>
+  <path d="M660 1546v88h-32v-88zm72 0v88h-32v-88zm-92 96v40h-8l-4-40zm72 0v40h-8l-4-40zm-64 0h12l-4 40h-8zm72 0h12l-4 40h-8z" style="fill:#ffe" transform="translate(-552 -1470)"/>
+</svg>

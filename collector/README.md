@@ -19,7 +19,7 @@ Supabase; the app reads from Supabase and never calls the API itself.
 | assignments | 5 min  | `assignments` and `order_samples` (the last day of Major Order progress) snapshots         |
 | dispatches  | 5 min  | `dispatches` snapshot (newest 50), only when there's a new one                             |
 | stations    | 5 min  | `space_stations` snapshot, a `station_jumps` row when a station has moved                  |
-| episodes    | 15 min | `episodes` (Galactic Campaigns) and `planet_effects` snapshots, from the official game API |
+| episodes    | 15 min | `episodes` (Galactic Campaigns) and `planet_effects` (with arsenal augmentations and when they end) snapshots, from the official game API |
 | compact     | 1 hour | thins samples and war samples older than 48 h to one per 15 min                            |
 
 ## Setup on a VDS (Docker)
