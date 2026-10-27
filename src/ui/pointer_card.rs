@@ -29,9 +29,13 @@ const OFFSET: f64 = 18.0;
 
 pub fn pointer_at(e: &web_sys::MouseEvent, anchor: &web_sys::Element) -> PointerAt {
     let r = anchor.get_bounding_client_rect();
+    // Pointer events carry fractional coordinates, which web-sys's integer getters drop.
+    let coord = |name: &str, whole: i32| {
+        js_sys::Reflect::get(e, &name.into()).ok().and_then(|v| v.as_f64()).unwrap_or(whole as f64)
+    };
     PointerAt {
-        x: e.client_x() as f64,
-        y: e.client_y() as f64,
+        x: coord("clientX", e.client_x()),
+        y: coord("clientY", e.client_y()),
         cx: r.left() + r.width() / 2.0,
         cy: r.top() + r.height() / 2.0,
     }
@@ -60,7 +64,7 @@ pub fn PointerCard(
     #[prop(into)] title: String,
     #[prop(optional)] badge: Option<AnyView>,
     rows: Vec<CardRow>,
-    #[prop(optional)] footer: Option<AnyView>,
+    #[prop(default = None)] footer: Option<String>,
 ) -> impl IntoView {
     let max = rows.iter().filter_map(|r| r.value).fold(1.0, f64::max);
     let (left, top) = place(at);

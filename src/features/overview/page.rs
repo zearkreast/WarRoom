@@ -342,7 +342,7 @@ fn Distribution() -> impl IntoView {
                                 card.set(Some((key, pointer_at(&e, &svg))));
                             }
                         })
-                        center=std::sync::Arc::new(move || center().into_any())
+                        center=std::sync::Arc::new(move || center.into_any())
                     />
                     <ul
                         class="ov-legend"
@@ -427,10 +427,7 @@ fn Distribution() -> impl IntoView {
                         title=title
                         badge=format!("{} fronts", fronts_n.unwrap_or(others_n)).into_any()
                         rows=card_rows(&kind)
-                        footer=fronts_n
-                            .filter(|n| *n > LIST_SIZE)
-                            .map(|n| format!("+{} more · busiest first", n - LIST_SIZE).into_any())
-                            .unwrap_or_else(|| ().into_any())
+                        footer=fronts_n.filter(|n| *n > LIST_SIZE).map(|n| format!("+{} more · busiest first", n - LIST_SIZE))
                     />
                 })
             }}

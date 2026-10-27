@@ -294,8 +294,7 @@ fn GalacticControl(#[prop(into)] planets: Signal<Arc<Vec<Planet>>>, on_filter: C
                         badge=format!("{}% · {}", pct(f.pct), f.planets).into_any()
                         rows=rows
                         footer=(m.faction != Faction::Humans && f.planets > LIST_SIZE)
-                            .then(|| format!("+{} more · busiest first", f.planets - LIST_SIZE).into_any())
-                            .unwrap_or_else(|| ().into_any())
+                            .then(|| format!("+{} more · busiest first", f.planets - LIST_SIZE))
                     />
                 })
             }}
