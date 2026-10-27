@@ -12,16 +12,19 @@ Supabase; the app reads from Supabase and never calls the API itself.
   whole queue for its Retry-After; timeouts and server errors pause it for 30 s, doubling up to 5 min.
 - If no job has succeeded for 10 minutes it exits, and Docker or systemd starts it again clean.
 
-| Job         | Every  | Writes                                                                                     |
-| ----------- | ------ | ------------------------------------------------------------------------------------------ |
-| planets     | 5 min  | `planets` + `planets_static` snapshots, samples, ownership changes                         |
-| campaigns   | 1 min  | `campaigns` snapshot (with planet and region progress rates), samples, ownership changes   |
-| war         | 2 min  | `war` snapshot, a `war_samples` row                                                        |
-| assignments | 5 min  | `assignments` and `order_samples` (the last day of Major Order progress) snapshots         |
-| dispatches  | 5 min  | `dispatches` snapshot (newest 50), only when there's a new one                             |
-| stations    | 5 min  | `space_stations` snapshot, a `station_jumps` row when a station has moved                  |
-| episodes    | 15 min | `episodes` (Galactic Campaigns) and `planet_effects` (with arsenal augmentations and when they end) snapshots, from the official game API |
-| compact     | 1 hour | thins samples and war samples older than 48 h to one per 15 min                            |
+| Job         | Every  | Writes                                                                                   |
+| ----------- | ------ | ---------------------------------------------------------------------------------------- |
+| planets     | 5 min  | `planets` + `planets_static` snapshots, samples, ownership changes                       |
+| campaigns   | 1 min  | `campaigns` snapshot (with planet and region progress rates), samples, ownership changes |
+| war         | 2 min  | `war` snapshot, a `war_samples` row                                                      |
+| assignments | 5 min  | `assignments` and `order_samples` (the last day of Major Order progress) snapshots       |
+| dispatches  | 5 min  | `dispatches` snapshot (newest 50), only when there's a new one                           |
+| stations    | 5 min  | `space_stations` snapshot, a `station_jumps` row when a station has moved                |
+| episodes    | 15 min | `episodes` (Galactic Campaigns) and `planet_effects` snapshots, from the game's own API  |
+| compact     | 1 hour | thins samples and war samples older than 48 h to one per 15 min                          |
+
+`planet_effects` includes arsenal augmentations, the stratagems High Command grants on a planet for a while,
+with when each ends.
 
 ## Setup on a VDS (Docker)
 
@@ -93,3 +96,19 @@ writes are skipped and the jobs carry on.
 
 On the free plan, the history stays well under the 500 MB limit (about 140 MB a year). Free projects pause
 after a week without activity; a running collector keeps it active.
+
+## Source
+
+The collector shares its data shapes and war logic with the app through `crates/core`; what is here is the
+polling, storing and pushing.
+
+- `src/main.rs`: config, the loop that runs each job when it is due, and the exit when nothing succeeds.
+- `src/tasks.rs`: the jobs, one method each, and what each writes.
+- `src/hd2.rs`: the API client: one queue, 2.5 s between requests, back-off on errors and 429s.
+- `src/http.rs`: the HTTP transport, behind a trait the tests answer in place of the network.
+- `src/language.rs`: spots game API answers cached for a player in another language.
+- `src/recorder.rs`: planet samples and ownership changes, reloaded at start and written each poll.
+- `src/supabase.rs`: the few Supabase REST calls the collector makes.
+- `src/push.rs`: Firebase Cloud Messaging.
+- `src/tests.rs`: the jobs end to end, against a stand-in for Supabase and the saved API answers in
+  `crates/core/tests/fixtures/`.
