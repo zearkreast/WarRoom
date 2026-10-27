@@ -3,6 +3,61 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.3.5-beta] - 2026-10-27
+
+Everything since v0.3.2-beta.
+
+### Upgrading
+
+- Apply `supabase/migrations/0005_activity.sql` and redeploy the collector. Each SEST day's Helldiver peak and
+  low, every planet's Helldiver count and city readings need the migration; until it is applied the collector
+  skips those writes. Arsenal augmentations need the redeployed collector.
+
+### Planet cards
+
+- The map's planet card and panel list the planet's arsenal augmentations, with each stratagem's icon and the
+  time left; the planet page shows the time left too.
+- Circumvallation: when liberating a front would leave enemy planets with only Super Earth planets around them,
+  the card, the panel and the planet's supply lines say so, as a SEAF siege could follow. Blue when the ring is
+  worth closing, bright for a double one, grey with a notice when liberating the surrounded planet directly is
+  quicker, judged on health and resistance.
+- Heavy SEAF Presence wears the SEAF emblem.
+- The liberation bar marks where each city opens, those open from the start included, with its rank emblem.
+
+### Cities and activity
+
+- Each city opens its own page: its status, what freeing it is worth, when it opens and its activity over the
+  last day. A city takes its holder's colour, blue once liberated, and shows the liberation it opens at instead
+  of Locked.
+- Every planet keeps its Helldiver count through the day, fought over or not, and charts it on its page.
+
+### Space stations
+
+- Every tactical action has its own icon, coloured while it cools down, and a charge bar that glows green when
+  it is ready or running. The live list keeps a fixed size for each action; the destination vote box is gone.
+- The FTL jumps move to the G.W.W.'s Galactic logs.
+
+### G.W.W.
+
+- Galactic logs (formerly the war log) folds the war log, each SEST day's busiest and quietest Helldiver counts
+  and the stations' FTL jumps into boxes.
+- Super Earth's holidays have their own pages, reached from Managed Democracy with the Citizenship
+  Classification Structure; the front page's holiday chip opens them.
+- The training manuals sit behind one tile. Martian Armory joins the corporations with a logo drawn for the app;
+  AmpuDyne and Ulterior, which have no logo yet, are left out for now.
+- Every page reads as the Federation's own net: no players, studio, crossovers or real-world notes. The wiki
+  pages they adapt are credited in About.
+
+### High Command overview
+
+- The Major Order box folds.
+- The Galactic war activity chart fits phones and toggles its series without stutter; the Distribution of
+  Democracy chart answers taps.
+
+### Fixed
+
+- The news ticker no longer shakes as its status line and clock change.
+
 ## [0.3.0-beta] - 2026-10-26
 
 Everything since v0.2.7-alpha, which is the same code as v0.2.7 (commit `c5ca962` on main).

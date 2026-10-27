@@ -815,13 +815,6 @@ button.gww-ad-open:focus-visible img {
   letter-spacing: 0.14em;
   color: var(--info);
 }
-.gww-source {
-  padding-top: var(--s-4);
-  border-top: 1px dashed var(--line-strong);
-  font-size: var(--fs-body-s);
-  line-height: 1.5;
-  color: var(--label);
-}
 .gww-pager {
   display: flex;
   justify-content: space-between;

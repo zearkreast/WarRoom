@@ -990,6 +990,54 @@
 .hc-effects li.subfaction {
   border-color: var(--tone);
 }
+.hc-effects li.seaf {
+  border-color: color-mix(in srgb, var(--f-humans) 70%, transparent);
+}
+.hc-augments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin: var(--s-3) var(--s-5) 0;
+  padding: 0;
+  list-style: none;
+}
+.hc-augments li {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  background: color-mix(in srgb, var(--cta) 6%, var(--void));
+  border: 1px solid color-mix(in srgb, var(--cta) 30%, var(--line));
+}
+.hc-augments img {
+  flex: none;
+}
+.hc-aug-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.hc-aug-body > span {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.12em;
+  color: var(--label);
+}
+.hc-aug-body b {
+  font-size: var(--fs-label);
+  letter-spacing: 0.06em;
+  color: var(--cta);
+  overflow-wrap: anywhere;
+}
+.hc-aug-left {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  color: var(--text-hi);
+}
 .hc-desc {
   margin: var(--s-3) var(--s-5) 0;
   font-size: var(--fs-body-s);
