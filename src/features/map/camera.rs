@@ -92,7 +92,7 @@ pub fn write_camera(k: f64, rot: f64, tilt: f64) {
     set("poiSphereLabel", "transform", format!("translateY({below})"));
     // Hologram projectors lie flat on the table, flatter as the map tilts; units float higher as it tilts away.
     let lift = 4.0 + 6.0 * tilt.sin();
-    set("holoFloor", "transform", format!("scale(1, {})", to_fixed(0.5f64.min(tilt.cos()), 4)));
+    set("holoFloor", "transform", format!("scale(1, {})", to_fixed(0.5 * tilt.cos(), 4)));
     set("holoBeam", "transform", format!("scale(1, {})", to_fixed(lift + 6.0, 4)));
     set("holoLift", "transform", format!("translateY({})", px(-lift)));
 }

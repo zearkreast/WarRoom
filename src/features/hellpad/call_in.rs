@@ -132,7 +132,7 @@ pub fn CallInCode(c: CallIn) -> impl IntoView {
         if !on_code && (!e.key().starts_with("Arrow") || in_field) {
             return;
         }
-        if c.press(a) {
+        if c.press(a) && on_code {
             e.prevent_default();
         }
     });

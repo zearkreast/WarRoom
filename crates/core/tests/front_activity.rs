@@ -88,6 +88,15 @@ fn averages_war_readings_over_each_window_stamped_at_its_middle() {
     assert_eq!(rows[1], r(w + w / 2.0, 50.0, 0.02, 5.0));
 }
 
+#[test]
+fn averages_the_fronts_only_over_the_readings_that_split_them() {
+    let w = 300_000.0;
+    let r = |at, terminids| Reading { at, players: 100.0, impact: 0.01, terminids, automatons: 0.0, illuminate: 0.0 };
+    let rows = average_readings(&[r(0.0, 30.0), r(60_000.0, 0.0), r(w, 0.0)], w);
+    assert_eq!((rows[0].players, rows[0].terminids), (100.0, 30.0));
+    assert_eq!((rows[1].players, rows[1].terminids), (100.0, 0.0));
+}
+
 fn row(online: Option<f64>, impact: Option<f64>) -> ActivityPoint {
     ActivityPoint { at: 0.0, terminids: 10.0, automatons: 20.0, illuminate: 30.0, players: 60.0, online, impact }
 }

@@ -97,7 +97,7 @@ pub(super) fn draw_stars(
         let _ = glow.add_color_stop(0.35, "rgba(70, 164, 255, 0.08)");
         let _ = glow.add_color_stop(1.0, "rgba(70, 164, 255, 0)");
         ctx.set_fill_style_canvas_gradient(&glow);
-        ctx.fill_rect(-width * 2.0, (-height * 2.0) / squash, width * 4.0, (height * 4.0) / squash);
+        ctx.fill_rect(-cx, -cy / squash, width, height / squash);
     }
     ctx.restore();
 

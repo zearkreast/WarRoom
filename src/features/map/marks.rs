@@ -534,6 +534,7 @@ pub fn planet_body(b: &Body) -> AnyView {
                 ></circle>
                 <circle r=r fill="url(#sphere-shade)" class="shade"></circle>
                 {b.enemy.then(|| view! { <circle r="5.6" class="owner-ring" stroke=b.color.clone()></circle> })}
+                {b.mo.then(|| view! { <circle r="6.8" class="mo-ring"></circle> })}
             }
             .into_any()
         }

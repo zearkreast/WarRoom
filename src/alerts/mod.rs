@@ -3,6 +3,7 @@
 pub mod watch;
 
 use crate::js::{self, get, obj};
+use crate::state::{Popups, settings};
 use crate::tauri;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -13,6 +14,7 @@ use wasm_bindgen::JsValue;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ToastKind {
     Order,
+    Campaign,
     Dispatch,
     Capture,
     Loss,
@@ -62,8 +64,20 @@ pub fn toasts() -> Toasts {
     *TOASTS.get().expect("toasts initialised")
 }
 
+/// Whether the Popups setting shows a toast of this kind.
+pub fn pops_up(popups: Popups, kind: ToastKind) -> bool {
+    match popups {
+        Popups::All => true,
+        Popups::Priority => kind != ToastKind::Dispatch,
+        Popups::None => false,
+    }
+}
+
 impl Toasts {
     pub fn push(&self, kind: ToastKind, title: String, body: String, message: Option<String>) {
+        if !pops_up(settings().untracked(|s| s.popups), kind) {
+            return;
+        }
         let t = Toast { id: next_id(), kind, title, body, message };
         self.toasts.update(|list| {
             list.insert(0, t);
@@ -121,6 +135,11 @@ pub fn request_notifications() {
     if PERMISSION.get().is_some() {
         return;
     }
+    ask_permission();
+}
+
+/// Asks even after a refusal; call it from a click, the only time browsers show the prompt.
+pub fn ask_permission() {
     PERMISSION.set(Some(None));
     spawn_local(async {
         let granted = ensure_permission().await;
@@ -128,8 +147,25 @@ pub fn request_notifications() {
     });
 }
 
+/// The browser's notification permission ("default", "granted" or "denied"); None in the app or without support.
+pub fn web_permission() -> Option<String> {
+    if tauri::is_tauri() {
+        return None;
+    }
+    let n = get(&js::window(), "Notification");
+    if n.is_undefined() {
+        return None;
+    }
+    get(&n, "permission").as_string()
+}
+
 async fn permitted() -> bool {
-    request_notifications();
+    if tauri::is_tauri() {
+        request_notifications();
+    } else if PERMISSION.get() != Some(None) {
+        // A prompt nobody clicked for is refused or buried, so the web only asks through ask_permission().
+        return get(&get(&js::window(), "Notification"), "permission").as_string().as_deref() == Some("granted");
+    }
     loop {
         if let Some(Some(granted)) = PERMISSION.get() {
             return granted;
@@ -138,7 +174,7 @@ async fn permitted() -> bool {
     }
 }
 
-/// In-app toast always; an OS notification too when `system` is on and permission is granted.
+/// In-app toast unless Popups hides it; an OS notification too when `system` is on and permission is granted.
 pub fn notify(kind: ToastKind, title: &str, body: &str, system: bool, message: Option<String>) {
     toasts().push(kind, title.into(), body.into(), message);
     if !system {
@@ -166,4 +202,26 @@ pub fn notify(kind: ToastKind, title: &str, body: &str, system: bool, message: O
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn priority_hides_only_dispatches() {
+        let kinds = [
+            ToastKind::Order,
+            ToastKind::Campaign,
+            ToastKind::Dispatch,
+            ToastKind::Capture,
+            ToastKind::Loss,
+            ToastKind::Defense,
+        ];
+        for k in kinds {
+            assert!(pops_up(Popups::All, k));
+            assert_eq!(pops_up(Popups::Priority, k), k != ToastKind::Dispatch);
+            assert!(!pops_up(Popups::None, k));
+        }
+    }
 }

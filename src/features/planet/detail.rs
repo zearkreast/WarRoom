@@ -5,7 +5,7 @@ use crate::api::history::PlayerReading;
 use crate::api::queries::{self, queries};
 use crate::features::planet::activity::ActivitySection;
 use crate::features::planet::globe::SuperEarthGlobe;
-use crate::features::planet::record::use_planet_record;
+use crate::features::planet::record::{UNREACHABLE, use_planet_record};
 use crate::features::planet::sections::{
     DispatchSection, FrontLineSection, LiberationSection, OperationsSection, PoisSection, ServiceRecordSection,
     SupplyLinesSection, WarHistorySection,
@@ -253,6 +253,9 @@ fn Body(index: i64) -> impl IntoView {
                                         })
                                         loading=Signal::derive(move || record.with(|r| r.loading))
                                         empty=Signal::derive(move || {
+                                            if record.with(|r| r.error) {
+                                                return UNREACHABLE.to_string();
+                                            }
                                             format!(
                                                 "No Helldivers recorded on {} in the last 24 hours. A reading is kept whenever any are there.",
                                                 p.with(|p| p.name.clone())

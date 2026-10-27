@@ -64,7 +64,7 @@ fn PlanetRow(
                 <button
                     class=format!("pi-row {} {}", if active { "active" } else { "" }, if pinned.get() { "pinned" } else { "" })
                     style=format!("--k: {}; --sky: {}; --ground: {};", faction_color(Some(face)), tint.sky, tint.ground)
-                    on:click=move |e| ui().open_options(Some(OptionsAnchor { planet: index, x: e.client_x() as f64, y: e.client_y() as f64 }))
+                    on:click=move |e| ui().open_options(Some(OptionsAnchor::at(index, &e)))
                 >
                     <FactionEmblem faction=face.as_str() size=26.0 />
                     <span class="pi-row-text">
@@ -169,13 +169,14 @@ fn GalacticControl(#[prop(into)] planets: Signal<Arc<Vec<Planet>>>, on_filter: C
             <Show when=move || open.get()>
                 <div class="gc-body">
                     <NeonRing
-                        label=shares
-                            .with_untracked(|s| {
+                        label=Signal::derive(move || {
+                            shares.with(|s| {
                                 format!(
                                     "Planet control: {}",
                                     s.iter().map(|s| format!("{} {}%", faction_label(Some(s.faction)), pct(s.pct))).collect::<Vec<_>>().join(", ")
                                 )
                             })
+                        })
                         segments=Signal::derive(move || {
                             shares
                                 .get()
@@ -301,6 +302,18 @@ fn GalacticControl(#[prop(into)] planets: Signal<Arc<Vec<Planet>>>, on_filter: C
                 })
             }}
         </section>
+    }
+}
+
+fn empty_text(filter: PlanetFilter, query: &str) -> String {
+    if !query.is_empty() {
+        return format!("No planets match “{query}”.");
+    }
+    match filter {
+        PlanetFilter::Pinned => "No pinned planets yet. Pick a planet and choose Pin to top.".into(),
+        PlanetFilter::Active => "No front is open right now.".into(),
+        PlanetFilter::Owner(f) => format!("No planet is under {} control.", faction_label(Some(f))),
+        PlanetFilter::All => "No planets charted yet.".into(),
     }
 }
 
@@ -481,11 +494,7 @@ pub fn PlanetsModule() -> impl IntoView {
                 </Show>
                 {move || {
                     if empty.get() {
-                        let text = if filter.get() == PlanetFilter::Pinned && query.with(String::is_empty) {
-                            "No pinned planets yet. Pick a planet and choose Pin to top.".to_string()
-                        } else {
-                            format!("No planets match “{}”.", query.get())
-                        };
+                        let text = query.with(|q| empty_text(filter.get(), q));
                         return view! { <Empty>{text}</Empty> }.into_any();
                     }
                     view! {
@@ -534,5 +543,18 @@ pub fn PlanetsModule() -> impl IntoView {
                 }}
             </div>
         </Show>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_text_names_the_filter_without_a_search() {
+        assert_eq!(empty_text(PlanetFilter::Owner(Faction::Illuminate), ""), "No planet is under Illuminate control.");
+        assert_eq!(empty_text(PlanetFilter::Active, ""), "No front is open right now.");
+        assert_eq!(empty_text(PlanetFilter::Active, "mars"), "No planets match “mars”.");
+        assert!(empty_text(PlanetFilter::Pinned, "").starts_with("No pinned planets yet."));
     }
 }

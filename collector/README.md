@@ -6,8 +6,8 @@ Supabase; the app reads from Supabase and never calls the API itself.
 - A small Rust program that shares the app's data shapes and war logic (`crates/core`), so what it writes
   is what the app reads.
 - Little memory, near-zero CPU, and about 2 API requests a minute.
-- Safe to restart: it reloads its state from Supabase. Running two at once is harmless too (duplicate
-  readings are ignored).
+- Safe to restart: it reloads its state from Supabase. Run only one at a time, though: a second one stores
+  every reading and capture again and sends every push twice, so stop the old one before starting a new one.
 - Gentle on the API: one request at a time, 2.5 s apart, a fresh connection for each. A 429 pauses the
   whole queue for its Retry-After; timeouts and server errors pause it for 30 s, doubling up to 5 min.
 - If no job has succeeded for 10 minutes it exits, and Docker or systemd starts it again clean.
@@ -58,6 +58,10 @@ up the Firebase project first (see "Pushed news on Android" in the main README),
 
 What is already stored counts as announced, so a restart, or turning pushes on, sends nothing old. A push that
 fails is logged and not retried.
+
+Orders and campaign news go to one topic and dispatches to another, so the app's alert settings decide what a
+phone receives; older APKs on the single `news` topic still get everything. Update the collector before
+releasing an APK built from the same version, or new installs receive nothing until it is updated.
 
 ## Setup without Docker
 

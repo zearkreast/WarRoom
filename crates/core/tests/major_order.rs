@@ -29,6 +29,33 @@ fn falls_back_to_a_count_task_for_unknown_types() {
 }
 
 #[test]
+fn a_defend_task_with_no_planet_is_a_count_not_super_earth() {
+    let planets = planets();
+    let mut a = assignments()[0].clone();
+    a.tasks = vec![AssignmentTask {
+        kind: 12,
+        values: vec![3.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        value_types: vec![1, 2, 3, 4, 6, 5, 8, 9, 11, 12],
+    }];
+    a.progress = vec![2.0];
+    let t = &describe_assignment(&a, Some(&planets))[0];
+    assert!(!t.is_planet);
+    assert_eq!(t.planet, None);
+    assert_eq!((t.current, t.goal, t.done), (2.0, 5.0, false));
+}
+
+#[test]
+fn a_defend_task_that_names_super_earth_keeps_its_planet() {
+    let planets = planets();
+    let mut a = assignments()[0].clone();
+    a.tasks = vec![AssignmentTask { kind: 12, values: vec![4.0, 1.0, 1.0, 0.0], value_types: vec![1, 3, 11, 12] }];
+    a.progress = vec![0.0];
+    let t = &describe_assignment(&a, Some(&planets))[0];
+    assert!(t.is_planet);
+    assert_eq!(t.planet.as_ref().map(|p| p.name.as_str()), Some("SUPER EARTH"));
+}
+
+#[test]
 fn calls_a_target_on_track_behind_done_or_still_measuring() {
     let now = ms("2026-10-23T12:00:00Z");
     assert_eq!(deadline_outlook(40.0, Some(5.0), now, now + 20.0 * H), (DeadlineOutlook::OnTrack, Some(100.0)));

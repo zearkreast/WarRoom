@@ -29,7 +29,8 @@ pub fn outlooks(a: &Assignment, tasks: &[TaskView], now: f64) -> Vec<TaskOutlook
             if campaigns.is_some() && front.is_none() {
                 return TaskOutlook { outlook: DeadlineOutlook::NoFront, end: None, eta: None, rate: None };
             }
-            task_outlook(tracked_percent(p), front.and_then(|f| f.rate), now, deadline)
+            let limit = p.event.as_ref().map_or(deadline, |e| deadline.min(parse_ms(&e.end_time)));
+            task_outlook(tracked_percent(p), front.and_then(|f| f.rate), now, limit)
         })
         .collect()
 }

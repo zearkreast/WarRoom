@@ -5,7 +5,7 @@ pub mod jumps;
 
 use crate::api::fronts::planet_rate;
 use crate::api::queries::queries;
-use crate::api::stations::use_station_jumps;
+use crate::api::stations::{JUMP_LIMIT, use_station_jumps};
 use crate::features::map::pawn_art::{DssState, action_icon, dss_state};
 use crate::features::planet::detail::PlanetSphere;
 use crate::js::{self, fmt_date_time};
@@ -30,7 +30,6 @@ use warroom_core::progress::tracked_percent;
 use warroom_core::snapshot::StationLive;
 use warroom_core::time::parse_ms;
 use warroom_core::war_history::fmt_long_duration;
-use wasm_bindgen::JsCast;
 
 static CLOSE_TWICE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(</span>)>+").unwrap());
 static HIGHLIGHT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<span[^>]*>(.*?)</span>").unwrap());
@@ -75,17 +74,7 @@ fn planet_text(text: &str) -> AnyView {
                         <button
                             class="link st-planet-link"
                             style=format!("color: {};", faction_color(Some(owner)))
-                            on:click=move |e| {
-                                // A keyboard click has no pointer position; open beside the link instead.
-                                let rect = e
-                                    .current_target()
-                                    .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
-                                    .map(|el| el.get_bounding_client_rect());
-                                let (cx, cy) = (e.client_x() as f64, e.client_y() as f64);
-                                let x = if cx != 0.0 { cx } else { rect.as_ref().map_or(0.0, |r| r.left()) };
-                                let y = if cy != 0.0 { cy } else { rect.as_ref().map_or(0.0, |r| r.bottom()) };
-                                ui().open_options(Some(OptionsAnchor { planet: index, x, y }))
-                            }
+                            on:click=move |e| ui().open_options(Some(OptionsAnchor::at(index, &e)))
                         >
                             {label}
                         </button>
@@ -297,7 +286,11 @@ fn JumpHistoryLink(station: i64) -> impl IntoView {
                 None => "No jumps logged yet".to_string(),
                 Some(last) => format!(
                     "{} logged · last {}",
-                    if j.len() == 1 { "1 jump".to_string() } else { format!("{} jumps", j.len()) },
+                    match j.len() {
+                        1 => "1 jump".to_string(),
+                        n if n >= JUMP_LIMIT => format!("{n}+ jumps"),
+                        n => format!("{n} jumps"),
+                    },
                     fmt_date_time(last.at)
                 ),
             }
@@ -387,7 +380,13 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
                                     {format!(
                                         " {} {}",
                                         fmt_pct(pct, 2),
-                                        if front { if p.event.is_some() { "defended" } else { "liberated" } } else { "held" }
+                                        if p.event.is_some() {
+                                            "defended"
+                                        } else if front || enemy.is_some() {
+                                            "liberated"
+                                        } else {
+                                            "held"
+                                        }
                                     )}
                                 </span>
                                 {front.then(|| view! {
@@ -395,7 +394,7 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
                                         {rate.map_or("Rate measuring…".to_string(), |r| format!("{}{}% / h", if r > 0.0 { "+" } else { "" }, to_fixed(r, 2)))}
                                     </span>
                                 })}
-                                {enemy.map(|e| view! {
+                                {enemy.filter(|_| p.event.is_none()).map(|e| view! {
                                     <span class="num" style=format!("color: {};", faction_color(Some(e)))>
                                         <FactionEmblem faction=e.as_str() size=14.0 />
                                         {format!(" -{}% / h regen", to_fixed(regen_pct_per_hour(p.regen_per_second, p.max_health), 2))}

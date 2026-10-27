@@ -70,6 +70,10 @@ fn PlanetTask(s: OrderState, i: usize) -> impl IntoView {
     let planet = Memo::new(move |_| item.with(|x| x.as_ref().and_then(|(t, _)| t.planet.clone())));
     let label = Memo::new(move |_| item.with(|x| x.as_ref().map(|(t, _)| t.label.clone()).unwrap_or_default()));
     let owner = Signal::derive(move || faction_color(planet.with(|p| p.as_ref().map(|p| p.current_owner))).to_string());
+    let enemy = Signal::derive(move || {
+        faction_color(planet.with(|p| p.as_ref().map(|p| p.event.as_ref().map_or(p.current_owner, |e| e.faction))))
+            .to_string()
+    });
     let name = move || planet.with(|p| p.as_ref().map(|p| p.name.clone()).unwrap_or_default());
     let outlook = Memo::new(move |_| item.with(|x| x.as_ref().map(|(_, o)| *o)));
     view! {
@@ -84,7 +88,7 @@ fn PlanetTask(s: OrderState, i: usize) -> impl IntoView {
                         style=move || format!("color: {};", owner.get())
                         on:click=move |e| {
                             if let Some(index) = planet.with_untracked(|p| p.as_ref().map(|p| p.index)) {
-                                ui().open_options(Some(OptionsAnchor { planet: index, x: e.client_x() as f64, y: e.client_y() as f64 }))
+                                ui().open_options(Some(OptionsAnchor::at(index, &e)))
                             }
                         }
                     >
@@ -99,7 +103,7 @@ fn PlanetTask(s: OrderState, i: usize) -> impl IntoView {
                 label=Signal::derive(move || format!("{} {}", label.get(), name()))
                 value_text=Signal::derive(move || format!("{}{}", fmt_pct(pct.get(), 1), if done.get() { ", complete" } else { "" }))
                 tone="var(--f-humans)".to_string()
-                rest=owner
+                rest=enemy
                 marker=Signal::derive(move || if done.get() { None } else { outlook.get().and_then(|o| o.end) })
                 done=done
             />

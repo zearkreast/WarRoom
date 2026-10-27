@@ -51,11 +51,7 @@ pub fn MarkupText(
                                         <button
                                             class="link hl hl-planet"
                                             on:click=move |e| {
-                                                ui().open_options(Some(OptionsAnchor {
-                                                    planet,
-                                                    x: e.client_x() as f64,
-                                                    y: e.client_y() as f64,
-                                                }))
+                                                ui().open_options(Some(OptionsAnchor::at(planet, &e)))
                                             }
                                         >
                                             {text}

@@ -56,7 +56,7 @@ pub fn PlanetOptions() -> impl IntoView {
     let stations = station_planets();
     move || {
         let anchor = options.get()?;
-        let planet = queries::planet(Some(anchor.planet))?;
+        let planet = untrack(|| queries::planet(Some(anchor.planet)))?;
         let index = planet.index;
         let close = move || ui().open_options(None);
         let w = js::window();
@@ -67,7 +67,8 @@ pub fn PlanetOptions() -> impl IntoView {
         let x = anchor.x.max(SIZE / 2.0 + 8.0).min(vw - SIZE / 2.0 - 8.0);
         let y = anchor.y.max(SIZE / 2.0 + 8.0).min(vh - SIZE / 2.0 - 8.0);
         let has_station = stations.with(|s| s.contains(&index));
-        let pinned = settings().get(|s| s.pinned.contains(&index));
+        // Untracked: any settings write would rebuild the menu and send focus back to its first item.
+        let pinned = settings().untracked(|s| s.pinned.contains(&index));
         let on_map = ui().view.get() == View::Map;
         type Run = Box<dyn Fn() + Send + Sync>;
         let items: Vec<(&str, String, IconLike, Run, bool)> = vec![

@@ -1,7 +1,7 @@
 //! Polling jobs: each fetches from the API, writes to Supabase, and returns a short status for the log.
 
 use crate::hd2::{Api, ApiError};
-use crate::push::Push;
+use crate::push::{Push, Topic};
 use crate::recorder::Recorder;
 use crate::supabase::{Supabase, unless_missing};
 use serde_json::{Value, json};
@@ -120,6 +120,8 @@ pub struct Collector {
     announced_dispatch: Option<i64>,
     /// Latest campaigns, so each war sample can split players by front.
     last_campaigns: Vec<Campaign>,
+    /// When `last_campaigns` was fetched.
+    campaigns_at: Option<f64>,
     /// Each station's planet as last seen; read back from the stored snapshot after a restart.
     station_at: Option<HashMap<i64, i64>>,
     /// The last day of Major Order readings; read back from the stored snapshot after a restart.
@@ -158,6 +160,7 @@ impl Collector {
             announced_orders: None,
             announced_dispatch: None,
             last_campaigns: Vec::new(),
+            campaigns_at: None,
             station_at: None,
             order_samples: None,
             episodes: None,
@@ -217,11 +220,11 @@ impl Collector {
 
     // Keep the wording in step with the app's own alerts (src/alerts/watch.rs). A failed push is only logged: the
     // snapshot is already written, so a retry wouldn't see the news as new.
-    fn announce(&mut self, items: &[(String, String)]) -> String {
+    fn announce(&mut self, topic: Topic, items: &[(String, String)]) -> String {
         let Some(push) = self.push.as_mut() else { return String::new() };
         let mut sent = 0;
         for (title, body) in items {
-            match push.push(title, body) {
+            match push.push(topic, title, body) {
                 Ok(()) => sent += 1,
                 Err(e) => eprintln!("push failed: {e}"),
             }
@@ -232,7 +235,8 @@ impl Collector {
     fn planets(&mut self) -> Result<String, JobError> {
         let planets: Vec<Planet> = typed(self.api.get("/api/v1/planets")?)?;
         let at = (self.now)();
-        let r = self.recorder.ingest(&self.db, &planets, at)?;
+        let campaign: HashSet<i64> = self.last_campaigns.iter().map(|c| c.planet.index).collect();
+        let r = self.recorder.ingest(&self.db, &planets, &campaign, at)?;
         self.snapshot(
             SnapshotKind::Planets,
             serde_json::to_value(planets.iter().map(to_live).collect::<Vec<_>>()).unwrap(),
@@ -249,10 +253,12 @@ impl Collector {
 
     fn campaigns(&mut self) -> Result<String, JobError> {
         let campaigns: Vec<Campaign> = typed(self.api.get("/api/v1/campaigns")?)?;
-        self.last_campaigns = campaigns.clone();
-        let planets: Vec<Planet> = campaigns.iter().map(|c| c.planet.clone()).collect();
         let at = (self.now)();
-        let r = self.recorder.ingest(&self.db, &planets, at)?;
+        self.last_campaigns = campaigns.clone();
+        self.campaigns_at = Some(at);
+        let planets: Vec<Planet> = campaigns.iter().map(|c| c.planet.clone()).collect();
+        let campaign: HashSet<i64> = planets.iter().map(|p| p.index).collect();
+        let r = self.recorder.ingest(&self.db, &planets, &campaign, at)?;
         let live: Vec<_> = campaigns
             .iter()
             .map(|c| {
@@ -269,10 +275,16 @@ impl Collector {
         let raw = self.api.get("/api/v1/war")?;
         let war: War = typed(raw.clone())?;
         self.snapshot(SnapshotKind::War, raw)?;
-        let sample = to_war_sample(&war, self.last_campaigns.iter().map(|c| &c.planet), (self.now)());
-        self.db.upsert("war_samples", &[serde_json::to_value(sample).unwrap()], None, true)?;
         let online = war.statistics.player_count;
-        // A reading of nobody online is an API blip, not the day's low.
+        // A reading of nobody online is an API blip, not a war sample or the day's low.
+        if online > 0.0 {
+            let at = (self.now)();
+            // Campaigns more than three polls old leave the fronts at 0, which the app reads as no split.
+            let fresh = self.campaigns_at.is_some_and(|t| at - t <= 3.0 * Job::Campaigns.every_ms());
+            let fronts: &[Campaign] = if fresh { &self.last_campaigns } else { &[] };
+            let sample = to_war_sample(&war, fronts.iter().map(|c| &c.planet), at);
+            self.db.upsert("war_samples", &[serde_json::to_value(sample).unwrap()], None, true)?;
+        }
         let noted = online > 0.0
             && unless_missing(
                 self.db.rpc("note_war_day", json!({ "reading_at": iso_string((self.now)()), "online": online })),
@@ -313,7 +325,7 @@ impl Collector {
                     )
                 })
                 .collect();
-            pushed = self.announce(&items);
+            pushed = self.announce(Topic::Orders, &items);
             let ids: Vec<i64> = fresh.iter().map(|x| x.id).collect();
             self.announced_orders.as_mut().unwrap().extend(ids);
         }
@@ -355,7 +367,7 @@ impl Collector {
                 .map(|(d, _)| ("New dispatch".to_string(), dispatch_title(&d.message)))
                 .collect();
             fresh.reverse();
-            pushed = self.announce(&fresh);
+            pushed = self.announce(Topic::Dispatches, &fresh);
             self.announced_dispatch = Some(items.iter().map(|(d, _)| d.id).fold(since, i64::max));
         }
         Ok(format!("newest #{}{pushed}", items.first().map_or(0, |(d, _)| d.id)))
@@ -458,7 +470,7 @@ impl Collector {
         self.episodes = Some(list.clone());
         // An empty archive is a fresh setup, not a dozen campaigns launching at once.
         let pushed = if self.push.is_some() && !before.is_empty() {
-            self.announce(&campaign_news(&before, &list))
+            self.announce(Topic::Orders, &campaign_news(&before, &list))
         } else {
             String::new()
         };

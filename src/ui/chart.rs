@@ -835,9 +835,10 @@ pub fn Chart(
         let tooltip = tooltip.clone()?;
         let i = hover.get()?;
         let p = plot.get();
+        let at = *p.xs.get(i)?;
         let content = tooltip(&p, i)?;
         let f = frame_of();
-        let x = f.x(*p.xs.get(i)?);
+        let x = f.x(at);
         let y = pointer_y.get().unwrap_or(f.top).clamp(f.top, f.top + f.height);
         let (tw, th) = tip_size.get();
         let place = |c: f64, size: f64, lo: f64, span: f64| {

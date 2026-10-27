@@ -2,15 +2,15 @@
 
 use crate::hd2::{Api, ApiError};
 use crate::http::{Request, Response, Transport, TransportError};
-use crate::push::Push;
+use crate::push::{Push, Topic};
 use crate::recorder::Recorder;
 use crate::supabase::Supabase;
 use crate::tasks::{Collector, Job, campaign_news};
 use serde_json::{Value, json};
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
-use warroom_core::api::{Planet, from_str};
+use warroom_core::api::{Faction, Planet, from_str};
 use warroom_core::format::dispatch_title;
 use warroom_core::snapshot::{
     EpisodeLive, EpisodeStatus, OrderSample, add_order_samples, campaign_tally, merge_episodes, to_campaign_live,
@@ -169,7 +169,7 @@ fn measures_a_regions_rate_from_the_readings_of_its_planet() {
     let region = p.regions[0].id;
     for m in (0..=20).step_by(5) {
         p.regions[0].health = Some(100_000.0 - m as f64 * 1000.0);
-        recorder.ingest(&db, std::slice::from_ref(&p), m as f64 * 60_000.0).unwrap();
+        recorder.ingest(&db, std::slice::from_ref(&p), &HashSet::new(), m as f64 * 60_000.0).unwrap();
     }
     assert!((recorder.region_rate(p.index, region).unwrap() - 60.0).abs() < 1e-5);
     assert_eq!(recorder.region_rate(p.index, region + 99), None);
@@ -185,7 +185,7 @@ fn stores_helldivers_on_a_planet_with_no_campaign_and_a_busy_city_at_most_every_
     idle.statistics.player_count = 4321.0;
     idle.regions[0].players = 12.0;
     for m in [0.0, 1.0, 5.0] {
-        recorder.ingest(&db, std::slice::from_ref(&idle), m * 60_000.0).unwrap();
+        recorder.ingest(&db, std::slice::from_ref(&idle), &HashSet::new(), m * 60_000.0).unwrap();
     }
     let calls = calls.borrow();
     let rows = |path: &str| -> Vec<Value> {
@@ -198,13 +198,80 @@ fn stores_helldivers_on_a_planet_with_no_campaign_and_a_busy_city_at_most_every_
 }
 
 #[test]
+fn samples_a_campaign_planet_still_at_0_percent_instead_of_counting_its_helldivers_as_idle() {
+    let (db, calls) = fake_db(&[]);
+    let mut recorder = Recorder::default();
+    let mut p = planets().remove(0);
+    p.health = p.max_health;
+    p.event = None;
+    p.statistics.player_count = 300.0;
+    let campaign = HashSet::from([p.index]);
+    for m in [0.0, 5.0, 10.0] {
+        assert_eq!(recorder.ingest(&db, std::slice::from_ref(&p), &campaign, m * 60_000.0).unwrap().samples, 1);
+    }
+    assert_eq!(recorder.rate(p.index), Some(0.0));
+    assert!(!calls.borrow().iter().any(|c| c.path == "planet_players"));
+}
+
+#[test]
+fn samples_every_campaign_planet_in_both_the_campaigns_and_the_planets_job() {
+    let campaigns: Vec<warroom_core::api::Campaign> = from_str(fixture!("campaigns.json")).unwrap();
+    assert!(campaigns.iter().any(|c| c.planet.health == c.planet.max_health && c.planet.event.is_none()));
+    let indexes: HashSet<i64> = campaigns.iter().map(|c| c.planet.index).collect();
+    let (db, calls) = fake_db(&[]);
+    let mut c = collector(db, 1_000_000.0);
+    c.run(Job::Campaigns);
+    let planets_of = |path: &str| -> HashSet<i64> {
+        let calls = calls.borrow();
+        let rows = calls.iter().filter(|c| c.path == path).flat_map(|c| c.body.as_array().unwrap().clone());
+        rows.map(|r| r["planet"].as_i64().unwrap()).collect()
+    };
+    assert_eq!(planets_of("samples"), indexes);
+    calls.borrow_mut().clear();
+    c.run(Job::Planets);
+    let listed: HashSet<i64> = planets().iter().map(|p| p.index).collect();
+    assert!(indexes.intersection(&listed).all(|i| planets_of("samples").contains(i)));
+    assert!(planets_of("planet_players").is_disjoint(&indexes));
+}
+
+#[test]
+fn keeps_a_capture_for_the_next_poll_when_its_owner_change_fails_to_store() {
+    let (db, _) = fake_db(&[]);
+    let mut recorder = Recorder::default();
+    let mut list = planets();
+    recorder.ingest(&db, &list, &HashSet::new(), 0.0).unwrap();
+    list.iter_mut().find(|p| p.index == 261).unwrap().current_owner = Faction::Humans;
+    let (down, _) = fake_db_missing(&[], &["owner_changes"]);
+    assert!(recorder.ingest(&down, &list, &HashSet::new(), 60_000.0).is_err());
+    let (db, calls) = fake_db(&[]);
+    assert_eq!(recorder.ingest(&db, &list, &HashSet::new(), 120_000.0).unwrap().changes.len(), 1);
+    let calls = calls.borrow();
+    assert_eq!(calls.iter().find(|c| c.path == "owner_changes").unwrap().body[0]["at"], json!(iso_string(120_000.0)));
+    assert_eq!(calls.iter().find(|c| c.path == "planet_owners").unwrap().body, json!([{ "planet": 261, "owner": 1 }]));
+}
+
+#[test]
+fn stores_a_capture_even_when_the_samples_write_fails() {
+    let (db, _) = fake_db(&[]);
+    let mut recorder = Recorder::default();
+    let mut list = planets();
+    recorder.ingest(&db, &list, &HashSet::new(), 0.0).unwrap();
+    list.iter_mut().find(|p| p.index == 261).unwrap().current_owner = Faction::Humans;
+    let (down, calls) = fake_db_missing(&[], &["samples"]);
+    assert!(recorder.ingest(&down, &list, &HashSet::new(), 60_000.0).is_err());
+    assert!(calls.borrow().iter().any(|c| c.path == "owner_changes"));
+    let (db, _) = fake_db(&[]);
+    assert!(recorder.ingest(&db, &list, &HashSet::new(), 120_000.0).unwrap().changes.is_empty());
+}
+
+#[test]
 fn skips_the_activity_writes_rather_than_failing_before_their_migration_is_applied() {
     let missing = ["planet_players", "region_samples", "rpc/note_war_day"];
     let (db, _) = fake_db_missing(&[], &missing);
     let mut recorder = Recorder::default();
     let mut idle = planets().remove(0);
     idle.statistics.player_count = 10.0;
-    assert_eq!(recorder.ingest(&db, &[idle], 0.0).unwrap().samples, 0);
+    assert_eq!(recorder.ingest(&db, &[idle], &HashSet::new(), 0.0).unwrap().samples, 0);
     let (db, _) = fake_db_missing(&[], &missing);
     let r = collector(db, 0.0).run(Job::War);
     assert!(r.ok && r.message.contains("no war_days table yet"), "{}", r.message);
@@ -374,6 +441,37 @@ fn restores_owners_after_a_restart_so_it_doesnt_invent_captures() {
 }
 
 #[test]
+fn stores_no_war_reading_when_the_api_reports_nobody_online() {
+    let mut war = raw(fixture!("war.json"));
+    war["statistics"]["playerCount"] = json!(0);
+    let mut data = api_data();
+    data.insert("war".into(), Ok(war));
+    let (db, calls) = fake_db(&[]);
+    let mut c = Collector::new(Box::new(FakeApi(data)), db, Recorder::default(), Box::new(|| 0.0), None, None);
+    assert!(c.run(Job::War).ok);
+    assert!(!calls.borrow().iter().any(|c| c.path == "war_samples" || c.path == "rpc/note_war_day"));
+}
+
+#[test]
+fn leaves_the_fronts_out_of_a_war_reading_while_the_campaigns_are_out_of_date() {
+    let (db, calls) = fake_db(&[]);
+    let mut c = collector(db, 1_000_000.0);
+    c.run(Job::War);
+    c.run(Job::Campaigns);
+    c.run(Job::War);
+    c.now = Box::new(|| 1_000_000.0 + 10.0 * 60_000.0);
+    c.run(Job::War);
+    let fronts: Vec<f64> = calls
+        .borrow()
+        .iter()
+        .filter(|c| c.path == "war_samples")
+        .map(|c| ["terminids", "automatons", "illuminate"].iter().map(|k| c.body[0][k].as_f64().unwrap()).sum())
+        .collect();
+    assert_eq!(fronts.len(), 3);
+    assert!(fronts[0] == 0.0 && fronts[1] > 0.0 && fronts[2] == 0.0, "{fronts:?}");
+}
+
+#[test]
 fn reports_a_rate_limit_with_a_retry_time() {
     let (db, _) = fake_db(&[]);
     let mut data = api_data();
@@ -537,11 +635,11 @@ fn writes_an_episodes_snapshot_only_when_the_game_api_client_is_given() {
 }
 
 /// Records what would have been pushed.
-struct Recorded(Rc<RefCell<Vec<(String, String)>>>);
+struct Recorded(Rc<RefCell<Vec<(Topic, String, String)>>>);
 
 impl Push for Recorded {
-    fn push(&mut self, title: &str, body: &str) -> Result<(), String> {
-        self.0.borrow_mut().push((title.into(), body.into()));
+    fn push(&mut self, topic: Topic, title: &str, body: &str) -> Result<(), String> {
+        self.0.borrow_mut().push((topic, title.into(), body.into()));
         Ok(())
     }
 }
@@ -549,7 +647,7 @@ impl Push for Recorded {
 struct Failing;
 
 impl Push for Failing {
-    fn push(&mut self, _: &str, _: &str) -> Result<(), String> {
+    fn push(&mut self, _: Topic, _: &str, _: &str) -> Result<(), String> {
         Err("FCM send 503".into())
     }
 }
@@ -566,7 +664,7 @@ fn pushes_a_major_order_missing_from_the_stored_snapshot_once() {
     assert_eq!(c.run(Job::Assignments).message, "1 orders, 1/1 pushed");
     assert_eq!(c.run(Job::Assignments).message, "1 orders");
     let briefing = raw(fixture!("assignments.json"))[0]["briefing"].as_str().unwrap().to_string();
-    assert_eq!(*sent.borrow(), [("New Major Order".to_string(), briefing)]);
+    assert_eq!(*sent.borrow(), [(Topic::Orders, "New Major Order".to_string(), briefing)]);
 }
 
 #[test]
@@ -588,11 +686,24 @@ fn pushes_the_dispatches_newer_than_the_stored_ones_oldest_first() {
     let mut c = pushing(db, Box::new(Recorded(sent.clone())));
     assert_eq!(c.run(Job::Dispatches).message, format!("newest #{}, 2/2 pushed", newest[0]["id"]));
     assert_eq!(c.run(Job::Dispatches).message, "unchanged");
-    let want: Vec<(String, String)> = [&newest[1], &newest[0]]
+    let want: Vec<(Topic, String, String)> = [&newest[1], &newest[0]]
         .iter()
-        .map(|d| ("New dispatch".to_string(), dispatch_title(d["message"].as_str().unwrap())))
+        .map(|d| (Topic::Dispatches, "New dispatch".to_string(), dispatch_title(d["message"].as_str().unwrap())))
         .collect();
     assert_eq!(*sent.borrow(), want);
+}
+
+#[test]
+fn pushes_a_campaign_launch_under_the_orders_setting() {
+    let raw_list: Vec<warroom_core::api::EpisodeRaw> = from_str(&raw_episodes().to_string()).unwrap();
+    let stored = to_episodes(&raw_list[..1], 10_000.0, 50_000_000.0);
+    let (db, _) = fake_db(&[("snapshots", json!([{ "data": serde_json::to_value(&stored).unwrap() }]))]);
+    let sent = Rc::new(RefCell::new(Vec::new()));
+    let game = game(raw_episodes(), json!({ "time": 10_000 }));
+    let push = Box::new(Recorded(sent.clone()));
+    let mut c = Collector::new(api(), db, Recorder::default(), Box::new(|| 50_000_000.0), Some(game), Some(push));
+    assert_eq!(c.run(Job::Episodes).message, "2 campaigns, 1 active, 1/1 pushed");
+    assert_eq!(*sent.borrow(), [(Topic::Orders, "New Galactic Campaign".to_string(), "New campaign: NOW".to_string())]);
 }
 
 #[test]

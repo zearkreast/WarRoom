@@ -37,7 +37,7 @@ pub fn NeonRing(
     #[prop(optional)] on_pointer_move: Option<Callback<(String, web_sys::MouseEvent)>>,
     #[prop(optional)] on_select: Option<Callback<String>>,
     center: ChildrenFn,
-    #[prop(into)] label: String,
+    #[prop(into)] label: Signal<String>,
     #[prop(default = 240.0)] size: f64,
 ) -> impl IntoView {
     let root = NodeRef::<html::Div>::new();
@@ -117,7 +117,7 @@ pub fn NeonRing(
             class=move || format!("nr {}", if active.get().is_some() { "has-active" } else { "" })
             style=format!("width: {}px; height: {}px;", num(size), num(size))
             role="img"
-            aria-label=label
+            aria-label=move || label.get()
             on:pointerdown=move |e| touch.set_value(e.pointer_type() != "mouse")
             on:pointerleave=move |e| {
                 if e.pointer_type() == "mouse" {

@@ -67,6 +67,10 @@ fn TargetItem(s: OrderState, i: usize) -> impl IntoView {
     let shown = use_count_up(percent);
     let end = move || outlook.get().and_then(|o| o.end).filter(|_| !done.get());
     let owner = Signal::derive(move || faction_color(planet.with(|p| p.as_ref().map(|p| p.current_owner))).to_string());
+    let enemy = Signal::derive(move || {
+        faction_color(planet.with(|p| p.as_ref().map(|p| p.event.as_ref().map_or(p.current_owner, |e| e.faction))))
+            .to_string()
+    });
     let name = move || planet.with(|p| p.as_ref().map(|p| p.name.clone()).unwrap_or_default());
     view! {
         <li style=move || format!("--k: {};", owner.get())>
@@ -74,7 +78,7 @@ fn TargetItem(s: OrderState, i: usize) -> impl IntoView {
                 class="ms-name"
                 on:click=move |e| {
                     if let Some(index) = planet.with_untracked(|p| p.as_ref().map(|p| p.index)) {
-                        ui().open_options(Some(OptionsAnchor { planet: index, x: e.client_x() as f64, y: e.client_y() as f64 }))
+                        ui().open_options(Some(OptionsAnchor::at(index, &e)))
                     }
                 }
             >
@@ -90,7 +94,7 @@ fn TargetItem(s: OrderState, i: usize) -> impl IntoView {
                     format!("{}{}", fmt_pct(percent.get(), 1), end().map(|e| format!(", {} by the deadline", fmt_pct(e, 1))).unwrap_or_default())
                 })
                 tone="var(--f-humans)".to_string()
-                rest=owner
+                rest=enemy
                 marker=Signal::derive(end)
                 done=done
             />

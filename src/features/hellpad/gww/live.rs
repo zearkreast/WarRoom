@@ -59,7 +59,7 @@ fn planet_name(p: &Planet) -> AnyView {
         <button
             class="gww-live-planet"
             style=format!("color: {};", faction_color(Some(p.current_owner)))
-            on:click=move |e| ui().open_options(Some(OptionsAnchor { planet: index, x: e.client_x() as f64, y: e.client_y() as f64 }))
+            on:click=move |e| ui().open_options(Some(OptionsAnchor::at(index, &e)))
         >
             <FactionEmblem faction=p.current_owner.as_str() size=14.0 />
             {p.name.clone()}

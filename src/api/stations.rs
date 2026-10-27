@@ -23,6 +23,9 @@ struct Row {
     to_planet: i64,
 }
 
+/// How many of a station's newest jumps are read.
+pub const JUMP_LIMIT: usize = 50;
+
 /// A station's FTL jumps, newest first, as the collector logged them. Empty while the `station_jumps`
 /// table doesn't exist yet (older backends).
 pub fn use_station_jumps(station: impl Fn() -> i64 + 'static) -> Query<Arc<Vec<StationJump>>> {
@@ -35,14 +38,16 @@ pub fn use_station_jumps(station: impl Fn() -> i64 + 'static) -> Query<Arc<Vec<S
         POLL_MS * 5.0,
         |key: String| async move {
             let station = key.split(':').nth(1).unwrap_or("0").to_string();
-            let rows =
-                match source::select("station_jumps", &format!("select=*&station=eq.{station}&order=at.desc&limit=50"))
-                    .await
-                {
-                    Err(e) if e.status == 404 => Vec::new(),
-                    Err(e) => return Err(e.message),
-                    Ok(rows) => rows,
-                };
+            let rows = match source::select(
+                "station_jumps",
+                &format!("select=*&station=eq.{station}&order=at.desc&limit={JUMP_LIMIT}"),
+            )
+            .await
+            {
+                Err(e) if e.status == 404 => Vec::new(),
+                Err(e) => return Err(e.message),
+                Ok(rows) => rows,
+            };
             let rows: Vec<Row> =
                 warroom_core::api::from_value(serde_json::Value::Array(rows)).map_err(|e| e.to_string())?;
             Ok(Arc::new(

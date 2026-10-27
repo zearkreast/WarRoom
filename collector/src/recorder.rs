@@ -140,20 +140,41 @@ impl Recorder {
         rate_per_hour(self.regions.get(&(planet, region)).map_or(&[], Vec::as_slice))
     }
 
-    pub fn ingest(&mut self, db: &Supabase, planets: &[Planet], at: f64) -> Result<IngestResult, String> {
+    pub fn ingest(
+        &mut self,
+        db: &Supabase,
+        planets: &[Planet],
+        campaign: &HashSet<i64>,
+        at: f64,
+    ) -> Result<IngestResult, String> {
         let changes = detect_owner_changes(&self.owners, planets, at);
-        let mut updated = Vec::new();
-        for p in planets {
-            if self.owners.get(&p.index) != Some(&p.current_owner) {
-                self.owners.insert(p.index, p.current_owner);
-                updated.push(json!({ "planet": p.index, "owner": faction_id(p.current_owner) }));
-            }
-        }
+        let updated: Vec<&Planet> =
+            planets.iter().filter(|p| self.owners.get(&p.index) != Some(&p.current_owner)).collect();
+        let owner_rows: Vec<Value> =
+            updated.iter().map(|p| json!({ "planet": p.index, "owner": faction_id(p.current_owner) })).collect();
+        let change_rows: Vec<Value> = changes
+            .iter()
+            .map(|c| {
+                json!({
+                    "planet": c.planet,
+                    "planet_name": c.planet_name,
+                    "from_owner": faction_id(c.from),
+                    "to_owner": faction_id(c.to),
+                    "at": iso_string(c.at),
+                })
+            })
+            .collect();
+        // New owners are kept only once stored, so a failed write is retried next poll. planet_owners goes first:
+        // it is safe to write twice, an owner change isn't.
+        db.upsert("planet_owners", &owner_rows, None, false)?;
+        db.insert("owner_changes", &change_rows)?;
+        self.owners.extend(updated.iter().map(|p| (p.index, p.current_owner)));
 
         // A planet that just changed hands gets one sample even if it's no longer contested,
-        // so its chart ends at the moment of capture.
+        // so its chart ends at the moment of capture. A campaign still at 0% is sampled too, or its rate
+        // would never be measured.
         let changed: HashSet<i64> = changes.iter().map(|c| c.planet).collect();
-        let contested = |p: &Planet| is_active(p) || changed.contains(&p.index);
+        let contested = |p: &Planet| is_active(p) || changed.contains(&p.index) || campaign.contains(&p.index);
         let samples: Vec<Sample> = planets.iter().filter(|p| contested(p)).map(|p| to_sample(p, at)).collect();
         for s in &samples {
             keep(&mut self.recent, s.planet, s.clone());
@@ -179,22 +200,7 @@ impl Recorder {
             }
         }
 
-        // Duplicates (same planet and time) are ignored, so two collectors can safely overlap.
         db.upsert("samples", &samples.iter().map(to_row).collect::<Vec<_>>(), None, true)?;
-        let change_rows: Vec<Value> = changes
-            .iter()
-            .map(|c| {
-                json!({
-                    "planet": c.planet,
-                    "planet_name": c.planet_name,
-                    "from_owner": faction_id(c.from),
-                    "to_owner": faction_id(c.to),
-                    "at": iso_string(c.at),
-                })
-            })
-            .collect();
-        db.insert("owner_changes", &change_rows)?;
-        db.upsert("planet_owners", &updated, None, false)?;
         unless_missing(db.upsert("planet_players", &idle, None, true))?;
         unless_missing(db.upsert("region_samples", &cities, None, true))?;
         Ok(IngestResult { samples: samples.len(), changes })

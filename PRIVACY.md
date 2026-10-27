@@ -1,7 +1,7 @@
 WARCOMMAND TRACKER - PRIVACY POLICY
 ===================================
 
-Last updated: 26 October 2026
+Last updated: 27 October 2026
 
 In short: WarCommand Tracker collects no personal data. There is no account,
 no analytics, no advertising and no tracking of any kind.
@@ -30,8 +30,15 @@ browser and fall under that site's own policy.
 NOTIFICATIONS
 
 Alerts for new Major Orders, dispatches, captures and defenses are worked out
-on your device from the war data it downloads. No push service is used and no
-device identifier leaves your device. You can turn alerts off in Settings, and
+on your device from the war data it downloads.
+
+On Android, the app can also receive Strohmann News while it is closed,
+through Firebase Cloud Messaging, a Google service. It subscribes only to the
+news topics your alert settings switch on. Google's servers handle the
+device's messaging token under Google's own privacy policy; the project sends
+each push to a topic and never receives or stores a device identifier.
+
+You can turn alerts off in Settings, which also ends those subscriptions, and
 your system's own notification settings always apply.
 
 

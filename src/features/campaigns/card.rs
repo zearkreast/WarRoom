@@ -131,7 +131,13 @@ pub fn CampaignCard(
     let get = move |pick: fn(&Front) -> f64| move || front.with(|f| f.as_ref().map_or(0.0, pick));
     let percent = Signal::derive(get(|f| f.percent));
     let players = Signal::derive(get(|f| f.players));
-    let regen = Signal::derive(get(|f| regen_pct_per_hour(f.planet.regen_per_second, f.planet.max_health)));
+    let regen = Signal::derive(move || {
+        front.with(|f| {
+            f.as_ref()
+                .filter(|f| f.kind == FrontKind::Liberation)
+                .map(|f| regen_pct_per_hour(f.planet.regen_per_second, f.planet.max_health))
+        })
+    });
     let projected = Signal::derive(move || front.with(|f| f.as_ref().and_then(|f| f.projected)));
     let rate = Memo::new(move |_| front.with(|f| f.as_ref().and_then(|f| f.rate)));
     let flag = move |pick: fn(&Front) -> bool| Memo::new(move |_| front.with(|f| f.as_ref().is_some_and(pick)));
@@ -179,7 +185,7 @@ pub fn CampaignCard(
                 <button
                     class=move || format!("cc-card {}", if in_mo.get() { "mo" } else { "" })
                     on:click=move |e| {
-                        ui().open_options(Some(OptionsAnchor { planet: index, x: e.client_x() as f64, y: e.client_y() as f64 }))
+                        ui().open_options(Some(OptionsAnchor::at(index, &e)))
                     }
                     aria-label=aria
                 >
@@ -244,11 +250,11 @@ pub fn CampaignCard(
                         </span>
                         <span title="Super Earth progress per hour, before enemy regeneration" style="color: var(--f-humans);">
                             <FactionEmblem faction="Humans" size=12.0 />
-                            {move || format!(" {}", rate.get().map_or("—".to_string(), |r| format!("{}%", to_fixed(r + regen.get(), 2))))}
+                            {move || format!(" {}", rate.get().map_or("—".to_string(), |r| format!("{}%", to_fixed(r + regen.get().unwrap_or(0.0), 2))))}
                         </span>
                         <span title="Enemy regeneration per hour" style=format!("color: {enemy};")>
                             <FactionEmblem faction=l.enemy.as_str() size=12.0 />
-                            {move || format!(" {}%", to_fixed(regen.get(), 2))}
+                            {move || format!(" {}", regen.get().map_or("—".to_string(), |r| format!("{}%", to_fixed(r, 2))))}
                         </span>
                     </footer>
                 </button>

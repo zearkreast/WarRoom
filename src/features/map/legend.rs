@@ -1,5 +1,6 @@
 use crate::ui::emblems::EmblemArt;
 use crate::ui::icons::{self, Icon};
+use crate::ui::primitives::use_escape;
 use leptos::html;
 use leptos::prelude::*;
 use wasm_bindgen::JsCast;
@@ -34,7 +35,7 @@ const ENTRIES: &[Entry] = &[
             )
         },
         name: "Planets",
-        text: "Blue for Super Earth, otherwise the colour of the faction holding it.",
+        text: "Blue for Super Earth, otherwise the colour of the faction holding it, or attacking it in a defense.",
     },
     Entry {
         mark: || {
@@ -164,15 +165,8 @@ pub fn close_outside(panel: NodeRef<html::Div>, on_close: Callback<()>) {
             on_close.run(());
         }
     });
-    let key = window_event_listener(leptos::ev::keydown, move |e| {
-        if e.key() == "Escape" {
-            on_close.run(());
-        }
-    });
-    on_cleanup(move || {
-        down.remove();
-        key.remove();
-    });
+    use_escape(move || on_close.run(()));
+    on_cleanup(move || down.remove());
 }
 
 /// What the marks on the map mean; opens beside the rail like the map settings.

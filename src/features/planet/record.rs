@@ -11,6 +11,8 @@ use warroom_core::progress::Sample;
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct PlanetRecord {
     pub loading: bool,
+    /// The last read failed; whatever was read before is kept.
+    pub error: bool,
     /// The 24 hours of samples up to the newest data (not the clock, so a stalled collector still shows its last day).
     pub samples: Arc<Vec<Sample>>,
     /// Helldivers on the planet over the same 24 hours while it had no campaign.
@@ -20,6 +22,9 @@ pub struct PlanetRecord {
     /// When the collector first recorded this planet (or anything, if never this one).
     pub record_start: Option<f64>,
 }
+
+/// Shown in place of the record while nothing could be read.
+pub const UNREACHABLE: &str = "Could not reach the war archive; retrying.";
 
 const DAY_MS: f64 = 86_400_000.0;
 const REFRESH_MS: f64 = 5.0 * 60_000.0;
@@ -62,13 +67,17 @@ pub fn use_planet_record(planet: i64) -> ReadSignal<PlanetRecord> {
             match result {
                 Ok((samples, idle, changes, defending_at, record_start)) => set_rec.set(PlanetRecord {
                     loading: false,
+                    error: false,
                     samples: Arc::new(samples),
                     idle: Arc::new(idle),
                     changes: Arc::new(changes.into_iter().map(|c| c.change).collect()),
                     defending_at: Arc::new(defending_at),
                     record_start,
                 }),
-                Err(_) => set_rec.update(|r| r.loading = false),
+                Err(_) => set_rec.update(|r| {
+                    r.loading = false;
+                    r.error = true;
+                }),
             }
         });
     });

@@ -212,7 +212,7 @@ pub fn NewsPage() -> impl IntoView {
                     }
                     _ => view! {
                         {move || featured.get().map(|k| render(k, true))}
-                        <For each=move || days.get() key=|g| (g.0, g.2.len(), g.2.first().cloned()) let:g>
+                        <For each=move || days.get() key=|g| (g.0, g.1.clone(), g.2.len(), g.2.first().cloned()) let:g>
                             <section class="news-day" aria-label=g.1.clone()>
                                 <h2 class="news-day-head caps">
                                     {g.1.clone()}

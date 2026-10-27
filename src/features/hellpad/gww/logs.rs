@@ -2,7 +2,7 @@
 
 use crate::api::history::history;
 use crate::api::queries::queries;
-use crate::api::stations::use_station_jumps;
+use crate::api::stations::{JUMP_LIMIT, use_station_jumps};
 use crate::api::war_samples::use_war_days;
 use crate::features::hellpad::gww::blocks::{HeadingRef, banner, crumb, related};
 use crate::features::hellpad::stations::jumps::JumpRoute;
@@ -12,6 +12,7 @@ use crate::ui::emblems::{DssIcon, FactionEmblem};
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Empty, Loading};
 use leptos::prelude::*;
+use leptos::task::spawn_local;
 use warroom_core::api::Faction;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, sest_clock, sest_date};
@@ -46,6 +47,8 @@ fn war_log() -> AnyView {
     let all_days = RwSignal::new(false);
     let changes = h.changes;
     let ready = h.ready;
+    let older = h.older;
+    let fetching = RwSignal::new(false);
     let days = Memo::new(move |_| {
         let s = show.get();
         let mut days: Vec<(String, Vec<_>)> = Vec::new();
@@ -68,10 +71,15 @@ fn war_log() -> AnyView {
         }
         let list = days.get();
         if list.is_empty() {
+            let span = if older.get() {
+                format!("in the latest {} changes", changes.with(Vec::len))
+            } else {
+                "since records began".into()
+            };
             let text = match show.get() {
-                LogFilter::All => "No planet has changed hands since records began.",
-                LogFilter::Won => "No planet has been liberated since records began.",
-                LogFilter::Lost => "No planet has been lost since records began.",
+                LogFilter::All => format!("No planet has changed hands {span}."),
+                LogFilter::Won => format!("No planet has been liberated {span}."),
+                LogFilter::Lost => format!("No planet has been lost {span}."),
             };
             return view! { <Empty>{text}</Empty> }.into_any();
         }
@@ -99,7 +107,7 @@ fn war_log() -> AnyView {
                                                 <button
                                                     class="link"
                                                     style="color: var(--text-hi);"
-                                                    on:click=move |e| ui().open_options(Some(OptionsAnchor { planet, x: e.client_x() as f64, y: e.client_y() as f64 }))
+                                                    on:click=move |e| ui().open_options(Some(OptionsAnchor::at(planet, &e)))
                                                 >
                                                     {ch.planet_name.clone()}
                                                 </button>
@@ -129,6 +137,26 @@ fn war_log() -> AnyView {
             </button>
         })
         };
+    let load_older = move || {
+        let every_day = all_days.get() || days.with(Vec::len) <= LOG_DAYS;
+        (ready.get() && older.get() && every_day).then(|| {
+            view! {
+                <button
+                    class="gww-chip gww-more"
+                    disabled=move || fetching.get()
+                    on:click=move |_| {
+                        fetching.set(true);
+                        spawn_local(async move {
+                            let _ = h.load_older().await;
+                            fetching.set(false);
+                        });
+                    }
+                >
+                    "Show older changes"
+                </button>
+            }
+        })
+    };
     view! {
         <div class="gww-filter" role="group" aria-label="Show">
             {[(LogFilter::All, "Everything"), (LogFilter::Won, "Liberated"), (LogFilter::Lost, "Lost")]
@@ -145,6 +173,7 @@ fn war_log() -> AnyView {
         </div>
         {body}
         {more}
+        {load_older}
     }
     .into_any()
 }
@@ -175,7 +204,7 @@ fn activity_days(now: Memo<f64>) -> AnyView {
     let all = RwSignal::new(false);
     let hm = |ms: f64| sest_clock(ms).chars().take(5).collect::<String>();
     (move || {
-        if q.loading.get() {
+        if q.loading.get() && q.data.with(Option::is_none) {
             return view! { <Loading what="the activity log" rows=2 /> }.into_any();
         }
         let days = q.data.get().unwrap_or_default();
@@ -226,13 +255,16 @@ fn StationJumps(station: i64, name: String, now: Memo<f64>) -> impl IntoView {
     let jumps = Signal::derive(move || q.data.get().unwrap_or_default());
     let note = move || match jumps.with(|j| j.len()) {
         1 => "1 jump".to_string(),
+        n if n >= JUMP_LIMIT => format!("Latest {n} jumps"),
         n => format!("{n} jumps"),
     };
+    let waiting = Memo::new(move |_| q.loading.get() && q.data.with(Option::is_none));
+    let empty = Memo::new(move |_| jumps.with(|j| j.is_empty()));
     let body = move || {
-        if q.loading.get() {
+        if waiting.get() {
             return view! { <Loading what="the jump log" rows=2 /> }.into_any();
         }
-        if jumps.with(|j| j.is_empty()) {
+        if empty.get() {
             return view! { <Empty>"No jumps logged yet. Each jump is logged as telemetry comes in."</Empty> }
                 .into_any();
         }
@@ -246,6 +278,7 @@ pub fn logs_page(heading: HeadingRef) -> AnyView {
     let h = history();
     let changes = h.changes;
     let ready = h.ready;
+    let older = h.older;
     let clock = js::use_now(60_000.0);
     let now = Memo::new(move |_| clock.get());
     let stations = Memo::new(move |_| {
@@ -259,6 +292,7 @@ pub fn logs_page(heading: HeadingRef) -> AnyView {
         }
         let (lib, total) = changes.with(|c| (c.iter().filter(|c| c.change.to == Faction::Humans).count(), c.len()));
         view! {
+            {older.get().then(|| format!("Latest {total} · "))}
             <span style="color: var(--f-humans);">{lib}" liberated"</span>
             " ·"
             " "

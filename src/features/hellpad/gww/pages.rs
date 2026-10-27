@@ -245,8 +245,7 @@ fn countdown(days: i64) -> String {
     }
 }
 
-fn days_until(h: &Holiday, now: f64) -> i64 {
-    let (y, m, d) = js::local_today(now);
+fn days_until(h: &Holiday, (y, m, d): (i64, u32, u32)) -> i64 {
     next_yearly(&[(h.month, h.day)], y, m, d).map_or(0, |(_, n)| n)
 }
 
@@ -256,13 +255,14 @@ fn holiday_target(h: &Holiday) -> String {
 
 pub fn holidays_page(heading: HeadingRef) -> AnyView {
     let nav = use_gww_nav();
-    let now = js::use_now(60.0 * 60_000.0);
+    let now = js::use_now(60_000.0);
+    let today = Memo::new(move |_| js::local_today(now.get()));
     let cards = move || {
-        let now = now.get();
+        let today = today.get();
         HOLIDAYS
             .iter()
             .map(|h| {
-                let days = days_until(h, now);
+                let days = days_until(h, today);
                 let target = holiday_target(h);
                 view! {
                     <li>
@@ -310,8 +310,8 @@ pub fn holidays_page(heading: HeadingRef) -> AnyView {
 
 pub fn holiday_page(h: &'static Holiday, heading: HeadingRef) -> AnyView {
     let prefix = format!("gww-{}", h.id);
-    let now = js::use_now(60.0 * 60_000.0);
-    let days = Memo::new(move |_| days_until(h, now.get()));
+    let now = js::use_now(60_000.0);
+    let days = Memo::new(move |_| days_until(h, js::local_today(now.get())));
     let mut crumbs = gov_crumbs("holidays");
     crumbs.push(crumb("Holidays", Some("site:holidays")));
     let at = HOLIDAYS.iter().position(|x| x.id == h.id).unwrap_or(0);

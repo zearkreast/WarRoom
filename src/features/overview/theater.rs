@@ -57,7 +57,7 @@ pub fn TheaterOfWar() -> impl IntoView {
         if overlay.get() != MapOverlay::Galaxy {
             return String::new();
         }
-        planets.with_untracked(|p| {
+        planets.with(|p| {
             let lookup = by_index(p);
             supply_lines(p)
                 .into_iter()

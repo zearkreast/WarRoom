@@ -10,6 +10,7 @@ use crate::js::{self, num};
 use crate::state::{HellpadModule, settings, ui};
 use crate::ui::emblems::{DssIcon, SeafEmblem, SubfactionEmblem};
 use crate::ui::icons::{self, Icon};
+use crate::ui::primitives::use_escape;
 use leptos::prelude::*;
 use warroom_core::api::{Faction, Planet};
 use warroom_core::biomes::{biome_tint, regen_pct_per_hour, resistance_level};
@@ -312,14 +313,21 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
                             {move || if defended.get() { "defended" } else { "liberated" }}
                         </span>
                     </div>
-                    <div class="hc-row caps">
-                        <span>"Resistance"</span>
-                        <b style=move || format!("color: {};", resistance_level(regen.get()).1)>
-                            {move || resistance_level(regen.get()).0}
-                            " "
-                            <span class="num">"("{move || to_fixed(regen.get(), 2)}"%)"</span>
-                        </b>
-                    </div>
+                    {move || {
+                        (!defended.get())
+                            .then(|| {
+                                view! {
+                                    <div class="hc-row caps">
+                                        <span>"Resistance"</span>
+                                        <b style=move || format!("color: {};", resistance_level(regen.get()).1)>
+                                            {move || resistance_level(regen.get()).0}
+                                            " "
+                                            <span class="num">"("{move || to_fixed(regen.get(), 2)}"%)"</span>
+                                        </b>
+                                    </div>
+                                }
+                            })
+                    }}
                 }
             })
         }}
@@ -327,9 +335,21 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
     }
 }
 
+/// Beside the pointer; in the window's lower half the card grows upward so its foot stays on screen.
+fn card_place(x: f64, y: f64, width: f64, height: f64) -> String {
+    let left = num((x + 18.0).min(width - 300.0));
+    if y > height / 2.0 {
+        format!("left: {left}px; bottom: {}px; ", num(8f64.max(height - y - 40.0)))
+    } else {
+        format!("left: {left}px; top: {}px; ", num(8f64.max(y - 40.0)))
+    }
+}
+
 pub fn hover_card(h: &Hover, active: Signal<bool>, effects: Signal<Vec<PlanetEffect>>) -> AnyView {
-    let width = js::window().inner_width().ok().and_then(|w| w.as_f64()).unwrap_or(0.0);
-    let place = format!("left: {}px; top: {}px; ", num((h.x + 18.0).min(width - 300.0)), num(8f64.max(h.y - 40.0)));
+    let w = js::window();
+    let width = w.inner_width().ok().and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let height = w.inner_height().ok().and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let place = card_place(h.x, h.y, width, height);
     match &h.what {
         Hovered::Landmark(l) => {
             let tint = biome_tint(Some(l.biome));
@@ -390,12 +410,7 @@ pub fn planet_panel(
     let pinned = Memo::new(move |_| settings().get(|s| s.pinned.contains(&index.get())));
     let stations = station_planets();
     let has_station = Memo::new(move |_| stations.with(|s| s.contains(&index.get())));
-    let on_key = window_event_listener(leptos::ev::keydown, move |e| {
-        if e.key() == "Escape" {
-            on_close.run(());
-        }
-    });
-    on_cleanup(move || on_key.remove());
+    use_escape(move || on_close.run(()));
     let has_cities = Memo::new(move |_| p.with(|p| !p.regions.is_empty()));
     let owner = Memo::new(move |_| p.with(|p| p.current_owner));
     view! {
@@ -458,5 +473,18 @@ pub fn planet_panel(
                 </button>
             </div>
         </aside>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::card_place;
+
+    #[test]
+    fn card_grows_upward_in_the_lower_half() {
+        assert_eq!(card_place(100.0, 200.0, 1440.0, 900.0), "left: 118px; top: 160px; ");
+        assert_eq!(card_place(100.0, 800.0, 1440.0, 900.0), "left: 118px; bottom: 60px; ");
+        assert_eq!(card_place(1400.0, 890.0, 1440.0, 900.0), "left: 1140px; bottom: 8px; ");
+        assert_eq!(card_place(100.0, 20.0, 1440.0, 900.0), "left: 118px; top: 8px; ");
     }
 }

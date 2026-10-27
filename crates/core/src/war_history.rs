@@ -24,7 +24,7 @@ pub struct DefenseEvent {
 #[derive(Clone, Debug, PartialEq)]
 pub enum LogEntry {
     Start { at: f64, owner: Faction },
-    Change { at: f64, from: Faction, to: Faction, battle: usize, held_days: f64 },
+    Change { at: f64, from: Faction, to: Faction, battle: usize, held_days: Option<f64> },
     Defense { at: f64, enemy: Option<Faction>, battle: usize, ongoing: bool, held: bool },
 }
 
@@ -118,22 +118,26 @@ pub fn build_war_history(opts: HistoryInput) -> WarHistory {
 
     // Battles are numbered in time order across captures and defenses.
     let mut battles: Vec<LogEntry> = Vec::new();
-    let mut prev_at = opts.record_start;
+    // The first change's owner held the planet from before the record began.
+    let mut prev_at: Option<f64> = None;
     for c in &changes {
         battles.push(LogEntry::Change {
             at: c.at,
             from: c.from,
             to: c.to,
             battle: 0,
-            held_days: (c.at - prev_at) / DAY_MS,
+            held_days: prev_at.map(|p| (c.at - p) / DAY_MS),
         });
-        prev_at = c.at;
+        prev_at = Some(c.at);
     }
     for d in opts.defenses {
         if d.start < opts.record_start {
             continue;
         }
-        let enemy = changes.iter().find(|c| c.from == Faction::Humans && c.at >= d.start).map(|c| c.to);
+        let enemy = changes
+            .iter()
+            .find(|c| c.from == Faction::Humans && c.at >= d.start && c.at <= d.end + EVENT_GAP_MS)
+            .map(|c| c.to);
         battles.push(LogEntry::Defense { at: d.start, enemy, battle: 0, ongoing: d.ongoing, held: d.held });
     }
     battles.sort_by(|a, b| a.at().total_cmp(&b.at()));
