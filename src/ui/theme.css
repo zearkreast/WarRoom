@@ -1,215 +1,256 @@
-/* Design tokens. */
-:root {
-  /* Ground and surfaces, darkest first. */
-  --void: #04070b;
-  --ground: #0b0d18;
-  --surface-0: #0b0f16;
-  --surface-1: #11151b;
-  --surface-2: #171c24;
-  --surface-3: #1b2027;
-  --line: #283039;
-  --line-strong: #33373f;
-  --hair: rgba(255, 255, 255, 0.06);
+/* Design tokens and element defaults. */
+@layer tokens {
+  :root {
+    /* Ground and surfaces, darkest first. */
+    --void: #030303;
+    --ground: #070706;
+    /* Keep in sync with BAR_COLOR in src-tauri/android/MainActivity.kt.template and theme-color in index.html. */
+    --surface-0: #0b0b0a;
+    --surface-1: #11110f;
+    --surface-2: #181815;
+    --surface-3: #21201c;
+    /* Dividers inside a surface. */
+    --line: #2b2924;
+    /* Panel and card frames. */
+    --line-strong: #47443b;
+    /* Borders of things you can press: at least 3:1 against every surface. */
+    --control: #6f6a5e;
 
-  /* Text, brightest first. */
-  --text-hi: #eaf4fa;
-  --text: #cfd8de;
-  --text-dim: #9fb4be;
-  --label: #7f93a0;
-  --faint: #56707f;
+    /* Text, brightest first; all but --faint pass 4.5:1 on --surface-2. */
+    --text-hi: #f4f1e8;
+    --text: #dcd8cc;
+    --text-dim: #b6b0a2;
+    --label: #958f81;
+    --faint: #858073;
 
-  /* The one hot colour: primary actions, focus, selection. */
-  --cta: #ffff5a;
-  --cta-deep: #ad9a63;
-  --ink-on-cta: #06090d;
+    /* The one hot colour: primary actions, focus, selection, Major Orders. */
+    --cta: #ffe710;
+    --cta-deep: #a89508;
+    --ink-on-cta: #050505;
 
-  --good: #5ce372;
-  --warn: #ffb23f;
-  --bad: #ff5a5a;
-  --info: #9fd4ff;
-  /* The galactic impact multiplier's line: a saturated cyan that holds up beside the online yellow. */
-  --impact: #67e8f9;
+    --good: #5ce372;
+    --warn: #ffab3d;
+    --bad: #ff5f57;
+    --info: #8fd0ff;
+    /* The galactic impact multiplier's line: a saturated cyan that holds up beside the online yellow. */
+    --impact: #67e8f9;
 
-  --f-humans: #46a4ff;
-  --f-terminids: #ff9433;
-  --f-automaton: #ff7171;
-  --f-illuminate: #cd8ae9;
-  --f-none: #4b6b78;
+    --f-humans: #46a4ff;
+    --f-terminids: #ff9433;
+    --f-automaton: #ff6b6b;
+    --f-illuminate: #cd8ae9;
 
-  /* Chart fills: the faction hues stepped into the dark-mode lightness band (OKLCH L ≤ 0.67),
-     validated with the dataviz palette checker. Stack order Terminids, Illuminate, Automatons
-     keeps orange and red apart. UI identity keeps the brighter --f-* tokens above. */
-  --c-humans: #3897f1;
-  --c-terminids: #d07c1a;
-  --c-automaton: #eb5f61;
-  --c-illuminate: #b674d2;
-  --c-grid: #1d232c;
+    /* Chart fills: the faction hues stepped into the dark-mode lightness band (OKLCH L ≤ 0.67),
+       validated with the dataviz palette checker. Stack order Terminids, Illuminate, Automatons
+       keeps orange and red apart. UI identity keeps the brighter --f-* tokens above. */
+    --c-humans: #3897f1;
+    --c-terminids: #d07c1a;
+    --c-automaton: #eb5f61;
+    --c-illuminate: #b674d2;
+    --c-grid: #24221d;
 
-  /* Tint strengths for color-mix(); every tint in the app uses one of these. */
-  --wash: 8%;
-  --fill: 14%;
-  --edge: 30%;
-  --strong: 55%;
+    /* Tint strengths for color-mix(); every tint in the app uses one of these. */
+    --wash: 8%;
+    --fill: 14%;
+    --edge: 30%;
+    --strong: 55%;
 
-  --font: "Chakra Petch", "Segoe UI", sans-serif;
-  --font-head: "Archivo Variable", "Chakra Petch", sans-serif;
+    --font: "Chakra Petch", "Segoe UI", sans-serif;
+    --font-head: "Archivo Variable", "Arial Narrow", "Chakra Petch", sans-serif;
+    /* Figures: Archivo has tabular digits; Chakra Petch has none. */
+    --font-num: "Archivo Variable", "Chakra Petch", sans-serif;
 
-  --fs-micro: 0.5rem;
-  --fs-kicker: 0.5625rem;
-  --fs-label: 0.625rem;
-  --fs-body-s: 0.6875rem;
-  --fs-body: 0.8125rem;
-  --fs-value: 1.0625rem;
-  --fs-title: 1.3125rem;
-  --fs-hero: 2.125rem;
+    --fs-micro: 0.6875rem;
+    --fs-kicker: 0.6875rem;
+    --fs-label: 0.75rem;
+    --fs-body-s: 0.8125rem;
+    --fs-body: 0.9375rem;
+    --fs-value: 1.25rem;
+    --fs-title: 2rem;
+    --fs-hero: 3rem;
 
-  --s-1: 2px;
-  --s-2: 4px;
-  --s-3: 6px;
-  --s-4: 8px;
-  --s-5: 12px;
-  --s-6: 16px;
-  --s-7: 24px;
-  --s-8: 32px;
+    --track: 0.02em;
+    --track-caps: 0.08em;
+    --track-wide: 0.14em;
 
-  --t-state: 120ms;
-  --t-reveal: 200ms;
-  --t-value: 320ms;
-  --ease: cubic-bezier(0.2, 0.85, 0.25, 1);
+    --s-1: 2px;
+    --s-2: 4px;
+    --s-3: 6px;
+    --s-4: 8px;
+    --s-5: 12px;
+    --s-6: 16px;
+    --s-7: 24px;
+    --s-8: 32px;
 
-  --shadow-1: 0 4px 12px rgba(0, 0, 0, 0.45);
-  --shadow-2: 0 10px 26px rgba(0, 0, 0, 0.5);
-  --shadow-3: 0 14px 38px rgba(0, 0, 0, 0.6);
-  --lip: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    /* The cut corners of panels, cards and buttons. */
+    --cut: 14px;
+    --cut-s: 7px;
+    /* What shows through a panel's cut corner; a container on another surface sets it. */
+    --behind: var(--ground);
 
-  --top-h: 52px;
-  --strip-h: 26px;
-  --dock-h: 60px;
+    --t-state: 120ms;
+    --t-reveal: 200ms;
+    --t-value: 320ms;
+    --ease: cubic-bezier(0.2, 0.85, 0.25, 1);
 
-  color-scheme: dark;
+    --shadow-1: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-2: 0 10px 26px rgba(0, 0, 0, 0.55);
+    --shadow-3: 0 14px 38px rgba(0, 0, 0, 0.65);
+    --lip: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+    /* Layers, lowest first. */
+    --z-chrome: 20;
+    --z-panel: 30;
+    --z-hover: 35;
+    --z-overlay: 40;
+    --z-menu: 45;
+    --z-pointer: 50;
+    --z-toast: 60;
+
+    /* Shell. Breakpoints (media queries cannot read variables): phones below 760px, the full rail from 1100px. */
+    --top-h: 56px;
+    --strip-h: 0px;
+    --rail-w: 96px;
+    --tab-h: 60px;
+    --dock-h: 0px;
+
+    color-scheme: dark;
+  }
+  @media (max-width: 1099px) {
+    :root {
+      --rail-w: 80px;
+    }
+  }
+  @media (max-width: 759px) {
+    :root {
+      --top-h: 52px;
+      --dock-h: var(--tab-h);
+      --fs-title: 1.625rem;
+      --fs-hero: 2.25rem;
+    }
+  }
 }
 
-* {
-  box-sizing: border-box;
-}
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
 
-html,
-body,
-#root {
-  height: 100%;
-  margin: 0;
-}
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
 
-body {
-  background: var(--void);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: var(--fs-body);
-  line-height: 1.35;
-  letter-spacing: 0.02em;
-  -webkit-font-smoothing: antialiased;
-  overflow: hidden;
-}
-
-/* On touch screens a long press starts a text selection that fights held buttons and drags;
-   only prose stays selectable. */
-@media (pointer: coarse) {
   body {
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-touch-callout: none;
+    background: var(--void);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: var(--fs-body);
+    line-height: 1.4;
+    letter-spacing: var(--track);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
   }
-  input,
-  textarea,
-  .ni-body,
-  .mo-briefing,
-  .mo-desc,
-  .cmp-desc,
-  .cmp-text,
-  .bp-text,
-  .gww-page p {
-    -webkit-user-select: text;
-    user-select: text;
+
+  /* On touch screens a long press starts a text selection that fights held buttons and drags;
+     only prose stays selectable. */
+  @media (pointer: coarse) {
+    body {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    input,
+    textarea,
+    .ni-body,
+    .mo-briefing,
+    .mo-desc,
+    .cmp-desc,
+    .cmp-text,
+    .bp-text,
+    .gww-page p {
+      -webkit-user-select: text;
+      user-select: text;
+    }
   }
-}
 
-button {
-  font: inherit;
-  color: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-}
-
-h1,
-h2,
-h3 {
-  margin: 0;
-  font-family: var(--font-head);
-  font-stretch: 125%;
-  font-weight: 800;
-  color: var(--text-hi);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  line-height: 1.1;
-  text-wrap: balance;
-}
-
-::selection {
-  background: color-mix(in srgb, var(--cta) 35%, transparent);
-  color: var(--text-hi);
-}
-
-:focus-visible {
-  outline: 1px solid var(--cta);
-  outline-offset: 2px;
-}
-
-.num {
-  font-variant-numeric: tabular-nums;
-}
-
-.caps {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.muted {
-  color: var(--text-dim);
-}
-
-.scroll {
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
-}
-
-/* Deep-space ground shared by the non-map pages. */
-.starfield {
-  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(70, 164, 255, 0.07), transparent 70%),
-    radial-gradient(1px 1px at 12% 22%, #fff7 50%, transparent 51%),
-    radial-gradient(1px 1px at 78% 14%, #fff5 50%, transparent 51%),
-    radial-gradient(1px 1px at 33% 71%, #fff4 50%, transparent 51%),
-    radial-gradient(1px 1px at 61% 48%, #fff6 50%, transparent 51%),
-    radial-gradient(1px 1px at 88% 83%, #fff4 50%, transparent 51%),
-    radial-gradient(1px 1px at 5% 90%, #fff5 50%, transparent 51%), var(--ground);
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.35;
+  button {
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
   }
-  50% {
-    opacity: 1;
-  }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  h1,
+  h2,
+  h3 {
+    margin: 0;
+    font-family: var(--font-head);
+    font-stretch: 75%;
+    font-weight: 800;
+    color: var(--text-hi);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--cta) 35%, transparent);
+    color: var(--text-hi);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--cta);
+    outline-offset: 2px;
+  }
+
+  .num {
+    font-family: var(--font-num);
+    font-stretch: 87.5%;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+
+  .caps {
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+  }
+
+  .muted {
+    color: var(--text-dim);
+  }
+
+  .scroll {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
+  /* The ground of the pages that aren't the map: flat, so the panels' cut corners show it exactly. */
+  .starfield {
+    background: var(--ground);
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.35;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }

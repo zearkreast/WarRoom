@@ -5,7 +5,7 @@ use leptos::prelude::*;
 #[component]
 pub fn HoloGlobe(#[prop(default = 120.0)] size: f64) -> impl IntoView {
     view! {
-        <svg class="holo" width=num(size) height=num(size) viewBox="-60 -60 120 120" aria-hidden="true">
+        <svg class="holo-globe" width=num(size) height=num(size) viewBox="-60 -60 120 120" aria-hidden="true">
             <defs>
                 <radialGradient id="holo-fill" cx="40%" cy="35%" r="70%">
                     <stop offset="0%" stop-color="#9fd4ff" stop-opacity="0.35" />

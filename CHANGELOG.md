@@ -11,6 +11,21 @@ each entry, from `crates/core/src/changelog.rs`.
   new APKs follow one push topic per alert setting, and only the updated collector sends to them. There are no
   new database migrations.
 
+### New look
+
+- The app takes a Super Earth Command look: warm near-black ground, Super Earth yellow as the one hot colour,
+  cut-cornered panels and cards with 2px frames, and larger type, with condensed figures that stay still as they
+  count.
+- Navigation: a rail down the left holds all five destinations (keys 1 to 5) with Settings, About, the legend
+  and Tracker Dispatch at its foot, and the status strip joins the header. On phones a tab bar runs along the
+  foot and the rest sits in a More menu.
+- Campaign cards show the type and countdown inside the card, the game's campaign glyphs and a large
+  percentage; Major Order targets are framed in yellow. Active planets opens with its fronts, defenses and
+  Helldivers in large figures.
+- On/off settings are switches; filter chips fill yellow when chosen; the briefing's hold plays once a session
+  and not at all with reduced motion; fields no longer make iOS zoom in, and small buttons are easier to tap.
+- The map's Minimal quality now drops the hologram and ember glows it promises to.
+
 ### Fixed
 
 - Planet charts and War history read every row of the last day instead of stopping at 1000, so busy fronts

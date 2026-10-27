@@ -45,7 +45,7 @@ src/                     the app
   api/                   everything read from Supabase: snapshots, history, fronts, station jumps
   alerts/                toasts and OS notifications, and the watcher that raises them
   features/              one folder per page or shared panel (see "Pages" below)
-  layout/                the frame: top bar, status strip, dock, About and legend, briefing popup
+  layout/                the frame: header with the status and ticker, navigation rail (a tab bar on phones), About and legend, briefing popup
   ui/                    shared components: panels, meters, charts, icons, emblems
   update/                finds and installs new releases
   assets/                pictures, fonts and map data, served next to the page; the game's pictures come
@@ -62,7 +62,7 @@ crates/android-project/  patches the generated Android project: manifest entries
 collector/               the polling service, with its Dockerfile and systemd unit
 supabase/migrations/     the database schema
 vendor/tachys/           Leptos's renderer with a fix for static SVG; drop it on the move to Leptos 0.9
-index.html               Trunk's entry: the app, every stylesheet in cascade order, and the assets
+index.html               Trunk's entry: the app, every stylesheet, and the assets
 build.rs                 lists src/assets, so the app knows which pictures exist
 .github/workflows/       release.yml (installers, APK, update manifest), android.yml (the APK),
                          pages.yml (tests, then the web version on GitHub Pages)
@@ -86,13 +86,16 @@ lists the modules. Each file opens with a one-line summary of what it holds, or 
 Panels several pages share: `features/major_order/`, `features/galactic_campaigns/`, and `features/planet/`
 (the planet detail overlay, cities, charts and the planet options menu).
 
-Each folder keeps its stylesheet beside its code, and `index.html` loads them in order. Class names carry a
+Each folder keeps its stylesheet beside its code. Every stylesheet sits in a cascade layer, declared in order in
+`ui/fonts.css` (`tokens`, `base`, `primitives`, `features`, `shell`), and `index.html` loads them; within a layer,
+later files win. `ui/theme.css` holds the tokens: colours, type scale, spacing, the `--cut` chamfer, z-index
+levels and the shell's sizes. Class names carry a
 short prefix for their area: `cc-` campaign cards and `ms-` the Major Order strip (`campaigns.css`), `mo-`
 Major Orders, `hc-` and `map-` the map and its hover card, `pd-` planet detail and `po-` planet options
 (`planet.css`), `city-` and `cd-` cities, `hp-` Hellpad, `pi-` its planet index, `st-` space stations,
 `pc-` past campaigns and `cmp-` the Galactic Campaign panel, `gww-` the G.W.W., `ni-` and `news-` Strohmann
 News, `ov-` Overview, `tw-` the Theater of War, `wa-` War Activity, `nr-` the neon ring chart, `chart-`
-charts, and `top-`, `strip-`, `dock-` and `bp-` (briefing popup) the shell.
+charts, and `top-`, `strip-`, `nav-` and `bp-` (briefing popup) the shell.
 
 ### Words used in the code
 

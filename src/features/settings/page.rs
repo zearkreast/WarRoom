@@ -8,7 +8,7 @@ use crate::js::{self, num};
 use crate::state::{AlertSettings, Popups, settings};
 use crate::tauri;
 use crate::ui::icons::{self, Icon};
-use crate::ui::primitives::{Panel, Stepper};
+use crate::ui::primitives::{Panel, Stepper, Switch};
 use crate::update::{UpdatePhase, check_for_update, update};
 use leptos::prelude::*;
 use serde::Serialize;
@@ -76,14 +76,7 @@ fn OnOff(
     #[prop(into)] value: Signal<bool>,
     on_change: impl Fn(bool) + Clone + Send + Sync + 'static,
 ) -> impl IntoView {
-    view! {
-        <Stepper
-            label=label
-            options=vec![(true, "On"), (false, "Off")]
-            value=value
-            on_change=move |v: bool| on_change(v)
-        />
-    }
+    view! { <Switch label=label value=value on_change=move |v: bool| on_change(v) /> }
 }
 
 const ALERTS: [(&str, &str, &str); 5] = [

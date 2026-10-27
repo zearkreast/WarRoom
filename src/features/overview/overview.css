@@ -1,419 +1,419 @@
-/* ---------- Board ----------
-   Wide screens: three columns fill the viewport and scroll on their own; the page itself never scrolls. */
-.ov-page {
-  overflow: hidden;
-}
-.ov-board {
-  display: grid;
-  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr) minmax(340px, 420px);
-  gap: var(--s-6);
-  height: 100%;
-  padding: var(--s-6);
-}
-.ov-col {
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-6);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-}
-.ov-col > * {
-  flex: none;
-}
-/* The theater takes whatever height its column leaves; the disc is sized to fit both ways. */
-.ov-col > .tw {
-  flex: 1 1 0;
-  min-height: 300px;
-  display: flex;
-  flex-direction: column;
-}
-.ov-col .tw-body {
-  flex: 1;
-  min-height: 0;
-  container-type: size;
-  display: grid;
-  place-items: center;
-}
-.ov-col .tw-stage {
-  width: min(100cqw, 155cqh);
-}
-
-.ov-dist .panel-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-5);
-}
-.ov-dist-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: var(--fs-label);
-  letter-spacing: 0.1em;
-}
-.ov-total {
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  padding: var(--s-4) var(--s-5);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--cta);
-}
-.ov-total b {
-  font-size: var(--fs-title);
-  color: var(--text-hi);
-}
-.ov-total .caps {
-  margin-left: auto;
-  font-size: var(--fs-label);
-  letter-spacing: 0.14em;
-  color: var(--label);
-}
-
-.ov-summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s-3);
-}
-.ov-readout {
-  max-width: 96px;
-}
-.ov-readout .caps {
-  font-size: var(--fs-micro);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 96px;
-}
-.ov-readout b {
-  font-size: var(--fs-value);
-}
-.ov-donut {
-  display: grid;
-  grid-template-columns: 150px 1fr;
-  gap: var(--s-5);
-  align-items: center;
-}
-.ov-donut-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-.ov-donut-center b {
-  font-size: var(--fs-value);
-  color: var(--text-hi);
-}
-.ov-donut-center span {
-  font-size: var(--fs-micro);
-  letter-spacing: 0.16em;
-  color: var(--label);
-}
-.ov-legend {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  font-size: var(--fs-body-s);
-  min-width: 0;
-}
-.ov-legend li {
-  display: grid;
-  grid-template-columns: 8px minmax(0, 1fr) auto 32px;
-  align-items: center;
-  gap: var(--s-3);
-  padding: 2px var(--s-2);
-  margin: 0 calc(var(--s-2) * -1);
-  border: 1px solid transparent;
-  cursor: default;
-  transition:
-    border-color var(--t-state),
-    background var(--t-state);
-}
-.ov-legend li.on {
-  border-color: color-mix(in srgb, var(--k) var(--strong), transparent);
-  background: color-mix(in srgb, var(--k) var(--wash), transparent);
-}
-.ov-legend li.on::before {
-  box-shadow: 0 0 8px var(--k);
-}
-.ov-legend li::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--k);
-}
-.ov-legend-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-hi);
-  letter-spacing: 0.06em;
-}
-.ov-legend .num:last-child {
-  text-align: right;
-}
-
-.ov-fronts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-}
-.ov-front {
-  display: grid;
-  grid-template-columns: 20px 1fr auto 52px;
-  align-items: center;
-  column-gap: var(--s-4);
-  row-gap: var(--s-2);
-  padding: var(--s-3) var(--s-4);
-  background: var(--surface-2);
-  border: 1px solid color-mix(in srgb, var(--k) var(--edge), var(--line));
-  font-size: var(--fs-body);
-}
-.ov-front .caps {
-  font-size: var(--fs-body-s);
-  letter-spacing: 0.08em;
-  color: var(--text-hi);
-  font-weight: 600;
-}
-.ov-front b {
-  color: var(--text-hi);
-}
-.ov-front .muted {
-  text-align: right;
-  font-size: var(--fs-body-s);
-}
-.ov-front-bar {
-  grid-column: 2 / -1;
-  height: 3px;
-  background: var(--surface-3);
-}
-.ov-front-bar span {
-  display: block;
-  height: 100%;
-  background: var(--k);
-}
-
-.ov-stats {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  border-top: 1px solid var(--line);
-  padding-top: var(--s-4);
-}
-.ov-stats div {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--s-4);
-  padding: var(--s-2) 0;
-  font-size: var(--fs-body-s);
-}
-.ov-stats dt {
-  color: var(--cta);
-  font-weight: 600;
-}
-.ov-stats dd {
-  margin: 0;
-  color: var(--text-hi);
-  text-align: right;
-}
-
-/* ---------- Theater of war ---------- */
-.tw-body {
-  /* The disc's near edge widens past its stage under perspective; clip at the panel instead. */
-  overflow: hidden;
-}
-.tw-stage {
-  position: relative;
-  width: min(100%, 560px);
-  margin: 0 auto;
-  aspect-ratio: 14 / 9;
-  perspective: 900px;
-  cursor: grab;
-  /* Vertical swipes still scroll the page; horizontal ones turn the disc. */
-  touch-action: pan-y;
-  user-select: none;
-  background: radial-gradient(ellipse at 50% 55%, rgba(70, 164, 255, 0.14), transparent 60%);
-}
-.tw-stage.dragging {
-  cursor: grabbing;
-}
-.tw-stage svg {
-  position: absolute;
-  top: 46%;
-  left: 50%;
-  width: 92%;
-  transform: translate(-50%, -50%) rotateX(56deg);
-  overflow: visible;
-}
-.tw-rim {
-  fill: none;
-  stroke: color-mix(in srgb, var(--c-humans) 40%, transparent);
-  stroke-width: 2;
-  stroke-dasharray: 2 10;
-}
-.tw-owner path {
-  stroke: var(--c);
-  stroke-linejoin: round;
-}
-.tw-owner.se path {
-  fill: color-mix(in srgb, var(--c) 24%, transparent);
-  stroke-width: 2;
-  stroke-opacity: 0.6;
-}
-.tw-owner.enemy path {
-  fill: color-mix(in srgb, var(--c) 30%, transparent);
-  stroke-width: 4;
-}
-.tw-owner.se circle {
-  fill: color-mix(in srgb, var(--c) 14%, transparent);
-  stroke: var(--c);
-  stroke-width: 1.5;
-  stroke-opacity: 0.35;
-}
-.tw-lanes {
-  fill: none;
-  stroke: rgba(210, 228, 255, 0.45);
-  stroke-width: 2;
-}
-.tw-owner.contested path {
-  fill: color-mix(in srgb, var(--c) 10%, transparent);
-  stroke-width: 2.5;
-  stroke-opacity: 0.6;
-}
-.tw-owner.enemy {
-  filter: drop-shadow(0 0 4px var(--c)) drop-shadow(0 0 12px var(--c))
-    drop-shadow(0 0 26px color-mix(in srgb, var(--c) 60%, transparent));
-}
-.tw-owner.enemy path {
-  stroke: color-mix(in srgb, var(--c) 55%, #fff);
-}
-/* Neon on the Sectors overlay too: enemy borders glow in the enemy's colour. */
-.tw .tf-front,
-.tw .tf-cell {
-  filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 10px currentColor);
-}
-.tw-hits path {
-  fill: transparent;
-}
-.tw-mark {
-  transform: rotate(var(--unrot, 0deg)) scale(1, var(--unsquash));
-  opacity: 0.55;
-  pointer-events: none;
-}
-.tw-mark path {
-  filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 14px currentColor);
-}
-.tw-tick {
-  stroke: var(--cta);
-  stroke-width: 4;
-  filter: drop-shadow(0 0 6px var(--cta));
-}
-.tw-core-glow {
-  fill: color-mix(in srgb, var(--c-humans) 25%, transparent);
-  filter: blur(18px);
-}
-.tw-core-mark {
-  filter: drop-shadow(0 0 8px var(--f-humans));
-}
-.tw-spin {
-  width: 28px;
-  height: 28px;
-}
-.tw-hint {
-  position: absolute;
-  right: var(--s-4);
-  bottom: var(--s-3);
-  font-size: var(--fs-micro);
-  letter-spacing: 0.16em;
-  color: var(--label);
-}
-.tw-open {
-  height: 28px;
-  font-size: var(--fs-label);
-}
-
-.ov-front {
-  cursor: default;
-  transition:
-    border-color var(--t-state),
-    box-shadow var(--t-state);
-}
-.ov-front.on {
-  border-color: var(--k);
-  box-shadow: 0 0 14px color-mix(in srgb, var(--k) var(--edge), transparent);
-}
-
-/* Medium screens: two columns over the theater, and the page scrolls. */
-@media (max-width: 1279px) {
+@layer features {
+  /* ---------- Board ----------
+     Wide screens: three columns fill the viewport and scroll on their own; the page itself never scrolls. */
   .ov-page {
-    overflow-y: auto;
+    overflow: hidden;
   }
   .ov-board {
-    height: auto;
-    grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
-    grid-template-areas:
-      "left right"
-      "mid mid";
+    display: grid;
+    grid-template-columns: minmax(300px, 360px) minmax(0, 1fr) minmax(340px, 420px);
+    gap: var(--s-6);
+    height: 100%;
+    padding: var(--s-6);
   }
   .ov-col {
-    overflow: visible;
-  }
-  .ov-col-left {
-    grid-area: left;
-  }
-  .ov-col-mid {
-    grid-area: mid;
-  }
-  .ov-col-right {
-    grid-area: right;
-  }
-  .ov-col > .tw {
-    flex: none;
+    min-width: 0;
     min-height: 0;
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-6);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .ov-col > * {
+    flex: none;
+  }
+  /* The theater takes whatever height its column leaves; the disc is sized to fit both ways. */
+  .ov-col > .tw {
+    flex: 1 1 0;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
   }
   .ov-col .tw-body {
-    container-type: normal;
-    display: block;
+    flex: 1;
+    min-height: 0;
+    container-type: size;
+    display: grid;
+    place-items: center;
   }
   .ov-col .tw-stage {
-    width: min(100%, 560px);
+    width: min(100cqw, 155cqh);
   }
-}
 
-@media (max-width: 860px) {
-  .ov-board {
+  .ov-dist .panel-body {
     display: flex;
     flex-direction: column;
     gap: var(--s-5);
-    padding: var(--s-5) var(--s-4);
   }
-  .ov-col {
-    display: contents;
+  .ov-dist-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--fs-label);
+    letter-spacing: 0.1em;
   }
-  /* Phones lead with the Major Order, then the Galactic Campaign, the distribution, 24h activity and the theater. */
-  .ov-board .mo {
-    order: 1;
+  .ov-total {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    padding: var(--s-4) var(--s-5);
+    background: var(--surface-2);
+    border-left: 3px solid var(--cta);
+    color: var(--cta);
   }
-  .ov-board .cmp-panel {
-    order: 2;
+  .ov-total b {
+    font-stretch: 75%;
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--text-hi);
   }
-  .ov-board .ov-dist {
-    order: 3;
+  .ov-total .caps {
+    margin-left: auto;
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--label);
   }
-  .ov-board .wa {
-    order: 4;
+
+  .ov-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s-3);
   }
-  .ov-board .tw {
-    order: 5;
+  .ov-readout {
+    max-width: 96px;
+  }
+  .ov-readout .caps {
+    font-size: var(--fs-micro);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 96px;
+  }
+  .ov-readout b {
+    font-size: var(--fs-value);
+  }
+  .ov-donut {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: var(--s-5);
+    align-items: center;
+  }
+  .ov-donut-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .ov-donut-center b {
+    font-size: var(--fs-value);
+    color: var(--text-hi);
+  }
+  .ov-donut-center span {
+    font-size: var(--fs-micro);
+    letter-spacing: 0.16em;
+    color: var(--label);
+  }
+  .ov-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    font-size: var(--fs-body-s);
+    min-width: 0;
+  }
+  .ov-legend li {
+    display: grid;
+    grid-template-columns: 8px minmax(0, 1fr) auto 32px;
+    align-items: center;
+    gap: var(--s-3);
+    padding: 2px var(--s-2);
+    margin: 0 calc(var(--s-2) * -1);
+    border: 1px solid transparent;
+    cursor: default;
+    transition:
+      border-color var(--t-state),
+      background var(--t-state);
+  }
+  .ov-legend li.on {
+    border-color: color-mix(in srgb, var(--k) var(--strong), transparent);
+    background: color-mix(in srgb, var(--k) var(--wash), transparent);
+  }
+  .ov-legend li::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    background: var(--k);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  }
+  .ov-legend-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-hi);
+    letter-spacing: 0.06em;
+  }
+  .ov-legend .num:last-child {
+    text-align: right;
+  }
+
+  .ov-fronts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .ov-front {
+    display: grid;
+    grid-template-columns: 20px 1fr auto 52px;
+    align-items: center;
+    column-gap: var(--s-4);
+    row-gap: var(--s-2);
+    padding: var(--s-3) var(--s-4);
+    background: var(--surface-2);
+    border-left: 3px solid var(--k);
+    font-size: var(--fs-body);
+  }
+  .ov-front .caps {
+    font-size: var(--fs-body-s);
+    letter-spacing: 0.08em;
+    color: var(--text-hi);
+    font-weight: 600;
+  }
+  .ov-front b {
+    color: var(--text-hi);
+  }
+  .ov-front .muted {
+    text-align: right;
+    font-size: var(--fs-body-s);
+  }
+  .ov-front-bar {
+    grid-column: 2 / -1;
+    height: 3px;
+    background: var(--surface-3);
+  }
+  .ov-front-bar span {
+    display: block;
+    height: 100%;
+    background: var(--k);
+  }
+
+  .ov-stats {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    border-top: 2px solid var(--line);
+    padding-top: var(--s-4);
+  }
+  .ov-stats div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-4);
+    padding: var(--s-2) 0;
+    font-size: var(--fs-body-s);
+  }
+  .ov-stats dt {
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+  .ov-stats dd {
+    margin: 0;
+    color: var(--text-hi);
+    text-align: right;
+  }
+
+  /* ---------- Theater of war ---------- */
+  .tw-body {
+    /* The disc's near edge widens past its stage under perspective; clip at the panel instead. */
+    overflow: hidden;
+  }
+  .tw-stage {
+    position: relative;
+    width: min(100%, 560px);
+    margin: 0 auto;
+    aspect-ratio: 14 / 9;
+    perspective: 900px;
+    cursor: grab;
+    /* Vertical swipes still scroll the page; horizontal ones turn the disc. */
+    touch-action: pan-y;
+    user-select: none;
+    background: radial-gradient(ellipse at 50% 55%, rgba(70, 164, 255, 0.14), transparent 60%);
+  }
+  .tw-stage.dragging {
+    cursor: grabbing;
+  }
+  .tw-stage svg {
+    position: absolute;
+    top: 46%;
+    left: 50%;
+    width: 92%;
+    transform: translate(-50%, -50%) rotateX(56deg);
+    overflow: visible;
+  }
+  .tw-rim {
+    fill: none;
+    stroke: color-mix(in srgb, var(--c-humans) 40%, transparent);
+    stroke-width: 2;
+    stroke-dasharray: 2 10;
+  }
+  .tw-owner path {
+    stroke: var(--c);
+    stroke-linejoin: round;
+  }
+  .tw-owner.se path {
+    fill: color-mix(in srgb, var(--c) 24%, transparent);
+    stroke-width: 2;
+    stroke-opacity: 0.6;
+  }
+  .tw-owner.enemy path {
+    fill: color-mix(in srgb, var(--c) 30%, transparent);
+    stroke-width: 4;
+  }
+  .tw-owner.se circle {
+    fill: color-mix(in srgb, var(--c) 14%, transparent);
+    stroke: var(--c);
+    stroke-width: 1.5;
+    stroke-opacity: 0.35;
+  }
+  .tw-lanes {
+    fill: none;
+    stroke: rgba(210, 228, 255, 0.45);
+    stroke-width: 2;
+  }
+  .tw-owner.contested path {
+    fill: color-mix(in srgb, var(--c) 10%, transparent);
+    stroke-width: 2.5;
+    stroke-opacity: 0.6;
+  }
+  .tw-owner.enemy {
+    filter: drop-shadow(0 0 4px var(--c)) drop-shadow(0 0 12px var(--c))
+      drop-shadow(0 0 26px color-mix(in srgb, var(--c) 60%, transparent));
+  }
+  .tw-owner.enemy path {
+    stroke: color-mix(in srgb, var(--c) 55%, #fff);
+  }
+  /* Neon on the Sectors overlay too: enemy borders glow in the enemy's colour. */
+  .tw .tf-front,
+  .tw .tf-cell {
+    filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 10px currentColor);
+  }
+  .tw-hits path {
+    fill: transparent;
+  }
+  .tw-mark {
+    transform: rotate(var(--unrot, 0deg)) scale(1, var(--unsquash));
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .tw-mark path {
+    filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 14px currentColor);
+  }
+  .tw-tick {
+    stroke: var(--cta);
+    stroke-width: 4;
+    filter: drop-shadow(0 0 6px var(--cta));
+  }
+  .tw-core-glow {
+    fill: color-mix(in srgb, var(--c-humans) 25%, transparent);
+    filter: blur(18px);
+  }
+  .tw-core-mark {
+    filter: drop-shadow(0 0 8px var(--f-humans));
+  }
+  .tw-spin {
+    width: 36px;
+    height: 36px;
+  }
+  .tw-hint {
+    position: absolute;
+    right: var(--s-4);
+    bottom: var(--s-3);
+    font-size: var(--fs-micro);
+    letter-spacing: 0.16em;
+    color: var(--label);
+  }
+  .tw-open {
+    height: 36px;
+    font-size: var(--fs-label);
+  }
+
+  .ov-front {
+    cursor: default;
+    transition:
+      border-color var(--t-state),
+      box-shadow var(--t-state);
+  }
+  .ov-front.on {
+    background: color-mix(in srgb, var(--k) var(--fill), var(--surface-2));
+  }
+
+  /* Medium screens: two columns over the theater, and the page scrolls. */
+  @media (max-width: 1279px) {
+    .ov-page {
+      overflow-y: auto;
+    }
+    .ov-board {
+      height: auto;
+      grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+      grid-template-areas:
+        "left right"
+        "mid mid";
+    }
+    .ov-col {
+      overflow: visible;
+    }
+    .ov-col-left {
+      grid-area: left;
+    }
+    .ov-col-mid {
+      grid-area: mid;
+    }
+    .ov-col-right {
+      grid-area: right;
+    }
+    .ov-col > .tw {
+      flex: none;
+      min-height: 0;
+      display: block;
+    }
+    .ov-col .tw-body {
+      container-type: normal;
+      display: block;
+    }
+    .ov-col .tw-stage {
+      width: min(100%, 560px);
+    }
+  }
+
+  @media (max-width: 860px) {
+    .ov-board {
+      display: flex;
+      flex-direction: column;
+      gap: var(--s-5);
+      padding: var(--s-5) var(--s-4);
+    }
+    .ov-col {
+      display: contents;
+    }
+    /* Phones lead with the Major Order, then the Galactic Campaign, the distribution, 24h activity and the theater. */
+    .ov-board .mo-panel {
+      order: 1;
+    }
+    .ov-board .cmp-panel {
+      order: 2;
+    }
+    .ov-board .ov-dist {
+      order: 3;
+    }
+    .ov-board .wa {
+      order: 4;
+    }
+    .ov-board .tw {
+      order: 5;
+    }
   }
 }
-

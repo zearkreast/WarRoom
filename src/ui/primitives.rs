@@ -77,7 +77,7 @@ pub fn Meter(
     };
     let class = format!("meter meter-{size} {}", if chevron { "chevron" } else { "" });
     let style = move || {
-        format!("--fill: {}; --rest: {};", color.get(), rest.map_or_else(|| "var(--line-strong)".into(), |r| r.get()))
+        format!("--meter: {}; --rest: {};", color.get(), rest.map_or_else(|| "var(--line-strong)".into(), |r| r.get()))
     };
     let mark = move || marker.and_then(|m| m.get()).filter(|m| *m > 0.0 && *m < 100.0);
     view! {
@@ -210,6 +210,29 @@ where
                 <Icon icon=icons::CHEVRON_RIGHT size=18.0 />
             </button>
         </div>
+    }
+}
+
+/// An on/off switch that says which way it is set.
+#[component]
+pub fn Switch(
+    #[prop(into)] label: String,
+    #[prop(into)] value: Signal<bool>,
+    on_change: impl Fn(bool) + 'static,
+) -> impl IntoView {
+    view! {
+        <button
+            class=move || format!("switch {}", if value.get() { "on" } else { "" })
+            role="switch"
+            aria-checked=move || value.get().to_string()
+            aria-label=label
+            on:click=move |_| on_change(!value.get_untracked())
+        >
+            <span class="switch-track" aria-hidden="true">
+                <span class="switch-thumb"></span>
+            </span>
+            <span class="switch-text caps">{move || if value.get() { "On" } else { "Off" }}</span>
+        </button>
     }
 }
 

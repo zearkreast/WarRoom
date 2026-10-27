@@ -1,4 +1,4 @@
-//! The shell: top bar, status strip with the news ticker, the dock, toasts and overlays.
+//! The shell: the header with the war status and news ticker, the navigation rail, toasts and overlays.
 
 use crate::alerts::{ToastKind, pops_up, toasts};
 use crate::api::queries::queries;
@@ -16,7 +16,7 @@ use crate::state::{InfoDialog, View, settings, ui};
 use crate::ui::emblems::{AppMark, IconLike, icon_view};
 use crate::ui::feed_status::{FeedState, use_feed_status};
 use crate::ui::icons::{self, Icon, IconData};
-use crate::ui::primitives::{Keycap, StatusChip};
+use crate::ui::primitives::{Keycap, StatusChip, use_escape_when};
 use crate::update::card::UpdateCard;
 use leptos::prelude::*;
 use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, sest_clock, sest_date, war_day};
@@ -24,55 +24,6 @@ use warroom_core::galaxy::human_control;
 use warroom_core::progress::tracked_percent;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
-
-#[component]
-pub fn Logo() -> impl IntoView {
-    view! {
-        <div class="logo">
-            <AppMark />
-            <div>
-                <div class="logo-name">"WarCommand"</div>
-                <div class="logo-sub">"Galactic War Tracker"</div>
-            </div>
-        </div>
-    }
-}
-
-#[component]
-fn TopButton(
-    view: View,
-    icon: IconData,
-    small: &'static str,
-    big: &'static str,
-    #[prop(optional)] class: &'static str,
-    #[prop(optional, into)] badge: Option<Signal<usize>>,
-) -> impl IntoView {
-    let u = ui();
-    let on = move || u.view.get() == view;
-    view! {
-        <button
-            class=move || format!("top-btn {} {class}", if on() { "on" } else { "" })
-            on:click=move |_| u.set_view(if on() { View::Campaigns } else { view })
-            aria-pressed=move || on().to_string()
-        >
-            <span class="top-btn-icon">
-                <Icon icon=icon size=18.0 stroke_width=1.75 />
-            </span>
-            <span class="top-btn-text">
-                <span class="top-btn-small">{small}</span>
-                <span class="top-btn-big">{big}</span>
-            </span>
-            {move || {
-                let n = badge.map_or(0, |b| b.get());
-                (n > 0).then(|| view! {
-                    <span class="top-btn-badge num" aria-label=format!("{n} new")>
-                        {n}
-                    </span>
-                })
-            }}
-        </button>
-    }
-}
 
 /// Rotating one-line war status.
 fn status_lines() -> Vec<AnyView> {
@@ -101,9 +52,11 @@ fn status_lines() -> Vec<AnyView> {
     lines
 }
 
+/// The war's state at a glance: link status and the rotating line, the news ticker, the clock and the war day.
 #[component]
-fn StatusStrip() -> impl IntoView {
+fn TopBar() -> impl IntoView {
     let q = queries();
+    let u = ui();
     let f = use_feed_status(1000.0);
     let (i, set_i) = signal(0usize);
     let handle =
@@ -133,8 +86,13 @@ fn StatusStrip() -> impl IntoView {
         _ => (i.get() % line_count.get().max(1)).to_string(),
     });
     view! {
-        <div class="strip">
-            <div class="strip-status">
+        <header class="topbar">
+            <button class="top-logo" on:click=move |_| u.set_view(View::Campaigns) aria-label="WarCommand: Active planets">
+                <AppMark size=26.0 />
+            </button>
+            <div class=move || {
+                format!("strip-status {}", if f.state.get() == FeedState::Live { "is-live" } else { "" })
+            }>
                 {move || match f.state.get() {
                     FeedState::Offline => view! { <StatusChip tone="var(--bad)">"Link lost"</StatusChip> }.into_any(),
                     FeedState::Stale => view! { <StatusChip tone="var(--warn)">"Stale"</StatusChip> }.into_any(),
@@ -175,18 +133,100 @@ fn StatusStrip() -> impl IntoView {
                     view! { <div class="strip-day caps num">{format!("Day {}", war_day(&w.started, f.now.get()))}</div> }
                 })
             }}
+            <PhoneMenu />
+        </header>
+    }
+}
+
+/// On phones the header holds what the rail's foot holds on wider screens.
+#[component]
+fn PhoneMenu() -> impl IntoView {
+    let u = ui();
+    let open = RwSignal::new(false);
+    use_escape_when(move || open.set(false), move || open.get());
+    let seen = Memo::new(move |_| settings().get(|s| s.seen_changelog.clone()));
+    let pick = move |f: fn()| {
+        move |_| {
+            open.set(false);
+            f();
+        }
+    };
+    view! {
+        <div class="top-phone">
+            <button
+                class=move || format!("top-icon {}", if u.view.get() == View::Settings { "on" } else { "" })
+                aria-label="Settings"
+                on:click=move |_| u.set_view(View::Settings)
+            >
+                <Icon icon=icons::SETTINGS size=20.0 stroke_width=1.75 />
+            </button>
+            <button
+                class=move || format!("top-icon {}", if open.get() { "on" } else { "" })
+                aria-label="More"
+                aria-expanded=move || open.get().to_string()
+                on:click=move |_| open.update(|o| *o = !*o)
+            >
+                <Icon icon=icons::ELLIPSIS size=20.0 stroke_width=2.0 />
+                {move || (seen.get() != APP_VERSION).then(|| view! { <span class="unread" aria-label="Unread"></span> })}
+            </button>
+            <Show when=move || open.get()>
+                <div class="more-scrim" on:click=move |_| open.set(false)></div>
+                <div class="more-menu panel glass" role="menu">
+                    <button role="menuitem" on:click=pick(|| ui().toggle_dispatch(Some(true)))>
+                        <Icon icon=icons::SCROLL_TEXT size=18.0 />
+                        "Tracker Dispatch"
+                    </button>
+                    <button role="menuitem" on:click=pick(|| ui().show_dialog(Some(InfoDialog::About)))>
+                        <Icon icon=icons::INFO size=18.0 />
+                        "About"
+                    </button>
+                    <button role="menuitem" on:click=pick(|| ui().show_dialog(Some(InfoDialog::Legend)))>
+                        <Icon icon=icons::BOOK_OPEN size=18.0 />
+                        "Icons legend"
+                    </button>
+                </div>
+            </Show>
         </div>
     }
 }
 
-const TABS: [(View, &str, IconLike, &str); 3] = [
-    (View::Map, "Galaxy map", IconLike::Lucide(icons::ORBIT), "1"),
-    (View::Campaigns, "Active planets", IconLike::Lucide(icons::LAYOUT_GRID), "2"),
-    (View::Hellpad, "Hellpad", IconLike::Hellpad, "3"),
+struct Tab {
+    view: View,
+    label: &'static str,
+    short: &'static str,
+    icon: IconLike,
+    key: &'static str,
+}
+
+const TABS: [Tab; 5] = [
+    Tab { view: View::Map, label: "Galaxy map", short: "Map", icon: IconLike::Lucide(icons::ORBIT), key: "1" },
+    Tab {
+        view: View::Campaigns,
+        label: "Active planets",
+        short: "Planets",
+        icon: IconLike::Lucide(icons::LAYOUT_GRID),
+        key: "2",
+    },
+    Tab { view: View::Hellpad, label: "Hellpad", short: "Hellpad", icon: IconLike::Hellpad, key: "3" },
+    Tab {
+        view: View::Overview,
+        label: "High Command",
+        short: "Command",
+        icon: IconLike::Lucide(icons::SHIELD_HALF),
+        key: "4",
+    },
+    Tab {
+        view: View::News,
+        label: "Strohmann News",
+        short: "News",
+        icon: IconLike::Lucide(icons::NEWSPAPER),
+        key: "5",
+    },
 ];
 
+/// The destinations: a rail down the left on wide screens, a tab bar along the foot on phones.
 #[component]
-fn Dock() -> impl IntoView {
+fn Nav(#[prop(into)] unread_news: Signal<usize>) -> impl IntoView {
     let u = ui();
     let seen = Memo::new(move |_| settings().get(|s| s.seen_changelog.clone()));
     let on_key = Closure::<dyn Fn(web_sys::KeyboardEvent)>::new(move |e: web_sys::KeyboardEvent| {
@@ -201,8 +241,8 @@ fn Dock() -> impl IntoView {
         if js::document().query_selector("dialog[open], .overlay").ok().flatten().is_some() {
             return;
         }
-        if let Some(t) = TABS.iter().find(|t| t.3 == e.key()) {
-            u.set_view(t.0);
+        if let Some(t) = TABS.iter().find(|t| t.key == e.key()) {
+            u.set_view(t.view);
         }
     });
     let _ = js::window().add_event_listener_with_callback("keydown", on_key.as_ref().unchecked_ref());
@@ -211,66 +251,75 @@ fn Dock() -> impl IntoView {
         let f = on_key.take();
         let _ = js::window().remove_event_listener_with_callback("keydown", f.as_ref().unchecked_ref());
     });
+    let foot_btn = move |view: Option<View>, icon: IconData, label: &'static str, on_click: fn()| {
+        view! {
+            <button
+                class=move || {
+                    format!("nav-btn {}", if view.is_some_and(|v| u.view.get() == v) { "on" } else { "" })
+                }
+                aria-label=label
+                title=label
+                on:click=move |_| on_click()
+            >
+                <Icon icon=icon size=20.0 stroke_width=1.75 />
+            </button>
+        }
+    };
     view! {
-        <nav class="dock" aria-label="Main">
-            <div class="dock-side">
-                <button
-                    class=move || format!("hud-btn icon {}", if u.view.get() == View::Settings { "on" } else { "" })
-                    aria-label="Settings"
-                    title="Settings"
-                    on:click=move |_| {
-                        u.set_view(if u.view.get_untracked() == View::Settings { View::Campaigns } else { View::Settings })
-                    }
-                >
-                    <Icon icon=icons::SETTINGS size=18.0 stroke_width=1.75 />
-                </button>
-                <button
-                    class="hud-btn icon"
-                    aria-label="About"
-                    title="About"
-                    on:click=move |_| u.show_dialog(Some(InfoDialog::About))
-                >
-                    <Icon icon=icons::INFO size=18.0 stroke_width=1.75 />
-                </button>
-                <button
-                    class="hud-btn icon"
-                    aria-label="Icons legend"
-                    title="Icons legend"
-                    on:click=move |_| u.show_dialog(Some(InfoDialog::Legend))
-                >
-                    <Icon icon=icons::BOOK_OPEN size=18.0 stroke_width=1.75 />
-                </button>
-            </div>
-            <div class="dock-tabs" role="tablist">
+        <nav class="nav" aria-label="Main">
+            <button class="nav-logo" on:click=move |_| u.set_view(View::Campaigns) aria-label="WarCommand: Active planets">
+                <AppMark size=30.0 />
+            </button>
+            <div class="nav-tabs">
                 {TABS
                     .iter()
-                    .map(|&(view, label, icon, key)| {
+                    .map(|t| {
+                        let (view, label, short, icon, key) = (t.view, t.label, t.short, t.icon, t.key);
+                        let on = move || u.view.get() == view;
                         view! {
                             <button
-                                role="tab"
-                                aria-selected=move || (u.view.get() == view).to_string()
-                                class=move || format!("dock-tab {}", if u.view.get() == view { "on" } else { "" })
+                                class=move || format!("nav-tab {}", if on() { "on" } else { "" })
+                                aria-current=move || on().then_some("page")
                                 on:click=move |_| u.set_view(view)
                                 title=format!("{label} ({key})")
                             >
-                                {icon_view(icon, 22.0, 1.6, None)}
-                                <span class="dock-label">{label}</span>
-                                <span class="dock-key">
+                                <span class="nav-icon">{icon_view(icon, 24.0, 1.6, None)}</span>
+                                <span class="nav-label">{label}</span>
+                                <span class="nav-short">{short}</span>
+                                <span class="nav-key">
                                     <Keycap k=key />
                                 </span>
+                                {(view == View::News)
+                                    .then(|| {
+                                        move || {
+                                            let n = unread_news.get();
+                                            (n > 0)
+                                                .then(|| {
+                                                    view! {
+                                                        <span class="nav-badge num" aria-label=format!("{n} new")>
+                                                            {n}
+                                                        </span>
+                                                    }
+                                                })
+                                        }
+                                    })}
                             </button>
                         }
                     })
                     .collect_view()}
             </div>
-            <div class="dock-side right">
+            <div class="nav-foot">
+                {foot_btn(Some(View::Settings), icons::SETTINGS, "Settings", || ui().set_view(View::Settings))}
+                {foot_btn(None, icons::INFO, "About", || ui().show_dialog(Some(InfoDialog::About)))}
+                {foot_btn(None, icons::BOOK_OPEN, "Icons legend", || ui().show_dialog(Some(InfoDialog::Legend)))}
                 <button
-                    class=move || format!("dock-dispatch {}", if u.dispatch_open.get() { "on" } else { "" })
-                    on:click=move |_| u.toggle_dispatch(None)
+                    class=move || format!("nav-btn {}", if u.dispatch_open.get() { "on" } else { "" })
+                    aria-label="Tracker Dispatch"
+                    title="Tracker Dispatch"
                     aria-expanded=move || u.dispatch_open.get().to_string()
+                    on:click=move |_| u.toggle_dispatch(None)
                 >
-                    <span>"Tracker"</span>
-                    <b>"Dispatch"</b>
+                    <Icon icon=icons::SCROLL_TEXT size=20.0 stroke_width=1.75 />
                     {move || (seen.get() != APP_VERSION).then(|| view! { <span class="unread" aria-label="Unread"></span> })}
                 </button>
             </div>
@@ -335,18 +384,9 @@ pub fn Shell(children: ChildrenFn) -> impl IntoView {
     crate::update::start_update_checks();
     view! {
         <div class="shell">
-            <header class="topbar">
-                <Logo />
-                <div class="top-actions">
-                    <TopButton view=View::News icon=icons::NEWSPAPER small="Strohmann" big="News" badge=unread_news />
-                    <TopButton view=View::Overview icon=icons::SHIELD_HALF small="High Command" big="Overview" />
-                    // The dock has no room for Settings on phones.
-                    <TopButton view=View::Settings icon=icons::SETTINGS small="Tracker" big="Settings" class="narrow-only" />
-                </div>
-            </header>
-            <StatusStrip />
+            <TopBar />
+            <Nav unread_news=unread_news />
             <main class="main">{children()}</main>
-            <Dock />
             <DispatchPanel />
             <AboutDialog />
             <PlanetOptions />
