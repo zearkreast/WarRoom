@@ -7,6 +7,20 @@ export interface ChangelogEntry {
 /** Newest first. Shown in the Tracker Dispatch panel. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.3.5-beta",
+    date: "2026-10-27",
+    items: [
+      "Planet cards list the planet's arsenal augmentations with each stratagem's icon and the time left, and show a circumvallation when liberating a front would leave enemy planets surrounded for a SEAF siege, greyed when liberating them directly is quicker.",
+      "Heavy SEAF Presence wears the SEAF emblem.",
+      "Cities have their own page with their status and activity. The card's liberation bar marks where each city opens, and a city takes its holder's colour, blue once liberated.",
+      "Every planet keeps its Helldiver count through the day, fought over or not.",
+      "Space stations: each tactical action has its own icon and a clearer charge bar. The FTL jumps move to the G.W.W.'s Galactic logs, which also keep each SEST day's busiest and quietest Helldiver counts.",
+      "G.W.W.: Super Earth's holidays have their own pages, reached with the citizen classes from Managed Democracy; the training manuals sit behind one tile; Martian Armory joins the corporations; and every page reads as the Federation's own net.",
+      "High Command overview: the Major Order box folds, and the Galactic war activity and Distribution of Democracy charts work on phones.",
+      "The news ticker no longer shakes as its status line and clock change.",
+    ],
+  },
+  {
     version: "0.3.2-beta",
     date: "2026-10-26",
     items: ["The app opens again: 0.3.1-beta closed as soon as it started."],
