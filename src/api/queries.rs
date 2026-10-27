@@ -61,8 +61,6 @@ pub struct Snapshots {
     pub loading: RwSignal<bool>,
     /// The latest poll failed, after its retries; the last good data stays.
     pub error: RwSignal<bool>,
-    /// When the latest poll succeeded, epoch ms.
-    pub updated_at: RwSignal<f64>,
 }
 
 #[derive(Clone, Copy)]
@@ -122,7 +120,6 @@ pub fn init() {
         since: RwSignal::new(String::new()),
         loading: RwSignal::new(true),
         error: RwSignal::new(false),
-        updated_at: RwSignal::new(0.0),
     };
     let statics_by_index = Memo::new(move |_| {
         raw.planets_static
@@ -291,7 +288,6 @@ async fn poll() {
                 apply(rows);
                 s.loading.set(false);
                 s.error.set(false);
-                s.updated_at.set(js::now());
                 return;
             }
             Err(_) if attempt < 2 => js::sleep(1000.0 * 2f64.powi(attempt)).await,

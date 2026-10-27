@@ -197,7 +197,7 @@ fn Distribution() -> impl IntoView {
                     "Missions failed",
                     format!("{} ({})", fmt_int(s.missions_lost), fmt_pct(s.missions_lost / or1(missions) * 100.0, 1)),
                 ),
-                ("Mission dive time", fmt_long_duration(s.mission_time / 1000.0)),
+                ("Mission dive time", fmt_long_duration(s.mission_time)),
                 ("Shots fired", fmt_int(s.bullets_fired)),
                 ("Projectile hits", fmt_int(s.bullets_hit)),
                 (

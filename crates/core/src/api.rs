@@ -273,7 +273,7 @@ pub struct TacticalAction {
     pub effect_ids: Vec<i64>,
 }
 
-/// A Democracy Space Station, from /api/v1/space-stations.
+/// A Democracy Space Station, from /api/v2/space-stations.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct SpaceStation {

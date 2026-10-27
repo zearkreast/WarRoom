@@ -24,7 +24,7 @@ use warroom_core::biomes::regen_pct_per_hour;
 use warroom_core::effects::EffectKind;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, fmt_time_left, js_round, js_sum, to_fixed};
-use warroom_core::progress::liberation_percent;
+use warroom_core::progress::tracked_percent;
 use warroom_core::time::parse_ms;
 use warroom_core::war_history::{HistoryInput, LogEntry, build_war_history, defense_events, fmt_long_duration};
 
@@ -46,14 +46,15 @@ pub fn LiberationSection(#[prop(into)] p: Signal<Planet>, front: Memo<Option<Fro
     let tiles = move || {
         let f = front.get()?;
         let p = p.get();
-        let regen = regen_of(&p);
         let (health, max) = match (&p.event, f.kind) {
             (Some(e), FrontKind::Defense) => (e.health, e.max_health),
             _ => (p.health, p.max_health),
         };
         let defense = f.kind == FrontKind::Defense;
+        let regen = (!defense).then(|| regen_of(&p));
         let verb = if defense { "Defended" } else { "Liberated" };
-        let victory = f.victory_at.filter(|v| *v != 0.0 && !v.is_nan());
+        let victory =
+            f.victory_at.filter(|v| *v != 0.0 && !v.is_nan()).filter(|v| !defense || f.fail_at.is_none_or(|d| *v < d));
         let fail = f.fail_at.filter(|v| *v != 0.0 && !v.is_nan());
         let prediction = match (victory, fail) {
             (Some(v), _) => view! { <Countdown to=v /> }.into_any(),
@@ -96,12 +97,12 @@ pub fn LiberationSection(#[prop(into)] p: Signal<Planet>, front: Memo<Option<Fro
                 <div class="pd-pill" style=format!("color: {enemy};")>
                     <FactionEmblem faction=f.enemy.as_str() size=18.0 />
                     " "
-                    <span class="num">{format!("-{}% / h", to_fixed(regen, 2))}</span>
+                    <span class="num">{regen.map_or("—".to_string(), |r| format!("-{}% / h", to_fixed(r, 2)))}</span>
                     <span class="muted caps">"enemy regen"</span>
                 </div>
                 <div class="pd-pill" style="color: var(--f-humans);">
                     <FactionEmblem faction="Humans" size=18.0 />
-                    <span class="num">{f.rate.map_or("—".to_string(), |r| format!("+{}% / h", to_fixed(r + regen, 2)))}</span>
+                    <span class="num">{f.rate.map_or("—".to_string(), |r| format!("+{}% / h", to_fixed(r + regen.unwrap_or(0.0), 2)))}</span>
                     <span class="muted caps">"Helldiver impact"</span>
                 </div>
                 <div class="pd-pill" style="color: var(--cta);">
@@ -226,9 +227,11 @@ pub fn FrontLineSection(
         let (change, peak) = record.with(|r| {
             (r.samples.first().map(|s| f.percent - s.percent), r.samples.iter().fold(0.0, |m: f64, s| m.max(s.players)))
         });
-        let regen = regen_of(&p);
+        let defense = f.kind == FrontKind::Defense;
+        let regen = (!defense).then(|| regen_of(&p));
         let proj = f.rate.map(|r| (f.percent + r * 24.0).clamp(0.0, 100.0));
-        let victory = f.victory_at.filter(|v| *v != 0.0 && !v.is_nan());
+        let victory =
+            f.victory_at.filter(|v| *v != 0.0 && !v.is_nan()).filter(|v| !defense || f.fail_at.is_none_or(|d| *v < d));
         Some(view! {
             <div class="pd-heads">
                 <div>
@@ -249,7 +252,7 @@ pub fn FrontLineSection(
                 </div>
                 <div>
                     <span class="pd-key" style="--k: var(--bad);">"Enemy impact"</span>
-                    <b class="num" style="color: var(--bad);">{format!("-{}%/h", to_fixed(regen, 2))}</b>
+                    <b class="num" style="color: var(--bad);">{regen.map_or("—".to_string(), |r| format!("-{}%/h", to_fixed(r, 2)))}</b>
                 </div>
                 <div>
                     <span class="pd-key dashed" style="--k: var(--f-humans);">"24 h projection"</span>
@@ -324,7 +327,8 @@ pub fn ServiceRecordSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
         kills.sort_by(|a, b| b.1.total_cmp(&a.1));
         let total_kills = js_sum(kills.iter().map(|k| k.1));
         let max_kills = kills[0].1.max(1.0);
-        let accuracy = if s.bullets_fired != 0.0 { s.bullets_hit / s.bullets_fired * 100.0 } else { 0.0 };
+        // The API counts more hits than shots on most planets.
+        let accuracy = if s.bullets_fired != 0.0 { (s.bullets_hit / s.bullets_fired * 100.0).min(100.0) } else { 0.0 };
         // Older collector builds trimmed these counters from the snapshot; they read as zero until it updates.
         let combat = s.bullets_fired > 0.0 || total_kills > 0.0;
         if missions == 0.0 && total_kills == 0.0 {
@@ -358,7 +362,7 @@ pub fn ServiceRecordSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
                                     <span class="tile-label">"Accuracy"</span>
                                 </div>
                                 <div class="pd-big num">{fmt_pct(accuracy, 2)}</div>
-                                <Meter value=accuracy.min(100.0) color="var(--info)".to_string() rest="var(--line-strong)".to_string() size=MeterSize::S />
+                                <Meter value=accuracy color="var(--info)".to_string() rest="var(--line-strong)".to_string() size=MeterSize::S />
                                 <div class="pd-legend num">
                                     <span style="--k: var(--cta);">{format!("Shots fired {}", fmt_int(s.bullets_fired))}</span>
                                     <span style="--k: var(--warn);">{format!("Projectile hits {}", fmt_int(s.bullets_hit))}</span>
@@ -407,7 +411,7 @@ pub fn ServiceRecordSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
                                 label="Kills per death"
                                 value=(if s.deaths != 0.0 { to_fixed(total_kills / s.deaths, 1) } else { "—".into() }).into_any()
                             />
-                            <Tile icon=icons::CALENDAR_CLOCK label="Time deployed" value=fmt_long_duration(s.mission_time / 1000.0).into_any() />
+                            <Tile icon=icons::CALENDAR_CLOCK label="Time deployed" value=fmt_long_duration(s.mission_time).into_any() />
                         </div>
                     })}
                 </div>
@@ -457,11 +461,13 @@ fn log_row(e: &LogEntry) -> AnyView {
         LogEntry::Change { at, from, to, battle, held_days } => {
             let won = *to == Faction::Humans;
             let color = faction_color(Some(if won { Faction::Humans } else { *to }));
-            let held = if *held_days < 1.0 {
-                format!("{} hours", js::num(js_round(held_days * 24.0)))
-            } else {
-                format!("{} days", js::num(js_round(*held_days)))
-            };
+            let held = held_days.map(|d| {
+                if d < 1.0 {
+                    format!("{} hours", js::num(js_round(d * 24.0)))
+                } else {
+                    format!("{} days", js::num(js_round(d)))
+                }
+            });
             view! {
                 <li class="wl-row">
                     <span class="wl-mark" style=format!("--k: {color};")>
@@ -478,12 +484,15 @@ fn log_row(e: &LogEntry) -> AnyView {
                             <span class="wl-battle">{format!("Battle {battle}")}</span>
                         </div>
                         <div class="wl-sub">
-                            {format!(
-                                "{} · {} {held}{}",
-                                fmt_date_time(*at),
-                                if won { "enemy held it for" } else { "after" },
-                                if won { "" } else { " of freedom" }
-                            )}
+                            {match held {
+                                Some(held) => format!(
+                                    "{} · {} {held}{}",
+                                    fmt_date_time(*at),
+                                    if won { "enemy held it for" } else { "after" },
+                                    if won { "" } else { " of freedom" }
+                                ),
+                                None => fmt_date_time(*at),
+                            }}
                         </div>
                     </div>
                 </li>
@@ -894,7 +903,7 @@ pub fn SupplyLinesSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
                                     let pct = if l.current_owner == Faction::Humans && l.event.is_none() {
                                         100.0
                                     } else {
-                                        liberation_percent(l.health, l.max_health)
+                                        tracked_percent(l)
                                     };
                                     let state = match (campaign, l.event.is_some(), l.current_owner == Faction::Humans) {
                                         (true, true, _) => "Defense",

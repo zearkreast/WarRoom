@@ -391,7 +391,13 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
                                     {format!(
                                         " {} {}",
                                         fmt_pct(pct, 2),
-                                        if front { if p.event.is_some() { "defended" } else { "liberated" } } else { "held" }
+                                        if p.event.is_some() {
+                                            "defended"
+                                        } else if front || enemy.is_some() {
+                                            "liberated"
+                                        } else {
+                                            "held"
+                                        }
                                     )}
                                 </span>
                                 {front.then(|| view! {

@@ -48,7 +48,8 @@ pub fn describe_task(task: &AssignmentTask, progress: f64, planets: Option<&[Pla
     let goal = value_of(task, VT_GOAL).unwrap_or(1.0);
     let faction = faction_id.filter(|f| *f != 0.0 && !f.is_nan()).and_then(|f| faction_by_id(f as i64));
     let label = task_label(task.kind);
-    let planet = planet_index.and_then(|i| planets?.iter().find(|p| p.index as f64 == i));
+    // The API fills the planet slot with 0 when a task has no planet.
+    let planet = planet_index.filter(|i| *i > 0.0).and_then(|i| planets?.iter().find(|p| p.index as f64 == i));
     if let Some(planet) = planet.filter(|_| matches!(task.kind, 11..=13)) {
         return TaskView {
             is_planet: true,
@@ -175,9 +176,9 @@ pub fn task_name(t: &TaskView) -> String {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TaskOutlook {
     pub outlook: DeadlineOutlook,
-    /// Percent it stands at when the order expires, 0-100.
+    /// Percent it stands at by the deadline, 0-100.
     pub end: Option<f64>,
-    /// When it reaches 100% at the current rate, if that's before the order expires.
+    /// When it reaches 100% at the current rate, if that's before the deadline.
     pub eta: Option<f64>,
     /// Trend in %/h.
     pub rate: Option<f64>,
@@ -210,7 +211,7 @@ pub fn task_outlook(percent: f64, rate: Option<f64>, now: f64, deadline: f64) ->
     TaskOutlook { outlook, end, eta: eta.filter(|e| *e < deadline), rate }
 }
 
-/// Where a target ends up when the order expires if the current rate holds; `end` is clamped to 0-100.
+/// Where a target ends up by the deadline if the current rate holds; `end` is clamped to 0-100.
 pub fn deadline_outlook(percent: f64, rate: Option<f64>, now: f64, deadline: f64) -> (DeadlineOutlook, Option<f64>) {
     if percent >= 100.0 {
         return (DeadlineOutlook::Done, Some(100.0));

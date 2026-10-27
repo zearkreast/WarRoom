@@ -21,7 +21,7 @@ use crate::update::card::UpdateCard;
 use leptos::prelude::*;
 use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, sest_clock, sest_date, war_day};
 use warroom_core::galaxy::human_control;
-use warroom_core::progress::liberation_percent;
+use warroom_core::progress::tracked_percent;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 
@@ -90,7 +90,7 @@ fn status_lines() -> Vec<AnyView> {
         if let Some(top) = sorted.first() {
             let kind = if top.planet.event.is_some() { "Defense" } else { "Liberation" };
             let name = top.planet.name.clone();
-            let pct = fmt_pct(liberation_percent(top.planet.health, top.planet.max_health), 1);
+            let pct = fmt_pct(tracked_percent(&top.planet), 1);
             lines.push(view! { {kind} " at " <b class="hi">{name}</b> " " <b class="hi">{pct}</b> }.into_any());
         }
     }

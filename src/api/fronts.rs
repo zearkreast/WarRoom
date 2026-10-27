@@ -143,8 +143,7 @@ fn shared() -> &'static Shared {
                 let mo = mo_planets.get();
                 let stations = station_planets.get();
                 let pinned: HashSet<i64> = settings().get(|s| s.pinned.iter().copied().collect());
-                let updated = q.raw.updated_at.get();
-                let now = if updated > 0.0 { updated } else { crate::js::now() };
+                let now = q.last_update.get().unwrap_or_else(crate::js::now);
                 let mut list: Vec<Front> = data
                     .iter()
                     .flat_map(|l| l.iter())

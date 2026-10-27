@@ -71,10 +71,15 @@ fn names(list: &[Planet]) -> AnyView {
         .into_any()
 }
 
-/// Blue when the ring is worth closing, bright for two sieges, grey when liberating the targets directly is quicker.
+/// Blue when the ring is worth closing, bright for 2+ sieges, grey when liberating the targets directly is quicker.
 pub fn circumvallation_note(front: &Planet, c: &Circumvallation, class: &str) -> AnyView {
-    let double = c.targets.len() > 1;
-    let title = if double { "Double circumvallation" } else { "Circumvallation" };
+    let n = c.targets.len();
+    let double = n > 1;
+    let title = match n {
+        0 | 1 => "Circumvallation",
+        2 => "Double circumvallation",
+        _ => "Multiple circumvallation",
+    };
     view! {
         <section
             class=format!(
@@ -100,12 +105,16 @@ pub fn circumvallation_note(front: &Planet, c: &Circumvallation, class: &str) ->
                     "Liberating "
                     {name(front)}
                     " leaves "
-                    {double.then_some("both ")}
+                    {(n == 2).then_some("both ")}
                     {names(&c.targets)}
                     " with only Super Earth planets around "
                     {if double { "them" } else { "it" }}
                     ". Held, the ring lets the SEAF lay "
-                    {if double { "two sieges" } else { "siege" }}
+                    {match n {
+                        0 | 1 => "siege".to_string(),
+                        2 => "two sieges".to_string(),
+                        _ => format!("{n} sieges"),
+                    }}
                     ", turning "
                     {if double { "their" } else { "its" }}
                     " resistance into slow liberation."

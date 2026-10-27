@@ -34,7 +34,7 @@ const ENTRIES: &[Entry] = &[
             )
         },
         name: "Planets",
-        text: "Blue for Super Earth, otherwise the colour of the faction holding it.",
+        text: "Blue for Super Earth, otherwise the colour of the faction holding it, or attacking it in a defense.",
     },
     Entry {
         mark: || {

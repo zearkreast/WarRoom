@@ -60,6 +60,50 @@ fn numbers_battles_in_time_order_and_ends_the_log_with_the_record_start() {
 }
 
 #[test]
+fn the_first_change_has_no_held_span_as_its_owner_held_the_planet_before_the_record() {
+    let changes = changes();
+    let h = build_war_history(HistoryInput {
+        changes: &changes[..2],
+        defenses: &[],
+        current_owner: Faction::Automaton,
+        record_start: 0.0,
+        now: 100.0 * D,
+    });
+    let spans: Vec<_> = h
+        .log
+        .iter()
+        .filter_map(|e| match e {
+            LogEntry::Change { held_days, .. } => Some(*held_days),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(spans, [Some(53.0), None]);
+}
+
+#[test]
+fn a_held_defense_takes_no_attacker_from_a_later_loss() {
+    let changes = changes();
+    let now = 100.0 * D;
+    let defenses = defense_events(&[10.0 * D, 10.0 * D + H, 54.0 * D, 55.0 * D - 60_000.0], &changes, None, now);
+    let h = build_war_history(HistoryInput {
+        changes: &changes[..2],
+        defenses: &defenses,
+        current_owner: Faction::Automaton,
+        record_start: 0.0,
+        now,
+    });
+    let defended: Vec<_> = h
+        .log
+        .iter()
+        .filter_map(|e| match e {
+            LogEntry::Defense { enemy, held, .. } => Some((*enemy, *held)),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(defended, [(Some(Faction::Automaton), false), (None, true), (None, true)]);
+}
+
+#[test]
 fn groups_defending_samples_into_events_and_marks_the_lost_one() {
     // The planet falls the moment its last defense ends, just after the last defending sample.
     let events = defense_events(&[10.0 * D, 10.0 * D + H, 54.0 * D, 55.0 * D - 60_000.0], &changes(), None, 100.0 * D);

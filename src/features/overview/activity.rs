@@ -190,11 +190,14 @@ pub fn WarActivity() -> impl IntoView {
 
     let narrow = js::use_media(NARROW);
     let rows = Memo::new(move |_| {
-        let (Some(data), Some(last)) = (data.get(), q.last_update.get()) else { return Arc::new(Vec::new()) };
+        let Some(last) = q.last_update.get() else { return Arc::new(Vec::new()) };
+        let buckets = data.get().unwrap_or_default();
         let readings: Vec<Reading> = readings
             .with(|r| {
                 r.as_ref().map(|r| {
                     r.iter()
+                        // Nobody online is an API blip.
+                        .filter(|s| s.players > 0.0)
                         .map(|s| Reading {
                             at: s.at,
                             impact: s.impact,
@@ -208,7 +211,7 @@ pub fn WarActivity() -> impl IntoView {
             })
             .unwrap_or_default();
         let window = if narrow.get() { NARROW_WINDOW_MS } else { READING_WINDOW_MS };
-        Arc::new(merge_activity(&data, &average_readings(&readings, window), last))
+        Arc::new(merge_activity(&buckets, &average_readings(&readings, window), last))
     });
     let has_online = Memo::new(move |_| rows.with(|r| r.iter().filter(|r| r.online.is_some()).count() > 1));
     // The online total once the collector has recorded it; until then, everyone on the fronts.
