@@ -1,6 +1,6 @@
 //! The shell: top bar, status strip with the news ticker, the dock, toasts and overlays.
 
-use crate::alerts::{ToastKind, toasts};
+use crate::alerts::{ToastKind, pops_up, toasts};
 use crate::api::queries::queries;
 use crate::config::APP_VERSION;
 use crate::features::news::items::unread_news;
@@ -12,7 +12,7 @@ use crate::js;
 use crate::layout::about_dialog::AboutDialog;
 use crate::layout::briefing_popup::BriefingPopup;
 use crate::layout::dispatch_panel::DispatchPanel;
-use crate::state::{InfoDialog, Popups, View, settings, ui};
+use crate::state::{InfoDialog, View, settings, ui};
 use crate::ui::emblems::{AppMark, IconLike, icon_view};
 use crate::ui::feed_status::{FeedState, use_feed_status};
 use crate::ui::icons::{self, Icon, IconData};
@@ -198,6 +198,9 @@ fn Dock() -> impl IntoView {
         if e.ctrl_key() || e.meta_key() || e.alt_key() || in_field {
             return;
         }
+        if js::document().query_selector("dialog[open], .overlay").ok().flatten().is_some() {
+            return;
+        }
         if let Some(t) = TABS.iter().find(|t| t.3 == e.key()) {
             u.set_view(t.0);
         }
@@ -278,6 +281,7 @@ fn Dock() -> impl IntoView {
 fn toast_look(k: ToastKind) -> (&'static str, IconData) {
     match k {
         ToastKind::Order => ("var(--cta)", icons::TARGET),
+        ToastKind::Campaign => ("var(--info)", icons::FLAG),
         ToastKind::Dispatch => ("var(--info)", icons::RADIO),
         ToastKind::Capture => ("var(--good)", icons::FLAG),
         ToastKind::Loss => ("var(--bad)", icons::FLAG_OFF),
@@ -290,12 +294,8 @@ fn Toasts() -> impl IntoView {
     let t = toasts();
     let popups = Memo::new(move |_| settings().get(|s| s.popups));
     let shown = Memo::new(move |_| {
-        let list = t.toasts.get();
-        match popups.get() {
-            Popups::None => Vec::new(),
-            Popups::Priority => list.into_iter().filter(|t| t.kind != ToastKind::Dispatch).collect(),
-            Popups::All => list,
-        }
+        let popups = popups.get();
+        t.toasts.get().into_iter().filter(|t| pops_up(popups, t.kind)).collect::<Vec<_>>()
     });
     view! {
         <div class="toasts" aria-live="polite">

@@ -123,7 +123,7 @@ pub fn start() {
             for ev in &fresh {
                 let launched = ev.kind == EventType::Launched;
                 notify(
-                    ToastKind::Order,
+                    ToastKind::Campaign,
                     if launched { "New Galactic Campaign" } else { "Galactic Campaign over" },
                     &campaign_headline(ev),
                     s.alerts.system && !NEWS_PUSHED,

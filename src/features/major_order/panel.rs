@@ -88,7 +88,7 @@ fn PlanetTask(s: OrderState, i: usize) -> impl IntoView {
                         style=move || format!("color: {};", owner.get())
                         on:click=move |e| {
                             if let Some(index) = planet.with_untracked(|p| p.as_ref().map(|p| p.index)) {
-                                ui().open_options(Some(OptionsAnchor { planet: index, x: e.client_x() as f64, y: e.client_y() as f64 }))
+                                ui().open_options(Some(OptionsAnchor::at(index, &e)))
                             }
                         }
                     >

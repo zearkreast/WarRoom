@@ -30,7 +30,6 @@ use warroom_core::progress::tracked_percent;
 use warroom_core::snapshot::StationLive;
 use warroom_core::time::parse_ms;
 use warroom_core::war_history::fmt_long_duration;
-use wasm_bindgen::JsCast;
 
 static CLOSE_TWICE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(</span>)>+").unwrap());
 static HIGHLIGHT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<span[^>]*>(.*?)</span>").unwrap());
@@ -75,17 +74,7 @@ fn planet_text(text: &str) -> AnyView {
                         <button
                             class="link st-planet-link"
                             style=format!("color: {};", faction_color(Some(owner)))
-                            on:click=move |e| {
-                                // A keyboard click has no pointer position; open beside the link instead.
-                                let rect = e
-                                    .current_target()
-                                    .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
-                                    .map(|el| el.get_bounding_client_rect());
-                                let (cx, cy) = (e.client_x() as f64, e.client_y() as f64);
-                                let x = if cx != 0.0 { cx } else { rect.as_ref().map_or(0.0, |r| r.left()) };
-                                let y = if cy != 0.0 { cy } else { rect.as_ref().map_or(0.0, |r| r.bottom()) };
-                                ui().open_options(Some(OptionsAnchor { planet: index, x, y }))
-                            }
+                            on:click=move |e| ui().open_options(Some(OptionsAnchor::at(index, &e)))
                         >
                             {label}
                         </button>

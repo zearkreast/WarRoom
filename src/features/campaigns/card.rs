@@ -185,7 +185,7 @@ pub fn CampaignCard(
                 <button
                     class=move || format!("cc-card {}", if in_mo.get() { "mo" } else { "" })
                     on:click=move |e| {
-                        ui().open_options(Some(OptionsAnchor { planet: index, x: e.client_x() as f64, y: e.client_y() as f64 }))
+                        ui().open_options(Some(OptionsAnchor::at(index, &e)))
                     }
                     aria-label=aria
                 >

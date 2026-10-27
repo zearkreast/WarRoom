@@ -10,6 +10,7 @@ use leptos::html;
 use leptos::prelude::*;
 use warroom_core::dispatch::{DispatchKind, dispatch_kind};
 use warroom_core::format::dispatch_title;
+use wasm_bindgen::JsCast;
 
 fn verdict(k: DispatchKind) -> (&'static str, &'static str) {
     match k {
@@ -22,14 +23,16 @@ fn verdict(k: DispatchKind) -> (&'static str, &'static str) {
     }
 }
 
-fn verdict_of(t: &Toast) -> DispatchKind {
-    match t.kind {
+fn verdict_of(t: &Toast) -> (&'static str, &'static str) {
+    let kind = match t.kind {
         ToastKind::Capture => DispatchKind::Victory,
         ToastKind::Loss => DispatchKind::Defeat,
         ToastKind::Defense => DispatchKind::Alert,
         ToastKind::Order => DispatchKind::Order,
+        ToastKind::Campaign => return ("Galactic campaign", "var(--info)"),
         ToastKind::Dispatch => dispatch_kind(t.message.as_deref().unwrap_or(&t.body)),
-    }
+    };
+    verdict(kind)
 }
 
 const CLOTH: &str = "M74 14C210 -4 330 40 470 22s130 6 150 14V206c-40-14-90-24-160-8S200 214 74 196Z";
@@ -119,7 +122,7 @@ pub fn BriefingPopup() -> impl IntoView {
             timer.set_value(h);
         }
     });
-    let verdict_now = move || t.briefing.with(|b| b.as_ref().map(|b| verdict(verdict_of(b))));
+    let verdict_now = move || t.briefing.with(|b| b.as_ref().map(verdict_of));
     let close = move || t.close_briefing();
     view! {
         <dialog
@@ -128,7 +131,12 @@ pub fn BriefingPopup() -> impl IntoView {
             aria-label=move || verdict_now().map_or("Briefing", |v| v.0)
             on:close=move |_| close()
             on:click=move |e| {
-                if e.target() == e.current_target() {
+                // A planet's options draw under the modal, so the briefing makes way for them.
+                let on_planet = e
+                    .target()
+                    .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
+                    .is_some_and(|el| el.closest(".hl-planet").ok().flatten().is_some());
+                if on_planet || e.target() == e.current_target() {
                     close()
                 }
             }
@@ -136,7 +144,7 @@ pub fn BriefingPopup() -> impl IntoView {
         >
             {move || {
                 let b = t.briefing.get()?;
-                let (word, _) = verdict(verdict_of(&b));
+                let (word, _) = verdict_of(&b);
                 if !ready.get() {
                     return Some(view! { <PleaseWait /> }.into_any());
                 }

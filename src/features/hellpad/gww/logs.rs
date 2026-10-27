@@ -107,7 +107,7 @@ fn war_log() -> AnyView {
                                                 <button
                                                     class="link"
                                                     style="color: var(--text-hi);"
-                                                    on:click=move |e| ui().open_options(Some(OptionsAnchor { planet, x: e.client_x() as f64, y: e.client_y() as f64 }))
+                                                    on:click=move |e| ui().open_options(Some(OptionsAnchor::at(planet, &e)))
                                                 >
                                                     {ch.planet_name.clone()}
                                                 </button>

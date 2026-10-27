@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::OnceLock;
 use warroom_core::gww_nav::GwwPage;
+use wasm_bindgen::JsCast;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -41,6 +42,20 @@ pub struct OptionsAnchor {
     pub planet: i64,
     pub x: f64,
     pub y: f64,
+}
+
+impl OptionsAnchor {
+    /// At the pointer, or below the clicked element for a keyboard click, which has no pointer position.
+    pub fn at(planet: i64, e: &web_sys::MouseEvent) -> Self {
+        let rect = e
+            .current_target()
+            .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
+            .map(|el| el.get_bounding_client_rect());
+        let (cx, cy) = (e.client_x() as f64, e.client_y() as f64);
+        let x = if cx != 0.0 { cx } else { rect.as_ref().map_or(0.0, |r| r.left()) };
+        let y = if cy != 0.0 { cy } else { rect.as_ref().map_or(0.0, |r| r.bottom()) };
+        Self { planet, x, y }
+    }
 }
 
 /// A city: its planet, and its region id on that planet.
@@ -83,6 +98,7 @@ impl Ui {
         self.module.set(module);
         self.options.set(None);
         self.detail.set(None);
+        self.city.set(None);
     }
 
     pub fn select(&self, planet: Option<i64>) {
@@ -94,6 +110,7 @@ impl Ui {
         self.selected_planet.set(Some(planet));
         self.focus_seq.update(|n| *n += 1);
         self.detail.set(None);
+        self.city.set(None);
         self.options.set(None);
     }
 
