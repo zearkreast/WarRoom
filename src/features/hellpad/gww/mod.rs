@@ -6,6 +6,7 @@ pub mod pages;
 use crate::config::{APP_NAME, APP_VERSION};
 use crate::history::history;
 use crate::js;
+use crate::state::settings;
 use crate::state::ui;
 use crate::ui::emblems::{DssIcon, FactionEmblem};
 use crate::ui::icons::{self, Icon};
@@ -14,16 +15,16 @@ use leptos::html;
 use leptos::prelude::*;
 use nav::{GwwNav, icon_url, use_gww_nav};
 use pages::{
-    CourseProgress, HeadingRef, RAIL_QUERY, ad_box, citizens_tile, company_page, company_tile, dir_page, gov_page,
-    gov_tile, log_tile, manual_page, manual_tile, ministry_page, ministry_tile, missing_page, news_tile, pick_one,
-    war_log_page,
+    HeadingRef, RAIL_QUERY, ad_box, company_page, company_tile, dir_page, gov_page, gov_tile, holiday_page,
+    holidays_page, log_tile, logs_page, manual_page, manual_tile, ministry_page, ministry_tile, missing_page,
+    news_tile, pick_one, site_tile,
 };
 use warroom_core::api::Faction;
 use warroom_core::data::manuals::{CHAPTERS, MANUALS, TIPS, WIKI, WIKI_LICENCE};
-use warroom_core::data::sites::{ADS, CITIZENS, COMPANIES, GOV, HOLIDAYS, MINISTRIES};
+use warroom_core::data::sites::{ADS, COMPANIES, GOV, HOLIDAYS, MINISTRIES};
 use warroom_core::data::{Ad, AdShape};
 use warroom_core::factions::{faction_color, faction_label};
-use warroom_core::gww_nav::{GwwPage, address_of, addresses, normalize, target_at};
+use warroom_core::gww_nav::{GwwPage, LOG_ADDRESS, LOG_TITLE, address_of, normalize, suggested_addresses, target_at};
 use warroom_core::gww_text::{next_yearly, plain_text};
 use wasm_bindgen::JsCast;
 
@@ -89,20 +90,20 @@ fn AddressBar(page: Memo<GwwPage>) -> impl IntoView {
                     }
                 }
             />
-            <datalist id=list_id>{addresses().into_iter().map(|(a, _)| view! { <option value=a></option> }).collect_view()}</datalist>
+            <datalist id=list_id>{suggested_addresses().into_iter().map(|a| view! { <option value=a></option> }).collect_view()}</datalist>
         </form>
     }
 }
 
 fn log_line(count: usize) -> String {
     match count {
-        1 => "1 planet has changed hands since tracking began.".into(),
-        0 => "Every planet that changed hands.".into(),
-        n => format!("{n} planets have changed hands since tracking began."),
+        0 => "The war log and the FTL jumps.".into(),
+        1 => "The war log and the FTL jumps. 1 planet has changed hands since tracking began.".into(),
+        n => format!("The war log and the FTL jumps. {n} planets have changed hands since tracking began."),
     }
 }
 
-fn group(title: &'static str, count: usize, all: &'static str, children: AnyView) -> AnyView {
+fn group(title: &'static str, count: usize, all: Option<&'static str>, children: AnyView) -> AnyView {
     let nav = use_gww_nav();
     view! {
         <section class="gww-group">
@@ -110,10 +111,12 @@ fn group(title: &'static str, count: usize, all: &'static str, children: AnyView
                 {title}
                 " "
                 <span class="num">{count}</span>
-                <button class="gww-group-all" on:click=move |e| nav.follow(all, Some(&e))>
-                    "View all "
-                    <Icon icon=icons::ARROW_RIGHT size=12.0 />
-                </button>
+                {all.map(|all| view! {
+                    <button class="gww-group-all" on:click=move |e| nav.follow(all, Some(&e))>
+                        "View all "
+                        <Icon icon=icons::ARROW_RIGHT size=12.0 />
+                    </button>
+                })}
             </h3>
             <div class="gww-sites">{children}</div>
         </section>
@@ -156,7 +159,7 @@ fn HolidayChip() -> impl IntoView {
                 n => format!("in {n} days"),
             };
             view! {
-                <button class=format!("gww-holiday caps {}", if n <= 1 { "soon" } else { "" }) on:click=move |e| nav.follow("site:gov", Some(&e))>
+                <button class=format!("gww-holiday caps {}", if n <= 1 { "soon" } else { "" }) on:click=move |e| nav.follow("site:holidays", Some(&e))>
                     <Icon icon=icons::CALENDAR_DAYS size=13.0 />
                     " "
                     {HOLIDAYS[i].name}
@@ -175,7 +178,6 @@ fn hit<S: AsRef<str>>(q: &str, texts: &[S]) -> bool {
 #[derive(Clone, Copy, PartialEq)]
 enum Official {
     Gov,
-    Citizens,
     Log,
     News,
     Ministry(usize),
@@ -184,7 +186,6 @@ enum Official {
 fn official_tile(o: Official, log_text: Signal<String>) -> AnyView {
     match o {
         Official::Gov => gov_tile(),
-        Official::Citizens => citizens_tile(),
         Official::Log => log_tile(log_text),
         Official::News => news_tile(),
         Official::Ministry(i) => ministry_tile(&MINISTRIES[i]),
@@ -202,12 +203,7 @@ fn official_hits(q: &str, log_text: &str) -> Vec<Official> {
     if hit(q, &gov) {
         out.push(Official::Gov);
     }
-    let mut citizens: Vec<String> = vec![CITIZENS.title.into(), CITIZENS.summary.into(), CITIZENS.address.into()];
-    citizens.extend(section_lines(CITIZENS.sections));
-    if hit(q, &citizens) {
-        out.push(Official::Citizens);
-    }
-    if hit(q, &["Galactic war log", log_text, "se://hc/war-log"]) {
+    if hit(q, &[LOG_TITLE, log_text, LOG_ADDRESS, "war log", "FTL jumps"]) {
         out.push(Official::Log);
     }
     if hit(q, &["Strohmann News", "Dispatches and campaign news", "se://strohmann.news"]) {
@@ -302,9 +298,6 @@ fn Home(log_text: Signal<String>) -> impl IntoView {
                 </label>
             </header>
             <TipTicker />
-            <Show when=move || !searching.get()>
-                <CourseProgress compact=true />
-            </Show>
             <div class="gww-home-grid">
                 <div class="gww-dir">
                     <Show when=move || none.get()>
@@ -314,36 +307,45 @@ fn Home(log_text: Signal<String>) -> impl IntoView {
                         let list = official.get();
                         (!list.is_empty()).then(|| {
                             let n = list.len();
-                            group("Super Earth", n, "dir:gov", list.into_iter().map(|o| official_tile(o, log_text)).collect_view().into_any())
+                            group("Super Earth", n, Some("dir:gov"), list.into_iter().map(|o| official_tile(o, log_text)).collect_view().into_any())
                         })
                     }}
                     {move || {
                         let list = manuals.get();
-                        (!list.is_empty()).then(|| {
-                            let body = if searching.get() {
-                                list.iter().map(|&i| manual_tile(&MANUALS[i])).collect_view().into_any()
-                            } else {
-                                CHAPTERS
-                                    .iter()
-                                    .enumerate()
-                                    .map(|(i, ch)| view! {
-                                        <p class="gww-chapter-label caps">
-                                            <span class="num">"Chapter "{i + 1}</span>
-                                            " "{ch.title}
-                                        </p>
-                                        {MANUALS.iter().filter(|m| m.chapter == ch.id).map(manual_tile).collect_view()}
-                                    })
-                                    .collect_view()
-                                    .into_any()
-                            };
-                            group("Training manuals", list.len(), "dir:manuals", body)
+                        (searching.get() && !list.is_empty()).then(|| {
+                            let body = list.iter().map(|&i| manual_tile(&MANUALS[i])).collect_view().into_any();
+                            group("Training manuals", list.len(), Some("dir:manuals"), body)
                         })
                     }}
+                    {move || (!searching.get()).then(|| {
+                        let read = Signal::derive(|| {
+                            settings().get(|s| MANUALS.iter().filter(|m| s.gww_read.iter().any(|r| r == m.id)).count())
+                        });
+                        let tile = move || {
+                            let n = read.get();
+                            site_tile(
+                                "dir:manuals".into(),
+                                "se://hc/manuals",
+                                "Training manuals".into(),
+                                format!(
+                                    "How the Second Galactic War works, in {} chapters and {} manuals. {n} of {} read.",
+                                    CHAPTERS.len(),
+                                    MANUALS.len(),
+                                    MANUALS.len()
+                                ),
+                                view! { <Icon icon=icons::GRADUATION_CAP size=28.0 stroke_width=1.5 /> }.into_any(),
+                                Some("var(--cta)".into()),
+                                Signal::stored(n == MANUALS.len()),
+                                false,
+                            )
+                        };
+                        group("Training manuals", MANUALS.len(), None, tile.into_any())
+                    })}
                     {move || (!searching.get()).then(|| banner.map(|a| ad_box(a, None, false)))}
                     {move || {
                         let list = companies.get();
                         (!list.is_empty()).then(|| {
-                            group("Corporations", list.len(), "dir:corps", list.iter().map(|&i| company_tile(&COMPANIES[i])).collect_view().into_any())
+                            group("Corporations", list.len(), Some("dir:corps"), list.iter().map(|&i| company_tile(&COMPANIES[i])).collect_view().into_any())
                         })
                     }}
                     {move || (!searching.get() && !wide.get()).then(|| second.map(|a| ad_box(a, None, false)))}
@@ -368,11 +370,13 @@ fn page_view(page: &GwwPage, heading: HeadingRef, log_text: Signal<String>) -> O
         GwwPage::Manual { id } => manual_page(MANUALS.iter().find(|m| m.id == id)?, heading),
         GwwPage::Ministry { id } => ministry_page(MINISTRIES.iter().find(|m| m.id == id)?, heading),
         GwwPage::Company { id } => company_page(COMPANIES.iter().find(|c| c.id == id)?, heading),
-        GwwPage::Site { id } if id == "log" => war_log_page(heading),
+        GwwPage::Holiday { id } => holiday_page(HOLIDAYS.iter().find(|h| h.id == id)?, heading),
+        GwwPage::Site { id } if id == "log" => logs_page(heading),
+        GwwPage::Site { id } if id == "holidays" => holidays_page(heading),
         GwwPage::Site { id } => gov_page(id, heading),
         GwwPage::Dir { id } => dir_page(id, heading, log_text),
         GwwPage::Missing { address } => missing_page(address.clone(), heading),
-        GwwPage::Holiday { .. } | GwwPage::Home => return None,
+        GwwPage::Home => return None,
     })
 }
 

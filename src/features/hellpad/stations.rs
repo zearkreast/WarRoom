@@ -1,14 +1,14 @@
 use crate::api::queries::queries;
 use crate::api::stations::use_station_jumps;
 use crate::features::hellpad::station_holo::{CssHolo, DssHolo};
-use crate::features::map::pawn_art::{DssState, dss_state};
+use crate::features::map::pawn_art::{DssState, action_icon, dss_state};
 use crate::features::planet::detail::PlanetSphere;
 use crate::features::planets::fronts::planet_rate;
 use crate::js::{self, fmt_date_time};
-use crate::state::{OptionsAnchor, ui};
+use crate::state::{HellpadModule, OptionsAnchor, View, ui};
 use crate::ui::emblems::{FactionEmblem, IconLike, StationEmblem};
 use crate::ui::icons::{self, Icon};
-use crate::ui::primitives::{Countdown, Empty, Loading, Meter, MeterSize, OutLink, Panel, StatusChip};
+use crate::ui::primitives::{Countdown, Empty, Loading, OutLink, Panel, StatusChip};
 use leptos::prelude::*;
 use regex_lite::Regex;
 use std::sync::LazyLock;
@@ -18,7 +18,8 @@ use warroom_core::data::manuals::WIKI_LICENCE;
 use warroom_core::data::stations::{PAST_STATIONS, STAR_OF_PEACE};
 use warroom_core::data::{Dated, Source, StationRecord};
 use warroom_core::factions::faction_color;
-use warroom_core::format::{fmt_pct, to_fixed};
+use warroom_core::format::{fmt_pct, js_round, to_fixed};
+use warroom_core::gww_nav::{GwwPage, LOG_ADDRESS};
 use warroom_core::gww_text::{Segment, parse_rich};
 use warroom_core::progress::tracked_percent;
 use warroom_core::snapshot::StationLive;
@@ -179,17 +180,44 @@ fn is_cooling(a: &TacticalAction, now: f64) -> bool {
     a.status == 3 && parse_ms(&a.status_expire) > now
 }
 
-fn action_state(a: &TacticalAction, now: f64) -> (&'static str, &'static str) {
+/// Mode (its CSS class), label and tone.
+fn action_state(a: &TacticalAction, now: f64) -> (&'static str, &'static str, &'static str) {
     if is_active(a, now) {
-        return ("Active", "var(--good)");
+        return ("active", "Active", "var(--good)");
     }
     if is_cooling(a, now) {
-        return ("On cooldown", "var(--warn)");
+        return ("cooling", "Cooldown", "var(--warn)");
     }
     if a.costs.first().is_some_and(|c| c.current_value >= c.target_value) {
-        return ("Ready", "var(--good)");
+        return ("ready", "Ready", "var(--good)");
     }
-    ("Gathering", "var(--f-humans)")
+    ("gathering", "Gathering", "var(--f-humans)")
+}
+
+fn action_icon_view(name: &str, size: f64) -> AnyView {
+    match action_icon(name) {
+        None => view! { <Icon icon=icons::ZAP size=size /> }.into_any(),
+        Some(href) => {
+            view! { <img class="st-action-icon" src=href width=js::num(size) height=js::num(size) alt="" /> }.into_any()
+        }
+    }
+}
+
+fn action_bar(pct: f64, mode: &'static str, label: String) -> impl IntoView {
+    let v = pct.clamp(0.0, 100.0);
+    view! {
+        <div
+            class=format!("st-bar {mode}")
+            role="progressbar"
+            aria-valuenow=js_round(v).to_string()
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-label=label
+        >
+            <div class="st-bar-fill" style=format!("width: {}%;", js::num(v))></div>
+            {(mode == "cooling").then(|| view! { <span class="st-bar-tag caps">"Standby"</span> })}
+        </div>
+    }
 }
 
 fn action_card(a: &TacticalAction, now: f64) -> AnyView {
@@ -205,7 +233,7 @@ fn action_card(a: &TacticalAction, now: f64) -> AnyView {
     let remaining = cost
         .filter(|c| c.delta_per_second > 0.0 && c.current_value < c.target_value)
         .map(|c| (c.target_value - c.current_value) / c.delta_per_second);
-    let (label, tone) = action_state(a, now);
+    let (mode, label, tone) = action_state(a, now);
     let expire = parse_ms(&a.status_expire);
     let progress = cost.map(|_| {
         let text = if active {
@@ -213,13 +241,17 @@ fn action_card(a: &TacticalAction, now: f64) -> AnyView {
         } else if cooling {
             view! { "Ready again in " <Countdown to=expire /> }.into_any()
         } else if let Some(r) = remaining {
-            format!("Estimated ready in {}", if r < 3600.0 { "under an hour".to_string() } else { fmt_long_duration(r) }).into_any()
+            format!(
+                "Estimated ready in {}",
+                if r < 3600.0 { "under an hour".to_string() } else { fmt_long_duration(r) }
+            )
+            .into_any()
         } else {
             "Holding".into_any()
         };
         view! {
             <div class="st-progress">
-                <Meter value=pct color="var(--f-humans)".to_string() size=MeterSize::L label=format!("{} readiness", a.name) />
+                {action_bar(pct, mode, format!("{} readiness", a.name))}
                 <div class="st-progress-row num">
                     <span>{text}</span>
                     <b>{fmt_pct(pct, 3)}</b>
@@ -228,8 +260,9 @@ fn action_card(a: &TacticalAction, now: f64) -> AnyView {
         }
     });
     view! {
-        <article class="st-action">
+        <article class=format!("st-action {mode}") style=format!("--tone: {tone};")>
             <header>
+                {action_icon_view(&a.name, 34.0)}
                 <h3>{a.name.clone()}</h3>
                 <span class="status-chip" style=format!("--tone: {tone};")>{label}</span>
             </header>
@@ -242,44 +275,42 @@ fn action_card(a: &TacticalAction, now: f64) -> AnyView {
 }
 
 #[component]
-fn JumpHistory(station: i64) -> impl IntoView {
+fn JumpHistoryLink(station: i64) -> impl IntoView {
     let jumps = use_station_jumps(move || station).data;
-    let planets = queries().fresh_planets;
-    let name = move |i: Option<i64>| match i {
-        None => "—".to_string(),
-        Some(i) => planets
-            .with(|p| p.as_ref().and_then(|p| p.iter().find(|p| p.index == i).map(|p| p.name.clone())))
-            .unwrap_or_else(|| format!("Planet {i}")),
+    let open = move |_| {
+        let u = ui();
+        u.view.set(View::Hellpad);
+        u.module.set(Some(HellpadModule::Gww));
+        u.set_gww(vec![GwwPage::Home, GwwPage::Site { id: "log".into() }]);
+        u.options.set(None);
+        u.detail.set(None);
     };
-    let list = move || jumps.get().map(|j| (*j).clone()).unwrap_or_default();
+    let summary = move || {
+        jumps.with(|j| {
+            let j = j.as_deref().map_or(&[][..], |j| j.as_slice());
+            match j.first() {
+                None => "No jumps logged yet".to_string(),
+                Some(last) => format!(
+                    "{} logged · last {}",
+                    if j.len() == 1 { "1 jump".to_string() } else { format!("{} jumps", j.len()) },
+                    fmt_date_time(last.at)
+                ),
+            }
+        })
+    };
     view! {
-        <Panel title="FTL jump history" icon=icons::HISTORY right=view! { <span class="num">{move || list().len()}</span> }.into_any()>
-            {move || {
-                let list = list();
-                if list.is_empty() {
-                    return view! { <Empty>"No jumps logged yet. Each jump is recorded from the next collector update on."</Empty> }.into_any();
-                }
-                view! {
-                    <ol class="st-jumps">
-                        {list
-                            .into_iter()
-                            .map(|j| view! {
-                                <li>
-                                    <span class="num">{fmt_date_time(j.at)}</span>
-                                    <span class="caps">
-                                        {format!("{} ", name(j.from))}
-                                        <span aria-hidden="true">"→"</span>
-                                        " "
-                                        <b>{name(Some(j.to))}</b>
-                                    </span>
-                                </li>
-                            })
-                            .collect_view()}
-                    </ol>
-                }
-                .into_any()
-            }}
-        </Panel>
+        <button class="st-jumplink" on:click=open>
+            <Icon icon=icons::HISTORY size=18.0 />
+            <span class="st-jumplink-text">
+                <b class="caps">"FTL jump history"</b>
+                <span class="num">{summary}</span>
+            </span>
+            <span class="st-jumplink-to caps num">
+                {LOG_ADDRESS}
+                " "
+                <Icon icon=icons::ARROW_RIGHT size=14.0 />
+            </span>
+        </button>
     }
 }
 
@@ -301,7 +332,9 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
         let s = station.get()?;
         let now_v = now.get_untracked();
         let p = q.fresh_planets.with(|p| p.as_ref()?.iter().find(|x| x.index == s.planet_index).cloned())?;
-        let effects = q.effects.with(|e| e.as_ref().and_then(|e| e.stations.get(&s.id32).cloned()).unwrap_or_default());
+        let mut effects =
+            q.effects.with(|e| e.as_ref().and_then(|e| e.stations.get(&s.id32).cloned()).unwrap_or_default());
+        effects.sort_by_key(|e| action_icon(&e.name).is_some());
         let front =
             q.campaigns.with(|c| c.as_ref().is_some_and(|c| c.iter().any(|c| c.planet.index == s.planet_index)));
         let rate = planet_rate(Some(s.planet_index));
@@ -314,6 +347,20 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
         let index = p.index;
         let face = enemy.unwrap_or(Faction::Humans);
         let sphere_planet = p.clone();
+        let station_readout = if live.is_empty() {
+            dss_state_label(state).into_any()
+        } else {
+            let names = live.iter().map(|a| a.name.as_str()).collect::<Vec<_>>().join(", ");
+            view! {
+                <span class="st-holo-icons" aria-label=names>
+                    {live
+                        .iter()
+                        .map(|a| view! { <span title=a.name.clone()>{action_icon_view(&a.name, 22.0)}</span> })
+                        .collect_view()}
+                </span>
+            }
+            .into_any()
+        };
         let jump_view = move || {
             if jump > now.get() { view! { <Countdown to=jump /> }.into_any() } else { "Vote closing".into_any() }
         };
@@ -360,10 +407,12 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
                                     {live
                                         .iter()
                                         .map(|a| view! {
-                                            <li>
-                                                <Icon icon=icons::ZAP size=14.0 />
-                                                <b class="caps">{a.name.clone()}</b>
-                                                <span class="caps">{format!("over {}", p.name)}</span>
+                                            <li title=a.name.clone()>
+                                                {action_icon_view(&a.name, 22.0)}
+                                                <span class="st-live-name">
+                                                    <b class="caps">{a.name.clone()}</b>
+                                                    <span class="caps">{format!("Over {}", p.name)}</span>
+                                                </span>
                                                 <span class="num">
                                                     "ends in "
                                                     <Countdown to=parse_ms(&a.status_expire) />
@@ -375,7 +424,15 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
                             })}
                             {(!effects.is_empty()).then(|| view! {
                                 <ul class="st-effects" aria-label="Station effects">
-                                    {effects.iter().map(|e| view! { <li class="caps" title=e.description.clone()>{e.name.clone()}</li> }).collect_view()}
+                                    {effects
+                                        .iter()
+                                        .map(|e| view! {
+                                            <li class="caps" title=e.description.clone()>
+                                                {action_icon(&e.name).map(|_| action_icon_view(&e.name, 14.0))}
+                                                {e.name.clone()}
+                                            </li>
+                                        })
+                                        .collect_view()}
                                 </ul>
                             })}
                         </div>
@@ -387,21 +444,14 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
                         />
                     </section>
                     <div class="st-actions">{s.tactical_actions.iter().map(|a| action_card(a, now_v)).collect_view()}</div>
-                    <div class="st-cols">
-                        <Panel title="Destination vote" icon=icons::VOTE>
-                            <p class="st-note">
-                                "Helldivers vote in game on where the station jumps next, and the vote closes when the countdown above runs out. The game publishes when it closes but not the votes, so the tally can only be seen in game."
-                            </p>
-                        </Panel>
-                        <JumpHistory station=id />
-                    </div>
+                    <JumpHistoryLink station=id />
                     <StarOfPeace />
                 </div>
                 <DssHolo
                     state=state
                     readout=vec![
                         ("Orbit".to_string(), p.name.clone().into_any()),
-                        ("Station".to_string(), dss_state_label(state).into_any()),
+                        ("Station".to_string(), station_readout),
                         ("Next jump".to_string(), (move || jump_view()).into_any()),
                     ]
                 />

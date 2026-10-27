@@ -170,19 +170,41 @@ pub fn OrderCard(
     id: i64,
     #[prop(into)] name: Signal<Option<String>>,
     #[prop(optional)] compact: bool,
+    /// The overview's card folds to its header; the fold is remembered.
+    #[prop(optional)]
+    foldable: bool,
 ) -> impl IntoView {
+    let st = crate::state::settings();
+    let open = Memo::new(move |_| !foldable || st.get(|s| s.overview_mo_open));
     let s = order_state(id);
     let slots =
         Memo::new(move |_| s.tasks.with(|t| t.iter().enumerate().map(|(i, t)| (i, t.is_planet)).collect::<Vec<_>>()));
     let title =
         move || s.order.with(|a| a.as_ref().and_then(|a| a.title.clone()).unwrap_or_else(|| "Major Order".into()));
     let expires = Signal::derive(move || s.order.with(|a| a.as_ref().map_or(0.0, |a| parse_ms(&a.expiration))));
+    let name_tag = move || name.get().map(|n| view! { <span class="mo-name">{n}</span> });
+    let (heading, extra) = if foldable {
+        let toggle = view! {
+            <button
+                class="mo-toggle"
+                aria-expanded=move || open.get().to_string()
+                on:click=move |_| st.set(|s| s.overview_mo_open = !open.get_untracked())
+            >
+                <Icon icon=icons::CHEVRON_RIGHT size=14.0 class="mo-chevron" />
+                {title}
+                {name_tag}
+            </button>
+        };
+        (Signal::derive(String::new), toggle.into_any())
+    } else {
+        (Signal::derive(title), view! { {name_tag} }.into_any())
+    };
     view! {
         <Panel
-            class="mo"
+            class=Signal::derive(move || if open.get() { "mo ".to_string() } else { "mo folded".to_string() })
             icon=icons::TARGET
-            title=Signal::derive(title)
-            title_extra=view! { {move || name.get().map(|n| view! { <span class="mo-name">{n}</span> })} }.into_any()
+            title=heading
+            title_extra=extra
             right=view! { <span class="mo-ends">"Ends in " <b><Countdown to=expires /></b></span> }.into_any()
         >
             {move || {
@@ -220,7 +242,7 @@ pub fn OrderCard(
 }
 
 #[component]
-pub fn MajorOrderList(#[prop(optional)] compact: bool) -> impl IntoView {
+pub fn MajorOrderList(#[prop(optional)] compact: bool, #[prop(optional)] foldable: bool) -> impl IntoView {
     let q = queries();
     let ids =
         Memo::new(move |_| q.assignments.with(|l| l.as_ref().map(|l| l.iter().map(|a| a.id).collect::<Vec<_>>())));
@@ -240,7 +262,7 @@ pub fn MajorOrderList(#[prop(optional)] compact: bool) -> impl IntoView {
         }
         view! {
             <For each=move || ids.get().unwrap_or_default() key=|id| *id let:id>
-                <OrderCard id=id name=name compact=compact />
+                <OrderCard id=id name=name compact=compact foldable=foldable />
             </For>
         }
         .into_any()

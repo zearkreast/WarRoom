@@ -53,6 +53,8 @@ pub struct XAxis {
     pub line: bool,
     pub stroke: String,
     pub tick_fill: String,
+    pub font_size: f64,
+    pub height: f64,
 }
 
 impl XAxis {
@@ -66,6 +68,8 @@ impl XAxis {
             line: true,
             stroke: GRID.into(),
             tick_fill: LABEL.into(),
+            font_size: 10.0,
+            height: X_AXIS_HEIGHT,
         }
     }
 }
@@ -81,6 +85,7 @@ pub struct YAxis {
     pub stroke: String,
     pub tick_fill: String,
     pub tick_class: Option<String>,
+    pub font_size: f64,
 }
 
 impl YAxis {
@@ -96,12 +101,22 @@ impl YAxis {
             stroke: GRID.into(),
             tick_fill: LABEL.into(),
             tick_class: None,
+            font_size: 10.0,
         }
     }
 
-    /// Recharts' automatic axis: `count` round ticks from zero past the data's highest value.
+    /// Recharts' automatic axis: five round ticks from zero past the data's highest value.
     pub fn auto(max: f64, fmt: Fmt) -> Self {
-        let ticks = warroom_core::chart::nice_ticks(0.0_f64.min(max), max.max(0.0), 5, true);
+        Self::auto_ticks(max, fmt, true)
+    }
+
+    /// [`YAxis::auto`] with whole-number ticks, like Recharts' `allowDecimals={false}`.
+    pub fn auto_whole(max: f64, fmt: Fmt) -> Self {
+        Self::auto_ticks(max, fmt, false)
+    }
+
+    fn auto_ticks(max: f64, fmt: Fmt, allow_decimals: bool) -> Self {
+        let ticks = warroom_core::chart::nice_ticks(0.0_f64.min(max), max.max(0.0), 5, allow_decimals);
         let domain = (ticks.first().copied().unwrap_or(0.0), ticks.last().copied().unwrap_or(0.0));
         YAxis::new(domain, ticks, fmt)
     }
@@ -127,6 +142,8 @@ pub struct Series {
     pub active_dot: bool,
     /// Draw across gaps instead of breaking the line.
     pub connect_nulls: bool,
+    /// A dot on every point, with no outline: radius and fill.
+    pub dots: Option<(f64, String)>,
 }
 
 impl Series {
@@ -146,6 +163,7 @@ impl Series {
             curve: Curve::Linear,
             active_dot: true,
             connect_nulls: false,
+            dots: None,
         }
     }
 
@@ -204,12 +222,13 @@ impl Frame {
 }
 
 thread_local! {
-    static SIZES: RefCell<HashMap<String, (f64, f64)>> = RefCell::new(HashMap::new());
+    static SIZES: RefCell<HashMap<(String, u32), (f64, f64)>> = RefCell::new(HashMap::new());
 }
 
 /// A tick label's rendered size, measured the way Recharts does: in an off-screen span in the body.
-fn text_size(text: &str) -> (f64, f64) {
-    if let Some(s) = SIZES.with(|c| c.borrow().get(text).copied()) {
+fn text_size(text: &str, font_size: f64) -> (f64, f64) {
+    let key = (text.to_string(), (font_size * 100.0) as u32);
+    if let Some(s) = SIZES.with(|c| c.borrow().get(&key).copied()) {
         return s;
     }
     let doc = js::document();
@@ -219,27 +238,36 @@ fn text_size(text: &str) -> (f64, f64) {
         let _ = s.set_attribute("aria-hidden", "true");
         let _ = s.set_attribute(
             "style",
-            "position: absolute; top: -20000px; left: 0; padding: 0; margin: 0; border: none; white-space: pre; font-size: 10px;",
+            "position: absolute; top: -20000px; left: 0; padding: 0; margin: 0; border: none; white-space: pre;",
         );
         if let Some(b) = doc.body() {
             let _ = b.append_child(&s);
         }
         s
     });
+    if let Ok(span) = span.clone().dyn_into::<web_sys::HtmlElement>() {
+        let _ = span.style().set_property("font-size", &format!("{}px", num(font_size)));
+    }
     span.set_text_content(Some(text));
     let r = span.get_bounding_client_rect();
     let size = (r.width(), r.height());
-    SIZES.with(|c| c.borrow_mut().insert(text.to_string(), size));
+    SIZES.with(|c| c.borrow_mut().insert(key, size));
     size
 }
 
 /// Recharts' default `preserveEnd` tick filter: walk back from the last tick, keeping each label that fits
 /// clear of the one after it; the last is nudged inside the axis if it would overhang.
-fn visible_ticks(coords: &[(f64, String)], start: f64, end: f64, vertical: bool) -> Vec<(f64, f64, String)> {
+fn visible_ticks(
+    coords: &[(f64, String)],
+    start: f64,
+    end: f64,
+    vertical: bool,
+    font_size: f64,
+) -> Vec<(f64, f64, String)> {
     let sign = if coords.len() >= 2 && coords[1].0 < coords[0].0 { -1.0 } else { 1.0 };
     let (start, mut end) = if sign > 0.0 { (start, end) } else { (end, start) };
     let size = |t: &str| {
-        let (w, h) = text_size(t);
+        let (w, h) = text_size(t, font_size);
         if vertical { h } else { w }
     };
     let mut out = Vec::new();
@@ -273,7 +301,7 @@ fn y_axis_view(a: &YAxis, x: f64, f: &Frame, axis: usize, chart_h: f64) -> AnyVi
     };
     let _ = inner;
     let coords: Vec<(f64, String)> = a.ticks.iter().map(|t| (f.y(axis, *t), (a.fmt)(*t))).collect();
-    let ticks = visible_ticks(&coords, 0.0, chart_h, true);
+    let ticks = visible_ticks(&coords, 0.0, chart_h, true, a.font_size);
     let class =
         format!("recharts-text recharts-cartesian-axis-tick-value {}", a.tick_class.clone().unwrap_or_default());
     let side = if a.right { "right" } else { "left" };
@@ -311,7 +339,7 @@ fn y_axis_view(a: &YAxis, x: f64, f: &Frame, axis: usize, chart_h: f64) -> AnyVi
                                     class=class.clone()
                                     text-anchor=anchor
                                     fill=a.tick_fill.clone()
-                                    font-size="10"
+                                    font-size=num(a.font_size)
                                 >
                                     <tspan x=num(text_x) dy="0.355em">{label}</tspan>
                                 </text>
@@ -326,17 +354,17 @@ fn y_axis_view(a: &YAxis, x: f64, f: &Frame, axis: usize, chart_h: f64) -> AnyVi
 }
 
 fn x_axis_view(a: &XAxis, f: &Frame, bottom: f64, chart_w: f64) -> AnyView {
-    let y = bottom - X_AXIS_HEIGHT;
+    let y = bottom - a.height;
     let text_y = y + TICK_SIZE + TICK_MARGIN;
     let coords: Vec<(f64, String)> = a.ticks.iter().map(|t| (f.x(*t), (a.fmt)(*t))).collect();
-    let ticks = visible_ticks(&coords, 0.0, chart_w, false);
+    let ticks = visible_ticks(&coords, 0.0, chart_w, false, a.font_size);
     view! {
         <g class="recharts-layer recharts-cartesian-axis recharts-xAxis xAxis">
             {a.line.then(|| view! {
                 <line
                     orientation="bottom"
                     width=num(f.width)
-                    height=num(X_AXIS_HEIGHT)
+                    height=num(a.height)
                     x=num(f.left)
                     y=num(y)
                     class="recharts-cartesian-axis-line"
@@ -357,14 +385,14 @@ fn x_axis_view(a: &XAxis, f: &Frame, bottom: f64, chart_w: f64) -> AnyView {
                                 <text
                                     orientation="bottom"
                                     width=num(f.width)
-                                    height=num(X_AXIS_HEIGHT)
+                                    height=num(a.height)
                                     stroke="none"
                                     x=num(at)
                                     y=num(text_y)
                                     class="recharts-text recharts-cartesian-axis-tick-value"
                                     text-anchor="middle"
                                     fill=a.tick_fill.clone()
-                                    font-size="10"
+                                    font-size=num(a.font_size)
                                 >
                                     <tspan x=num(at) dy="0.71em">{label}</tspan>
                                 </text>
@@ -379,6 +407,10 @@ fn x_axis_view(a: &XAxis, f: &Frame, bottom: f64, chart_w: f64) -> AnyView {
 }
 
 fn series_view(s: &Series, xs: &[f64], f: &Frame) -> AnyView {
+    if xs.len() < 2 {
+        let kind = if s.fill.is_some() { "area" } else { "line" };
+        return view! { <g class=format!("recharts-layer recharts-{kind} {}", s.class)></g> }.into_any();
+    }
     let mut pts: Vec<Option<(f64, f64)>> =
         xs.iter().zip(&s.values).map(|(x, v)| v.filter(|v| v.is_finite()).map(|v| (f.x(*x), f.y(s.axis, v)))).collect();
     if s.connect_nulls {
@@ -439,6 +471,32 @@ fn series_view(s: &Series, xs: &[f64], f: &Frame) -> AnyView {
             .into_any()
         }
     }
+}
+
+fn dots_view(s: &Series, xs: &[f64], f: &Frame) -> Option<AnyView> {
+    let (r, fill) = s.dots.clone()?;
+    let kind = if s.fill.is_some() { "area" } else { "line" };
+    let fill_opacity = s.fill.is_some().then(|| num(s.fill_opacity));
+    let circles = xs
+        .iter()
+        .zip(&s.values)
+        .filter_map(|(x, v)| {
+            let v = v.filter(|v| v.is_finite())?;
+            Some(view! {
+                <circle
+                    r=num(r)
+                    stroke=s.stroke.clone()
+                    stroke-width="0"
+                    fill=fill.clone()
+                    fill-opacity=fill_opacity.clone()
+                    class=format!("recharts-dot recharts-{kind}-dot")
+                    cx=num(f.x(*x))
+                    cy=num(f.y(s.axis, v))
+                ></circle>
+            })
+        })
+        .collect_view();
+    Some(view! { <g class=format!("recharts-layer recharts-{kind}-dots")>{circles}</g> }.into_any())
 }
 
 /// One row of the default tooltip.
@@ -551,7 +609,7 @@ pub fn Chart(
             let (top, right, bottom, left) = margin;
             let lefts: f64 = p.y.iter().filter(|a| !a.right).map(|a| a.width).sum();
             let rights: f64 = p.y.iter().filter(|a| a.right).map(|a| a.width).sum();
-            let x_h = if p.x.hide { 0.0 } else { X_AXIS_HEIGHT };
+            let x_h = if p.x.hide { 0.0 } else { p.x.height };
             let f = Frame {
                 left: left + lefts,
                 top,
@@ -661,6 +719,7 @@ pub fn Chart(
         let (areas, lines): (Vec<&Series>, Vec<&Series>) = p.series.iter().partition(|s| s.fill.is_some());
         let areas = areas.into_iter().map(|s| series_view(s, &p.xs, &f)).collect_view();
         let lines = lines.into_iter().map(|s| series_view(s, &p.xs, &f)).collect_view();
+        let dots = p.series.iter().filter_map(|s| dots_view(s, &p.xs, &f)).collect_view();
         let refs = p
             .ref_lines
             .iter()
@@ -728,6 +787,7 @@ pub fn Chart(
                 {refs}
                 {axes}
                 {x_axis}
+                {dots}
                 {over}
                 {move || {
                     let i = hover.get()?;

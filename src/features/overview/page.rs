@@ -131,6 +131,24 @@ fn Distribution() -> impl IntoView {
             .or_else(|| row_slice.with(|r| r.as_ref().and_then(|r| r.enemy.map(|e| e.as_str().to_string()))));
         key.and_then(|k| arcs.with(|a| a.iter().find(|a| a.key == k).cloned()))
     });
+    let mouse = |e: &web_sys::PointerEvent| e.pointer_type() == "mouse";
+    // A touch has no hover: a tap on a legend or front row shows it until a tap lands elsewhere.
+    let away = window_event_listener(leptos::ev::pointerdown, move |e| {
+        if hover_row.with_untracked(Option::is_none) && active_arc.with_untracked(Option::is_none) {
+            return;
+        }
+        let inside = e
+            .target()
+            .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
+            .is_some_and(|t| t.closest(".ov-legend li, .ov-front, .nr").ok().flatten().is_some());
+        if mouse(&e) || inside {
+            return;
+        }
+        hover_row.set(None);
+        active_arc.set(None);
+        card.set(None);
+    });
+    on_cleanup(move || away.remove());
     let pct_of_online = move |n: f64| fmt_pct(n / (if total.get() != 0.0 { total.get() } else { 1.0 }) * 100.0, 1);
 
     let card_rows = move |kind: &str| -> Vec<CardRow> {
@@ -328,7 +346,10 @@ fn Distribution() -> impl IntoView {
                     />
                     <ul
                         class="ov-legend"
-                        on:pointerleave=move |_| {
+                        on:pointerleave=move |e| {
+                            if !mouse(&e) {
+                                return;
+                            }
                             hover_row.set(None);
                             card.set(None);
                         }
@@ -336,20 +357,23 @@ fn Distribution() -> impl IntoView {
                         <For each=move || slices.get() key=|p| p.name.clone() let:p>
                             {
                                 let name = p.name.clone();
-                                let (n1, n2, n3) = (name.clone(), name.clone(), name.clone());
+                                let (n1, n2, n3, n4) = (name.clone(), name.clone(), name.clone(), name.clone());
                                 let players = Memo::new(move |_| slices.with(|s| s.iter().find(|x| x.name == n3).map_or(0.0, |x| x.players)));
                                 view! {
                                     <li
                                         class=move || if hover_row.with(|h| h.as_deref() == Some(n1.as_str())) { "on" } else { "" }
                                         style=format!("--k: {};", p.color)
-                                        on:pointerenter=move |_| {
+                                        on:pointerenter=move |e| {
+                                            if !mouse(&e) {
+                                                return;
+                                            }
                                             hover_row.set(Some(n2.clone()));
                                             if n2 != OTHERS {
                                                 card.set(None);
                                             }
                                         }
                                         on:pointermove=move |e: web_sys::PointerEvent| {
-                                            if name != OTHERS {
+                                            if !mouse(&e) || name != OTHERS {
                                                 return;
                                             }
                                             let ring = e
@@ -360,6 +384,23 @@ fn Distribution() -> impl IntoView {
                                             if let Some(ring) = ring {
                                                 card.set(Some((OTHERS.into(), pointer_at(&e, &ring))));
                                             }
+                                        }
+                                        on:pointerup=move |e: web_sys::PointerEvent| {
+                                            if mouse(&e) {
+                                                return;
+                                            }
+                                            let again = hover_row.with_untracked(|h| h.as_deref() == Some(n4.as_str()));
+                                            active_arc.set(None);
+                                            hover_row.set((!again).then(|| n4.clone()));
+                                            let ring = e
+                                                .current_target()
+                                                .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
+                                                .and_then(|el| el.closest(".ov-donut").ok().flatten())
+                                                .and_then(|d| d.query_selector(".nr").ok().flatten());
+                                            card.set(match ring {
+                                                Some(ring) if !again && n4 == OTHERS => Some((OTHERS.into(), pointer_at(&e, &ring))),
+                                                _ => None,
+                                            });
                                         }
                                     >
                                         <span class="ov-legend-name caps">{p.name.clone()}</span>
@@ -403,8 +444,25 @@ fn Distribution() -> impl IntoView {
                             <div
                                 class=move || format!("ov-front {}", if arc.with(|a| a.as_ref().is_some_and(|a| a.key == f.as_str())) { "on" } else { "" })
                                 style=format!("--k: {}; --t: var(--f-{});", chart_color(f), f.as_str().to_lowercase())
-                                on:pointerenter=move |_| active_arc.set(Some(f.as_str().into()))
-                                on:pointerleave=move |_| active_arc.set(None)
+                                on:pointerenter=move |e| {
+                                    if mouse(&e) {
+                                        active_arc.set(Some(f.as_str().into()))
+                                    }
+                                }
+                                on:pointerleave=move |e| {
+                                    if mouse(&e) {
+                                        active_arc.set(None)
+                                    }
+                                }
+                                on:pointerup=move |e| {
+                                    if mouse(&e) {
+                                        return;
+                                    }
+                                    hover_row.set(None);
+                                    card.set(None);
+                                    let again = active_arc.with_untracked(|a| a.as_deref() == Some(f.as_str()));
+                                    active_arc.set((!again).then(|| f.as_str().into()));
+                                }
                             >
                                 <FactionEmblem faction=f.as_str() size=18.0 />
                                 <span class="caps">{faction_label(Some(f))}</span>
@@ -420,8 +478,25 @@ fn Distribution() -> impl IntoView {
                 <div
                     class=move || format!("ov-front {}", if arc.with(|a| a.as_ref().is_some_and(|a| a.key == ELSEWHERE)) { "on" } else { "" })
                     style="--k: var(--faint);"
-                    on:pointerenter=move |_| active_arc.set(Some(ELSEWHERE.into()))
-                    on:pointerleave=move |_| active_arc.set(None)
+                    on:pointerenter=move |e| {
+                        if mouse(&e) {
+                            active_arc.set(Some(ELSEWHERE.into()))
+                        }
+                    }
+                    on:pointerleave=move |e| {
+                        if mouse(&e) {
+                            active_arc.set(None)
+                        }
+                    }
+                    on:pointerup=move |e| {
+                        if mouse(&e) {
+                            return;
+                        }
+                        hover_row.set(None);
+                        card.set(None);
+                        let again = active_arc.with_untracked(|a| a.as_deref() == Some(ELSEWHERE));
+                        active_arc.set((!again).then(|| ELSEWHERE.into()));
+                    }
                 >
                     <FactionEmblem faction="Humans" size=18.0 color="var(--text-dim)" />
                     <span class="caps">"Elsewhere"</span>
@@ -462,7 +537,7 @@ pub fn OverviewPage() -> impl IntoView {
                     <Distribution />
                 </div>
                 <div class="ov-col ov-col-mid">
-                    <MajorOrderList />
+                    <MajorOrderList foldable=true />
                     <WarActivity />
                 </div>
                 <div class="ov-col ov-col-right">

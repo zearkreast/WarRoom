@@ -76,7 +76,10 @@ const IMPACT: &str = "var(--wa-impact)";
 const MUTED: &str = "var(--wa-muted)";
 const FULL_DAY_MS: f64 = 23.5 * 3_600_000.0;
 const STEP: f64 = 25_000.0;
-const READING_WINDOW_MS: f64 = 2.0 * 60_000.0;
+/// Readings are averaged into windows this long: about 240 points a day, 120 on a phone.
+const READING_WINDOW_MS: f64 = 6.0 * 60_000.0;
+const NARROW_WINDOW_MS: f64 = 12.0 * 60_000.0;
+const NARROW: &str = "(max-width: 720px)";
 // Keep in sync with --wa-morph in warActivity.css.
 const MORPH_MS: f64 = 700.0;
 // Keep in sync with --ease in theme.css, which the CSS fades use.
@@ -183,6 +186,7 @@ pub fn WarActivity() -> impl IntoView {
     let touched = RwSignal::new(HashSet::<SeriesKey>::new());
     let morph_next = StoredValue::new(false);
 
+    let narrow = js::use_media(NARROW);
     let rows = Memo::new(move |_| {
         let (Some(data), Some(last)) = (data.get(), q.last_update.get()) else { return Arc::new(Vec::new()) };
         let readings: Vec<Reading> = readings
@@ -201,7 +205,8 @@ pub fn WarActivity() -> impl IntoView {
                 })
             })
             .unwrap_or_default();
-        Arc::new(merge_activity(&data, &average_readings(&readings, READING_WINDOW_MS), last))
+        let window = if narrow.get() { NARROW_WINDOW_MS } else { READING_WINDOW_MS };
+        Arc::new(merge_activity(&data, &average_readings(&readings, window), last))
     });
     let has_online = Memo::new(move |_| rows.with(|r| r.iter().filter(|r| r.online.is_some()).count() > 1));
     // The online total once the collector has recorded it; until then, everyone on the fronts.
@@ -292,18 +297,22 @@ pub fn WarActivity() -> impl IntoView {
         let data = shown.get();
         let (d0, d1) = domain.get();
         let top = top.get();
+        let narrow = narrow.get();
+        let font_size = if narrow { 9.0 } else { 10.0 };
         let mut y = vec![YAxis {
-            width: 44.0,
+            width: if narrow { 32.0 } else { 44.0 },
             line: false,
             tick_fill: MUTED.into(),
+            font_size,
             ..YAxis::new((0.0, top), (0..=(top / STEP) as usize).map(|i| i as f64 * STEP).collect(), Arc::new(fmt_k))
         }];
         if let Some((dom, ticks)) = impact_axis.get() {
             y.push(YAxis {
-                width: 56.0,
+                width: if narrow { 42.0 } else { 56.0 },
                 right: true,
                 line: false,
                 tick_fill: MUTED.into(),
+                font_size,
                 tick_class: Some(format!("wa-axis-tick{}", off(SeriesKey::Impact))),
                 ..YAxis::new(dom, ticks, Arc::new(|v| to_fixed(v, 4)))
             });
@@ -350,7 +359,13 @@ pub fn WarActivity() -> impl IntoView {
         }
         Arc::new(Plot {
             xs,
-            x: XAxis { line: false, tick_fill: MUTED.into(), ..XAxis::time((d0, d1), hour_ticks(d0, d1, 4.0)) },
+            x: XAxis {
+                line: false,
+                tick_fill: MUTED.into(),
+                font_size,
+                height: if narrow { 24.0 } else { 30.0 },
+                ..XAxis::time((d0, d1), hour_ticks(d0, d1, if narrow { 6.0 } else { 4.0 }))
+            },
             y,
             grid: Some(Grid { stroke: MUTED.into(), opacity: Some(0.15), edges_only: true }),
             series,
@@ -486,9 +501,12 @@ pub fn WarActivity() -> impl IntoView {
                             <span class="wa-corner tr" aria-hidden="true"></span>
                             <span class="wa-corner bl" aria-hidden="true"></span>
                             <span class="wa-corner br" aria-hidden="true"></span>
+                            {
+                                let (tooltip, overlay) = (tooltip.clone(), overlay.clone());
+                                move || view! {
                             <Chart
                                 plot=plot
-                                height=280.0
+                                height=if narrow.get() { 220.0 } else { 280.0 }
                                 margin=(20.0, 0.0, 0.0, 0.0)
                                 tooltip=tooltip.clone()
                                 overlay=overlay.clone()
@@ -505,6 +523,7 @@ pub fn WarActivity() -> impl IntoView {
                                         .collect_view()
                                 })
                             />
+                            }}
                         </div>
                         <Show when=move || impact_axis.with(Option::is_none)>
                             <p class="wa-note">"The impact multiplier's history is recorded from the next collector update."</p>

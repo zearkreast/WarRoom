@@ -134,6 +134,10 @@ pub const FLAME: IconData = IconData {
     class: "lucide lucide-flame",
     body: r#"<path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"></path>"#,
 };
+pub const GAUGE: IconData = IconData {
+    class: "lucide lucide-gauge",
+    body: r#"<path d="m12 14 4-4"></path><path d="M3.34 19a10 10 0 1 1 17.32 0"></path>"#,
+};
 pub const GIFT: IconData = IconData {
     class: "lucide lucide-gift",
     body: r#"<path d="M12 7v14"></path><path d="M20 11v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"></path><path d="M7.5 7a1 1 0 0 1 0-5A4.8 8 0 0 1 12 7a4.8 8 0 0 1 4.5-5 1 1 0 0 1 0 5"></path><rect x="3" y="7" width="18" height="4" rx="1"></rect>"#,
@@ -373,10 +377,6 @@ pub const TROPHY: IconData = IconData {
 pub const USERS: IconData = IconData {
     class: "lucide lucide-users",
     body: r#"<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle>"#,
-};
-pub const VOTE: IconData = IconData {
-    class: "lucide lucide-vote",
-    body: r#"<path d="m9 12 2 2 4-4"></path><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z"></path><path d="M22 19H2"></path>"#,
 };
 pub const WIND: IconData = IconData {
     class: "lucide lucide-wind",

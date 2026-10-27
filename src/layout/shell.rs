@@ -3,6 +3,7 @@ use crate::api::queries::queries;
 use crate::config::APP_VERSION;
 use crate::features::news::items::unread_news;
 use crate::features::news::ticker::NewsTicker;
+use crate::features::planet::city_detail::CityDetail;
 use crate::features::planet::detail::PlanetDetail;
 use crate::features::planet::options::PlanetOptions;
 use crate::js;
@@ -348,6 +349,7 @@ pub fn Shell(children: ChildrenFn) -> impl IntoView {
             <AboutDialog />
             <PlanetOptions />
             <PlanetDetail />
+            <CityDetail />
             <Toasts />
             <BriefingPopup />
         </div>

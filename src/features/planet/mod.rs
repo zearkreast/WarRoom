@@ -1,4 +1,6 @@
+pub mod activity;
 pub mod cities;
+pub mod city_detail;
 pub mod detail;
 pub mod globe;
 pub mod options;

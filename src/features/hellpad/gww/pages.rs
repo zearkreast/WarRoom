@@ -1,10 +1,14 @@
+use crate::api::queries::queries;
+use crate::api::stations::use_station_jumps;
+use crate::api::war_samples::use_war_days;
 use crate::features::hellpad::gww::figures::figure;
 use crate::features::hellpad::gww::live::live_panel;
 use crate::features::hellpad::gww::nav::{Rich, ad_url, icon_url, logo_url, use_gww_nav};
+use crate::features::hellpad::station_jumps::JumpRoute;
 use crate::history::history;
 use crate::js::{self, fmt_date, fmt_date_time, num};
 use crate::state::{OptionsAnchor, settings, ui};
-use crate::ui::emblems::{FactionEmblem, IconLike, icon_view};
+use crate::ui::emblems::{DssIcon, FactionEmblem, IconLike, icon_view};
 use crate::ui::icons::{self, Icon, IconData};
 use crate::ui::primitives::{Empty, Loading, OutLink};
 use leptos::html;
@@ -12,10 +16,12 @@ use leptos::prelude::*;
 use send_wrapper::SendWrapper;
 use warroom_core::api::Faction;
 use warroom_core::data::manuals::{CHAPTERS, MANUALS, WIKI, WIKI_LICENCE};
-use warroom_core::data::sites::{ADS, CITIZENS, COMPANIES, GOV, MINISTRIES};
-use warroom_core::data::{Ad, AdBy, AdShape, Company, Manual, Ministry, Section, Source, Tie};
+use warroom_core::data::sites::{ADS, CITIZENS, COMPANIES, GOV, HOLIDAYS, HOLIDAYS_SITE, MINISTRIES};
+use warroom_core::data::{Ad, AdBy, AdShape, Company, Holiday, Manual, Ministry, Section, Source, Tie};
 use warroom_core::factions::{faction_color, faction_label};
-use warroom_core::gww_nav::{DIRS, title_of};
+use warroom_core::format::{fmt_int, sest_clock, sest_date};
+use warroom_core::gww_nav::{DIRS, LOG_ADDRESS, LOG_TITLE, title_of};
+use warroom_core::gww_text::{next_yearly, plain_text};
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 
@@ -104,6 +110,9 @@ pub fn target_icon(target: &str, size: f64) -> AnyView {
             Some(src) => img(Some(src)),
             None => view! { <Icon icon=icons::BUILDING_2 size=size stroke_width=1.5 /> }.into_any(),
         },
+        k if k == "holiday" || (k == "site" && id == "holidays") => {
+            view! { <Icon icon=icons::CALENDAR_DAYS size=size stroke_width=1.5 /> }.into_any()
+        }
         "site" if id == "log" => view! { <Icon icon=icons::HISTORY size=size stroke_width=1.5 /> }.into_any(),
         "site" => img(icon_url(if id == "citizens" { CITIZENS.icon } else { GOV.icon })),
         "dir" => dir_icon(id)
@@ -118,6 +127,7 @@ fn kind_label(kind: &str) -> &'static str {
         "manual" => "Training manual",
         "ministry" => "Ministry",
         "company" => "Corporation",
+        "holiday" => "Holiday",
         "site" => "Super Earth",
         "dir" => "Directory",
         "app" => "In the tracker",
@@ -248,6 +258,19 @@ fn broadcast(text: &str) -> AnyView {
             <p>
                 <b class="caps">"Ship broadcast"</b>
                 <span>"“"{text.to_string()}"”"</span>
+            </p>
+        </aside>
+    }
+    .into_any()
+}
+
+fn sourced_quote(from: &'static str, text: &'static str) -> AnyView {
+    view! {
+        <aside class="gww-quote">
+            <Icon icon=icons::QUOTE size=16.0 />
+            <p>
+                <b class="caps">{from}</b>
+                <span>"“"{text}"”"</span>
             </p>
         </aside>
     }
@@ -695,19 +718,6 @@ fn humanity() -> &'static str {
     MINISTRIES.iter().find(|m| m.id == "humanity").map_or("", |m| m.color)
 }
 
-pub fn citizens_tile() -> AnyView {
-    site_tile(
-        "site:citizens".into(),
-        CITIZENS.address,
-        CITIZENS.title.into(),
-        CITIZENS.summary.into(),
-        view! { <img src=icon_url(CITIZENS.icon) alt="" /> }.into_any(),
-        Some(humanity().into()),
-        Signal::stored(false),
-        false,
-    )
-}
-
 pub fn gov_tile() -> AnyView {
     site_tile(
         "site:gov".into(),
@@ -725,8 +735,8 @@ pub fn log_tile(log_text: Signal<String>) -> AnyView {
     (move || {
         site_tile(
             "site:log".into(),
-            "se://hc/war-log",
-            "Galactic war log".into(),
+            LOG_ADDRESS,
+            LOG_TITLE.into(),
             log_text.get(),
             view! { <Icon icon=icons::HISTORY size=26.0 stroke_width=1.5 /> }.into_any(),
             Some("var(--f-humans)".into()),
@@ -916,7 +926,8 @@ pub fn company_page(c: &'static Company, heading: HeadingRef) -> AnyView {
         view! {
             <article class="gww-page" style=format!("--site: {};", c.color)>
                 {banner(
-                    Some(company_mark(c)),
+                    // The name is beside the banner's picture, so a company without a logo shows no picture there.
+                    c.logo.and_then(logo_url).map(|_| company_mark(c)),
                     vec![crumb("Corporations", Some("dir:corps")), crumb(c.trade, None)],
                     c.name.into(),
                     Some(slogan_or_summary(c.slogan, c.summary)),
@@ -944,6 +955,47 @@ pub fn company_page(c: &'static Company, heading: HeadingRef) -> AnyView {
     with_rail(rail, here, page)
 }
 
+const GOV_TABS: [(&str, &str); 3] =
+    [("gov", "Managed Democracy"), ("citizens", "Citizen classes"), ("holidays", "Holidays")];
+
+/// Managed Democracy's own menu: its sub-sites are reached from here, not from the G.W.W. home.
+fn gov_nav(at: &str) -> AnyView {
+    let nav = use_gww_nav();
+    view! {
+        <nav class="gww-sitenav" aria-label="Managed Democracy">
+            <span class="gww-sitenav-brand caps">
+                <img src=icon_url(GOV.icon) alt="" width="18" height="18" />
+                "se://gov"
+            </span>
+            {GOV_TABS
+                .iter()
+                .map(|&(id, label)| {
+                    let on = id == at;
+                    let target = format!("site:{id}");
+                    view! {
+                        <button
+                            class=format!("gww-sitenav-link caps {}", if on { "on" } else { "" })
+                            aria-current=on.then_some("page")
+                            on:click=move |e| nav.follow(&target, Some(&e))
+                        >
+                            {label}
+                        </button>
+                    }
+                })
+                .collect_view()}
+        </nav>
+    }
+    .into_any()
+}
+
+fn gov_crumbs(site: &str) -> Vec<Crumb> {
+    let mut crumbs = vec![crumb("Super Earth", Some("dir:gov"))];
+    if site != "gov" {
+        crumbs.push(crumb(GOV.title, Some("site:gov")));
+    }
+    crumbs
+}
+
 /// Super Earth's own sites: Managed Democracy, and the Citizenship Classification Structure under it.
 pub fn gov_page(site: &str, heading: HeadingRef) -> AnyView {
     let gov = site == "gov";
@@ -953,16 +1005,13 @@ pub fn gov_page(site: &str, heading: HeadingRef) -> AnyView {
     } else {
         (CITIZENS.title, CITIZENS.icon, CITIZENS.summary, CITIZENS.sections, CITIZENS.related, CITIZENS.sources)
     };
-    let mut crumbs = vec![crumb("Super Earth", Some("dir:gov"))];
-    if !gov {
-        crumbs.push(crumb(GOV.title, Some("site:gov")));
-    }
     let sources: Vec<&'static Source> = sources.iter().collect();
     view! {
         <article class="gww-page" style=format!("--site: {};", if gov { "var(--f-humans)" } else { humanity() })>
+            {gov_nav(site)}
             {banner(
                 Some(view! { <img src=icon_url(icon) alt="" width="72" height="72" /> }.into_any()),
-                crumbs,
+                gov_crumbs(site),
                 title.into(),
                 Some(summary.into_any()),
                 heading,
@@ -977,6 +1026,134 @@ pub fn gov_page(site: &str, heading: HeadingRef) -> AnyView {
                 &sources,
                 Some(if gov { "Training manual tips are quoted from the game." } else { "Ship broadcasts are quoted from the game." }),
             )}
+        </article>
+    }
+    .into_any()
+}
+
+const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+fn date_badge(h: &Holiday) -> AnyView {
+    view! {
+        <span class="gww-date" aria-hidden="true">
+            <span class="caps">{MONTHS[h.month as usize - 1]}</span>
+            <b class="num">{h.day}</b>
+        </span>
+    }
+    .into_any()
+}
+
+fn countdown(days: i64) -> String {
+    match days {
+        0 => "Today".into(),
+        1 => "Tomorrow".into(),
+        n => format!("In {n} days"),
+    }
+}
+
+fn days_until(h: &Holiday, now: f64) -> i64 {
+    let (y, m, d) = js::local_today(now);
+    next_yearly(&[(h.month, h.day)], y, m, d).map_or(0, |(_, n)| n)
+}
+
+fn holiday_target(h: &Holiday) -> String {
+    format!("holiday:{}", h.id)
+}
+
+pub fn holidays_page(heading: HeadingRef) -> AnyView {
+    let nav = use_gww_nav();
+    let now = js::use_now(60.0 * 60_000.0);
+    let cards = move || {
+        let now = now.get();
+        HOLIDAYS
+            .iter()
+            .map(|h| {
+                let days = days_until(h, now);
+                let target = holiday_target(h);
+                view! {
+                    <li>
+                        <button
+                            class=format!("gww-holiday-card {}", if days == 0 { "today" } else { "" })
+                            style=format!("--site: {};", h.color)
+                            on:click=move |e| nav.follow(&target, Some(&e))
+                        >
+                            {date_badge(h)}
+                            <span class="gww-holiday-body">
+                                <span class="gww-address num">{h.address}</span>
+                                <b class="gww-site-title">{h.name}</b>
+                                <span class="caps gww-holiday-when">{h.when}</span>
+                                <span class="gww-site-text">{h.summary}</span>
+                                {h.sections.first().and_then(|s| s.text).map(|t| view! {
+                                    <span class="gww-holiday-story">{plain_text(t)}</span>
+                                })}
+                            </span>
+                            <span class=format!("gww-holiday-in caps num {}", if days <= 1 { "soon" } else { "" })>
+                                {countdown(days)}
+                            </span>
+                        </button>
+                    </li>
+                }
+            })
+            .collect_view()
+    };
+    let sources: Vec<&'static Source> = HOLIDAYS.iter().flat_map(|h| h.sources.iter()).collect();
+    view! {
+        <article class="gww-page" style="--site: var(--cta);">
+            {gov_nav("holidays")}
+            {banner(
+                Some(view! { <Icon icon=icons::CALENDAR_DAYS size=40.0 stroke_width=1.5 /> }.into_any()),
+                gov_crumbs("holidays"),
+                HOLIDAYS_SITE.title.into(),
+                Some(HOLIDAYS_SITE.summary.into_any()),
+                heading,
+                false,
+            )}
+            <ol class="gww-holidays">{cards}</ol>
+            {related(HOLIDAYS_SITE.related.to_vec(), "Read next")}
+            {source_line(&sources, None)}
+        </article>
+    }
+    .into_any()
+}
+
+pub fn holiday_page(h: &'static Holiday, heading: HeadingRef) -> AnyView {
+    let prefix = format!("gww-{}", h.id);
+    let now = js::use_now(60.0 * 60_000.0);
+    let days = Memo::new(move |_| days_until(h, now.get()));
+    let mut crumbs = gov_crumbs("holidays");
+    crumbs.push(crumb("Holidays", Some("site:holidays")));
+    let at = HOLIDAYS.iter().position(|x| x.id == h.id).unwrap_or(0);
+    let sources: Vec<&'static Source> = h.sources.iter().collect();
+    view! {
+        <article class="gww-page" style=format!("--site: {};", h.color)>
+            {gov_nav("holidays")}
+            {banner(
+                Some(date_badge(h)),
+                crumbs,
+                h.name.into(),
+                Some(view! {
+                    {h.summary}
+                    " "
+                    <span class=move || format!("gww-holiday-in caps num {}", if days.get() <= 1 { "soon" } else { "" })>
+                        {h.when}
+                        " · "
+                        {move || countdown(days.get())}
+                    </span>
+                }
+                .into_any()),
+                heading,
+                false,
+            )}
+            {h.quotes.iter().take(1).map(|q| sourced_quote(q.from, q.text)).collect_view()}
+            {toc(h.sections, &prefix)}
+            {h.sections.iter().enumerate().map(|(i, sec)| section_block(sec, format!("{prefix}-{i}"))).collect_view()}
+            {h.quotes.iter().skip(1).map(|q| sourced_quote(q.from, q.text)).collect_view()}
+            {related(h.related.to_vec(), "Read next")}
+            {source_line(
+                &sources,
+                (!h.quotes.is_empty()).then_some("Decrees, carols, tips and broadcasts are quoted from the game."),
+            )}
+            {pager(HOLIDAYS.iter().map(holiday_target).collect(), at, "holiday")}
         </article>
     }
     .into_any()
@@ -1004,6 +1181,20 @@ pub fn missing_page(address: String, heading: HeadingRef) -> AnyView {
     .into_any()
 }
 
+fn log_box(title: String, note: AnyView, icon: AnyView, body: AnyView) -> AnyView {
+    view! {
+        <details class="gww-fold gww-logbox" open>
+            <summary>
+                <span class="gww-logbox-icon" aria-hidden="true">{icon}</span>
+                <b>{title}</b>
+                <span class="caps num">{note}</span>
+            </summary>
+            <div class="gww-logbox-body">{body}</div>
+        </details>
+    }
+    .into_any()
+}
+
 #[derive(Clone, Copy, PartialEq)]
 enum LogFilter {
     All,
@@ -1011,56 +1202,46 @@ enum LogFilter {
     Lost,
 }
 
-pub fn war_log_page(heading: HeadingRef) -> AnyView {
+const LOG_DAYS: usize = 7;
+
+fn war_log() -> AnyView {
     let h = history();
     let show = RwSignal::new(LogFilter::All);
+    let all_days = RwSignal::new(false);
     let changes = h.changes;
     let ready = h.ready;
-    let lead = move || {
-        if ready.get() {
-            let (lib, total) = changes.with(|c| (c.iter().filter(|c| c.change.to == Faction::Humans).count(), c.len()));
-            view! {
-                <span class="num">
-                    <span style="color: var(--f-humans);">{lib}" liberated"</span>
-                    " ·"
-                    " "
-                    <span style="color: var(--bad);">{total - lib}" lost"</span>
-                    " since tracking began"
-                </span>
+    let days = Memo::new(move |_| {
+        let s = show.get();
+        let mut days: Vec<(String, Vec<_>)> = Vec::new();
+        changes.with(|c| {
+            for c in
+                c.iter().filter(|c| s == LogFilter::All || (s == LogFilter::Won) == (c.change.to == Faction::Humans))
+            {
+                let day = fmt_date(c.change.at);
+                match days.last_mut() {
+                    Some((d, items)) if *d == day => items.push(c.clone()),
+                    _ => days.push((day, vec![c.clone()])),
+                }
             }
-            .into_any()
-        } else {
-            "Every planet that changed hands since tracking began.".into_any()
-        }
-    };
+        });
+        days
+    });
     let body = move || {
         if !ready.get() {
             return view! { <Loading what="the war archive" rows=3 /> }.into_any();
         }
-        let s = show.get();
-        let list: Vec<_> = changes.with(|c| {
-            c.iter()
-                .filter(|c| s == LogFilter::All || (s == LogFilter::Won) == (c.change.to == Faction::Humans))
-                .cloned()
-                .collect()
-        });
+        let list = days.get();
         if list.is_empty() {
-            let text = match s {
-                LogFilter::All => "No planet has changed hands since tracking began.".to_string(),
-                LogFilter::Won => "No planet has been liberated since tracking began.".to_string(),
-                LogFilter::Lost => "No planet has been lost since tracking began.".to_string(),
+            let text = match show.get() {
+                LogFilter::All => "No planet has changed hands since tracking began.",
+                LogFilter::Won => "No planet has been liberated since tracking began.",
+                LogFilter::Lost => "No planet has been lost since tracking began.",
             };
             return view! { <Empty>{text}</Empty> }.into_any();
         }
-        let mut days: Vec<(String, Vec<_>)> = Vec::new();
-        for c in list {
-            let day = fmt_date(c.change.at);
-            match days.last_mut() {
-                Some((d, items)) if *d == day => items.push(c),
-                _ => days.push((day, vec![c])),
-            }
-        }
-        days.into_iter()
+        let shown = if all_days.get() { list.len() } else { LOG_DAYS };
+        list.into_iter()
+            .take(shown)
             .map(|(day, items)| view! {
                 <section class="gww-log-day">
                     <h3 class="caps num">{day}</h3>
@@ -1103,31 +1284,186 @@ pub fn war_log_page(heading: HeadingRef) -> AnyView {
             .collect_view()
             .into_any()
     };
+    let more =
+        move || {
+            let n = days.with(Vec::len);
+            (ready.get() && n > LOG_DAYS).then(|| view! {
+            <button class="gww-chip gww-more" on:click=move |_| all_days.update(|a| *a = !*a)>
+                {move || if all_days.get() { "Show fewer days".to_string() } else { format!("Show all {n} days") }}
+            </button>
+        })
+        };
+    view! {
+        <div class="gww-filter" role="group" aria-label="Show">
+            {[(LogFilter::All, "Everything"), (LogFilter::Won, "Liberated"), (LogFilter::Lost, "Lost")]
+                .map(|(k, label)| view! {
+                    <button
+                        class=move || format!("gww-chip {}", if show.get() == k { "on" } else { "" })
+                        aria-pressed=move || (show.get() == k).to_string()
+                        on:click=move |_| show.set(k)
+                    >
+                        {label}
+                    </button>
+                })
+                .collect_view()}
+        </div>
+        {body}
+        {more}
+    }
+    .into_any()
+}
+
+const ACTIVITY_DAYS: usize = 14;
+
+fn day_stat(peak: bool, value: f64, at: String, top: f64) -> AnyView {
+    view! {
+        <span class=format!("gww-day-stat {}", if peak { "peak" } else { "low" })>
+            <span class="gww-day-num num">
+                <b>{fmt_int(value)}</b>
+                <span class="caps">
+                    <span class="sr-only">{if peak { "peak" } else { "lowest" }}" "</span>
+                    "at "
+                    {at}
+                </span>
+            </span>
+            <span class="gww-day-bar" aria-hidden="true">
+                <i style=format!("width: {}%;", num(value / top * 100.0))></i>
+            </span>
+        </span>
+    }
+    .into_any()
+}
+
+fn activity_days(now: Memo<f64>) -> AnyView {
+    let q = use_war_days();
+    let all = RwSignal::new(false);
+    let hm = |ms: f64| sest_clock(ms).chars().take(5).collect::<String>();
+    (move || {
+        if q.loading.get() {
+            return view! { <Loading what="the activity log" rows=2 /> }.into_any();
+        }
+        let days = q.data.get().unwrap_or_default();
+        if days.is_empty() {
+            return view! { <Empty>"No days logged yet. Each day is recorded from the next collector update on."</Empty> }
+                .into_any();
+        }
+        let shown: Vec<_> = days.iter().take(if all.get() { days.len() } else { ACTIVITY_DAYS }).copied().collect();
+        let top = shown.iter().fold(1.0, |m: f64, d| m.max(d.peak));
+        let today = (now.get() / 86_400_000.0).floor() * 86_400_000.0;
+        let n = days.len();
+        view! {
+            <div class="gww-days-head caps" aria-hidden="true">
+                <span>"SEST day"</span>
+                <span>"Peak online"</span>
+                <span>"Lowest online"</span>
+            </div>
+            <ol class="gww-days">
+                {shown
+                    .into_iter()
+                    .map(|d| view! {
+                        <li class=(d.day == today).then_some("today")>
+                            <span class="gww-day-date num">
+                                {sest_date(d.day)}
+                                {(d.day == today).then(|| view! { <span class="caps">"Today, so far"</span> })}
+                            </span>
+                            {day_stat(true, d.peak, hm(d.peak_at), top)}
+                            {day_stat(false, d.low, hm(d.low_at), top)}
+                        </li>
+                    })
+                    .collect_view()}
+            </ol>
+            <p class="gww-note">"Each bar is the day's count against the busiest day listed."</p>
+            {(n > ACTIVITY_DAYS).then(|| view! {
+                <button class="gww-chip gww-more" on:click=move |_| all.update(|a| *a = !*a)>
+                    {if all.get_untracked() { "Show fewer days".to_string() } else { format!("Show all {n} days") }}
+                </button>
+            })}
+        }
+        .into_any()
+    })
+    .into_any()
+}
+
+#[component]
+fn StationJumps(station: i64, name: String, now: Memo<f64>) -> impl IntoView {
+    let q = use_station_jumps(move || station);
+    let jumps = Signal::derive(move || q.data.get().unwrap_or_default());
+    let note = move || match jumps.with(|j| j.len()) {
+        1 => "1 jump".to_string(),
+        n => format!("{n} jumps"),
+    };
+    let body = move || {
+        if q.loading.get() {
+            return view! { <Loading what="the jump log" rows=2 /> }.into_any();
+        }
+        if jumps.with(|j| j.is_empty()) {
+            return view! { <Empty>"No jumps logged yet. Each jump is recorded from the next collector update on."</Empty> }
+                .into_any();
+        }
+        view! { <JumpRoute jumps=jumps now=now /> }.into_any()
+    };
+    log_box(format!("{name} FTL jumps"), note.into_any(), view! { <DssIcon size=18.0 /> }.into_any(), body.into_any())
+}
+
+/// Every planet that changed hands and every station jump, as the collector logged them.
+pub fn logs_page(heading: HeadingRef) -> AnyView {
+    let h = history();
+    let changes = h.changes;
+    let ready = h.ready;
+    let clock = js::use_now(60_000.0);
+    let now = Memo::new(move |_| clock.get());
+    let stations = Memo::new(move |_| {
+        queries()
+            .stations
+            .with(|s| s.as_ref().map(|s| s.iter().map(|s| s.id32).collect::<Vec<_>>()).unwrap_or_default())
+    });
+    let war_note = move || {
+        if !ready.get() {
+            return "Planets that changed hands".into_any();
+        }
+        let (lib, total) = changes.with(|c| (c.iter().filter(|c| c.change.to == Faction::Humans).count(), c.len()));
+        view! {
+            <span style="color: var(--f-humans);">{lib}" liberated"</span>
+            " ·"
+            " "
+            <span style="color: var(--bad);">{total - lib}" lost"</span>
+        }
+        .into_any()
+    };
     view! {
         <article class="gww-page" style="--site: var(--f-humans);">
             {banner(
                 Some(view! { <Icon icon=icons::HISTORY size=40.0 stroke_width=1.5 /> }.into_any()),
                 vec![crumb("Super Earth", Some("dir:gov"))],
-                "Galactic war log".into(),
-                Some(lead.into_any()),
+                LOG_TITLE.into(),
+                Some(
+                    "The war log, Helldivers online day by day and the space stations' FTL jumps, since tracking began."
+                        .into_any(),
+                ),
                 heading,
                 false,
             )}
-            <div class="gww-filter" role="group" aria-label="Show">
-                {[(LogFilter::All, "Everything"), (LogFilter::Won, "Liberated"), (LogFilter::Lost, "Lost")]
-                    .map(|(k, label)| view! {
-                        <button
-                            class=move || format!("gww-chip {}", if show.get() == k { "on" } else { "" })
-                            aria-pressed=move || (show.get() == k).to_string()
-                            on:click=move |_| show.set(k)
-                        >
-                            {label}
-                        </button>
-                    })
-                    .collect_view()}
-            </div>
-            {body}
-            {related(vec!["manual:liberation", "manual:defense", "app:past"], "Read next")}
+            {log_box(
+                "War log".into(),
+                war_note.into_any(),
+                view! { <Icon icon=icons::GLOBE_2 size=18.0 /> }.into_any(),
+                war_log(),
+            )}
+            {log_box(
+                "Helldivers online".into(),
+                "Each SEST day, midnight to midnight".into_any(),
+                view! { <Icon icon=icons::USERS size=18.0 /> }.into_any(),
+                activity_days(now),
+            )}
+            <For
+                each=move || stations.get().into_iter().enumerate()
+                key=|(i, id)| (*i, *id)
+                children=move |(i, id)| {
+                    let name = if i == 0 { "DSS".to_string() } else { format!("Station {}", i + 1) };
+                    view! { <StationJumps station=id name=name now=now /> }
+                }
+            />
+            {related(vec!["manual:liberation", "manual:dss", "app:stations", "app:past"], "Read next")}
         </article>
     }
     .into_any()
@@ -1136,7 +1472,7 @@ pub fn war_log_page(heading: HeadingRef) -> AnyView {
 pub fn dir_page(id: &str, heading: HeadingRef, log_text: Signal<String>) -> AnyView {
     let lead = match id {
         "manuals" => "How the Second Galactic War works, in reading order.",
-        "gov" => "The Federation's own sites: its government, its ministries, its war log and its news.",
+        "gov" => "The Federation's own sites: its government, its ministries, its logs and its news.",
         _ => "The mega-corporations that arm, feed, heal and bank the Federation.",
     };
     let title = DIRS.iter().find(|(k, _)| *k == id).map_or("", |(_, t)| *t);
@@ -1162,7 +1498,6 @@ pub fn dir_page(id: &str, heading: HeadingRef, log_text: Signal<String>) -> AnyV
         "gov" => view! {
             <div class="gww-sites">
                 {gov_tile()}
-                {citizens_tile()}
                 {log_tile(log_text)}
                 {news_tile()}
                 {MINISTRIES.iter().map(ministry_tile).collect_view()}

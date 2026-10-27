@@ -1,4 +1,5 @@
 use crate::api::queries::{self, queries};
+use crate::features::planet::activity::ActivitySection;
 use crate::features::planet::globe::SuperEarthGlobe;
 use crate::features::planet::record::use_planet_record;
 use crate::features::planet::sections::{
@@ -9,6 +10,7 @@ use crate::features::planet::tint::planet_tint;
 use crate::features::planets::fronts::{
     Front, FrontKind, build_front, major_order_planets, planet_rate, station_planets,
 };
+use crate::history::PlayerReading;
 use crate::js::{self, num};
 use crate::state::{HellpadModule, settings, ui};
 use crate::ui::emblems::{DssIcon, FactionEmblem};
@@ -16,8 +18,10 @@ use crate::ui::feed::FeedTag;
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{CtaButton, Loading, Overlay};
 use leptos::prelude::*;
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::f64::consts::PI;
+use std::sync::Arc;
 use warroom_core::api::{Faction, Planet};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, sest_clock, sest_date};
@@ -228,7 +232,36 @@ fn Body(index: i64) -> impl IntoView {
                 view! {
                     <div class="pd">
                         <Hero p=p front=front />
-                        <Show when=move || has_front.get()>
+                        <Show
+                            when=move || has_front.get()
+                            fallback=move || {
+                                view! {
+                                    <ActivitySection
+                                        title="Helldiver activity · last 24 h".to_string()
+                                        now=Signal::derive(move || p.with(|p| p.statistics.player_count))
+                                        points=Signal::derive(move || {
+                                            record.with(|r| {
+                                                let mut points: Vec<PlayerReading> = r
+                                                    .samples
+                                                    .iter()
+                                                    .map(|s| PlayerReading { at: s.at, players: s.players })
+                                                    .chain(r.idle.iter().copied())
+                                                    .collect();
+                                                points.sort_by(|a, b| a.at.partial_cmp(&b.at).unwrap_or(Ordering::Equal));
+                                                Arc::new(points)
+                                            })
+                                        })
+                                        loading=Signal::derive(move || record.with(|r| r.loading))
+                                        empty=Signal::derive(move || {
+                                            format!(
+                                                "No Helldivers recorded on {} in the last 24 hours. A reading is kept whenever any are there.",
+                                                p.with(|p| p.name.clone())
+                                            )
+                                        })
+                                    />
+                                }
+                            }
+                        >
                             <LiberationSection p=p front=front />
                             <FrontLineSection p=p front=front record=record />
                         </Show>

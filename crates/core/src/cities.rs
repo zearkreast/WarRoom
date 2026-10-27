@@ -4,9 +4,10 @@ use crate::progress::liberation_percent;
 use regex_lite::Regex;
 use std::sync::LazyLock;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum CityState {
     Liberating,
+    #[default]
     Locked,
     Held,
     Secured,
@@ -29,7 +30,7 @@ impl CityState {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct City {
     pub id: i64,
     pub name: String,

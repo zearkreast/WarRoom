@@ -1,5 +1,5 @@
 use crate::api::queries::queries;
-use crate::history::{self, history};
+use crate::history::{self, PlayerReading, history};
 use crate::js;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -13,6 +13,8 @@ pub struct PlanetRecord {
     pub loading: bool,
     /// The 24 hours of samples up to the newest data (not the clock, so a stalled collector still shows its last day).
     pub samples: Arc<Vec<Sample>>,
+    /// Helldivers on the planet over the same 24 hours while it had no campaign.
+    pub idle: Arc<Vec<PlayerReading>>,
     pub changes: Arc<Vec<OwnerChange>>,
     pub defending_at: Arc<Vec<f64>>,
     /// When the collector first recorded this planet (or anything, if never this one).
@@ -49,6 +51,7 @@ pub fn use_planet_record(planet: i64) -> ReadSignal<PlanetRecord> {
             };
             let result = futures::try_join!(
                 history::samples(planet, since),
+                history::idle_players(planet, since),
                 history::changes(Some(planet), 200),
                 history::defending_times(planet),
                 start
@@ -57,9 +60,10 @@ pub fn use_planet_record(planet: i64) -> ReadSignal<PlanetRecord> {
                 return;
             }
             match result {
-                Ok((samples, changes, defending_at, record_start)) => set_rec.set(PlanetRecord {
+                Ok((samples, idle, changes, defending_at, record_start)) => set_rec.set(PlanetRecord {
                     loading: false,
                     samples: Arc::new(samples),
+                    idle: Arc::new(idle),
                     changes: Arc::new(changes.into_iter().map(|c| c.change).collect()),
                     defending_at: Arc::new(defending_at),
                     record_start,
