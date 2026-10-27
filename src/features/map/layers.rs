@@ -1,3 +1,5 @@
+//! Map layers shared with the Theater of War: sector tiles and the Gloom.
+
 use crate::js::{self, num};
 use leptos::prelude::*;
 use std::cell::RefCell;

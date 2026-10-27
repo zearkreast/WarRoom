@@ -1,3 +1,5 @@
+//! The Major Order progress bar, the count-up beside it, and the outlook tag.
+
 use crate::js::{self, num};
 use crate::ui::primitives::Countdown;
 use leptos::prelude::*;
@@ -7,7 +9,7 @@ use std::rc::Rc;
 use warroom_core::format::{fmt_compact_long, fmt_pct};
 use warroom_core::major_order::{DeadlineOutlook, TaskOutlook, TaskView, task_percent};
 
-// Keep in sync with --mo-grow in majorOrder.css.
+// Keep in sync with --mo-grow in major_order.css.
 const GROW_MS: f64 = 1100.0;
 
 /// Counts up to `to` from zero on first paint and glides to each new value.

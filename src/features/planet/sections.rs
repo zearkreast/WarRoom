@@ -1,10 +1,12 @@
+//! The planet detail's sections, from liberation and the front line to points of interest and supply lines.
+
+use crate::api::fronts::{Front, FrontKind};
 use crate::api::queries::queries;
 use crate::features::map::poi::{PoiGlyph, poi_kind, poi_origin};
 use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
 use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
 use crate::features::planet::cities::CityList;
 use crate::features::planet::record::PlanetRecord;
-use crate::features::planets::fronts::{Front, FrontKind};
 use crate::js::{self, fmt_date, fmt_date_time};
 use crate::state::ui;
 use crate::ui::chart::{

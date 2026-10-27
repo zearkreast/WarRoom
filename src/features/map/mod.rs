@@ -1,3 +1,5 @@
+//! The Galaxy map page: the map itself, its overlays, marks, cards and controls.
+
 pub mod camera;
 pub mod card;
 pub mod galaxy;

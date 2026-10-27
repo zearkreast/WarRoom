@@ -1,5 +1,5 @@
+use crate::api::history::history;
 use crate::api::queries::queries;
-use crate::history::history;
 use crate::js;
 use crate::state::{View, ui};
 use crate::ui::emblems::FactionEmblem;

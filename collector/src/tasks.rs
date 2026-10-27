@@ -215,7 +215,7 @@ impl Collector {
         Ok(rows.into_iter().next().and_then(|mut r| r.get_mut("data").map(Value::take)))
     }
 
-    // Keep the wording in step with the app's own alerts (src/sync.rs). A failed push is only logged: the
+    // Keep the wording in step with the app's own alerts (src/alerts/watch.rs). A failed push is only logged: the
     // snapshot is already written, so a retry wouldn't see the news as new.
     fn announce(&mut self, items: &[(String, String)]) -> String {
         let Some(push) = self.push.as_mut() else { return String::new() };

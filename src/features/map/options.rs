@@ -1,3 +1,5 @@
+//! The choices for each map setting, with their labels.
+
 use crate::state::{MapDispatches, MapOverlay, MapPlanets, MapQuality};
 
 pub fn overlay_options() -> Vec<(MapOverlay, &'static str)> {

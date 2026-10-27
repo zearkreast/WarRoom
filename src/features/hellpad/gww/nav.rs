@@ -1,3 +1,5 @@
+//! G.W.W. links (following a target, text with inline links) and the URLs of its pictures.
+
 use crate::api::queries::queries;
 use crate::assets;
 use crate::state::{HellpadModule, OptionsAnchor, View, global, ui};
@@ -83,7 +85,7 @@ impl GwwNav {
         match id {
             "stations" => u.open_module(Some(HellpadModule::Stations)),
             "planets" => u.open_module(Some(HellpadModule::Planets)),
-            "past" => u.open_module(Some(HellpadModule::Campaigns)),
+            "past" => u.open_module(Some(HellpadModule::PastCampaigns)),
             "news" => u.set_view(View::News),
             "overview" => u.set_view(View::Overview),
             "map" => u.set_view(View::Map),

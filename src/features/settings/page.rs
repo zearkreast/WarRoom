@@ -1,3 +1,5 @@
+//! Settings: interface, galaxy map, notifications and updates.
+
 use crate::alerts::{ToastKind, notify};
 use crate::api::queries::queries;
 use crate::config::APP_VERSION;

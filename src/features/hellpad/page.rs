@@ -1,13 +1,15 @@
+//! The Hellpad page: the masthead, the module tiles, and the open module.
+
 use crate::api::queries::queries;
 use crate::features::hellpad::call_in::{CallInCode, CallInWait, MarkPad, use_call_in};
 use crate::features::hellpad::gww::GwwModule;
-use crate::features::hellpad::past::PastCampaignsModule;
+use crate::features::hellpad::past_campaigns::PastCampaignsModule;
 use crate::features::hellpad::planets::PlanetsModule;
 use crate::features::hellpad::stations::StationsModule;
 use crate::js::{self, num};
 use crate::state::{HellpadModule, settings, ui};
 use crate::ui::emblems::{FactionEmblem, HellpadMark, IconLike, icon_view};
-use crate::ui::feed::{FeedState, use_feed_status};
+use crate::ui::feed_status::{FeedState, use_feed_status};
 use crate::ui::icons::{self, Icon, IconData};
 use crate::ui::primitives::{Countdown, LiveDot, StatusChip};
 use leptos::html;
@@ -33,7 +35,9 @@ fn module_info(m: HellpadModule) -> ModuleInfo {
             ModuleInfo { title: "Space stations", path: "hp://stations", color: "var(--impact)" }
         }
         HellpadModule::Gww => ModuleInfo { title: "G.W.W.", path: "hp://gww", color: "var(--cta)" },
-        HellpadModule::Campaigns => ModuleInfo { title: "Past campaigns", path: "hp://archive", color: "var(--warn)" },
+        HellpadModule::PastCampaigns => {
+            ModuleInfo { title: "Past campaigns", path: "hp://archive", color: "var(--warn)" }
+        }
     }
 }
 
@@ -42,7 +46,7 @@ fn module_key(m: HellpadModule) -> &'static str {
         HellpadModule::Planets => "planets",
         HellpadModule::Stations => "stations",
         HellpadModule::Gww => "gww",
-        HellpadModule::Campaigns => "campaigns",
+        HellpadModule::PastCampaigns => "campaigns",
     }
 }
 
@@ -304,7 +308,7 @@ fn PastTile() -> impl IntoView {
     });
     view! {
         <ModuleTile
-            id=HellpadModule::Campaigns
+            id=HellpadModule::PastCampaigns
             icon=icons::ARCHIVE.into()
             text="Every Galactic Campaign that has ended: its Major Orders, outcome and reward."
             meta=Signal::derive(move || {
@@ -441,7 +445,7 @@ pub fn HellpadPage() -> impl IntoView {
                     Some(HellpadModule::Planets) => view! { <PlanetsModule /> }.into_any(),
                     Some(HellpadModule::Stations) => view! { <StationsModule /> }.into_any(),
                     Some(HellpadModule::Gww) => view! { <GwwModule /> }.into_any(),
-                    Some(HellpadModule::Campaigns) => view! { <PastCampaignsModule /> }.into_any(),
+                    Some(HellpadModule::PastCampaigns) => view! { <PastCampaignsModule /> }.into_any(),
                 }}
             </div>
         </div>

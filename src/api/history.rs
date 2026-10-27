@@ -6,7 +6,7 @@ use leptos::prelude::*;
 use serde::Deserialize;
 use std::sync::OnceLock;
 use warroom_core::factions::faction_by_id;
-use warroom_core::history::OwnerChange;
+use warroom_core::owner_changes::OwnerChange;
 use warroom_core::progress::Sample;
 use warroom_core::time::{iso_string, parse_ms};
 

@@ -1,3 +1,5 @@
+//! Galaxy-wide history: war samples, each day's peak and low, and Helldivers per front.
+
 use crate::api::cache::{Query, use_query};
 use crate::api::queries::queries;
 use crate::api::source::{self, encode};

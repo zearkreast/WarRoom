@@ -1,3 +1,5 @@
+//! The planets listed for a faction on the control ring: its busiest, or Super Earth's fixed list and pool.
+
 use crate::api::{Faction, Planet};
 use crate::collate::locale_cmp;
 use regex_lite::Regex;

@@ -1,3 +1,5 @@
+//! Galaxy geometry: map projection, the game's sector rings, sector territory, supply lines and anomalies.
+
 use crate::api::{Faction, Planet, Position};
 use crate::format::{js_round, to_fixed};
 use std::collections::{HashMap, HashSet};

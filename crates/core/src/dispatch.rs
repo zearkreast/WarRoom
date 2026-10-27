@@ -1,3 +1,5 @@
+//! Super Earth dispatches: their kind from the headline, the body without it, and the recent ones.
+
 use crate::api::Dispatch;
 use crate::format::{MarkupSpan, dispatch_title, parse_markup};
 use crate::time::parse_ms;

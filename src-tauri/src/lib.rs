@@ -1,3 +1,5 @@
+//! The Tauri shell around the web app: plugins, the single-instance lock, the updater and the tray.
+
 #[cfg(desktop)]
 mod tray;
 

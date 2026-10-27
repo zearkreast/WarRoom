@@ -1,8 +1,7 @@
 //! Shared chart styling: hairline solid grid and axes one step off the surface, text in label ink (never
 //! series colours), a crosshair tooltip on every chart.
 //!
-//! The SVG mirrors what Recharts 3 drew (class names, tick placement and hiding, tooltip box), so the
-//! stylesheets written against it still apply.
+//! Tick placement and hiding and the tooltip box follow Recharts 3's defaults.
 
 use crate::js::{self, num};
 use leptos::html;
@@ -302,11 +301,10 @@ fn y_axis_view(a: &YAxis, x: f64, f: &Frame, axis: usize, chart_h: f64) -> AnyVi
     let _ = inner;
     let coords: Vec<(f64, String)> = a.ticks.iter().map(|t| (f.y(axis, *t), (a.fmt)(*t))).collect();
     let ticks = visible_ticks(&coords, 0.0, chart_h, true, a.font_size);
-    let class =
-        format!("recharts-text recharts-cartesian-axis-tick-value {}", a.tick_class.clone().unwrap_or_default());
+    let class = format!("chart-text chart-cartesian-axis-tick-value {}", a.tick_class.clone().unwrap_or_default());
     let side = if a.right { "right" } else { "left" };
     view! {
-        <g class="recharts-layer recharts-cartesian-axis recharts-yAxis yAxis">
+        <g class="chart-layer chart-cartesian-axis chart-yAxis yAxis">
             {a.line.then(|| view! {
                 <line
                     orientation=side
@@ -314,7 +312,7 @@ fn y_axis_view(a: &YAxis, x: f64, f: &Frame, axis: usize, chart_h: f64) -> AnyVi
                     height=num(f.height)
                     x=num(x)
                     y=num(f.top)
-                    class="recharts-cartesian-axis-line"
+                    class="chart-cartesian-axis-line"
                     stroke=a.stroke.clone()
                     fill="none"
                     x1=num(edge)
@@ -323,12 +321,12 @@ fn y_axis_view(a: &YAxis, x: f64, f: &Frame, axis: usize, chart_h: f64) -> AnyVi
                     y2=num(f.top + f.height)
                 ></line>
             })}
-            <g class="recharts-cartesian-axis-ticks recharts-yAxis-ticks">
+            <g class="chart-cartesian-axis-ticks chart-yAxis-ticks">
                 {ticks
                     .into_iter()
                     .map(|(_, at, label)| {
                         view! {
-                            <g class="recharts-layer recharts-cartesian-axis-tick">
+                            <g class="chart-layer chart-cartesian-axis-tick">
                                 <text
                                     orientation=side
                                     width=num(a.width)
@@ -359,7 +357,7 @@ fn x_axis_view(a: &XAxis, f: &Frame, bottom: f64, chart_w: f64) -> AnyView {
     let coords: Vec<(f64, String)> = a.ticks.iter().map(|t| (f.x(*t), (a.fmt)(*t))).collect();
     let ticks = visible_ticks(&coords, 0.0, chart_w, false, a.font_size);
     view! {
-        <g class="recharts-layer recharts-cartesian-axis recharts-xAxis xAxis">
+        <g class="chart-layer chart-cartesian-axis chart-xAxis xAxis">
             {a.line.then(|| view! {
                 <line
                     orientation="bottom"
@@ -367,7 +365,7 @@ fn x_axis_view(a: &XAxis, f: &Frame, bottom: f64, chart_w: f64) -> AnyView {
                     height=num(a.height)
                     x=num(f.left)
                     y=num(y)
-                    class="recharts-cartesian-axis-line"
+                    class="chart-cartesian-axis-line"
                     stroke=a.stroke.clone()
                     fill="none"
                     x1=num(f.left)
@@ -376,12 +374,12 @@ fn x_axis_view(a: &XAxis, f: &Frame, bottom: f64, chart_w: f64) -> AnyView {
                     y2=num(y)
                 ></line>
             })}
-            <g class="recharts-cartesian-axis-ticks recharts-xAxis-ticks">
+            <g class="chart-cartesian-axis-ticks chart-xAxis-ticks">
                 {ticks
                     .into_iter()
                     .map(|(_, at, label)| {
                         view! {
-                            <g class="recharts-layer recharts-cartesian-axis-tick">
+                            <g class="chart-layer chart-cartesian-axis-tick">
                                 <text
                                     orientation="bottom"
                                     width=num(f.width)
@@ -389,7 +387,7 @@ fn x_axis_view(a: &XAxis, f: &Frame, bottom: f64, chart_w: f64) -> AnyView {
                                     stroke="none"
                                     x=num(at)
                                     y=num(text_y)
-                                    class="recharts-text recharts-cartesian-axis-tick-value"
+                                    class="chart-text chart-cartesian-axis-tick-value"
                                     text-anchor="middle"
                                     fill=a.tick_fill.clone()
                                     font-size=num(a.font_size)
@@ -409,7 +407,7 @@ fn x_axis_view(a: &XAxis, f: &Frame, bottom: f64, chart_w: f64) -> AnyView {
 fn series_view(s: &Series, xs: &[f64], f: &Frame) -> AnyView {
     if xs.len() < 2 {
         let kind = if s.fill.is_some() { "area" } else { "line" };
-        return view! { <g class=format!("recharts-layer recharts-{kind} {}", s.class)></g> }.into_any();
+        return view! { <g class=format!("chart-layer chart-{kind} {}", s.class)></g> }.into_any();
     }
     let mut pts: Vec<Option<(f64, f64)>> =
         xs.iter().zip(&s.values).map(|(x, v)| v.filter(|v| v.is_finite()).map(|v| (f.x(*x), f.y(s.axis, v)))).collect();
@@ -427,12 +425,12 @@ fn series_view(s: &Series, xs: &[f64], f: &Frame) -> AnyView {
             fill="none"
             width=num(f.width)
             height=num(f.height)
-            class=if s.fill.is_some() { "recharts-curve recharts-area-curve" } else { "recharts-curve recharts-line-curve" }
+            class=if s.fill.is_some() { "chart-curve chart-area-curve" } else { "chart-curve chart-line-curve" }
             d=line
         ></path>
     };
     match &s.fill {
-        None => view! { <g class=format!("recharts-layer recharts-line {}", s.class)>{curve}</g> }.into_any(),
+        None => view! { <g class=format!("chart-layer chart-line {}", s.class)>{curve}</g> }.into_any(),
         Some(fill) => {
             let (lo, hi) = f.y_domains.get(s.axis).copied().unwrap_or((0.0, 1.0));
             let floor = if lo >= 0.0 && hi >= 0.0 {
@@ -453,15 +451,15 @@ fn series_view(s: &Series, xs: &[f64], f: &Frame) -> AnyView {
                 })
                 .collect();
             view! {
-                <g class=format!("recharts-layer recharts-area {}", s.class)>
-                    <g class="recharts-layer">
+                <g class=format!("chart-layer chart-area {}", s.class)>
+                    <g class="chart-layer">
                         <path
                             fill=fill.clone()
                             fill-opacity=num(s.fill_opacity)
                             stroke="none"
                             width=num(f.width)
                             height=num(f.height)
-                            class="recharts-curve recharts-area-area"
+                            class="chart-curve chart-area-area"
                             d=area_path(&area, s.curve)
                         ></path>
                         {curve}
@@ -489,14 +487,14 @@ fn dots_view(s: &Series, xs: &[f64], f: &Frame) -> Option<AnyView> {
                     stroke-width="0"
                     fill=fill.clone()
                     fill-opacity=fill_opacity.clone()
-                    class=format!("recharts-dot recharts-{kind}-dot")
+                    class=format!("chart-dot chart-{kind}-dot")
                     cx=num(f.x(*x))
                     cy=num(f.y(s.axis, v))
                 ></circle>
             })
         })
         .collect_view();
-    Some(view! { <g class=format!("recharts-layer recharts-{kind}-dots")>{circles}</g> }.into_any())
+    Some(view! { <g class=format!("chart-layer chart-{kind}-dots")>{circles}</g> }.into_any())
 }
 
 /// One row of the default tooltip.
@@ -510,23 +508,23 @@ pub struct TipRow {
 pub fn default_tooltip(label: String, rows: Vec<TipRow>) -> AnyView {
     view! {
         <div
-            class="recharts-default-tooltip"
+            class="chart-default-tooltip"
             style="margin: 0px; padding: 10px; background: var(--surface-1); border: 1px solid var(--line-strong); white-space: nowrap; border-radius: 0px; font-size: 12px; box-shadow: var(--shadow-2);"
         >
-            <p class="recharts-tooltip-label" style="margin: 0px 0px 4px; color: var(--text-dim);">{label}</p>
-            <ul class="recharts-tooltip-item-list" style="padding: 0px; margin: 0px;">
+            <p class="chart-tooltip-label" style="margin: 0px 0px 4px; color: var(--text-dim);">{label}</p>
+            <ul class="chart-tooltip-item-list" style="padding: 0px; margin: 0px;">
                 {rows
                     .into_iter()
                     .map(|r| {
                         view! {
                             <li
-                                class="recharts-tooltip-item"
+                                class="chart-tooltip-item"
                                 style=format!("display: block; padding: 0px; color: var(--text-hi); --series: {};", r.color)
                             >
-                                <span class="recharts-tooltip-item-name">{r.name}</span>
-                                <span class="recharts-tooltip-item-separator">" : "</span>
-                                <span class="recharts-tooltip-item-value">{r.value}</span>
-                                <span class="recharts-tooltip-item-unit"></span>
+                                <span class="chart-tooltip-item-name">{r.name}</span>
+                                <span class="chart-tooltip-item-separator">" : "</span>
+                                <span class="chart-tooltip-item-value">{r.value}</span>
+                                <span class="chart-tooltip-item-unit"></span>
                             </li>
                         }
                     })
@@ -691,8 +689,8 @@ pub fn Chart(
                 p.y.first().map(|a| a.ticks.iter().map(|t| f.y(0, *t)).collect()).unwrap_or_default()
             };
             view! {
-                <g class="recharts-cartesian-grid">
-                    <g class="recharts-cartesian-grid-horizontal">
+                <g class="chart-cartesian-grid">
+                    <g class="chart-cartesian-grid-horizontal">
                         {ys.into_iter()
                             .map(|y| {
                                 view! {
@@ -727,7 +725,7 @@ pub fn Chart(
             .map(|r| {
                 let x = f.x(r.x);
                 view! {
-                    <g class="recharts-layer recharts-reference-line">
+                    <g class="chart-layer chart-reference-line">
                         <line
                             stroke=r.stroke.clone()
                             fill="none"
@@ -737,7 +735,7 @@ pub fn Chart(
                             y1=num(f.top + f.height)
                             x2=num(x)
                             y2=num(f.top)
-                            class="recharts-reference-line-line"
+                            class="chart-reference-line-line"
                         ></line>
                     </g>
                 }
@@ -757,7 +755,7 @@ pub fn Chart(
                         offset="5"
                         x=num(x)
                         y=num(y)
-                        class="recharts-text recharts-label"
+                        class="chart-text chart-label"
                         text-anchor="end"
                         fill="var(--text-dim)"
                         font-size="10"
@@ -772,7 +770,7 @@ pub fn Chart(
         let defs = defs.as_ref().map(|d| d.run());
         Some(view! {
             <svg
-                class="recharts-surface"
+                class="chart-surface"
                 width=num(w)
                 height=num(height)
                 viewBox=format!("0 0 {} {}", num(w), num(height))
@@ -801,7 +799,7 @@ pub fn Chart(
                         .filter_map(|s| {
                             let v = s.values.get(i).copied().flatten()?;
                             Some(view! {
-                                <g class="recharts-layer recharts-active-dot">
+                                <g class="chart-layer chart-active-dot">
                                     <circle
                                         cx=num(x)
                                         cy=num(f.y(s.axis, v))
@@ -809,7 +807,7 @@ pub fn Chart(
                                         fill=s.stroke.clone()
                                         stroke-width="2"
                                         stroke="#fff"
-                                        class="recharts-dot"
+                                        class="chart-dot"
                                     ></circle>
                                 </g>
                             })
@@ -822,7 +820,7 @@ pub fn Chart(
                             stroke-width="1"
                             fill="none"
                             pointer-events="none"
-                            class="recharts-curve recharts-tooltip-cursor"
+                            class="chart-curve chart-tooltip-cursor"
                             d=format!("M{},{}L{},{}", num(x), num(f.top), num(x), num(f.top + f.height))
                         ></path>
                         {dots}
@@ -855,17 +853,17 @@ pub fn Chart(
         } else {
             "pointer-events: none; visibility: hidden; position: absolute; top: 0px; left: 0px;".to_string()
         };
-        Some(view! { <div class="recharts-tooltip-wrapper" style=style node_ref=tip_node>{content}</div> })
+        Some(view! { <div class="chart-tooltip-wrapper" style=style node_ref=tip_node>{content}</div> })
     };
 
     view! {
         <div
-            class=format!("recharts-responsive-container {}", class.unwrap_or_default())
+            class=format!("chart-responsive-container {}", class.unwrap_or_default())
             style=format!("width: 100%; height: {}px; min-width: 0px;", num(height))
             node_ref=node
         >
             <div
-                class="recharts-wrapper"
+                class="chart-wrapper"
                 style=move || format!("position: relative; cursor: default; width: 100%; height: 100%; max-height: {}px; max-width: {}px;", num(height), num(width.get()))
                 node_ref=wrap
                 on:pointermove=move |e| {

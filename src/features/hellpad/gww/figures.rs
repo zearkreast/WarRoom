@@ -1,3 +1,5 @@
+//! Diagrams for G.W.W. manuals: supply lines, sieges, liberation pace, and the live impact chart.
+
 use crate::api::war_samples::use_war_samples;
 use crate::js::num;
 use leptos::prelude::*;

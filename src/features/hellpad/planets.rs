@@ -1,6 +1,8 @@
+//! The planets module: the faction control ring and every planet, searchable and grouped by sector.
+
+use crate::api::fronts::{major_order_planets, station_planets};
 use crate::api::queries::queries;
 use crate::features::planet::tint::planet_tint;
-use crate::features::planets::fronts::{major_order_planets, station_planets};
 use crate::js::num;
 use crate::state::{OptionsAnchor, settings, ui};
 use crate::ui::emblems::{DssIcon, FactionEmblem};

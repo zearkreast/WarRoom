@@ -1,5 +1,7 @@
+//! A front's card: progress, pace, ETA or deadline, Helldivers and badges.
+
+use crate::api::fronts::{Front, FrontKind, fronts};
 use crate::features::planet::tint::planet_tint;
-use crate::features::planets::fronts::{Front, FrontKind, fronts};
 use crate::state::{OptionsAnchor, ui};
 use crate::ui::emblems::{DssIcon, FactionEmblem};
 use crate::ui::hazard_icons::hazard_icon;

@@ -1,15 +1,15 @@
+//! WarCommand Tracker, the WarRoom app: starts the shared state, polling and alerts, then mounts the UI.
+
 mod alerts;
 mod api;
 mod app;
 mod assets;
 mod config;
 mod features;
-mod history;
 mod js;
 mod layout;
 mod nav_history;
 mod state;
-mod sync;
 mod tauri;
 mod tray;
 mod ui;
@@ -57,13 +57,13 @@ fn main() {
     let _ = any_spawner::Executor::init_wasm_bindgen();
     state::init();
     api::queries::init();
-    history::init();
+    api::history::init();
     alerts::init();
     update::init();
     // Before the first render, so a reload never flashes the default screen.
     nav_history::start();
     api::queries::start_polling();
-    sync::start();
+    alerts::watch::start();
     tray::start();
     leptos::mount::mount_to(js::document().get_element_by_id("root").unwrap().unchecked_into(), app::App).forget();
 }

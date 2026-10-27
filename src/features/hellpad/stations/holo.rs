@@ -1,3 +1,5 @@
+//! The space stations' holograms.
+
 use crate::assets;
 use crate::features::map::pawn_art::DssState;
 use crate::js::{num, unique_id};

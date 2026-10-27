@@ -1,3 +1,5 @@
+//! Biome colours and landscape pictures, and enemy resistance graded from regeneration.
+
 use crate::api::Planet;
 use crate::galaxy::{Anomaly, anomaly_of};
 use regex_lite::Regex;

@@ -134,13 +134,13 @@
     font-size: var(--fs-kicker);
   }
   /* Stacked drop-shadows across the whole plot stall a phone's redraws; one glow per line is enough. */
-  .wa .wa-online .recharts-line-curve {
+  .wa .wa-online .chart-line-curve {
     filter: drop-shadow(0 0 3px var(--wa-online));
   }
-  .wa .wa-impact .recharts-line-curve {
+  .wa .wa-impact .chart-line-curve {
     filter: drop-shadow(0 0 3px var(--wa-impact));
   }
-  .wa .wa-front .recharts-area-curve {
+  .wa .wa-front .chart-area-curve {
     filter: none;
   }
 }
@@ -172,21 +172,21 @@
   transition-delay: 0s;
 }
 /* Neon: each line glows in its own colour, the front edges more softly than the two headline lines. */
-.wa-online .recharts-line-curve,
+.wa-online .chart-line-curve,
 .wa-dot circle,
 .wa-live {
   filter: drop-shadow(0 0 2px var(--wa-online)) drop-shadow(0 0 7px color-mix(in srgb, var(--wa-online) 60%, transparent));
 }
-.wa-impact .recharts-line-curve {
+.wa-impact .chart-line-curve {
   filter: drop-shadow(0 0 2px var(--wa-impact)) drop-shadow(0 0 7px color-mix(in srgb, var(--wa-impact) 55%, transparent));
 }
-.wa-front-Terminids .recharts-area-curve {
+.wa-front-Terminids .chart-area-curve {
   filter: drop-shadow(0 0 3px var(--wa-terminids));
 }
-.wa-front-Automaton .recharts-area-curve {
+.wa-front-Automaton .chart-area-curve {
   filter: drop-shadow(0 0 3px var(--wa-automaton));
 }
-.wa-front-Illuminate .recharts-area-curve {
+.wa-front-Illuminate .chart-area-curve {
   filter: drop-shadow(0 0 3px var(--wa-illuminate));
 }
 /* grayscale(0) pairs with the switched-off filter above, so the change can ease. */

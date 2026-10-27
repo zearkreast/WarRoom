@@ -1,3 +1,5 @@
+//! A planet's cities: size class, state and how close an enemy-held one is to liberation.
+
 use crate::api::{Faction, Planet};
 use crate::data::{CityFateState, super_earth_city};
 use crate::progress::liberation_percent;

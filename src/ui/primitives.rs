@@ -1,3 +1,5 @@
+//! Basic building blocks: panels, meters, chips, buttons, countdowns, empty and loading states.
+
 use crate::js::{self, num};
 use crate::tauri;
 use crate::ui::emblems::{IconLike, icon_view};

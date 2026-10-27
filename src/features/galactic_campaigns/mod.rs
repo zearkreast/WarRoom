@@ -1,3 +1,5 @@
+//! The Galactic Campaign panel: the running campaign's Major Orders, reward and tally, or the last one's outcome.
+
 use crate::api::queries::queries;
 use crate::features::news::card::MarkupText;
 use crate::js::fmt_date;

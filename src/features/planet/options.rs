@@ -1,5 +1,5 @@
+use crate::api::fronts::station_planets;
 use crate::api::queries;
-use crate::features::planets::fronts::station_planets;
 use crate::js::{self, num};
 use crate::state::{HellpadModule, View, settings, ui};
 use crate::ui::emblems::{IconLike, icon_view};

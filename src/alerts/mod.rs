@@ -1,5 +1,7 @@
 //! In-app toasts and the briefing popup, and the OS notifications that go with them.
 
+pub mod watch;
+
 use crate::js::{self, get, obj};
 use crate::tauri;
 use leptos::prelude::*;

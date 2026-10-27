@@ -1,4 +1,4 @@
-//! Number and text formatting that matches what the app showed when it ran on JavaScript.
+//! Number, date and text formatting. Rounding and number-to-text follow JavaScript (`Math.round`, `toFixed`, `String(n)`).
 
 use crate::time::{iso_string, parse_iso, utc_parts};
 use regex_lite::Regex;

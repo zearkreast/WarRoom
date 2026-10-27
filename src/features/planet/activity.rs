@@ -1,4 +1,6 @@
-use crate::history::PlayerReading;
+//! Planet charts: liberation and Helldivers over time.
+
+use crate::api::history::PlayerReading;
 use crate::js::{self, fmt_date_time, fmt_time};
 use crate::ui::chart::{
     Chart, GRID, Grid, Plot, RefLine, Series, Tooltip, XAxis, YAxis, default_tooltip, hour_ticks, series_rows,

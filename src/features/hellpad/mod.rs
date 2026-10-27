@@ -1,8 +1,8 @@
+//! Hellpad: the field terminal hub and its modules (planets, space stations, G.W.W., past campaigns).
+
 pub mod call_in;
 pub mod gww;
 pub mod page;
-pub mod past;
+pub mod past_campaigns;
 pub mod planets;
-pub mod station_holo;
-pub mod station_jumps;
 pub mod stations;

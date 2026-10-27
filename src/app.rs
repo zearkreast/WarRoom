@@ -1,3 +1,5 @@
+//! The root component: the shell around whichever page is open.
+
 use crate::features::campaigns::page::CampaignsPage;
 use crate::features::hellpad::page::HellpadPage;
 use crate::features::map::page::MapPage;

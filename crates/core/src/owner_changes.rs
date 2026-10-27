@@ -1,3 +1,5 @@
+//! Spotting what changed between two planet snapshots: new owners and new defenses.
+
 use crate::api::{Faction, Planet};
 use std::collections::{HashMap, HashSet};
 

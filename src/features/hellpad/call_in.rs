@@ -1,3 +1,5 @@
+//! The Call In Super Destroyer stratagem, keyed in on the Hellpad mark, which opens its G.W.W. manual.
+
 use crate::js;
 use crate::state::{HellpadModule, View, ui};
 use crate::ui::please_wait::{PLEASE_WAIT_MS, PleaseWait};

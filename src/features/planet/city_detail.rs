@@ -1,9 +1,11 @@
+//! A city's own page.
+
+use crate::api::history::{self, CityReading, PlayerReading};
 use crate::api::queries::{self, queries};
 use crate::features::map::card::LiberationBar;
 use crate::features::planet::activity::{ActivitySection, ProgressChart};
 use crate::features::planet::cities::{CityMark, enemy_of_cities, state_label};
 use crate::features::planet::tint::planet_tint;
-use crate::history::{self, CityReading, PlayerReading};
 use crate::js;
 use crate::state::{CityRef, HellpadModule, ui};
 use crate::ui::icons::{self, Icon};

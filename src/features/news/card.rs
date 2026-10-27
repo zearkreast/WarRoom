@@ -1,3 +1,5 @@
+//! Game text with its markup styled and planet names as links.
+
 use crate::api::queries::queries;
 use crate::state::{OptionsAnchor, ui};
 use leptos::prelude::*;

@@ -1,10 +1,12 @@
+//! Planet progress samples and ownership changes: loaded from Supabase at start, kept for rates, written each poll.
+
 use crate::supabase::{Supabase, unless_missing};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
 use warroom_core::api::{Faction, Planet, Region};
 use warroom_core::factions::{faction_by_id, faction_id};
-use warroom_core::history::{OwnerChange, detect_owner_changes, is_active};
+use warroom_core::owner_changes::{OwnerChange, detect_owner_changes, is_active};
 use warroom_core::progress::{Sample, rate_per_hour, to_sample};
 use warroom_core::time::{iso_string, parse_ms};
 

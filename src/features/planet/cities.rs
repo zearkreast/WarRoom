@@ -1,3 +1,5 @@
+//! A planet's cities: their marks and the list.
+
 use crate::features::major_order::order_bar::{OrderBar, use_count_up};
 use crate::state::{CityRef, ui};
 use crate::ui::icons::{self, Icon};

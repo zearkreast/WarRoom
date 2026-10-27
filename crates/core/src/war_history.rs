@@ -1,5 +1,7 @@
+//! A planet's war record: owner segments, numbered battles and defense events.
+
 use crate::api::Faction;
-use crate::history::OwnerChange;
+use crate::owner_changes::OwnerChange;
 
 /// A stretch of time with one owner.
 #[derive(Clone, Debug, PartialEq)]

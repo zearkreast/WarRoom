@@ -1,3 +1,5 @@
+//! Faction names, colours and ids.
+
 use crate::api::Faction;
 
 pub struct FactionInfo {

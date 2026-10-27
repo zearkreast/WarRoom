@@ -1,3 +1,5 @@
+//! The War Activity chart: Helldivers per front and online, and the impact multiplier.
+
 use crate::api::queries::queries;
 use crate::api::war_samples::{use_front_activity, use_war_samples};
 use crate::js::{self, fmt_date_time, fmt_time, num};
@@ -62,7 +64,7 @@ fn plot_value(p: &PlotPoint, f: Faction) -> f64 {
     }
 }
 
-// Series colours are the panel's own tokens (warActivity.css).
+// Series colours are the panel's own tokens (activity.css).
 fn front_color(f: Faction) -> &'static str {
     match f {
         Faction::Terminids => "var(--wa-terminids)",
@@ -80,7 +82,7 @@ const STEP: f64 = 25_000.0;
 const READING_WINDOW_MS: f64 = 6.0 * 60_000.0;
 const NARROW_WINDOW_MS: f64 = 12.0 * 60_000.0;
 const NARROW: &str = "(max-width: 720px)";
-// Keep in sync with --wa-morph in warActivity.css.
+// Keep in sync with --wa-morph in activity.css.
 const MORPH_MS: f64 = 700.0;
 // Keep in sync with --ease in theme.css, which the CSS fades use.
 const MORPH_EASE: (f64, f64, f64, f64) = (0.2, 0.85, 0.25, 1.0);
@@ -420,7 +422,7 @@ pub fn WarActivity() -> impl IntoView {
             .flatten()
             .map(|p| {
                 view! {
-                    <g class=format!("recharts-layer recharts-reference-dot wa-dot{online_off}")>
+                    <g class=format!("chart-layer chart-reference-dot wa-dot{online_off}")>
                         <circle
                             r="4"
                             fill=ONLINE
@@ -428,7 +430,7 @@ pub fn WarActivity() -> impl IntoView {
                             stroke-width="2"
                             cx=num(f.x(p.at))
                             cy=num(f.y(0, total(&p, h)))
-                            class="recharts-dot recharts-reference-dot-dot"
+                            class="chart-dot chart-reference-dot-dot"
                         ></circle>
                     </g>
                 }
@@ -437,7 +439,7 @@ pub fn WarActivity() -> impl IntoView {
         let live = last.get_untracked().map(|p| {
             let (cx, cy) = (num(f.x(p.at)), num(f.y(0, total(&p, h))));
             view! {
-                <g class=format!("recharts-layer recharts-reference-dot wa-live-dot{online_off}")>
+                <g class=format!("chart-layer chart-reference-dot wa-live-dot{online_off}")>
                     <g aria-hidden="true" class="wa-live">
                         <circle cx=cx.clone() cy=cy.clone() r="5" fill="none" stroke=ONLINE stroke-width="1.5" class="wa-ping" />
                         <circle cx=cx cy=cy r="5" fill="none" stroke=ONLINE stroke-width="1.5" />
