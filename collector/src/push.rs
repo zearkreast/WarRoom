@@ -1,4 +1,4 @@
-//! Firebase Cloud Messaging: sends Strohmann News to every Android app subscribed to the news topic.
+//! Firebase Cloud Messaging: sends Strohmann News to the Android apps subscribed to its topic.
 
 use crate::hd2::Clock;
 use crate::http::{Request, Transport};
@@ -9,8 +9,7 @@ use ring::signature::{RSA_PKCS1_SHA256, RsaKeyPair};
 use serde::Deserialize;
 use serde_json::json;
 
-/// Keep in sync with NEWS_TOPIC and NEWS_CHANNEL in src-tauri/android/MainActivity.kt.template.
-const TOPIC: &str = "news";
+/// Keep in sync with NEWS_CHANNEL in src-tauri/android/MainActivity.kt.template.
 const CHANNEL: &str = "news";
 /// FCM refuses messages over 4 KB; a Major Order briefing can come close.
 const MAX_BODY: usize = 1000;
@@ -24,8 +23,28 @@ pub struct ServiceAccount {
     pub private_key: String,
 }
 
+/// Which of the app's alert settings a push falls under; keep the topic names in sync with NewsTopics in
+/// src-tauri/android/MainActivity.kt.template.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Topic {
+    /// Major Orders and Galactic Campaign launches and outcomes.
+    Orders,
+    Dispatches,
+}
+
+impl Topic {
+    /// Older APKs are on "news" alone; FCM delivers once to a device on both topics.
+    fn condition(self) -> String {
+        let name = match self {
+            Topic::Orders => "news-orders",
+            Topic::Dispatches => "news-dispatches",
+        };
+        format!("'news' in topics || '{name}' in topics")
+    }
+}
+
 pub trait Push {
-    fn push(&mut self, title: &str, body: &str) -> Result<(), String>;
+    fn push(&mut self, topic: Topic, title: &str, body: &str) -> Result<(), String>;
 }
 
 /// The service account key as base64 (`base64 -w0 key.json`), or as JSON on one line.
@@ -138,11 +157,11 @@ impl Fcm {
 }
 
 impl Push for Fcm {
-    fn push(&mut self, title: &str, body: &str) -> Result<(), String> {
+    fn push(&mut self, topic: Topic, title: &str, body: &str) -> Result<(), String> {
         let token = self.access_token()?;
         let message = json!({
             "message": {
-                "topic": TOPIC,
+                "condition": topic.condition(),
                 "notification": { "title": title, "body": clip(body, MAX_BODY) },
                 "android": {
                     "priority": "high",
@@ -239,10 +258,10 @@ mod tests {
     }
 
     #[test]
-    fn signs_a_token_request_with_the_service_account_then_sends_to_the_news_topic() {
+    fn signs_a_token_request_with_the_service_account_then_sends_to_the_topic() {
         let t = Rc::new(Cell::new(1_000_000.0));
         let (mut push, calls) = fcm(200, &t);
-        push.push("New dispatch", "Helldivers, stand by").unwrap();
+        push.push(Topic::Dispatches, "New dispatch", "Helldivers, stand by").unwrap();
         let calls = calls.borrow();
         let (token, send) = (&calls[0], &calls[1]);
 
@@ -272,7 +291,7 @@ mod tests {
         assert_eq!(
             body["message"],
             json!({
-                "topic": "news",
+                "condition": "'news' in topics || 'news-dispatches' in topics",
                 "notification": { "title": "New dispatch", "body": "Helldivers, stand by" },
                 "android": { "priority": "high", "notification": { "channel_id": "news", "icon": "ic_notification", "color": "#ffff5a" } },
             })
@@ -283,11 +302,11 @@ mod tests {
     fn reuses_the_token_until_a_minute_before_it_lapses() {
         let t = Rc::new(Cell::new(0.0));
         let (mut push, calls) = fcm(200, &t);
-        push.push("a", "b").unwrap();
+        push.push(Topic::Orders, "a", "b").unwrap();
         t.set(3_500_000.0);
-        push.push("a", "b").unwrap();
+        push.push(Topic::Orders, "a", "b").unwrap();
         t.set(3_560_000.0);
-        push.push("a", "b").unwrap();
+        push.push(Topic::Orders, "a", "b").unwrap();
         let calls = calls.borrow();
         assert_eq!(calls.iter().filter(|c| c.url.contains("oauth2")).count(), 2);
         let auth: Vec<&str> =
@@ -299,7 +318,7 @@ mod tests {
     fn cuts_a_long_briefing_down_to_what_fcm_accepts() {
         let t = Rc::new(Cell::new(0.0));
         let (mut push, calls) = fcm(200, &t);
-        push.push("New Major Order", &"x".repeat(5000)).unwrap();
+        push.push(Topic::Orders, "New Major Order", &"x".repeat(5000)).unwrap();
         let body: serde_json::Value = serde_json::from_str(&calls.borrow()[1].body).unwrap();
         let text = body["message"]["notification"]["body"].as_str().unwrap();
         assert_eq!(text.encode_utf16().count(), 1000);
@@ -310,7 +329,13 @@ mod tests {
     fn fails_when_fcm_refuses_the_message() {
         let t = Rc::new(Cell::new(0.0));
         let (mut push, _) = fcm(403, &t);
-        assert_eq!(push.push("a", "b").unwrap_err(), "FCM send 403: denied");
+        assert_eq!(push.push(Topic::Orders, "a", "b").unwrap_err(), "FCM send 403: denied");
+    }
+
+    #[test]
+    fn reaches_installs_on_the_topic_or_still_on_the_old_news_one() {
+        assert_eq!(Topic::Orders.condition(), "'news' in topics || 'news-orders' in topics");
+        assert_eq!(Topic::Dispatches.condition(), "'news' in topics || 'news-dispatches' in topics");
     }
 
     #[test]

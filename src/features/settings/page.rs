@@ -1,6 +1,6 @@
 //! Settings: interface, galaxy map, notifications and updates.
 
-use crate::alerts::{ToastKind, notify};
+use crate::alerts::{ToastKind, ask_permission, notify};
 use crate::api::queries::queries;
 use crate::config::APP_VERSION;
 use crate::features::map::options::{dispatch_options, overlay_options, planet_options, quality_options};
@@ -258,7 +258,12 @@ pub fn SettingsPage() -> impl IntoView {
                                     <OnOff
                                         label=*title
                                         value=Signal::derive(move || s.get(|s| alert_value(&s.alerts, key)))
-                                        on_change=move |v| s.set(|s| *alert_flag(&mut s.alerts, key) = v)
+                                        on_change=move |v| {
+                                            if key == "system" && v {
+                                                ask_permission();
+                                            }
+                                            s.set(|s| *alert_flag(&mut s.alerts, key) = v)
+                                        }
                                     />
                                 </Row>
                             }
@@ -281,6 +286,9 @@ pub fn SettingsPage() -> impl IntoView {
                             class="hud-btn"
                             on:click=move |_| {
                                 let system = s.untracked(|s| s.alerts.system);
+                                if system {
+                                    ask_permission();
+                                }
                                 notify(ToastKind::Order, "Test alert", "Alerts are working, Helldiver.", system, None)
                             }
                         >

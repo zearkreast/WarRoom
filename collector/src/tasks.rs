@@ -1,7 +1,7 @@
 //! Polling jobs: each fetches from the API, writes to Supabase, and returns a short status for the log.
 
 use crate::hd2::{Api, ApiError};
-use crate::push::Push;
+use crate::push::{Push, Topic};
 use crate::recorder::Recorder;
 use crate::supabase::{Supabase, unless_missing};
 use serde_json::{Value, json};
@@ -217,11 +217,11 @@ impl Collector {
 
     // Keep the wording in step with the app's own alerts (src/alerts/watch.rs). A failed push is only logged: the
     // snapshot is already written, so a retry wouldn't see the news as new.
-    fn announce(&mut self, items: &[(String, String)]) -> String {
+    fn announce(&mut self, topic: Topic, items: &[(String, String)]) -> String {
         let Some(push) = self.push.as_mut() else { return String::new() };
         let mut sent = 0;
         for (title, body) in items {
-            match push.push(title, body) {
+            match push.push(topic, title, body) {
                 Ok(()) => sent += 1,
                 Err(e) => eprintln!("push failed: {e}"),
             }
@@ -313,7 +313,7 @@ impl Collector {
                     )
                 })
                 .collect();
-            pushed = self.announce(&items);
+            pushed = self.announce(Topic::Orders, &items);
             let ids: Vec<i64> = fresh.iter().map(|x| x.id).collect();
             self.announced_orders.as_mut().unwrap().extend(ids);
         }
@@ -355,7 +355,7 @@ impl Collector {
                 .map(|(d, _)| ("New dispatch".to_string(), dispatch_title(&d.message)))
                 .collect();
             fresh.reverse();
-            pushed = self.announce(&fresh);
+            pushed = self.announce(Topic::Dispatches, &fresh);
             self.announced_dispatch = Some(items.iter().map(|(d, _)| d.id).fold(since, i64::max));
         }
         Ok(format!("newest #{}{pushed}", items.first().map_or(0, |(d, _)| d.id)))
@@ -458,7 +458,7 @@ impl Collector {
         self.episodes = Some(list.clone());
         // An empty archive is a fresh setup, not a dozen campaigns launching at once.
         let pushed = if self.push.is_some() && !before.is_empty() {
-            self.announce(&campaign_news(&before, &list))
+            self.announce(Topic::Orders, &campaign_news(&before, &list))
         } else {
             String::new()
         };

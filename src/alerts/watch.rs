@@ -4,7 +4,7 @@ use crate::alerts::{ToastKind, notify, request_notifications};
 use crate::api::history::history;
 use crate::api::queries::queries;
 use crate::config::{NEWS_PUSHED, POLL_MS};
-use crate::js;
+use crate::js::{self, get};
 use crate::state::settings;
 use crate::tauri;
 use leptos::prelude::*;
@@ -93,7 +93,8 @@ pub fn start() {
                 }
             }
             if s.alerts.dispatches {
-                for d in dispatches.iter().filter(|d| d.id > s.seen_dispatch).take(3) {
+                let fresh: Vec<_> = dispatches.iter().filter(|d| d.id > s.seen_dispatch).take(3).collect();
+                for d in fresh.into_iter().rev() {
                     notify(
                         ToastKind::Dispatch,
                         "New dispatch",
@@ -133,4 +134,15 @@ pub fn start() {
         }
         settings().mark_campaign_seen(keys);
     });
+
+    // Android shows the collector's pushes itself, so these settings switch which topics it gets.
+    if NEWS_PUSHED {
+        let topics = Memo::new(move |_| {
+            settings().get(|s| (s.alerts.system && s.alerts.orders, s.alerts.system && s.alerts.dispatches))
+        });
+        Effect::new(move |_| {
+            let (orders, dispatches) = topics.get();
+            let _ = js::call(&get(&js::window(), "WarRoomPush"), "setTopics", &[orders.into(), dispatches.into()]);
+        });
+    }
 }

@@ -55,22 +55,39 @@ class MainActivity : TauriActivity() {
           NotificationChannel(NEWS_CHANNEL, "Strohmann News", NotificationManager.IMPORTANCE_HIGH),
         )
       }
-      FirebaseMessaging.getInstance().subscribeToTopic(NEWS_TOPIC)
     }
   }
 
   // Called before the page loads, so window.WarRoomApk is there from the start.
   override fun onWebViewCreate(webView: WebView) {
     webView.addJavascriptInterface(ApkUpdate(this, webView), "WarRoomApk")
+    if (FirebaseApp.getApps(this).isNotEmpty()) webView.addJavascriptInterface(NewsTopics(), "WarRoomPush")
   }
 
   private companion object {
     /** --surface-0 in src/ui/theme.css, the top bar's and dock's colour. */
     val BAR_COLOR = Color.parseColor("#0b0f16")
 
-    /** Keep in sync with TOPIC and CHANNEL in collector/src/push.rs. */
-    const val NEWS_TOPIC = "news"
+    /** Keep in sync with CHANNEL in collector/src/push.rs. */
     const val NEWS_CHANNEL = "news"
+  }
+}
+
+/** The Strohmann News topics the page's alert settings ask for (src/alerts/watch.rs). */
+class NewsTopics {
+  @JavascriptInterface
+  fun setTopics(orders: Boolean, dispatches: Boolean) {
+    val messaging = FirebaseMessaging.getInstance()
+    messaging.unsubscribeFromTopic(LEGACY_TOPIC)
+    if (orders) messaging.subscribeToTopic(ORDERS_TOPIC) else messaging.unsubscribeFromTopic(ORDERS_TOPIC)
+    if (dispatches) messaging.subscribeToTopic(DISPATCHES_TOPIC) else messaging.unsubscribeFromTopic(DISPATCHES_TOPIC)
+  }
+
+  private companion object {
+    /** Keep in sync with Topic in collector/src/push.rs; older installs are on LEGACY_TOPIC alone. */
+    const val LEGACY_TOPIC = "news"
+    const val ORDERS_TOPIC = "news-orders"
+    const val DISPATCHES_TOPIC = "news-dispatches"
   }
 }
 

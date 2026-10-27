@@ -2,7 +2,7 @@
 
 use crate::hd2::{Api, ApiError};
 use crate::http::{Request, Response, Transport, TransportError};
-use crate::push::Push;
+use crate::push::{Push, Topic};
 use crate::recorder::Recorder;
 use crate::supabase::Supabase;
 use crate::tasks::{Collector, Job, campaign_news};
@@ -537,11 +537,11 @@ fn writes_an_episodes_snapshot_only_when_the_game_api_client_is_given() {
 }
 
 /// Records what would have been pushed.
-struct Recorded(Rc<RefCell<Vec<(String, String)>>>);
+struct Recorded(Rc<RefCell<Vec<(Topic, String, String)>>>);
 
 impl Push for Recorded {
-    fn push(&mut self, title: &str, body: &str) -> Result<(), String> {
-        self.0.borrow_mut().push((title.into(), body.into()));
+    fn push(&mut self, topic: Topic, title: &str, body: &str) -> Result<(), String> {
+        self.0.borrow_mut().push((topic, title.into(), body.into()));
         Ok(())
     }
 }
@@ -549,7 +549,7 @@ impl Push for Recorded {
 struct Failing;
 
 impl Push for Failing {
-    fn push(&mut self, _: &str, _: &str) -> Result<(), String> {
+    fn push(&mut self, _: Topic, _: &str, _: &str) -> Result<(), String> {
         Err("FCM send 503".into())
     }
 }
@@ -566,7 +566,7 @@ fn pushes_a_major_order_missing_from_the_stored_snapshot_once() {
     assert_eq!(c.run(Job::Assignments).message, "1 orders, 1/1 pushed");
     assert_eq!(c.run(Job::Assignments).message, "1 orders");
     let briefing = raw(fixture!("assignments.json"))[0]["briefing"].as_str().unwrap().to_string();
-    assert_eq!(*sent.borrow(), [("New Major Order".to_string(), briefing)]);
+    assert_eq!(*sent.borrow(), [(Topic::Orders, "New Major Order".to_string(), briefing)]);
 }
 
 #[test]
@@ -588,11 +588,24 @@ fn pushes_the_dispatches_newer_than_the_stored_ones_oldest_first() {
     let mut c = pushing(db, Box::new(Recorded(sent.clone())));
     assert_eq!(c.run(Job::Dispatches).message, format!("newest #{}, 2/2 pushed", newest[0]["id"]));
     assert_eq!(c.run(Job::Dispatches).message, "unchanged");
-    let want: Vec<(String, String)> = [&newest[1], &newest[0]]
+    let want: Vec<(Topic, String, String)> = [&newest[1], &newest[0]]
         .iter()
-        .map(|d| ("New dispatch".to_string(), dispatch_title(d["message"].as_str().unwrap())))
+        .map(|d| (Topic::Dispatches, "New dispatch".to_string(), dispatch_title(d["message"].as_str().unwrap())))
         .collect();
     assert_eq!(*sent.borrow(), want);
+}
+
+#[test]
+fn pushes_a_campaign_launch_under_the_orders_setting() {
+    let raw_list: Vec<warroom_core::api::EpisodeRaw> = from_str(&raw_episodes().to_string()).unwrap();
+    let stored = to_episodes(&raw_list[..1], 10_000.0, 50_000_000.0);
+    let (db, _) = fake_db(&[("snapshots", json!([{ "data": serde_json::to_value(&stored).unwrap() }]))]);
+    let sent = Rc::new(RefCell::new(Vec::new()));
+    let game = game(raw_episodes(), json!({ "time": 10_000 }));
+    let push = Box::new(Recorded(sent.clone()));
+    let mut c = Collector::new(api(), db, Recorder::default(), Box::new(|| 50_000_000.0), Some(game), Some(push));
+    assert_eq!(c.run(Job::Episodes).message, "2 campaigns, 1 active, 1/1 pushed");
+    assert_eq!(*sent.borrow(), [(Topic::Orders, "New Galactic Campaign".to_string(), "New campaign: NOW".to_string())]);
 }
 
 #[test]

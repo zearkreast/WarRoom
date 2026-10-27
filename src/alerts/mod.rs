@@ -135,6 +135,11 @@ pub fn request_notifications() {
     if PERMISSION.get().is_some() {
         return;
     }
+    ask_permission();
+}
+
+/// Asks even after a refusal; call it from a click, the only time browsers show the prompt.
+pub fn ask_permission() {
     PERMISSION.set(Some(None));
     spawn_local(async {
         let granted = ensure_permission().await;
@@ -143,7 +148,12 @@ pub fn request_notifications() {
 }
 
 async fn permitted() -> bool {
-    request_notifications();
+    if tauri::is_tauri() {
+        request_notifications();
+    } else if PERMISSION.get() != Some(None) {
+        // A prompt nobody clicked for is refused or buried, so the web only asks through ask_permission().
+        return get(&get(&js::window(), "Notification"), "permission").as_string().as_deref() == Some("granted");
+    }
     loop {
         if let Some(Some(granted)) = PERMISSION.get() {
             return granted;
