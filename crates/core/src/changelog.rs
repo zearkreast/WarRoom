@@ -8,6 +8,13 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.5.0",
+        date: "2026-10-27",
+        items: &[
+            "Out of beta: the app and the collector that feeds it are rebuilt in Rust. Every screen, alert and setting works as before, and your settings carry over.",
+        ],
+    },
+    ChangelogEntry {
         version: "0.3.5-beta",
         date: "2026-10-27",
         items: &[
