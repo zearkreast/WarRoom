@@ -3,6 +3,43 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [Unreleased]
+
+### Upgrading
+
+- Redeploy the collector (`git pull && docker compose up -d --build`) before releasing an APK from this version:
+  new APKs follow one push topic per alert setting, and only the updated collector sends to them. There are no
+  new database migrations.
+
+### Fixed
+
+- Planet charts and War history read every row of the last day instead of stopping at 1000, so busy fronts
+  chart the whole 24 hours and recent or ongoing defenses no longer vanish or read as held. The G.W.W. war log
+  says "latest" when older changes aren't loaded and can show older ones; the FTL jump log says when it is cut
+  at 50.
+- Major Orders: a task with no planet is no longer shown as Super Earth, done from the start; defense targets
+  are judged against the defense's own deadline; a defense's bar shows the attacker's colour.
+- Defenses: the planet page no longer promises a victory after the deadline, liberation regen is no longer
+  counted as enemy regen or added to Helldiver impact, and the status strip and supply lines show the defense's
+  progress instead of 0%.
+- Mission dive time is shown in the right unit, and accuracy no longer reads over 100%.
+- War history names the attacker of a held defense correctly and no longer claims how long the enemy held a
+  planet before the record began. Order announcements pair with the right orders when the dispatch list is cut.
+- Zero-player readings from the API no longer drag the activity chart and the day's low down.
+- Chart tooltips no longer crash when the data shrinks under the pointer; a stalled download no longer hangs the
+  app; the cache stops growing; "Check now" can't start a second install.
+- Map: "Show on map" flies to the planet instead of being cancelled, a remounted map doesn't replay it, zooming
+  out on a small window no longer zooms in, Spheres marks Major Order targets, and the legend describes defended
+  planets.
+- Esc closes one layer at a time; number keys don't switch pages behind dialogs; the city page's "Planets"
+  breadcrumb works; planet links in a briefing open their options in front of it; keyboard-opened planet menus
+  appear by their row.
+- Alerts: several new dispatches arrive oldest first, Priority popups no longer lose toasts to hidden ones, the
+  web build asks for notification permission only from a click, and Galactic Campaign briefings are headed as
+  such. On Android, pushed news follows the alert settings.
+- Collector: a capture whose write fails is retried instead of lost, campaign planets at 0% or 100% are
+  sampled, and empty readings no longer reach the war samples.
+
 ## [0.5.0] - 2026-10-27
 
 Everything since v0.3.5-beta, and the first release out of beta.
