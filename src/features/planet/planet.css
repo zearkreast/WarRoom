@@ -322,12 +322,6 @@
   .good {
     color: var(--good);
   }
-  .pd-chart {
-    margin: 0 calc(var(--s-3) * -1);
-  }
-  .pd-chart .chart-cartesian-axis-tick-value {
-    fill: var(--label);
-  }
 
   .pd-card {
     display: flex;

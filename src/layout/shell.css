@@ -623,7 +623,7 @@
   }
   .bp-card {
     background: var(--surface-1);
-    border: 1px solid var(--line-strong);
+    border: 2px solid var(--line-strong);
     box-shadow: var(--shadow-3);
     animation: overlay-in var(--t-value) var(--ease);
   }

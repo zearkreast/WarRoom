@@ -1411,22 +1411,6 @@
     font-size: var(--fs-body-s);
     color: var(--text-dim);
   }
-  .gww-chapter-label {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    gap: var(--s-3);
-    margin: var(--s-3) 0 0;
-    font-size: var(--fs-label);
-    letter-spacing: 0.16em;
-    color: var(--cta);
-  }
-  .gww-chapter-label:first-child {
-    margin-top: 0;
-  }
-  .gww-chapter-label .num {
-    color: var(--label);
-  }
   .gww-site {
     position: relative;
   }
