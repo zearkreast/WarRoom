@@ -94,21 +94,51 @@ fn to_change(r: ChangeRow) -> Option<ChangeRecord> {
     })
 }
 
-/// PostgREST caps responses at 1000 rows; 7 days of 15-minute samples is ~700.
+/// PostgREST caps responses at 1000 rows.
 const SAMPLE_LIMIT: usize = 1000;
 
+/// One page of `filter` in time order: from `since` on the first page, then after `after`, the last time read.
+fn page_query(filter: &str, since: Option<&str>, after: Option<&str>) -> String {
+    let bound = match (after, since) {
+        (Some(t), _) => format!("&at=gt.{t}"),
+        (None, Some(t)) => format!("&at=gte.{t}"),
+        (None, None) => String::new(),
+    };
+    format!("{filter}{bound}&order=at.asc&limit={SAMPLE_LIMIT}")
+}
+
+/// The time the next page starts after, or None once a short page shows there's no more.
+fn next_after(page: &[serde_json::Value]) -> Option<&str> {
+    if page.len() < SAMPLE_LIMIT {
+        return None;
+    }
+    page.last()?.get("at")?.as_str()
+}
+
+/// Every row of `filter` from `since_ms` on, oldest first, a page at a time.
+async fn select_all(
+    table: &str,
+    filter: &str,
+    since_ms: Option<f64>,
+) -> Result<Vec<serde_json::Value>, source::SourceError> {
+    let since = since_ms.map(|ms| encode(&iso_string(ms)));
+    let mut rows = Vec::new();
+    let mut after = None;
+    loop {
+        let page = source::select(table, &page_query(filter, since.as_deref(), after.as_deref())).await?;
+        after = next_after(&page).map(encode);
+        rows.extend(page);
+        if after.is_none() {
+            return Ok(rows);
+        }
+    }
+}
+
 pub async fn samples(planet: i64, since_ms: f64) -> Result<Vec<Sample>, String> {
-    let since = encode(&iso_string(since_ms));
-    let rows: Vec<SampleRow> = typed(
-        source::select(
-            "samples",
-            &format!("select=*&planet=eq.{planet}&at=gte.{since}&order=at.desc&limit={SAMPLE_LIMIT}"),
-        )
-        .await,
-    )?;
+    let rows: Vec<SampleRow> =
+        typed(select_all("samples", &format!("select=*&planet=eq.{planet}"), Some(since_ms)).await)?;
     Ok(rows
         .into_iter()
-        .rev()
         .filter_map(|r| {
             Some(Sample {
                 planet: r.planet,
@@ -124,15 +154,10 @@ pub async fn samples(planet: i64, since_ms: f64) -> Result<Vec<Sample>, String> 
 
 /// Helldivers on the planet while it had no campaign, oldest first.
 pub async fn idle_players(planet: i64, since_ms: f64) -> Result<Vec<PlayerReading>, String> {
-    let since = encode(&iso_string(since_ms));
     let rows: Vec<ReadingRow> = unless_missing(
-        source::select(
-            "planet_players",
-            &format!("select=at,players&planet=eq.{planet}&at=gte.{since}&order=at.desc&limit={SAMPLE_LIMIT}"),
-        )
-        .await,
+        select_all("planet_players", &format!("select=at,players&planet=eq.{planet}"), Some(since_ms)).await,
     )?;
-    Ok(rows.into_iter().rev().map(|r| PlayerReading { at: parse_ms(&r.at), players: r.players }).collect())
+    Ok(rows.into_iter().map(|r| PlayerReading { at: parse_ms(&r.at), players: r.players }).collect())
 }
 
 /// One city's readings, oldest first.
@@ -158,13 +183,8 @@ pub async fn earliest(planet: Option<i64>) -> Result<Option<f64>, String> {
 
 /// Times of samples taken while the planet was under attack, oldest first.
 pub async fn defending_times(planet: i64) -> Result<Vec<f64>, String> {
-    let rows: Vec<AtRow> = typed(
-        source::select(
-            "samples",
-            &format!("select=at&planet=eq.{planet}&defending=is.true&order=at.asc&limit={SAMPLE_LIMIT}"),
-        )
-        .await,
-    )?;
+    let rows: Vec<AtRow> =
+        typed(select_all("samples", &format!("select=at&planet=eq.{planet}&defending=is.true"), None).await)?;
     Ok(rows.iter().map(|r| parse_ms(&r.at)).collect())
 }
 
@@ -183,19 +203,44 @@ pub async fn changes_after(after_id: i64, limit: usize) -> Result<Vec<ChangeReco
     Ok(rows.into_iter().filter_map(to_change).collect())
 }
 
+/// Changes older than `before_id`, newest first.
+async fn changes_before(before_id: i64, limit: usize) -> Result<Vec<ChangeRecord>, String> {
+    let rows: Vec<ChangeRow> = typed(
+        source::select("owner_changes", &format!("select=*&id=lt.{before_id}&order=id.desc&limit={limit}")).await,
+    )?;
+    Ok(rows.into_iter().filter_map(to_change).collect())
+}
+
 const KEEP: usize = 100;
+
+/// Puts `fresh` ahead of `held`, keeping as many as were held (at least KEEP); returns whether any fell off the end.
+fn prepend(held: &mut Vec<ChangeRecord>, mut fresh: Vec<ChangeRecord>) -> bool {
+    // A full page of new changes may not reach back to the held ones.
+    let keep = if fresh.len() < KEEP { held.len().max(KEEP) } else { KEEP };
+    fresh.append(held);
+    let dropped = fresh.len() > keep;
+    fresh.truncate(keep);
+    *held = fresh;
+    dropped
+}
 
 #[derive(Clone, Copy)]
 pub struct History {
     pub ready: RwSignal<bool>,
     /// Most recent ownership changes, newest first.
     pub changes: RwSignal<Vec<ChangeRecord>>,
+    /// Whether the store may hold changes older than the oldest in `changes`.
+    pub older: RwSignal<bool>,
 }
 
 static HISTORY: OnceLock<History> = OnceLock::new();
 
 pub fn init() {
-    let _ = HISTORY.set(History { ready: RwSignal::new(false), changes: RwSignal::new(Vec::new()) });
+    let _ = HISTORY.set(History {
+        ready: RwSignal::new(false),
+        changes: RwSignal::new(Vec::new()),
+        older: RwSignal::new(false),
+    });
 }
 
 pub fn history() -> History {
@@ -208,6 +253,7 @@ impl History {
     pub async fn refresh(&self) -> Result<Vec<ChangeRecord>, String> {
         if !self.ready.get_untracked() {
             let list = changes(None, KEEP).await?;
+            self.older.set(list.len() == KEEP);
             self.changes.set(list);
             self.ready.set(true);
             return Ok(Vec::new());
@@ -215,13 +261,96 @@ impl History {
         let newest = self.changes.with_untracked(|c| c.first().map_or(0, |c| c.id));
         let fresh = changes_after(newest, KEEP).await?;
         if !fresh.is_empty() {
-            self.changes.update(|c| {
-                let mut all = fresh.clone();
-                all.append(c);
-                all.truncate(KEEP);
-                *c = all;
-            });
+            let mut dropped = false;
+            self.changes.update(|c| dropped = prepend(c, fresh.clone()));
+            if dropped {
+                self.older.set(true);
+            }
         }
         Ok(fresh)
+    }
+
+    /// Appends the page of changes before the oldest held.
+    pub async fn load_older(&self) -> Result<(), String> {
+        let Some(oldest) = self.changes.with_untracked(|c| c.last().map(|c| c.id)) else { return Ok(()) };
+        let page = changes_before(oldest, KEEP).await?;
+        let full = page.len() == KEEP;
+        let mut joined = false;
+        // A refresh meanwhile may have dropped the oldest; appending then would leave a gap.
+        self.changes.update(|c| {
+            joined = c.last().map(|c| c.id) == Some(oldest);
+            if joined {
+                c.extend(page);
+            }
+        });
+        if joined {
+            self.older.set(full);
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use warroom_core::api::Faction;
+
+    #[test]
+    fn pages_forward_in_time_from_the_window_start() {
+        let first = page_query("select=at&planet=eq.5", Some("T0"), None);
+        assert_eq!(first, "select=at&planet=eq.5&at=gte.T0&order=at.asc&limit=1000");
+        let next = page_query("select=at&planet=eq.5", Some("T0"), Some("T9"));
+        assert_eq!(next, "select=at&planet=eq.5&at=gt.T9&order=at.asc&limit=1000");
+        assert_eq!(page_query("select=at", None, None), "select=at&order=at.asc&limit=1000");
+    }
+
+    #[test]
+    fn the_next_page_starts_after_a_full_page_only() {
+        let page = |n: usize| (0..n).map(|i| json!({ "at": format!("t{i}") })).collect::<Vec<_>>();
+        assert_eq!(next_after(&page(1000)), Some("t999"));
+        assert_eq!(next_after(&page(999)), None);
+        assert_eq!(next_after(&[]), None);
+    }
+
+    fn records(ids: impl DoubleEndedIterator<Item = i64>) -> Vec<ChangeRecord> {
+        ids.rev()
+            .map(|id| ChangeRecord {
+                id,
+                change: OwnerChange {
+                    planet: id,
+                    planet_name: format!("P{id}"),
+                    from: Faction::Humans,
+                    to: Faction::Automaton,
+                    at: id as f64,
+                },
+            })
+            .collect()
+    }
+
+    fn ids(c: &[ChangeRecord]) -> (i64, i64, usize) {
+        (c[0].id, c[c.len() - 1].id, c.len())
+    }
+
+    #[test]
+    fn new_changes_slide_the_window_but_keep_older_pages() {
+        let mut held = records(1..=60);
+        assert!(!prepend(&mut held, records(61..=63)));
+        assert_eq!(ids(&held), (63, 1, 63));
+
+        let mut held = records(1..=100);
+        assert!(prepend(&mut held, records(101..=103)));
+        assert_eq!(ids(&held), (103, 4, 100));
+
+        let mut held = records(1..=300);
+        assert!(prepend(&mut held, records(301..=302)));
+        assert_eq!(ids(&held), (302, 3, 300));
+    }
+
+    #[test]
+    fn a_full_page_of_new_changes_replaces_what_was_held() {
+        let mut held = records(1..=300);
+        assert!(prepend(&mut held, records(401..=500)));
+        assert_eq!(ids(&held), (500, 401, 100));
     }
 }

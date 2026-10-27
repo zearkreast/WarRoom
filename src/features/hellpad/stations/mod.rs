@@ -5,7 +5,7 @@ pub mod jumps;
 
 use crate::api::fronts::planet_rate;
 use crate::api::queries::queries;
-use crate::api::stations::use_station_jumps;
+use crate::api::stations::{JUMP_LIMIT, use_station_jumps};
 use crate::features::map::pawn_art::{DssState, action_icon, dss_state};
 use crate::features::planet::detail::PlanetSphere;
 use crate::js::{self, fmt_date_time};
@@ -297,7 +297,11 @@ fn JumpHistoryLink(station: i64) -> impl IntoView {
                 None => "No jumps logged yet".to_string(),
                 Some(last) => format!(
                     "{} logged · last {}",
-                    if j.len() == 1 { "1 jump".to_string() } else { format!("{} jumps", j.len()) },
+                    match j.len() {
+                        1 => "1 jump".to_string(),
+                        n if n >= JUMP_LIMIT => format!("{n}+ jumps"),
+                        n => format!("{n} jumps"),
+                    },
                     fmt_date_time(last.at)
                 ),
             }

@@ -1,5 +1,5 @@
 use crate::api::queries::queries;
-use crate::api::stations::StationJump;
+use crate::api::stations::{JUMP_LIMIT, StationJump};
 use crate::js::fmt_date_time;
 use crate::state::ui;
 use crate::ui::emblems::FactionEmblem;
@@ -81,7 +81,15 @@ pub fn JumpRoute(
         (n > limit).then(|| {
             view! {
                 <button class="gww-chip gww-more" on:click=move |_| all.update(|a| *a = !*a)>
-                    {move || if all.get() { "Show fewer".to_string() } else { format!("Show all {n} jumps") }}
+                    {move || {
+                        if all.get() {
+                            "Show fewer".to_string()
+                        } else if n >= JUMP_LIMIT {
+                            format!("Show latest {n} jumps")
+                        } else {
+                            format!("Show all {n} jumps")
+                        }
+                    }}
                 </button>
             }
         })

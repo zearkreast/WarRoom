@@ -97,9 +97,10 @@ fn AddressBar(page: Memo<GwwPage>) -> impl IntoView {
     }
 }
 
-fn log_line(count: usize) -> String {
+fn log_line(count: usize, older: bool) -> String {
     match count {
         0 => "The war log and the FTL jumps.".into(),
+        n if older => format!("The war log and the FTL jumps. {n}+ planets have changed hands since records began."),
         1 => "The war log and the FTL jumps. 1 planet has changed hands since records began.".into(),
         n => format!("The war log and the FTL jumps. {n} planets have changed hands since records began."),
     }
@@ -386,6 +387,7 @@ fn page_view(page: &GwwPage, heading: HeadingRef, log_text: Signal<String>) -> O
 pub fn GwwModule() -> impl IntoView {
     let stack = ui().gww;
     let changes = history().changes;
+    let older = history().older;
     let page = Memo::new(move |_| stack.with(|s| s.last().cloned().unwrap_or(GwwPage::Home)));
     let depth = Memo::new(move |_| stack.with(Vec::len));
     let root = NodeRef::<html::Div>::new();
@@ -473,7 +475,7 @@ pub fn GwwModule() -> impl IntoView {
         }
         record();
     });
-    let log_text = Signal::derive(move || log_line(changes.with(Vec::len)));
+    let log_text = Signal::derive(move || log_line(changes.with(Vec::len), older.get()));
     let view_key = Memo::new(move |_| (depth.get(), key_of(&page.get())));
     view! {
         <div class="gww" node_ref=root>
@@ -507,5 +509,22 @@ pub fn GwwModule() -> impl IntoView {
                 view! { <div class="gww-view">{body.unwrap_or_else(|| view! { <Home log_text=log_text /> }.into_any())}</div> }
             }}
         </div>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::log_line;
+
+    #[test]
+    fn counts_the_war_log_as_a_floor_while_older_changes_are_unread() {
+        assert_eq!(
+            log_line(37, false),
+            "The war log and the FTL jumps. 37 planets have changed hands since records began."
+        );
+        assert_eq!(
+            log_line(100, true),
+            "The war log and the FTL jumps. 100+ planets have changed hands since records began."
+        );
     }
 }
