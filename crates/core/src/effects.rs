@@ -45,6 +45,8 @@ pub struct PlanetEffect {
     pub kind: EffectKind,
     pub name: String,
     pub description: String,
+    /// When a timed effect, such as an arsenal augmentation, ends: epoch ms.
+    pub until: Option<f64>,
 }
 
 #[derive(Deserialize)]
@@ -134,6 +136,7 @@ fn describe(id: i64) -> Option<PlanetEffect> {
         kind,
         name: SIDE_SUFFIX.replace(name, "").into_owned(),
         description: MARKUP_TAG.replace_all(description, "").into_owned(),
+        until: None,
     })
 }
 

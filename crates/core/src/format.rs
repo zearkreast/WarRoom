@@ -191,6 +191,12 @@ pub fn fmt_rate(rate: Option<f64>) -> String {
     }
 }
 
+/// Time left on something that ends, in days and hours once it's a day or more.
+pub fn fmt_time_left(ms: f64) -> String {
+    let h = (ms / 3_600_000.0).floor();
+    if h >= 24.0 { format!("{}d {}h", (h / 24.0).floor(), h % 24.0) } else { fmt_duration(ms) }
+}
+
 /// "2d 4h", "47h 19m", "12m". Negative or zero durations render as "now".
 pub fn fmt_duration(ms: f64) -> String {
     if ms <= 0.0 || ms.is_nan() {

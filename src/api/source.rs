@@ -158,7 +158,7 @@ mod fixtures {
             row(SnapshotKind::PlanetsStatic, value(planets.iter().map(to_static).collect::<Vec<_>>())),
             row(SnapshotKind::Dispatches, value(newest_dispatches(&dispatches))),
             row(SnapshotKind::SpaceStations, value(stations.iter().map(to_station_live).collect::<Vec<_>>())),
-            row(SnapshotKind::PlanetEffects, value(to_effects_live(&status))),
+            row(SnapshotKind::PlanetEffects, value(to_effects_live(&status, crate::js::now()))),
             row(SnapshotKind::Episodes, value(merge_episodes(&[], &to_episodes(&raw, war_time, fetched), 0.0))),
         ]
     }

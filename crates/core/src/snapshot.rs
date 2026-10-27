@@ -5,6 +5,7 @@ use crate::api::{
     Statistics, TacticalAction, War, WarStatusRaw,
 };
 use crate::factions::faction_by_id;
+use crate::format::js_round;
 use crate::time::iso_string;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
@@ -579,9 +580,21 @@ pub struct StationEffectIds {
 pub struct EffectsLive {
     pub planets: Vec<PlanetEffectIds>,
     pub stations: Vec<StationEffectIds>,
+    /// Effects a war event grants its planets until `until` (epoch ms, to the minute).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub timed: Vec<TimedEffects>,
 }
 
-pub fn to_effects_live(status: &WarStatusRaw) -> EffectsLive {
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct TimedEffects {
+    pub ids: Vec<i64>,
+    pub planets: Vec<i64>,
+    pub until: f64,
+}
+
+/// `at` is when `status` was fetched, which places the events' expiry in real time.
+pub fn to_effects_live(status: &WarStatusRaw, at: f64) -> EffectsLive {
     let mut by_planet: BTreeMap<i64, Vec<i64>> = BTreeMap::new();
     for e in &status.planet_active_effects {
         let ids = by_planet.entry(e.index).or_default();
@@ -604,6 +617,20 @@ pub fn to_effects_live(status: &WarStatusRaw) -> EffectsLive {
                 let mut ids = s.active_effect_ids.clone();
                 ids.sort_unstable();
                 StationEffectIds { id: s.id32, ids }
+            })
+            .collect(),
+        // To the minute, so the snapshot is only rewritten when an event changes.
+        timed: status
+            .global_events
+            .iter()
+            .filter(|g| !g.effect_ids.is_empty() && !g.planet_indices.is_empty() && g.expire_time > status.time)
+            .map(|g| {
+                let mut ids = g.effect_ids.clone();
+                ids.sort_unstable();
+                let mut planets = g.planet_indices.clone();
+                planets.sort_unstable();
+                let until = js_round((at + (g.expire_time - status.time) * 1000.0) / 60_000.0) * 60_000.0;
+                TimedEffects { ids, planets, until }
             })
             .collect(),
     }

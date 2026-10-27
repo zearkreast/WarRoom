@@ -435,7 +435,7 @@ impl Collector {
         )?;
         let status: WarStatusRaw = typed(game.get(&format!("/api/WarSeason/{id}/Status"))?)?;
         // Effects come from the status this job already reads, at no extra request.
-        let effects = to_effects_live(&status);
+        let effects = to_effects_live(&status, (self.now)());
         let effects_json = to_js_json(&effects);
         if effects_json != self.last_effects {
             self.snapshot(SnapshotKind::PlanetEffects, serde_json::to_value(&effects).unwrap())?;

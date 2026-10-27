@@ -27,6 +27,7 @@ pub mod planet_index;
 pub mod planets;
 pub mod progress;
 pub mod regions;
+pub mod sieges;
 pub mod snapshot;
 pub mod stratagems;
 pub mod ticker;

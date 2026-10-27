@@ -100,6 +100,45 @@ fn gives_every_site_its_own_address_and_id() {
 }
 
 #[test]
+fn stays_in_universe() {
+    let mut shown: Vec<&str> = all_text();
+    shown.extend(CHAPTERS.iter().flat_map(|c| [c.title, c.summary]));
+    for m in MANUALS {
+        shown.extend([m.title, m.summary]);
+        shown.extend(m.sections.iter().map(|s| s.heading));
+        shown.extend(m.quotes.unwrap_or_default());
+    }
+    for m in MINISTRIES {
+        shown.push(m.summary);
+        shown.extend(m.sections.iter().map(|s| s.heading));
+        shown.extend(m.ties.unwrap_or_default().iter().map(|t| t.how));
+    }
+    for c in COMPANIES {
+        shown.extend([c.trade, c.summary, c.broadcast.unwrap_or("")]);
+        for s in c.sections {
+            shown.push(s.heading);
+            shown.extend(s.products.unwrap_or_default());
+        }
+        shown.extend(c.ties.unwrap_or_default().iter().map(|t| t.how));
+    }
+    for h in HOLIDAYS {
+        shown.extend([h.summary, h.when]);
+        shown.extend(h.quotes.iter().flat_map(|q| [q.from, q.text]));
+        shown.extend(h.sections.iter().map(|s| s.heading));
+    }
+    shown.extend([GOV.summary, CITIZENS.summary]);
+    shown.extend(CITIZENS.broadcasts);
+    shown.push(HOLIDAYS_SITE.summary);
+    shown.extend(ADS.iter().map(|a| a.alt));
+    let out_of_universe = regex_lite::Regex::new(
+        r"(?i)\b(arrowhead|players?|playerbase|crossovers?|concept art|game master|halo|killzone|starship troopers|memes?|canon|community|tracker|companion app|wiki|developers?|patch)\b|\bthe game\b|\bgame's\b|\b20\d\d\b",
+    )
+    .unwrap();
+    let found: Vec<&str> = shown.into_iter().filter(|t| out_of_universe.is_match(t)).collect();
+    assert!(found.is_empty(), "{found:?}");
+}
+
+#[test]
 fn links_only_to_pages_tracker_views_and_planets_that_exist() {
     let planets = planet_names();
     let broken: Vec<String> = targets()

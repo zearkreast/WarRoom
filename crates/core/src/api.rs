@@ -339,7 +339,24 @@ pub struct StationEffects {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct WarStatusRaw {
+    /// War time, in seconds; `expire_time` counts in the same clock.
     pub time: f64,
     pub planet_active_effects: Vec<PlanetActiveEffect>,
     pub space_stations: Vec<StationEffects>,
+    /// War events; one with effects grants them to its planets until it expires.
+    pub global_events: Vec<GlobalEvent>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct GlobalEvent {
+    #[serde(deserialize_with = "null_default")]
+    pub effect_ids: Vec<i64>,
+    #[serde(deserialize_with = "null_default")]
+    pub planet_indices: Vec<i64>,
+    pub expire_time: f64,
+}
+
+fn null_default<'de, D: serde::Deserializer<'de>, T: Default + Deserialize<'de>>(d: D) -> Result<T, D::Error> {
+    Ok(Option::<T>::deserialize(d)?.unwrap_or_default())
 }

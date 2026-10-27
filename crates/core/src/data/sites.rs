@@ -1,5 +1,6 @@
-//! Site text is adapted from the Helldivers Wiki in this app's words; slogans, poster lines and broadcast
-//! lines are the game's, word for word. Text links are written `[[kind:target|label]]` (see `gww_text`).
+//! Site text is adapted from the Helldivers Wiki in this app's words and kept in-universe: no players, studio,
+//! crossovers or real-world facts (`tests/gww.rs` checks). Slogans, poster lines and broadcast lines are the
+//! game's, word for word. Text links are written `[[kind:target|label]]` (see `gww_text`).
 
 use super::*;
 
@@ -58,7 +59,7 @@ pub const MINISTRIES: &[Ministry] = &[
             Section {
                 heading: "The only source",
                 text: Some(
-                    "The Ministry of Truth is the sole provider of information to the public: every poster about the other ministries is its work. It supervises Strohmann News, anchored by Coretta Kelly, through [[company:strohmann-media|Strohmann Media]]; the broadcasts reach this tracker as [[app:news|Strohmann News]].",
+                    "The Ministry of Truth is the sole provider of information to the public: every poster about the other ministries is its work. It supervises Strohmann News, anchored by Coretta Kelly, through [[company:strohmann-media|Strohmann Media]]; the latest dispatches are on [[app:news|Strohmann News]].",
                 ),
                 ..Section::EMPTY
             },
@@ -142,7 +143,7 @@ pub const MINISTRIES: &[Ministry] = &[
                 ..Section::EMPTY
             },
         ],
-        ties: Some(&[Tie { to: "company:ulterior", how: "Believed to own it; they share a logo" }]),
+        ties: None,
         related: Some(&["manual:supply-lines", "manual:liberation"]),
         ads: Some(&["expansion-work-songs"]),
         source: Source { title: "Ministry of Expansion", url: "https://helldivers.wiki.gg/wiki/Ministry_of_Expansion" },
@@ -208,7 +209,7 @@ pub const MINISTRIES: &[Ministry] = &[
             },
         ],
         ties: None,
-        related: Some(&["site:gov", "company:permacura", "company:ampudyne"]),
+        related: Some(&["site:gov", "company:permacura"]),
         ads: Some(&["humanity-franchisement"]),
         source: Source { title: "Ministry of Humanity", url: "https://helldivers.wiki.gg/wiki/Ministry_of_Humanity" },
     },
@@ -225,7 +226,7 @@ pub const MINISTRIES: &[Ministry] = &[
             Section {
                 heading: "The economy",
                 text: Some(
-                    "It manages Super Earth's economy and sees that every colony gets the latest beverages. Super Credits are issued in its name, down to the refunds Arrowhead's support hands out, and it closed the Midasburg Mint after 75 years.",
+                    "It manages Super Earth's economy and sees that every colony gets the latest beverages. Super Credits handed out by the Federation arrive marked “Issued by the Ministry of Prosperity”, and the ministry closed the Midasburg Mint after 75 years of operation.",
                 ),
                 ..Section::EMPTY
             },
@@ -257,13 +258,15 @@ pub const COMPANIES: &[Company] = &[
         color: "#f074d8",
         logo: Some("strohmann-news"),
         slogan: Some("Strohmann: truth, tailored to you."),
-        broadcast: None,
+        broadcast: Some(
+            "Only truth can bring us together, which is why Super Earth has partnered with Strohmann media for all your breaking news needs.",
+        ),
         quote: None,
         showcase: None,
         sections: &[Section {
             heading: "Strohmann News",
             text: Some(
-                "Strohmann Media runs Strohmann News, the broadcast on every Super Destroyer, anchored by Coretta Kelly and approved by the [[ministry:truth|Ministry of Truth]], which is believed to own the company and shares its logo. This tracker carries its dispatches as [[app:news|Strohmann News]].",
+                "Strohmann Media runs Strohmann News, the broadcast on every Super Destroyer, anchored by Coretta Kelly and approved by the [[ministry:truth|Ministry of Truth]], which is believed to own the company and shares its logo. The latest dispatches are on [[app:news|Strohmann News]].",
             ),
             ..Section::EMPTY
         }],
@@ -348,7 +351,7 @@ pub const COMPANIES: &[Company] = &[
             },
         ],
         ties: Some(&[Tie { to: "ministry:unity", how: "Logos all but identical; ties unknown" }]),
-        related: Some(&["ministry:humanity", "company:ampudyne"]),
+        related: Some(&["ministry:humanity"]),
         ads: None,
         source: Source { title: "Permacura", url: "https://helldivers.wiki.gg/wiki/Permacura" },
     },
@@ -384,30 +387,6 @@ pub const COMPANIES: &[Company] = &[
         related: Some(&["manual:dss", "app:past"]),
         ads: None,
         source: Source { title: "C.O.B. Genetics", url: "https://helldivers.wiki.gg/wiki/C.O.B._Genetics" },
-    },
-    Company {
-        id: "ampudyne",
-        name: "AmpuDyne",
-        address: "se://ampudyne.med",
-        trade: "Prosthetics",
-        summary: "Replacement limbs for the citizens the war leaves short of one.",
-        color: "#c9ced6",
-        logo: None,
-        slogan: Some("AmpuDyne: Let us give you a hand."),
-        broadcast: Some("Sometimes life deals you a bad hand. But AmpuDyne can deal you a better one."),
-        quote: None,
-        showcase: None,
-        sections: &[Section {
-            heading: "A helping hand",
-            text: Some(
-                "Builds cybernetic prosthetics for wounded and dismembered citizens. Its broadcasts suggest signing your life over to its indentured labour force, where you'll get every replacement limb the job requires.",
-            ),
-            ..Section::EMPTY
-        }],
-        ties: None,
-        related: Some(&["company:permacura", "ministry:humanity"]),
-        ads: None,
-        source: Source { title: "AmpuDyne", url: "https://helldivers.wiki.gg/wiki/AmpuDyne" },
     },
     Company {
         id: "trustor",
@@ -534,7 +513,7 @@ pub const COMPANIES: &[Company] = &[
             Section {
                 heading: "Under contract",
                 text: Some(
-                    "The Illuminate's return put the defense budget under unexpected strain, and the [[ministry:defense|Ministry of Defense]] signed Ståhl Arms to supply the Helldivers with more weapons and gear.",
+                    "On 19 December 2184 a dispatch announced the contract: the ammunition, stratagems and lives of heroes spent against the Illuminate extremists had put the Q4 defense budget under unexpected strain, so the [[ministry:defense|Ministry of Defense]] signed the “reputable arms manufacturer” Ståhl Arms to supply the Helldivers with more weapons and gear.",
                 ),
                 products: Some(&[
                     "StA-52 Assault Rifle",
@@ -543,13 +522,15 @@ pub const COMPANIES: &[Company] = &[
                     "StA-X3 W.A.S.P. Launcher",
                     "AC-1 Dutiful armour",
                     "AC-2 Obedient armour",
+                    "Strength in Our Arms cape",
+                    "Defender of Our Dream cape",
                 ]),
                 ..Section::EMPTY
             },
             Section {
-                heading: "From another war",
+                heading: "The arsenal",
                 text: Some(
-                    "A crossover from the Killzone series, where Ståhl Arms is a Helghast arms maker. The weapons' own descriptions misspell the name as Stål Arms.",
+                    "The StA-52 Assault Rifle's high-capacity drum magazine is made for sustained fire, and the StA-11 SMG's helical feed magazine holds more rounds at the cost of a front-heavy weapon. The StA-X3 W.A.S.P. Launcher carries seven lock-on homing missiles, fired straight from the launcher or as an airburst, with a support backpack for reloading; it was first issued to Helldivers on the planets the Illuminate had invaded.",
                 ),
                 ..Section::EMPTY
             },
@@ -560,37 +541,13 @@ pub const COMPANIES: &[Company] = &[
         source: Source { title: "Ståhl Arms", url: "https://helldivers.wiki.gg/wiki/St%C3%A5hl_Arms" },
     },
     Company {
-        id: "ulterior",
-        name: "Ulterior",
-        address: "se://ulterior.corp",
-        trade: "Mining",
-        summary: "The miner Super Earth trusts with its Element 710.",
-        color: "#7f93a0",
-        logo: None,
-        slogan: Some("Ulterior: operating under the mantle."),
-        broadcast: Some("Super Earth runs on Element 710. And Element 710 runs on Ulterior Industries."),
-        quote: None,
-        showcase: None,
-        sections: &[Section {
-            heading: "Under the mantle",
-            text: Some(
-                "The miner Super Earth trusts with all its mining needs. Concept art suggests the [[ministry:expansion|Ministry of Expansion]] owns it; the two share a logo.",
-            ),
-            ..Section::EMPTY
-        }],
-        ties: Some(&[Tie { to: "ministry:expansion", how: "Believed to own it; they share a logo" }]),
-        related: Some(&["ministry:expansion"]),
-        ads: None,
-        source: Source { title: "Ulterior", url: "https://helldivers.wiki.gg/wiki/Ulterior" },
-    },
-    Company {
         id: "martian-armory",
         name: "Martian Armory",
         address: "se://martian.armory",
         trade: "Arms",
         summary: "The weapons maker behind the arms made famous by the Obedient Democracy Support Troopers cartoon.",
         color: "#6f9a4a",
-        logo: None,
+        logo: Some("martian-armory"),
         slogan: None,
         broadcast: None,
         quote: None,
@@ -599,15 +556,15 @@ pub const COMPANIES: &[Company] = &[
             Section {
                 heading: "The armory",
                 text: Some(
-                    "A megacorporation weapons producer for the Federation, supplying the Helldivers with weapons, several of them made famous by the Obedient Democracy Support Troopers cartoon.",
+                    "A megacorporation weapons producer for the Federation, supplying the Helldivers with weapons, several of them made famous by the Obedient Democracy Support Troopers cartoon. Its M6C/SOCOM Pistol comes with a built-in laser sight, suppressor and flashlight.",
                 ),
                 products: Some(&["MA5C Assault Rifle", "M7S SMG", "M90A Shotgun", "M6C/SOCOM Pistol"]),
                 ..Section::EMPTY
             },
             Section {
-                heading: "From another war",
+                heading: "On screen",
                 text: Some(
-                    "Added with the Obedient Democracy Support Troopers Legendary Warbond, a Halo crossover. Unlike [[company:stahl-arms|Ståhl Arms]] in the Killzone crossover before it, Martian Armory does not exist in Halo canon; it is likely based on Misriah Armory.",
+                    "The MA5C Assault Rifle, with its convenient ammo counter and compass, is often showcased in “Obedient Democracy Support Troopers”, and the top-loaded M90A Shotgun is prominently featured in the cartoon's final episode.",
                 ),
                 ..Section::EMPTY
             },
@@ -788,7 +745,7 @@ pub const HOLIDAYS: &[Holiday] = &[
             Section {
                 heading: "The Creek",
                 text: Some(
-                    "The day commemorates the countless Helldivers who died in the effort to liberate [[planet:Malevelon Creek|Malevelon Creek]], a jungle world fought over against the Automatons. The planet became the target of Major Order A1-4-1, and its liberation was won in mere hours.",
+                    "The day commemorates the countless Helldivers who died in the effort to liberate [[planet:Malevelon Creek|Malevelon Creek]], a jungle world fought over against the Automatons. The planet became the target of a Major Order, and its liberation was won in mere hours.",
                 ),
                 ..Section::EMPTY
             },
@@ -810,14 +767,7 @@ pub const HOLIDAYS: &[Holiday] = &[
             Section {
                 heading: "The memorial",
                 text: Some(
-                    "On 21 October 2186, in the run-up to [[holiday:liberty-day|Liberty Day]], construction of a Malevelon Creek Memorial & Interrogation Center for Human Rights was ordered. Its materials were to come from key planets on each front in Major Order A3-10-5, but only one of the objectives was reached.",
-                ),
-                ..Section::EMPTY
-            },
-            Section {
-                heading: "Behind the day",
-                text: Some(
-                    "Players had dubbed the planet “space Vietnam”, for its thick jungle and the Automatons firing through it from every direction. Arrowhead Game Studios honoured the meme by making the Creek part of the game's official lore.",
+                    "On 21 October 2186, in the run-up to [[holiday:liberty-day|Liberty Day]], construction of a Malevelon Creek Memorial & Interrogation Center for Human Rights was ordered. Its materials were to come from key planets on each front under a Major Order, but only one of the objectives was reached.",
                 ),
                 ..Section::EMPTY
             },
@@ -837,7 +787,10 @@ pub const HOLIDAYS: &[Holiday] = &[
         address: "se://gov/holidays/avengement",
         color: "#9b6cf0",
         summary: "Seyshel Beach's own holiday, for the day a small cohort of Helldivers set it free.",
-        quotes: &[],
+        quotes: &[Quote {
+            from: "Dispatch: Seyshel Beach celebration",
+            text: "The planet Seyshel Beach was liberated earlier this week following a long and concerted campaign by a small but inexplicably dedicated group of Helldivers. To annotate this long-awaited victory over the Illuminate, the citizens of the planet voted to establish the date of the planet's liberation as ‘Avengement day.’ On this new annual holiday, Beach citizens will pause to remember the planets lost to humanity's foes, and relish the superlative satisfaction of long-awaited retribution.",
+        }],
         sections: &[
             Section {
                 heading: "Seyshel Beach",
@@ -856,18 +809,16 @@ pub const HOLIDAYS: &[Holiday] = &[
             Section {
                 heading: "The holiday",
                 text: Some(
-                    "Its citizens made 14 October, the day of its liberation, a planetary holiday to remember the planets lost to humanity's foes: Avengement Day. It is kept on Seyshel Beach only.",
+                    "Its citizens voted to make 14 October, the day of its liberation, an annual holiday: Avengement Day, when they pause to remember the planets lost to humanity's foes. It is kept on Seyshel Beach only.",
                 ),
-                ..Section::EMPTY
-            },
-            Section {
-                heading: "Behind the name",
-                text: Some("New Alexandria is a reference to the city of the same name in Halo: Reach."),
                 ..Section::EMPTY
             },
         ],
         related: &["holiday:liberty-day", "site:gov"],
-        sources: &[Source { title: "Seyshel Beach", url: "https://helldivers.wiki.gg/wiki/Seyshel_Beach" }],
+        sources: &[
+            Source { title: "Seyshel Beach", url: "https://helldivers.wiki.gg/wiki/Seyshel_Beach" },
+            Source { title: "Major Orders of 2025", url: "https://helldivers.wiki.gg/wiki/Major_Orders_of_2025" },
+        ],
     },
     Holiday {
         id: "liberty-day",
@@ -906,7 +857,9 @@ pub const HOLIDAYS: &[Holiday] = &[
             },
             Section {
                 heading: "Liberty Day 2184",
-                text: Some("The first Liberty Day of the Second Galactic War brought new gear for the Helldivers."),
+                text: Some(
+                    "The first Liberty Day of the Second Galactic War brought new gear for the Helldivers, a 24-hour broadcast of the Super Earth Anthem and a mandatory salute at 16:00 SEST. Anyone who failed to take part was due at the 20:00 SEST activity instead: Surprise Dissident Executions.",
+                ),
                 products: Some(&["DP-00 Tactical armour", "R-2124 Constitution"]),
                 ..Section::EMPTY
             },
@@ -915,7 +868,7 @@ pub const HOLIDAYS: &[Holiday] = &[
                 timeline: Some(&[
                     Dated {
                         when: "Before",
-                        text: "Less than two weeks ahead of the day, the Helldivers seized unsanctioned explosives from Automaton planets in Major Order A2-10-3.",
+                        text: "Less than two weeks ahead of the day, the Helldivers seized unsanctioned explosives from Automaton planets under a Major Order.",
                     },
                     Dated {
                         when: "26 Oct 2185",
@@ -927,7 +880,7 @@ pub const HOLIDAYS: &[Holiday] = &[
                     },
                     Dated {
                         when: "Major Order",
-                        text: "Kill 40 million enemies using only the R-2124 Constitution (A2-10-5). Its reward was the new Liberty Day cape, the Veridical Ideology.",
+                        text: "Kill 40 million enemies using only the R-2124 Constitution. Its reward was the new Liberty Day cape, the Veridical Ideology.",
                     },
                 ]),
                 ..Section::EMPTY
@@ -953,17 +906,14 @@ pub const HOLIDAYS: &[Holiday] = &[
                         text: "High Command releases the Liberty Day 2186 Party Pack: printable bunting, a game like darts, a colouring page, decorations, a DIY Helldiver mask, event highlights and democratic trivia.",
                     },
                     Dated {
+                        when: "23 Oct 2186",
+                        text: "High Command checks that Helldivers are completing their regular mandatory stratagem code input practice, and asks for their Stratagem Hero high scores.",
+                    },
+                    Dated {
                         when: "26 Oct 2186",
-                        text: "Every Super Destroyer is decorated for the day with flags, rugs and party cups, and Helldivers get the temporary Eagle Fly By and Orbital Confetti stratagems: tactically useless, full of patriotism. A new game, Adopt a SEAF, has Helldivers look after their own SEAF soldier and send them on missions. At the end of the day every Helldiver receives the AR-23L Liberator.",
+                        text: "Every Super Destroyer is decorated for the day with flags, rugs and party cups, and Helldivers get the temporary Eagle Fly By and Orbital Confetti stratagems: tactically useless, full of patriotism. At the end of the day every Helldiver receives the AR-23L Liberator.",
                     },
                 ]),
-                ..Section::EMPTY
-            },
-            Section {
-                heading: "Behind the day",
-                text: Some(
-                    "26 October is the day Starship Troopers was published, in 1959. Arrowhead Game Studios has marked it every year since the first Helldivers.",
-                ),
                 ..Section::EMPTY
             },
         ],
@@ -1045,13 +995,6 @@ pub const HOLIDAYS: &[Holiday] = &[
                     "Orbital Gatling Barrage: from 23 December, incendiary rounds that set the ground alight.",
                     "Orbital Walking Barrage: from 28 December, Orbital Smoke Strikes mixed into its salvos.",
                 ]),
-                ..Section::EMPTY
-            },
-            Section {
-                heading: "Behind the carols",
-                text: Some(
-                    "“All I want for The Festival of Reckoning is Vengeance” parodies Mariah Carey's “All I Want for Christmas Is You”.",
-                ),
                 ..Section::EMPTY
             },
         ],
@@ -1305,3 +1248,48 @@ pub const CITIZENS: CitizensPage = CitizensPage {
         Source { title: "Major Orders", url: "https://helldivers.wiki.gg/wiki/Major_Orders" },
     ],
 };
+
+/// Every wiki page the G.W.W. adapts, once each, for the credits: its pages carry no source lines of their own.
+pub const GWW_SOURCES: &[Source] = &[
+    Source {
+        title: "Second Galactic War Mechanics",
+        url: "https://helldivers.wiki.gg/wiki/Second_Galactic_War_Mechanics",
+    },
+    Source { title: "Democracy Space Station", url: "https://helldivers.wiki.gg/wiki/Democracy_Space_Station" },
+    Source { title: "Super Destroyer", url: "https://helldivers.wiki.gg/wiki/Super_Destroyer" },
+    Source { title: "Ship Modules", url: "https://helldivers.wiki.gg/wiki/Ship_Modules" },
+    Source { title: "Ministry of Science", url: "https://helldivers.wiki.gg/wiki/Ministry_of_Science" },
+    Source { title: "Admiral Defense", url: "https://helldivers.wiki.gg/wiki/Admiral_Defense" },
+    Source { title: "Ministry of Defense", url: "https://helldivers.wiki.gg/wiki/Ministry_of_Defense" },
+    Source { title: "Ministry of Truth", url: "https://helldivers.wiki.gg/wiki/Ministry_of_Truth" },
+    Source { title: "Ministry of Unity", url: "https://helldivers.wiki.gg/wiki/Ministry_of_Unity" },
+    Source { title: "Ministry of Expansion", url: "https://helldivers.wiki.gg/wiki/Ministry_of_Expansion" },
+    Source { title: "Ministry of Humanity", url: "https://helldivers.wiki.gg/wiki/Ministry_of_Humanity" },
+    Source { title: "Ministry of Prosperity", url: "https://helldivers.wiki.gg/wiki/Ministry_of_Prosperity" },
+    Source { title: "Government of Super Earth", url: "https://helldivers.wiki.gg/wiki/Government_of_Super_Earth" },
+    Source { title: "Strohmann Media", url: "https://helldivers.wiki.gg/wiki/Strohmann_Media" },
+    Source { title: "Morgunson", url: "https://helldivers.wiki.gg/wiki/Morgunson" },
+    Source { title: "Permacura", url: "https://helldivers.wiki.gg/wiki/Permacura" },
+    Source { title: "C.O.B. Genetics", url: "https://helldivers.wiki.gg/wiki/C.O.B._Genetics" },
+    Source { title: "Trustor", url: "https://helldivers.wiki.gg/wiki/Trustor" },
+    Source { title: "Ståhl Arms", url: "https://helldivers.wiki.gg/wiki/St%C3%A5hl_Arms" },
+    Source { title: "Martian Armory", url: "https://helldivers.wiki.gg/wiki/Martian_Armory" },
+    Source {
+        title: "Malevelon Creek Memorial Day",
+        url: "https://helldivers.wiki.gg/wiki/Malevelon_Creek_Memorial_Day",
+    },
+    Source { title: "Seyshel Beach", url: "https://helldivers.wiki.gg/wiki/Seyshel_Beach" },
+    Source { title: "Major Orders of 2025", url: "https://helldivers.wiki.gg/wiki/Major_Orders_of_2025" },
+    Source { title: "Liberty Day", url: "https://helldivers.wiki.gg/wiki/Liberty_Day" },
+    Source { title: "Festival of Reckoning", url: "https://helldivers.wiki.gg/wiki/Festival_of_Reckoning" },
+    Source { title: "Wall of Martyrs", url: "https://helldivers.wiki.gg/wiki/Wall_of_Martyrs" },
+    Source {
+        title: "Helldiver Contract of Employment",
+        url: "https://helldivers.wiki.gg/wiki/Helldiver_Contract_of_Employment",
+    },
+    Source { title: "SEAF Communications Device", url: "https://helldivers.wiki.gg/wiki/SEAF_Communications_Device" },
+    Source { title: "Major Orders", url: "https://helldivers.wiki.gg/wiki/Major_Orders" },
+    Source { title: "Corporations", url: "https://helldivers.wiki.gg/wiki/Corporations" },
+    Source { title: "Minor Corporations", url: "https://helldivers.wiki.gg/wiki/Minor_Corporations" },
+    Source { title: "Training Manual Tips", url: "https://helldivers.wiki.gg/wiki/Training_Manual_Tips" },
+];
