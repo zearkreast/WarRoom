@@ -3,6 +3,22 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.5.0] - 2026-10-27
+
+Everything since v0.3.5-beta, and the first release out of beta.
+
+### Upgrading
+
+- Redeploy the collector: `git pull && docker compose up -d --build` now builds the Rust collector, and the same
+  `collector/.env` works. Apply `supabase/migrations/0005_activity.sql` first if it isn't yet.
+
+### Rebuilt in Rust
+
+- The app is rebuilt in Rust with Leptos, in the same Tauri shell, for Windows, macOS, Linux, Android and the
+  web. Every screen keeps its look and behaviour, and settings saved by earlier versions carry over.
+- The collector is rebuilt in Rust and writes the same snapshots and rows, so older apps keep reading it.
+- Building needs no Node.js: Trunk builds the web app and the Tauri CLI comes from cargo.
+
 ## [0.3.5-beta] - 2026-10-27
 
 Everything since v0.3.2-beta.
