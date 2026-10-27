@@ -206,6 +206,22 @@ pub fn DssIcon(
     }
 }
 
+/// The game's Heavy SEAF Presence emblem, drawn like a Lucide icon in the current colour.
+#[component]
+pub fn SeafEmblem(
+    #[prop(default = 24.0)] size: f64,
+    #[prop(optional, into)] class: MaybeProp<String>,
+    #[prop(optional, into)] color: MaybeProp<String>,
+) -> impl IntoView {
+    let class = format!("emblem {}", class.get_untracked().unwrap_or_default());
+    let style = color.get_untracked().map(|c| format!("color: {c};"));
+    view! {
+        <svg class=class width=num(size) height=num(size) viewBox="-12 -12 24 24" style=style aria-hidden="true">
+            <EmblemArt art="seaf" size=24.0 />
+        </svg>
+    }
+}
+
 /// A space station's emblem: the DSS glyph, or the Automaton cog and star the enemy station wore.
 #[component]
 pub fn StationEmblem(
@@ -266,6 +282,7 @@ pub fn AppMark(#[prop(default = 26.0)] size: f64) -> impl IntoView {
 pub enum IconLike {
     Lucide(IconData),
     Dss,
+    Seaf,
     Hellpad,
 }
 
@@ -281,6 +298,7 @@ pub fn icon_view(icon: IconLike, size: f64, stroke_width: f64, class: Option<Str
             view! { <Icon icon=data size=size stroke_width=stroke_width class=class /> }.into_any()
         }
         IconLike::Dss => view! { <DssIcon size=size class=class /> }.into_any(),
+        IconLike::Seaf => view! { <SeafEmblem size=size class=class /> }.into_any(),
         IconLike::Hellpad => view! { <HellpadMark size=size class=class /> }.into_any(),
     }
 }

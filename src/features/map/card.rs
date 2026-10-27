@@ -1,12 +1,14 @@
 //! The map's hover card and the panel a clicked planet docks beside it.
 
 use crate::features::map::poi::{PoiGlyph, PoiKind, poi_image, poi_kind, poi_origin};
+use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
+use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
 use crate::features::planet::cities::{CityList, CityMark};
 use crate::features::planet::tint::planet_tint;
 use crate::features::planets::fronts::station_planets;
 use crate::js::{self, num};
 use crate::state::{HellpadModule, settings, ui};
-use crate::ui::emblems::{DssIcon, SubfactionEmblem};
+use crate::ui::emblems::{DssIcon, SeafEmblem, SubfactionEmblem};
 use crate::ui::icons::{self, Icon};
 use leptos::prelude::*;
 use warroom_core::api::{Faction, Planet};
@@ -14,7 +16,7 @@ use warroom_core::biomes::{biome_tint, regen_pct_per_hour, resistance_level};
 use warroom_core::cities::{CityState, cities_of};
 use warroom_core::effects::{EffectKind, PlanetEffect, has_pawn};
 use warroom_core::factions::{faction_color, faction_label};
-use warroom_core::format::{fmt_int, fmt_pct, to_fixed};
+use warroom_core::format::{fmt_int, fmt_pct, fmt_time_left, to_fixed};
 use warroom_core::galaxy::{Anomaly, Landmark, anomaly_of};
 use warroom_core::progress::{liberation_percent, tracked_percent};
 
@@ -157,6 +159,48 @@ pub fn LiberationBar(
     }
 }
 
+/// Arsenal augmentations: stratagems High Command adds to every loadout on the planet for a while.
+#[component]
+fn Augmentations(list: Signal<Vec<PlanetEffect>>) -> impl IntoView {
+    let clock = js::use_now(60_000.0);
+    move || {
+        let now = clock.get();
+        let live: Vec<PlanetEffect> =
+            list.with(|l| l.iter().filter(|e| e.until.is_none_or(|u| u > now)).cloned().collect());
+        (!live.is_empty()).then(|| {
+            view! {
+                <ul class="hc-augments" aria-label="Arsenal augmentations">
+                    {live
+                        .into_iter()
+                        .map(|e| {
+                            let name = augmented_stratagem(&e.name);
+                            let icon = match stratagem_icon(&name) {
+                                Some(src) => view! { <img src=src alt="" width="26" height="26" /> }.into_any(),
+                                None => view! { <Icon icon=icons::CROSSHAIR size=18.0 /> }.into_any(),
+                            };
+                            view! {
+                                <li>
+                                    {icon}
+                                    <span class="hc-aug-body">
+                                        <span class="caps">"Arsenal augmentation"</span>
+                                        <b class="caps">{name}</b>
+                                    </span>
+                                    {e.until.map(|u| view! {
+                                        <span class="hc-aug-left caps num" title="Time left">
+                                            <Icon icon=icons::TIMER size=11.0 />
+                                            {format!(" {}", fmt_time_left(u - now))}
+                                        </span>
+                                    })}
+                                </li>
+                            }
+                        })
+                        .collect_view()}
+                </ul>
+            }
+        })
+    }
+}
+
 fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<PlanetEffect>>) -> impl IntoView {
     let enemy = Memo::new(move |_| p.with(enemy_of));
     let anomaly = Memo::new(move |_| p.with(|p| effects.with(|e| anomaly_of(&p.name, &ids(e)))));
@@ -197,6 +241,10 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
                 .collect::<Vec<_>>()
         })
     });
+    let augments = Signal::derive(move || {
+        effects.with(|e| e.iter().filter(|e| e.kind == EffectKind::Arsenal).cloned().collect::<Vec<_>>())
+    });
+    let siege = use_circumvallation(p);
     let desc = Memo::new(move |_| p.with(|p| p.biome.description.clone()));
     let pct = Signal::derive(move || if enemy.get().is_some() { p.with(tracked_percent) } else { 100.0 });
     let regen = Memo::new(move |_| p.with(|p| regen_pct_per_hour(p.regen_per_second, p.max_health)));
@@ -242,6 +290,7 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
                                                 <SubfactionEmblem name=name.clone() faction=f.as_str() size=12.0 color="currentColor" />
                                             }
                                         })}
+                                        {(kind == EffectKind::Seaf).then(|| view! { <SeafEmblem size=13.0 color="var(--f-humans)" /> })}
                                         {name}
                                     </li>
                                 }
@@ -251,6 +300,7 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
                 }
             })
         }}
+        <Augmentations list=augments />
         {move || {
             enemy.get().map(|f| {
                 view! {
@@ -273,6 +323,7 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
                 }
             })
         }}
+        {move || siege.get().map(|c| circumvallation_note(&p.get(), &c, "hc-siege"))}
     }
 }
 

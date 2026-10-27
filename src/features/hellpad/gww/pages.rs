@@ -10,14 +10,14 @@ use crate::js::{self, fmt_date, fmt_date_time, num};
 use crate::state::{OptionsAnchor, settings, ui};
 use crate::ui::emblems::{DssIcon, FactionEmblem, IconLike, icon_view};
 use crate::ui::icons::{self, Icon, IconData};
-use crate::ui::primitives::{Empty, Loading, OutLink};
+use crate::ui::primitives::{Empty, Loading};
 use leptos::html;
 use leptos::prelude::*;
 use send_wrapper::SendWrapper;
 use warroom_core::api::Faction;
-use warroom_core::data::manuals::{CHAPTERS, MANUALS, WIKI, WIKI_LICENCE};
+use warroom_core::data::manuals::{CHAPTERS, MANUALS};
 use warroom_core::data::sites::{ADS, CITIZENS, COMPANIES, GOV, HOLIDAYS, HOLIDAYS_SITE, MINISTRIES};
-use warroom_core::data::{Ad, AdBy, AdShape, Company, Holiday, Manual, Ministry, Section, Source, Tie};
+use warroom_core::data::{Ad, AdBy, AdShape, Company, Holiday, Manual, Ministry, Section, Tie};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, sest_clock, sest_date};
 use warroom_core::gww_nav::{DIRS, LOG_ADDRESS, LOG_TITLE, title_of};
@@ -130,7 +130,7 @@ fn kind_label(kind: &str) -> &'static str {
         "holiday" => "Holiday",
         "site" => "Super Earth",
         "dir" => "Directory",
-        "app" => "In the tracker",
+        "app" => "Off the G.W.W.",
         _ => "",
     }
 }
@@ -543,38 +543,6 @@ fn ties(ties: &'static [Tie], title: &'static str) -> AnyView {
     .into_any()
 }
 
-fn source_line(sources: &[&'static Source], quoted: Option<&'static str>) -> AnyView {
-    let body = if sources.is_empty() {
-        "Written for this tracker.".into_any()
-    } else {
-        view! {
-            "Adapted from the "{WIKI.home.title}":"" "
-            {sources
-                .iter()
-                .copied()
-                .enumerate()
-                .map(|(i, s)| view! {
-                    <span>
-                        {(i > 0).then_some(", ")}
-                        <OutLink href=s.url>{s.title}</OutLink>
-                    </span>
-                })
-                .collect_view()}
-            ", under "
-            <OutLink href=WIKI_LICENCE.url>{WIKI_LICENCE.title}</OutLink>
-            ", which this page shares."
-        }
-        .into_any()
-    };
-    view! {
-        <footer class="gww-source">
-            {body}
-            {quoted.map(|q| view! { " "{q} })}
-        </footer>
-    }
-    .into_any()
-}
-
 fn pager(list: Vec<String>, at: usize, noun: &'static str) -> AnyView {
     let nav = use_gww_nav();
     let prev = at.checked_sub(1).and_then(|i| list.get(i).cloned());
@@ -752,7 +720,7 @@ pub fn news_tile() -> AnyView {
         "app:news".into(),
         "se://strohmann.news",
         "Strohmann News".into(),
-        "Dispatches and campaign news, in the tracker's news page.".into(),
+        "Dispatches and Galactic Campaign news, as they come in.".into(),
         view! { <Icon icon=icons::NEWSPAPER size=26.0 stroke_width=1.5 /> }.into_any(),
         Some("#f074d8".into()),
         Signal::stored(false),
@@ -848,7 +816,6 @@ pub fn manual_page(m: &'static Manual, heading: HeadingRef) -> AnyView {
             });
         }
     });
-    let sources: Vec<&'static Source> = m.sources.map(|s| s.iter().collect()).unwrap_or_default();
     view! {
         <article class="gww-page">
             {banner(
@@ -869,7 +836,6 @@ pub fn manual_page(m: &'static Manual, heading: HeadingRef) -> AnyView {
             {m.tips.iter().map(|t| field_tip(t)).collect_view()}
             {related(m.related.to_vec(), "Read next")}
             <span node_ref=end class="gww-end" aria-hidden="true"></span>
-            {source_line(&sources, m.quotes.filter(|q| !q.is_empty()).map(|_| "Training manual tips are quoted from the game."))}
             {pager(MANUALS.iter().map(manual_target).collect(), at, "manual")}
         </article>
     }
@@ -906,7 +872,6 @@ pub fn ministry_page(m: &'static Ministry, heading: HeadingRef) -> AnyView {
                 {m.ties.map(|t| ties(t, "Ties"))}
                 {ads_inline(inline, here2.clone())}
                 {related(m.related.map(|r| r.to_vec()).unwrap_or_default(), "Read next")}
-                {source_line(&[&m.source, &WIKI.government], Some("Its tip and poster line are quoted from the game."))}
                 {pager(MINISTRIES.iter().map(|x| format!("ministry:{}", x.id)).collect(), at, "ministry")}
             </article>
         }
@@ -946,7 +911,6 @@ pub fn company_page(c: &'static Company, heading: HeadingRef) -> AnyView {
                 {c.ties.map(|t| ties(t, "Ties"))}
                 {ads_inline(inline, here2.clone())}
                 {related(c.related.map(|r| r.to_vec()).unwrap_or_default(), "Read next")}
-                {source_line(&[&c.source], Some("Slogans and broadcast lines are quoted from the game."))}
                 {pager(COMPANIES.iter().map(|x| format!("company:{}", x.id)).collect(), at, "corporation")}
             </article>
         }
@@ -1000,12 +964,11 @@ fn gov_crumbs(site: &str) -> Vec<Crumb> {
 pub fn gov_page(site: &str, heading: HeadingRef) -> AnyView {
     let gov = site == "gov";
     let prefix = format!("gww-{site}");
-    let (title, icon, summary, sections, related_list, sources) = if gov {
-        (GOV.title, GOV.icon, GOV.summary, GOV.sections, GOV.related, GOV.sources)
+    let (title, icon, summary, sections, related_list) = if gov {
+        (GOV.title, GOV.icon, GOV.summary, GOV.sections, GOV.related)
     } else {
-        (CITIZENS.title, CITIZENS.icon, CITIZENS.summary, CITIZENS.sections, CITIZENS.related, CITIZENS.sources)
+        (CITIZENS.title, CITIZENS.icon, CITIZENS.summary, CITIZENS.sections, CITIZENS.related)
     };
-    let sources: Vec<&'static Source> = sources.iter().collect();
     view! {
         <article class="gww-page" style=format!("--site: {};", if gov { "var(--f-humans)" } else { humanity() })>
             {gov_nav(site)}
@@ -1022,10 +985,6 @@ pub fn gov_page(site: &str, heading: HeadingRef) -> AnyView {
             {sections.iter().enumerate().map(|(i, sec)| section_block(sec, format!("{prefix}-{i}"))).collect_view()}
             {gov.then(|| GOV.quotes.iter().map(|q| training_tip(q)).collect_view())}
             {related(related_list.to_vec(), "Read next")}
-            {source_line(
-                &sources,
-                Some(if gov { "Training manual tips are quoted from the game." } else { "Ship broadcasts are quoted from the game." }),
-            )}
         </article>
     }
     .into_any()
@@ -1096,7 +1055,6 @@ pub fn holidays_page(heading: HeadingRef) -> AnyView {
             })
             .collect_view()
     };
-    let sources: Vec<&'static Source> = HOLIDAYS.iter().flat_map(|h| h.sources.iter()).collect();
     view! {
         <article class="gww-page" style="--site: var(--cta);">
             {gov_nav("holidays")}
@@ -1110,7 +1068,6 @@ pub fn holidays_page(heading: HeadingRef) -> AnyView {
             )}
             <ol class="gww-holidays">{cards}</ol>
             {related(HOLIDAYS_SITE.related.to_vec(), "Read next")}
-            {source_line(&sources, None)}
         </article>
     }
     .into_any()
@@ -1123,7 +1080,6 @@ pub fn holiday_page(h: &'static Holiday, heading: HeadingRef) -> AnyView {
     let mut crumbs = gov_crumbs("holidays");
     crumbs.push(crumb("Holidays", Some("site:holidays")));
     let at = HOLIDAYS.iter().position(|x| x.id == h.id).unwrap_or(0);
-    let sources: Vec<&'static Source> = h.sources.iter().collect();
     view! {
         <article class="gww-page" style=format!("--site: {};", h.color)>
             {gov_nav("holidays")}
@@ -1149,10 +1105,6 @@ pub fn holiday_page(h: &'static Holiday, heading: HeadingRef) -> AnyView {
             {h.sections.iter().enumerate().map(|(i, sec)| section_block(sec, format!("{prefix}-{i}"))).collect_view()}
             {h.quotes.iter().skip(1).map(|q| sourced_quote(q.from, q.text)).collect_view()}
             {related(h.related.to_vec(), "Read next")}
-            {source_line(
-                &sources,
-                (!h.quotes.is_empty()).then_some("Decrees, carols, tips and broadcasts are quoted from the game."),
-            )}
             {pager(HOLIDAYS.iter().map(holiday_target).collect(), at, "holiday")}
         </article>
     }
@@ -1233,9 +1185,9 @@ fn war_log() -> AnyView {
         let list = days.get();
         if list.is_empty() {
             let text = match show.get() {
-                LogFilter::All => "No planet has changed hands since tracking began.",
-                LogFilter::Won => "No planet has been liberated since tracking began.",
-                LogFilter::Lost => "No planet has been lost since tracking began.",
+                LogFilter::All => "No planet has changed hands since records began.",
+                LogFilter::Won => "No planet has been liberated since records began.",
+                LogFilter::Lost => "No planet has been lost since records began.",
             };
             return view! { <Empty>{text}</Empty> }.into_any();
         }
@@ -1344,7 +1296,7 @@ fn activity_days(now: Memo<f64>) -> AnyView {
         }
         let days = q.data.get().unwrap_or_default();
         if days.is_empty() {
-            return view! { <Empty>"No days logged yet. Each day is recorded from the next collector update on."</Empty> }
+            return view! { <Empty>"No days logged yet. Logging starts with the next telemetry update."</Empty> }
                 .into_any();
         }
         let shown: Vec<_> = days.iter().take(if all.get() { days.len() } else { ACTIVITY_DAYS }).copied().collect();
@@ -1397,7 +1349,7 @@ fn StationJumps(station: i64, name: String, now: Memo<f64>) -> impl IntoView {
             return view! { <Loading what="the jump log" rows=2 /> }.into_any();
         }
         if jumps.with(|j| j.is_empty()) {
-            return view! { <Empty>"No jumps logged yet. Each jump is recorded from the next collector update on."</Empty> }
+            return view! { <Empty>"No jumps logged yet. Each jump is logged as telemetry comes in."</Empty> }
                 .into_any();
         }
         view! { <JumpRoute jumps=jumps now=now /> }.into_any()
@@ -1405,7 +1357,7 @@ fn StationJumps(station: i64, name: String, now: Memo<f64>) -> impl IntoView {
     log_box(format!("{name} FTL jumps"), note.into_any(), view! { <DssIcon size=18.0 /> }.into_any(), body.into_any())
 }
 
-/// Every planet that changed hands and every station jump, as the collector logged them.
+/// Every planet that changed hands, each day's Helldivers online and every station jump.
 pub fn logs_page(heading: HeadingRef) -> AnyView {
     let h = history();
     let changes = h.changes;
@@ -1437,7 +1389,7 @@ pub fn logs_page(heading: HeadingRef) -> AnyView {
                 vec![crumb("Super Earth", Some("dir:gov"))],
                 LOG_TITLE.into(),
                 Some(
-                    "The war log, Helldivers online day by day and the space stations' FTL jumps, since tracking began."
+                    "The war log, Helldivers online day by day and the space stations' FTL jumps, since records began."
                         .into_any(),
                 ),
                 heading,

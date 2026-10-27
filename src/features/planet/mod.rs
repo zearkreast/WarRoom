@@ -1,4 +1,5 @@
 pub mod activity;
+pub mod circumvallation;
 pub mod cities;
 pub mod city_detail;
 pub mod detail;

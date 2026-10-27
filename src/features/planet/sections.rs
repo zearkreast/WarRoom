@@ -1,5 +1,7 @@
 use crate::api::queries::queries;
 use crate::features::map::poi::{PoiGlyph, poi_kind, poi_origin};
+use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
+use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
 use crate::features::planet::cities::CityList;
 use crate::features::planet::record::PlanetRecord;
 use crate::features::planets::fronts::{Front, FrontKind};
@@ -19,7 +21,7 @@ use warroom_core::api::{Faction, Planet};
 use warroom_core::biomes::regen_pct_per_hour;
 use warroom_core::effects::EffectKind;
 use warroom_core::factions::{faction_color, faction_label};
-use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, js_round, js_sum, to_fixed};
+use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, fmt_time_left, js_round, js_sum, to_fixed};
 use warroom_core::progress::liberation_percent;
 use warroom_core::time::parse_ms;
 use warroom_core::war_history::{HistoryInput, LogEntry, build_war_history, defense_events, fmt_long_duration};
@@ -674,7 +676,7 @@ fn effect_icon(kind: EffectKind) -> IconLike {
     match kind {
         EffectKind::Subfaction => icons::SKULL.into(),
         EffectKind::Threat => icons::TRIANGLE_ALERT.into(),
-        EffectKind::Seaf => icons::SHIELD.into(),
+        EffectKind::Seaf => IconLike::Seaf,
         EffectKind::Poi => icons::LANDMARK.into(),
         EffectKind::Dss => IconLike::Dss,
         EffectKind::Arsenal => icons::CROSSHAIR.into(),
@@ -686,11 +688,26 @@ fn effect_icon(kind: EffectKind) -> IconLike {
 }
 
 fn env_row(icon: AnyView, name: String, text: String, tone: Option<String>) -> AnyView {
+    env_row_timed(icon, name, text, tone, None, "")
+}
+
+/// `left` is the time left on a timed effect, ms; `look` an extra class for its icon.
+fn env_row_timed(
+    icon: AnyView,
+    name: String,
+    text: String,
+    tone: Option<String>,
+    left: Option<f64>,
+    look: &str,
+) -> AnyView {
     view! {
         <div class="pd-env-row" style=tone.clone().map(|t| format!("--k: {t};"))>
-            <span class=format!("pd-env-icon {}", if tone.is_some() { "toned" } else { "" })>{icon}</span>
+            <span class=format!("pd-env-icon {} {look}", if tone.is_some() { "toned" } else { "" })>{icon}</span>
             <div>
-                <b class="caps">{name}</b>
+                <b class="caps">
+                    {name}
+                    {left.map(|l| view! { <span class="pd-env-left num">{format!(" · {} left", fmt_time_left(l))}</span> })}
+                </b>
                 {(!text.is_empty()).then(|| view! { <p>{text}</p> })}
             </div>
         </div>
@@ -703,14 +720,16 @@ fn env_row(icon: AnyView, name: String, text: String, tone: Option<String>) -> A
 #[component]
 pub fn OperationsSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
     let effects = queries().effects;
+    let clock = js::use_now(60_000.0);
     move || {
         let p = p.get();
+        let now = clock.get();
         let list: Vec<_> = effects.with(|e| {
             e.as_ref()
                 .and_then(|e| e.planets.get(&p.index).cloned())
                 .unwrap_or_default()
                 .into_iter()
-                .filter(|e| e.kind != EffectKind::Poi)
+                .filter(|e| e.kind != EffectKind::Poi && e.until.is_none_or(|u| u > now))
                 .collect()
         });
         let enemy = enemy_of(&p);
@@ -718,10 +737,14 @@ pub fn OperationsSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
             .iter()
             .map(|e| {
                 let sub = e.kind == EffectKind::Subfaction;
-                let icon = match (sub, enemy) {
-                    (true, Some(en)) => {
+                let stratagem =
+                    (e.kind == EffectKind::Arsenal).then(|| stratagem_icon(&augmented_stratagem(&e.name))).flatten();
+                let look = if stratagem.is_some() { "stratagem" } else { "" };
+                let icon = match (sub, enemy, stratagem) {
+                    (true, Some(en), _) => {
                         view! { <SubfactionEmblem name=e.name.clone() faction=en.as_str() size=16.0 color="currentColor" /> }.into_any()
                     }
+                    (_, _, Some(src)) => view! { <img src=src alt="" width="20" height="20" /> }.into_any(),
                     _ => icon_view(effect_icon(e.kind), 16.0, 2.0, None),
                 };
                 let tone = match (sub, enemy) {
@@ -729,7 +752,7 @@ pub fn OperationsSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
                     _ if e.kind == EffectKind::Seaf => Some("var(--f-humans)".to_string()),
                     _ => None,
                 };
-                env_row(icon, e.name.clone(), e.description.clone(), tone)
+                env_row_timed(icon, e.name.clone(), e.description.clone(), tone, e.until.map(|u| u - now), look)
             })
             .collect_view();
         let hazards = p
@@ -850,11 +873,13 @@ pub fn SupplyLinesSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
     let active = Memo::new(move |_| {
         q.campaigns.with(|c| c.iter().flat_map(|l| l.iter()).map(|c| c.planet.index).collect::<HashSet<_>>())
     });
+    let siege = use_circumvallation(p);
     move || {
         let list = linked.get();
         let active = active.get();
         view! {
             <Panel title="Supply lines" icon=icons::ROUTE right=view! { <span class="num">{list.len()}</span> }.into_any()>
+                {move || siege.get().map(|c| circumvallation_note(&p.get(), &c, "pd-siege"))}
                 {if list.is_empty() {
                     view! { <Empty>"No supply lines from this planet."</Empty> }.into_any()
                 } else {

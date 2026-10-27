@@ -17,7 +17,9 @@ pub fn icon_url(name: &str) -> Option<String> {
 
 /// A corporation's logo; some are kept as icons.
 pub fn logo_url(name: &str) -> Option<String> {
-    assets::url(&format!("gww/logos/{name}.webp")).or_else(|| icon_url(name))
+    assets::url(&format!("gww/logos/{name}.webp"))
+        .or_else(|| assets::url(&format!("gww/logos/{name}.svg")))
+        .or_else(|| icon_url(name))
 }
 
 pub fn ad_url(name: &str) -> Option<String> {

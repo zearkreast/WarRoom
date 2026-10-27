@@ -114,7 +114,7 @@ fn LiveBasics() -> impl IntoView {
     move || {
         let war = q.war.get();
         let Some(war) = war.filter(|_| !fronts_loading()) else {
-            return live("The war today", &[], waiting("Waiting for the collector…"));
+            return live("The war today", &[], waiting("Awaiting telemetry…"));
         };
         let list = all.get();
         let defenses = list.iter().filter(|f| f.kind == FrontKind::Defense).count();
@@ -151,7 +151,7 @@ fn LiveSupplyLines() -> impl IntoView {
             )
         });
         let body = match attacks {
-            None => waiting("Waiting for the collector…"),
+            None => waiting("Awaiting telemetry…"),
             Some(a) if a.is_empty() => waiting("No planet is attacking another right now."),
             Some(a) => view! {
                 <ul class="gww-live-rows">
@@ -178,7 +178,7 @@ fn LiveCampaignTypes() -> impl IntoView {
     let all = fronts();
     move || {
         if fronts_loading() {
-            return live("Campaigns now", &[], waiting("Waiting for the collector…"));
+            return live("Campaigns now", &[], waiting("Awaiting telemetry…"));
         }
         let list = all.get();
         let defenses = list.iter().filter(|f| f.kind == FrontKind::Defense).count();
@@ -205,7 +205,7 @@ fn LiveLiberation() -> impl IntoView {
         top.sort_by(|a, b| b.players.total_cmp(&a.players));
         top.truncate(5);
         let body = if fronts_loading() {
-            waiting("Waiting for the collector…")
+            waiting("Awaiting telemetry…")
         } else if top.is_empty() {
             waiting("No liberation campaign is open right now.")
         } else {
@@ -243,7 +243,7 @@ fn LiveResistance() -> impl IntoView {
         stiffest.sort_by(|a, b| regen(&b.planet).total_cmp(&regen(&a.planet)));
         stiffest.truncate(4);
         let body = if fronts_loading() {
-            waiting("Waiting for the collector…")
+            waiting("Awaiting telemetry…")
         } else if liberations.is_empty() {
             waiting("No liberation campaign is open right now.")
         } else {
@@ -308,7 +308,7 @@ fn LiveRegions() -> impl IntoView {
         regions.sort_by(|a, b| b.1.players.total_cmp(&a.1.players));
         regions.truncate(6);
         let body = if fronts_loading() {
-            waiting("Waiting for the collector…")
+            waiting("Awaiting telemetry…")
         } else if regions.is_empty() {
             waiting("No city is being fought over right now.")
         } else {
@@ -343,7 +343,7 @@ fn LiveDefense() -> impl IntoView {
         let defenses: Vec<&Front> = list.iter().filter(|f| f.kind == FrontKind::Defense).collect();
         let front_of: HashMap<i64, &Front> = list.iter().map(|f| (f.planet.index, f)).collect();
         let body = if fronts_loading() {
-            waiting("Waiting for the collector…")
+            waiting("Awaiting telemetry…")
         } else if defenses.is_empty() {
             waiting("No Super Earth planet is under attack right now.")
         } else {
@@ -405,7 +405,7 @@ fn LiveImpact() -> impl IntoView {
     let q = queries();
     move || {
         let body = match q.war.get() {
-            None => waiting("Waiting for the collector…"),
+            None => waiting("Awaiting telemetry…"),
             Some(w) => view! {
                 <div class="gww-live-stats">
                     {stat("Impact modifier", to_fixed(w.impact_multiplier, 4).into_any(), Some("var(--impact)"))}
@@ -426,7 +426,7 @@ fn LiveDss() -> impl IntoView {
     move || {
         let stations = q.stations.get();
         let body = match stations.as_ref().map(|s| s.first().cloned()) {
-            None => waiting("Waiting for the collector…"),
+            None => waiting("Awaiting telemetry…"),
             Some(None) => waiting("The Democracy Space Station is out of service."),
             Some(Some(s)) => {
                 let planet = q
@@ -464,7 +464,7 @@ fn LiveCampaigns() -> impl IntoView {
         let episodes = q.episodes.get();
         let orders = q.assignments.get();
         let body = if episodes.is_none() && orders.is_none() {
-            waiting("Waiting for the collector…")
+            waiting("Awaiting telemetry…")
         } else {
             let running = episodes.as_ref().and_then(|e| e.iter().find(|e| e.status == EpisodeStatus::Active).cloned());
             let order = orders.as_ref().and_then(|o| o.first().cloned());
@@ -486,7 +486,7 @@ fn LiveCampaigns() -> impl IntoView {
             }
             .into_any()
         };
-        live("The story now", &["app:overview", "app:past"], body)
+        live("The campaign now", &["app:overview", "app:past"], body)
     }
 }
 
@@ -496,7 +496,7 @@ fn LiveGloom() -> impl IntoView {
     let all = fronts();
     move || {
         let body = match q.effects.get() {
-            None => waiting("Waiting for the collector…"),
+            None => waiting("Awaiting telemetry…"),
             Some(e) => {
                 let in_gloom: Vec<Front> =
                     all.get().iter().filter(|f| e.gloom.contains(&f.planet.index)).cloned().collect();

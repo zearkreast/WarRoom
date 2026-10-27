@@ -184,8 +184,29 @@ pub fn init() {
     });
     let effects = memo(move || {
         let live = raw.effects.get()?;
+        let mut ids: HashMap<i64, Vec<i64>> = live.planets.iter().map(|p| (p.index, p.ids.clone())).collect();
+        let mut until: HashMap<i64, HashMap<i64, f64>> = HashMap::new();
+        for t in &live.timed {
+            for index in &t.planets {
+                ids.entry(*index).or_default().extend(&t.ids);
+                let ends = until.entry(*index).or_default();
+                for id in &t.ids {
+                    let end = ends.entry(*id).or_insert(0.0);
+                    *end = end.max(t.until);
+                }
+            }
+        }
         Some(WarEffects {
-            planets: live.planets.iter().map(|p| (p.index, planet_effects(&p.ids))).collect(),
+            planets: ids
+                .into_iter()
+                .map(|(index, list)| {
+                    let mut effects = planet_effects(&list);
+                    for e in &mut effects {
+                        e.until = until.get(&index).and_then(|ends| ends.get(&e.id).copied());
+                    }
+                    (index, effects)
+                })
+                .collect(),
             gloom: live
                 .planets
                 .iter()

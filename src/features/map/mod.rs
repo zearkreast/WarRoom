@@ -8,4 +8,5 @@ pub mod options;
 pub mod page;
 pub mod pawn_art;
 pub mod poi;
+pub mod stratagem_art;
 pub mod zoom;
