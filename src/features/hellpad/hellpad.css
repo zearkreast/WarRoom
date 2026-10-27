@@ -26,7 +26,7 @@
   .hp-mast-title {
     margin: 0;
     font-family: var(--font-head);
-    font-stretch: 125%;
+    font-stretch: 75%;
     font-weight: 800;
     font-size: clamp(1.4rem, 2.8vw, var(--fs-hero));
     line-height: 1.1;
@@ -286,7 +286,7 @@
   }
   .hp-mod-title {
     font-family: var(--font-head);
-    font-stretch: 125%;
+    font-stretch: 75%;
     font-weight: 800;
     font-size: var(--fs-value);
     text-transform: uppercase;
@@ -573,7 +573,7 @@
   }
   .gc-chip b {
     font-family: var(--font-head);
-    font-stretch: 125%;
+    font-stretch: 75%;
     font-size: var(--fs-value);
     color: var(--k);
   }
@@ -889,7 +889,7 @@
   .st-planet b {
     display: block;
     font-family: var(--font-head);
-    font-stretch: 125%;
+    font-stretch: 75%;
     font-weight: 800;
     font-size: var(--fs-title);
     color: var(--text-hi);
@@ -1554,7 +1554,7 @@
     top: var(--s-6);
     display: flex;
     flex-direction: column;
-    min-height: min(620px, calc(100vh - 220px));
+    min-height: min(620px, calc(100dvh - 220px));
     padding: var(--s-4);
     background:
       radial-gradient(ellipse 80% 45% at 50% 100%, color-mix(in srgb, var(--holo) 16%, transparent), transparent 70%),

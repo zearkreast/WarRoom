@@ -255,7 +255,7 @@ fn Nav(#[prop(into)] unread_news: Signal<usize>) -> impl IntoView {
         view! {
             <button
                 class=move || {
-                    format!("rail-btn {}", if view.is_some_and(|v| u.view.get() == v) { "on" } else { "" })
+                    format!("nav-btn {}", if view.is_some_and(|v| u.view.get() == v) { "on" } else { "" })
                 }
                 aria-label=label
                 title=label
@@ -266,11 +266,11 @@ fn Nav(#[prop(into)] unread_news: Signal<usize>) -> impl IntoView {
         }
     };
     view! {
-        <nav class="rail" aria-label="Main">
-            <button class="rail-logo" on:click=move |_| u.set_view(View::Campaigns) aria-label="WarCommand: Active planets">
+        <nav class="nav" aria-label="Main">
+            <button class="nav-logo" on:click=move |_| u.set_view(View::Campaigns) aria-label="WarCommand: Active planets">
                 <AppMark size=30.0 />
             </button>
-            <div class="rail-tabs">
+            <div class="nav-tabs">
                 {TABS
                     .iter()
                     .map(|t| {
@@ -278,15 +278,15 @@ fn Nav(#[prop(into)] unread_news: Signal<usize>) -> impl IntoView {
                         let on = move || u.view.get() == view;
                         view! {
                             <button
-                                class=move || format!("rail-tab {}", if on() { "on" } else { "" })
+                                class=move || format!("nav-tab {}", if on() { "on" } else { "" })
                                 aria-current=move || on().then_some("page")
                                 on:click=move |_| u.set_view(view)
                                 title=format!("{label} ({key})")
                             >
-                                <span class="rail-icon">{icon_view(icon, 24.0, 1.6, None)}</span>
-                                <span class="rail-label">{label}</span>
-                                <span class="rail-short">{short}</span>
-                                <span class="rail-key">
+                                <span class="nav-icon">{icon_view(icon, 24.0, 1.6, None)}</span>
+                                <span class="nav-label">{label}</span>
+                                <span class="nav-short">{short}</span>
+                                <span class="nav-key">
                                     <Keycap k=key />
                                 </span>
                                 {(view == View::News)
@@ -296,7 +296,7 @@ fn Nav(#[prop(into)] unread_news: Signal<usize>) -> impl IntoView {
                                             (n > 0)
                                                 .then(|| {
                                                     view! {
-                                                        <span class="rail-badge num" aria-label=format!("{n} new")>
+                                                        <span class="nav-badge num" aria-label=format!("{n} new")>
                                                             {n}
                                                         </span>
                                                     }
@@ -308,12 +308,12 @@ fn Nav(#[prop(into)] unread_news: Signal<usize>) -> impl IntoView {
                     })
                     .collect_view()}
             </div>
-            <div class="rail-foot">
+            <div class="nav-foot">
                 {foot_btn(Some(View::Settings), icons::SETTINGS, "Settings", || ui().set_view(View::Settings))}
                 {foot_btn(None, icons::INFO, "About", || ui().show_dialog(Some(InfoDialog::About)))}
                 {foot_btn(None, icons::BOOK_OPEN, "Icons legend", || ui().show_dialog(Some(InfoDialog::Legend)))}
                 <button
-                    class=move || format!("rail-btn {}", if u.dispatch_open.get() { "on" } else { "" })
+                    class=move || format!("nav-btn {}", if u.dispatch_open.get() { "on" } else { "" })
                     aria-label="Tracker Dispatch"
                     title="Tracker Dispatch"
                     aria-expanded=move || u.dispatch_open.get().to_string()

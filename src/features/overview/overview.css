@@ -60,11 +60,14 @@
     gap: var(--s-4);
     padding: var(--s-4) var(--s-5);
     background: var(--surface-2);
-    border: 1px solid var(--line);
+    border-left: 3px solid var(--cta);
     color: var(--cta);
   }
   .ov-total b {
-    font-size: var(--fs-title);
+    font-stretch: 75%;
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1;
     color: var(--text-hi);
   }
   .ov-total .caps {
@@ -141,15 +144,12 @@
     border-color: color-mix(in srgb, var(--k) var(--strong), transparent);
     background: color-mix(in srgb, var(--k) var(--wash), transparent);
   }
-  .ov-legend li.on::before {
-    box-shadow: 0 0 8px var(--k);
-  }
   .ov-legend li::before {
     content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+    width: 9px;
+    height: 9px;
     background: var(--k);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
   }
   .ov-legend-name {
     overflow: hidden;
@@ -175,7 +175,7 @@
     row-gap: var(--s-2);
     padding: var(--s-3) var(--s-4);
     background: var(--surface-2);
-    border: 1px solid color-mix(in srgb, var(--k) var(--edge), var(--line));
+    border-left: 3px solid var(--k);
     font-size: var(--fs-body);
   }
   .ov-front .caps {
@@ -206,7 +206,7 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    border-top: 1px solid var(--line);
+    border-top: 2px solid var(--line);
     padding-top: var(--s-4);
   }
   .ov-stats div {
@@ -217,7 +217,7 @@
     font-size: var(--fs-body-s);
   }
   .ov-stats dt {
-    color: var(--cta);
+    color: var(--text-dim);
     font-weight: 600;
   }
   .ov-stats dd {
@@ -325,8 +325,8 @@
     filter: drop-shadow(0 0 8px var(--f-humans));
   }
   .tw-spin {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
   }
   .tw-hint {
     position: absolute;
@@ -337,7 +337,7 @@
     color: var(--label);
   }
   .tw-open {
-    height: 28px;
+    height: 36px;
     font-size: var(--fs-label);
   }
 
@@ -348,8 +348,7 @@
       box-shadow var(--t-state);
   }
   .ov-front.on {
-    border-color: var(--k);
-    box-shadow: 0 0 14px color-mix(in srgb, var(--k) var(--edge), transparent);
+    background: color-mix(in srgb, var(--k) var(--fill), var(--surface-2));
   }
 
   /* Medium screens: two columns over the theater, and the page scrolls. */
@@ -401,7 +400,7 @@
       display: contents;
     }
     /* Phones lead with the Major Order, then the Galactic Campaign, the distribution, 24h activity and the theater. */
-    .ov-board .mo {
+    .ov-board .mo-panel {
       order: 1;
     }
     .ov-board .cmp-panel {

@@ -59,7 +59,7 @@
   }
 
   /* Idle hologram */
-  .holo {
+  .holo-globe {
     overflow: visible;
     filter: drop-shadow(0 0 6px rgba(70, 164, 255, 0.55));
   }

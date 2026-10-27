@@ -65,8 +65,8 @@ class MainActivity : TauriActivity() {
   }
 
   private companion object {
-    /** --surface-0 in src/ui/theme.css, the top bar's and dock's colour. */
-    val BAR_COLOR = Color.parseColor("#0b0f16")
+    /** --surface-0 in src/ui/theme.css, the header's and tab bar's colour. */
+    val BAR_COLOR = Color.parseColor("#0b0b0a")
 
     /** Keep in sync with CHANNEL in collector/src/push.rs. */
     const val NEWS_CHANNEL = "news"

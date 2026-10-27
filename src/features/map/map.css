@@ -196,11 +196,11 @@
   }
   .pin-mark path {
     fill: var(--cta);
-    stroke: #0b0f16;
+    stroke: var(--surface-0);
     stroke-width: 0.5;
   }
   .pin-mark circle {
-    fill: #0b0f16;
+    fill: var(--surface-0);
   }
   .anomaly .swirl {
     fill: none;
@@ -380,7 +380,7 @@
     opacity: 0.94;
     filter: var(--tint);
   }
-  .galaxy:not(.q-min) .holo-unit image {
+  .map-wrap:not(.q-min) .galaxy .holo-unit image {
     filter: var(--tint) drop-shadow(0 0 1.4px currentColor);
   }
   .z-units .holo-sweep {
@@ -449,7 +449,7 @@
   .anomaly.fractured .ember {
     fill: #ffb070;
   }
-  .galaxy:not(.q-min) .anomaly.fractured .ember {
+  .map-wrap:not(.q-min) .galaxy .anomaly.fractured .ember {
     filter: drop-shadow(0 0 1.5px #ff6a3a);
   }
   .planet .core.scorched {
@@ -490,19 +490,21 @@
     z-index: 2;
   }
   .map-title h1 {
-    font-size: clamp(1.4rem, 3vw, 2.125rem);
+    font-size: clamp(1.75rem, 3.4vw, 2.75rem);
+    line-height: 0.95;
     text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
   }
   .map-title h1.sector {
     color: var(--text-hi);
-    font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+    font-size: clamp(1.375rem, 2.4vw, 1.875rem);
   }
   .map-subtitle {
-    margin-top: var(--s-2);
-    font-size: var(--fs-body-s);
+    margin-top: var(--s-3);
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.16em;
-    color: var(--text-hi);
+    letter-spacing: var(--track-wide);
+    color: var(--cta);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
   }
 
   .map-corner {
@@ -522,32 +524,31 @@
   }
   .map-overlays {
     display: flex;
-    background: color-mix(in srgb, var(--surface-1) 86%, transparent);
-    border: 1px solid var(--line-strong);
+    background: color-mix(in srgb, var(--surface-1) 92%, transparent);
+    border: 2px solid var(--control);
   }
   .map-overlays button {
-    height: 32px;
+    height: 36px;
     padding: 0 var(--s-5);
     background: none;
     border: 0;
     color: var(--text-dim);
     font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: var(--track-caps);
     text-transform: uppercase;
     cursor: pointer;
     transition: color var(--t-state), background var(--t-state);
   }
   .map-overlays button + button {
-    border-left: 1px solid var(--line);
+    border-left: 1px solid var(--line-strong);
   }
   .map-overlays button:hover {
     color: var(--text-hi);
   }
   .map-overlays button.on {
-    color: var(--text-hi);
-    background: color-mix(in srgb, var(--cta) var(--fill), transparent);
-    box-shadow: inset 0 -2px 0 var(--cta);
+    color: var(--ink-on-cta);
+    background: var(--cta);
   }
   .map-keys {
     display: grid;
@@ -584,7 +585,7 @@
     top: 50%;
     transform: translateY(-50%);
     z-index: 4;
-    width: 300px;
+    width: 320px;
     padding: 0 0 var(--s-4);
     animation: toast-in var(--t-reveal) var(--ease);
   }
@@ -592,11 +593,13 @@
     display: flex;
     align-items: center;
     gap: var(--s-3);
-    padding: var(--s-4) var(--s-5);
-    border-bottom: 1px solid var(--line);
-    font-weight: 700;
-    font-size: var(--fs-body-s);
-    letter-spacing: 0.14em;
+    padding: var(--s-5) var(--s-5) var(--s-4) calc(var(--cut) + var(--s-2));
+    border-bottom: 2px solid var(--line);
+    font-family: var(--font-head);
+    font-stretch: 75%;
+    font-weight: 800;
+    font-size: 1.125rem;
+    letter-spacing: 0.02em;
     color: var(--text-hi);
   }
   .ms-head svg {
@@ -639,20 +642,25 @@
     align-items: center;
     justify-content: center;
     gap: 3px;
-    width: 54px;
-    height: 46px;
+    width: 64px;
+    height: 54px;
     padding: 0;
-    background: color-mix(in srgb, var(--surface-1) 82%, transparent);
+    background: color-mix(in srgb, var(--surface-1) 86%, transparent);
     backdrop-filter: blur(6px);
-    border: 1px solid var(--line-strong);
+    border: 2px solid var(--control);
     color: var(--text-hi);
     cursor: pointer;
     transition: border-color var(--t-state), color var(--t-state);
   }
   .rail-btn span {
-    font-size: var(--fs-micro);
-    letter-spacing: 0.1em;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .rail-btn:active {
+    background: var(--surface-3);
   }
   .rail-btn:hover {
     border-color: var(--text-dim);
@@ -686,9 +694,6 @@
     border-color: color-mix(in srgb, var(--tone) var(--strong), var(--line-strong));
     animation: toast-in var(--t-reveal) var(--ease);
   }
-  .planet-panel > .panel-body {
-    display: contents;
-  }
   .pp-scroll {
     flex: 1;
     min-height: 0;
@@ -709,10 +714,10 @@
     z-index: 1;
     display: grid;
     place-items: center;
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     background: color-mix(in srgb, var(--surface-0) 80%, transparent);
-    border: 1px solid var(--line-strong);
+    border: 2px solid var(--control);
     color: var(--text-hi);
     cursor: pointer;
   }
@@ -728,7 +733,7 @@
   .pp-stats div {
     padding: var(--s-3) var(--s-4);
     background: var(--surface-0);
-    border: 1px solid var(--line);
+    border-left: 3px solid var(--line-strong);
   }
   .pp-stats dt {
     font-size: var(--fs-micro);
@@ -737,19 +742,25 @@
   }
   .pp-stats dd {
     margin: 2px 0 0;
-    font-weight: 700;
+    font-family: var(--font-num);
+    font-stretch: 75%;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.25rem;
+    font-weight: 800;
     color: var(--text-hi);
   }
   .pp-actions {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    border-top: 1px solid var(--line);
+    border-top: 2px solid var(--line);
   }
   .pp-action {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 4px;
+    min-height: 60px;
     padding: var(--s-4) 0;
     background: none;
     border: 0;
@@ -766,15 +777,18 @@
   .pp-action:hover:not(:disabled) {
     color: var(--cta);
   }
+  .pp-action:active:not(:disabled) {
+    background: var(--surface-3);
+  }
   .pp-action:disabled {
-    opacity: 0.4;
+    color: var(--faint);
     cursor: default;
   }
 
   /* ---------- Legend ---------- */
   .map-legend {
     width: 320px;
-    max-height: min(70vh, 560px);
+    max-height: min(70dvh, 560px);
     overflow-y: auto;
     scrollbar-width: thin;
   }
@@ -782,12 +796,15 @@
     margin-left: auto;
     display: grid;
     place-items: center;
-    width: 24px;
-    height: 24px;
+    width: 36px;
+    height: 36px;
     background: none;
     border: 0;
     color: var(--text-dim);
     cursor: pointer;
+  }
+  .ml-close:hover {
+    color: var(--text-hi);
   }
   .ml-list {
     display: flex;
@@ -839,7 +856,7 @@
   }
   .map-drawer {
     width: min(360px, calc(100vw - 24px));
-    max-height: min(60vh, 520px);
+    max-height: min(60dvh, 520px);
     overflow-y: auto;
     scrollbar-width: thin;
     animation: toast-in var(--t-reveal) var(--ease);
@@ -853,11 +870,13 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: var(--s-4) var(--s-5);
-    border-bottom: 1px solid var(--line);
-    font-weight: 700;
-    font-size: var(--fs-body-s);
-    letter-spacing: 0.14em;
+    padding: var(--s-5) var(--s-5) var(--s-4) calc(var(--cut) + var(--s-2));
+    border-bottom: 2px solid var(--line);
+    font-family: var(--font-head);
+    font-stretch: 75%;
+    font-weight: 800;
+    font-size: 1.125rem;
+    letter-spacing: 0.02em;
     color: var(--text-hi);
   }
   .md-list {
@@ -912,9 +931,9 @@
     justify-content: center;
     gap: var(--s-2);
     width: 100%;
-    height: 36px;
+    height: 44px;
     border: 0;
-    border-top: 1px solid var(--line);
+    border-top: 2px solid var(--line);
     background: var(--surface-2);
     color: var(--cta);
     cursor: pointer;
@@ -930,22 +949,19 @@
   .hover-card {
     --tone: var(--f-automaton);
     position: fixed;
-    z-index: 35;
-    width: 280px;
+    z-index: var(--z-hover);
+    width: 300px;
     pointer-events: none;
     border-color: color-mix(in srgb, var(--tone) var(--strong), var(--line-strong));
     animation: overlay-in var(--t-state) var(--ease);
   }
-  .hover-card > .panel-body {
-    padding: 0;
-  }
   .hc-art {
-    height: 54px;
-    background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px),
+    height: 60px;
+    background: linear-gradient(180deg, transparent 40%, rgba(3, 3, 3, 0.6)),
       var(--art, none) center / cover no-repeat,
       radial-gradient(120% 90% at 70% 140%, color-mix(in srgb, var(--ground) 75%, transparent), transparent 62%),
       linear-gradient(180deg, var(--sky), color-mix(in srgb, var(--ground) 30%, var(--sky)));
-    border-bottom: 1px solid var(--line);
+    border-bottom: 2px solid var(--line);
   }
   .hc-head {
     display: flex;
@@ -954,21 +970,25 @@
   }
   .hc-kind {
     font-size: var(--fs-label);
-    letter-spacing: 0.16em;
-    color: var(--text-dim);
+    font-weight: 700;
+    letter-spacing: var(--track-caps);
+    color: var(--tone);
   }
   .hc-name {
     font-family: var(--font-head);
-    font-stretch: 125%;
+    font-stretch: 75%;
     font-weight: 800;
-    font-size: var(--fs-value);
-    color: var(--cta);
+    font-size: 1.625rem;
+    line-height: 1;
+    color: var(--text-hi);
     text-transform: uppercase;
   }
   .hc-sector {
+    margin-top: 2px;
     font-size: var(--fs-micro);
-    letter-spacing: 0.18em;
-    color: var(--tone);
+    font-weight: 600;
+    letter-spacing: var(--track-caps);
+    color: var(--label);
   }
   .hc-effects {
     display: flex;
@@ -1069,15 +1089,13 @@
     height: 10px;
     overflow: hidden;
     background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--rest) 45%, transparent) 0 3px, transparent 3px 7px),
-      var(--void);
-    border: 1px solid color-mix(in srgb, var(--rest) 40%, var(--line));
+      var(--surface-3);
   }
   .hc-bar-fill {
     position: absolute;
     inset: 0 auto 0 0;
-    background: repeating-linear-gradient(115deg, transparent 0 6px, rgba(255, 255, 255, 0.22) 6px 9px, transparent 9px 12px),
-      linear-gradient(180deg, color-mix(in srgb, #fff 25%, var(--f-humans)), var(--f-humans));
-    box-shadow: 0 0 10px color-mix(in srgb, var(--f-humans) 70%, transparent);
+    background: repeating-linear-gradient(115deg, transparent 0 7px, rgba(255, 255, 255, 0.24) 7px 10px, transparent 10px 14px),
+      var(--f-humans);
     transition: width var(--t-value) var(--ease);
   }
   .hc-bar-fill::after {
@@ -1086,9 +1104,8 @@
     top: -1px;
     right: 0;
     bottom: -1px;
-    width: 2px;
-    background: #fff;
-    box-shadow: 0 0 6px #fff, 0 0 10px var(--f-humans);
+    width: 3px;
+    background: var(--text-hi);
   }
   .hc-bar-mark {
     position: absolute;
@@ -1106,17 +1123,9 @@
     width: 2px;
     margin-top: 2px;
     background: var(--k);
-    box-shadow: 0 0 6px var(--k);
   }
   .hc-bar-mark.open::after {
-    box-shadow: none;
     opacity: 0.6;
-  }
-  .hc-bar-mark .city-mark {
-    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--k) 60%, transparent));
-  }
-  .hc-bar-mark.open .city-mark {
-    filter: none;
   }
   /* Points of interest: their logo and name, then what they are, as the game's tooltip lists them. */
   .hc-art.poi {
@@ -1164,28 +1173,29 @@
     gap: var(--s-3);
     margin-top: var(--s-4);
     padding: var(--s-3) var(--s-5);
-    border-top: 1px solid var(--line);
+    border-top: 2px solid var(--line);
     background: var(--surface-2);
     font-size: var(--fs-label);
-    letter-spacing: 0.14em;
+    font-weight: 600;
+    letter-spacing: var(--track-caps);
     color: var(--text-hi);
   }
   .hc-foot svg {
     color: var(--cta);
   }
 
-  @media (max-width: 760px) {
+  @media (max-width: 759px) {
     /* Keyboard hints mean nothing on a touch screen. */
     .map-controls-hint {
       display: none;
     }
     .map-corner {
-      top: 62px;
+      top: 84px;
       left: var(--s-3);
       right: auto;
     }
     .map-touch-hint {
-      top: 104px;
+      top: 132px;
     }
     .planet-panel {
       left: var(--s-3);
@@ -1204,7 +1214,7 @@
       width: min(300px, calc(100vw - 96px));
     }
     .map-legend {
-      max-height: 60vh;
+      max-height: 60dvh;
     }
     .map-rail {
       top: auto;

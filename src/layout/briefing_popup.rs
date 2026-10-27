@@ -100,6 +100,8 @@ pub fn BriefingPopup() -> impl IntoView {
     let dialog = NodeRef::<html::Dialog>::new();
     let (ready, set_ready) = signal(false);
     let timer = StoredValue::new_local(None::<TimeoutHandle>);
+    // The hold plays once a session, and not at all with reduced motion.
+    let held = StoredValue::new(crate::js::prefers_reduced_motion());
     Effect::new(move |_| {
         let briefing = t.briefing.get();
         let Some(d) = dialog.get() else { return };
@@ -113,7 +115,10 @@ pub fn BriefingPopup() -> impl IntoView {
         if let Some(h) = timer.get_value() {
             h.clear();
         }
-        if briefing.is_some() {
+        if briefing.is_some() && held.get_value() {
+            set_ready.set(true);
+        } else if briefing.is_some() {
+            held.set_value(true);
             let h = set_timeout_with_handle(
                 move || set_ready.set(true),
                 std::time::Duration::from_millis(PLEASE_WAIT_MS as u64),

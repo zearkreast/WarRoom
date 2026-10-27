@@ -415,6 +415,61 @@
     background: var(--cta);
   }
 
+  /* ---------- Switch ---------- */
+  .switch {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-4);
+    min-height: 40px;
+    padding: 0 var(--s-2);
+    background: none;
+    border: 0;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: var(--fs-body-s);
+    font-weight: 700;
+  }
+  .switch-track {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    flex: none;
+    background: var(--surface-2);
+    border: 2px solid var(--control);
+    transition:
+      border-color var(--t-state),
+      background var(--t-state);
+  }
+  .switch-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    background: var(--label);
+    transition:
+      transform var(--t-state) var(--ease),
+      background var(--t-state);
+  }
+  .switch:hover .switch-track {
+    border-color: var(--text-dim);
+  }
+  .switch.on {
+    color: var(--text-hi);
+  }
+  .switch.on .switch-track {
+    border-color: var(--cta);
+    background: color-mix(in srgb, var(--cta) var(--fill), var(--surface-2));
+  }
+  .switch.on .switch-thumb {
+    transform: translateX(22px);
+    background: var(--cta);
+  }
+  .switch-text {
+    min-width: 2.5em;
+    text-align: left;
+  }
+
   /* ---------- Tiles ---------- */
   .tile {
     --rule: var(--line-strong);
@@ -444,9 +499,7 @@
     font-weight: 800;
     line-height: 1.05;
     color: var(--text-hi);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
   .tile-sub {
     font-size: var(--fs-label);
@@ -711,7 +764,9 @@
     background: var(--cta);
     color: var(--ink-on-cta);
   }
-  .filter-chip.on .emblem {
+  /* Emblems colour themselves inline; on the yellow fill they go dark like the text. The activity chart's
+     chips tint in their series colour instead, so they keep theirs. */
+  .filter-chip.on:not(.ov-chips > *) .emblem g {
     color: var(--ink-on-cta) !important;
   }
   .filter-chip .count {

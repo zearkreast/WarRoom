@@ -4,6 +4,7 @@
     /* Ground and surfaces, darkest first. Warm near-blacks, so the Super Earth yellow reads as signal. */
     --void: #030303;
     --ground: #070706;
+    /* Keep in sync with BAR_COLOR in src-tauri/android/MainActivity.kt.template and theme-color in index.html. */
     --surface-0: #0b0b0a;
     --surface-1: #11110f;
     --surface-2: #181815;

@@ -401,7 +401,11 @@ pub fn PlanetsModule() -> impl IntoView {
     };
     let chip = move |f: PlanetFilter, label: AnyView| {
         view! {
-            <button class=move || format!("filter-chip {}", if filter.get() == f { "on" } else { "" }) on:click=move |_| filter.set(f)>
+            <button
+                class=move || format!("filter-chip {}", if filter.get() == f { "on" } else { "" })
+                aria-pressed=move || (filter.get() == f).to_string()
+                on:click=move |_| filter.set(f)
+            >
                 {label}
                 " "
                 <span class="count">{move || count(f)}</span>

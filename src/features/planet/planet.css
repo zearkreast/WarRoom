@@ -86,7 +86,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: var(--font-head);
-    font-stretch: 125%;
+    font-stretch: 75%;
     font-weight: 800;
     font-size: 11px;
     text-transform: uppercase;

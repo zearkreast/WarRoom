@@ -4,8 +4,8 @@
     grid-template-columns: var(--rail-w) minmax(0, 1fr);
     grid-template-rows: var(--top-h) minmax(0, 1fr);
     grid-template-areas:
-      "rail top"
-      "rail main";
+      "nav top"
+      "nav main";
     height: 100%;
   }
 
@@ -147,8 +147,8 @@
   }
 
   /* ---------- Rail ---------- */
-  .rail {
-    grid-area: rail;
+  .nav {
+    grid-area: nav;
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -157,7 +157,7 @@
     position: relative;
     z-index: var(--z-chrome);
   }
-  .rail-logo {
+  .nav-logo {
     display: grid;
     place-items: center;
     height: var(--top-h);
@@ -168,16 +168,16 @@
     background: var(--surface-0);
     cursor: pointer;
   }
-  .rail-logo:hover svg {
+  .nav-logo:hover svg {
     filter: brightness(1.15);
   }
-  .rail-tabs {
+  .nav-tabs {
     display: flex;
     flex-direction: column;
     padding: var(--s-4) 0;
     gap: var(--s-1);
   }
-  .rail-tab {
+  .nav-tab {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -195,59 +195,59 @@
       color var(--t-state),
       background var(--t-state);
   }
-  .rail-tab::before {
+  .nav-tab::before {
     content: "";
     position: absolute;
     inset: var(--s-3) auto var(--s-3) 0;
     width: 4px;
     background: transparent;
   }
-  .rail-tab:hover {
+  .nav-tab:hover {
     color: var(--text-hi);
     background: var(--surface-1);
   }
-  .rail-tab:active {
+  .nav-tab:active {
     background: var(--surface-2);
   }
-  .rail-tab.on {
+  .nav-tab.on {
     color: var(--text-hi);
     background: var(--surface-2);
   }
-  .rail-tab.on::before {
+  .nav-tab.on::before {
     background: var(--cta);
   }
-  .rail-tab.on .rail-icon {
+  .nav-tab.on .nav-icon {
     color: var(--cta);
   }
-  .rail-tab:focus-visible {
+  .nav-tab:focus-visible {
     outline-offset: -3px;
   }
-  .rail-icon {
+  .nav-icon {
     display: grid;
     place-items: center;
   }
-  .rail-label {
+  .nav-label {
     font-size: var(--fs-micro);
     font-weight: 700;
     letter-spacing: 0.06em;
     line-height: 1.15;
     text-transform: uppercase;
   }
-  .rail-short {
+  .nav-short {
     display: none;
   }
-  .rail-key {
+  .nav-key {
     position: absolute;
     top: var(--s-3);
     right: var(--s-3);
     opacity: 0;
     transition: opacity var(--t-state);
   }
-  .rail-tab:hover .rail-key,
-  .rail-tab:focus-visible .rail-key {
+  .nav-tab:hover .nav-key,
+  .nav-tab:focus-visible .nav-key {
     opacity: 1;
   }
-  .rail-badge {
+  .nav-badge {
     position: absolute;
     top: var(--s-4);
     left: calc(50% + 6px);
@@ -262,7 +262,7 @@
     font-weight: 800;
     box-shadow: 0 0 0 2px var(--surface-0);
   }
-  .rail-foot {
+  .nav-foot {
     margin-top: auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -270,7 +270,7 @@
     padding: var(--s-4);
     border-top: 2px solid var(--line);
   }
-  .rail-btn {
+  .nav-btn {
     position: relative;
     display: grid;
     place-items: center;
@@ -284,11 +284,11 @@
       border-color var(--t-state),
       color var(--t-state);
   }
-  .rail-btn:hover {
+  .nav-btn:hover {
     border-color: var(--control);
     color: var(--text-hi);
   }
-  .rail-btn.on {
+  .nav-btn.on {
     border-color: var(--cta);
     color: var(--cta);
   }
@@ -303,10 +303,10 @@
     border-color: transparent var(--cta) transparent transparent;
   }
   @media (max-width: 1099px) {
-    .rail-foot {
+    .nav-foot {
       grid-template-columns: 1fr;
     }
-    .rail-label {
+    .nav-label {
       font-size: 0.625rem;
     }
   }
@@ -319,7 +319,7 @@
       grid-template-areas:
         "top"
         "main"
-        "rail";
+        "nav";
     }
     .topbar {
       gap: var(--s-4);
@@ -408,37 +408,37 @@
       color: var(--cta);
     }
 
-    .rail {
+    .nav {
       flex-direction: row;
       border-right: 0;
       border-top: 2px solid var(--line);
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
-    .rail-logo,
-    .rail-foot,
-    .rail-label,
-    .rail-key {
+    .nav-logo,
+    .nav-foot,
+    .nav-label,
+    .nav-key {
       display: none;
     }
-    .rail-tabs {
+    .nav-tabs {
       flex: 1;
       flex-direction: row;
       padding: 0;
       gap: 0;
     }
-    .rail-tab {
+    .nav-tab {
       flex: 1;
       min-width: 0;
       min-height: 0;
       gap: var(--s-2);
       padding: var(--s-3) var(--s-1);
     }
-    .rail-tab::before {
+    .nav-tab::before {
       inset: 0 var(--s-4) auto;
       width: auto;
       height: 3px;
     }
-    .rail-short {
+    .nav-short {
       display: block;
       font-size: var(--fs-micro);
       font-weight: 700;
@@ -446,8 +446,30 @@
       text-transform: uppercase;
       white-space: nowrap;
     }
-    .rail-badge {
+    .nav-badge {
       top: var(--s-2);
+    }
+  }
+
+  /* ---------- Touch screens ----------
+     Anything smaller than 16px makes iOS zoom into a field on focus; small icon buttons get 44px targets. */
+  @media (pointer: coarse) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+    .news-search-x,
+    .hp-bar-back,
+    .ml-close,
+    .pp-close,
+    .tw-spin,
+    .tw-open {
+      min-width: 44px;
+      min-height: 44px;
+    }
+    .gww-chip {
+      min-height: 40px;
     }
   }
 
@@ -524,7 +546,7 @@
   /* ---------- About ---------- */
   .about-dialog {
     width: min(640px, calc(100vw - 32px));
-    max-height: calc(100vh - 96px);
+    max-height: calc(100dvh - 96px);
     padding: 0;
     border: 0;
     background: transparent;
@@ -551,7 +573,7 @@
   .briefing {
     --bp-tone: var(--info);
     width: min(560px, calc(100vw - 32px));
-    max-height: calc(100vh - 64px);
+    max-height: calc(100dvh - 64px);
     padding: 0;
     border: 0;
     background: transparent;

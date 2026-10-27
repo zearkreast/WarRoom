@@ -178,6 +178,7 @@ pub fn NewsPage() -> impl IntoView {
                     <div class="filter-row" role="toolbar" aria-label="Filter news">
                         <button
                             class=move || format!("filter-chip {}", if filter.get().is_none() { "on" } else { "" })
+                            aria-pressed=move || filter.get().is_none().to_string()
                             on:click=move |_| filter.set(None)
                         >
                             "All "
@@ -186,6 +187,7 @@ pub fn NewsPage() -> impl IntoView {
                         <For each=kind_keys key=|k| k.as_str() let:k>
                             <button
                                 class=move || format!("filter-chip {}", if filter.get() == Some(k) { "on" } else { "" })
+                                aria-pressed=move || (filter.get() == Some(k)).to_string()
                                 on:click=move |_| {
                                     filter.set(Some(k));
                                     shown.set(PAGE);

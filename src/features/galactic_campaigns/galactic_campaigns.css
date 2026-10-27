@@ -20,7 +20,7 @@
   }
   .cmp-title {
     font-family: var(--font-head);
-    font-stretch: 125%;
+    font-stretch: 75%;
     font-weight: 800;
     font-size: var(--fs-value);
     letter-spacing: 0.04em;

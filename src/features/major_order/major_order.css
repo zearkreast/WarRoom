@@ -1,35 +1,46 @@
 @layer features {
-  .mo .panel-body {
+  .mo-panel .panel-body {
     display: flex;
     flex-direction: column;
     gap: var(--s-5);
   }
-  .mo {
+  .mo-panel {
     container-type: inline-size;
   }
-  .mo .panel-title {
+  .mo-panel .panel-title {
     min-width: 0;
   }
-  .mo-name {
-    color: var(--cta);
+  .mo-panel .panel-title {
+    padding: var(--s-4) 0;
   }
-  .mo-name::before {
-    content: "·";
-    margin: 0 var(--s-3);
-    color: var(--text-dim);
-  }
-  /* A narrow card has no room beside the countdown, so the name takes its own line rather than an ellipsis. */
-  @container (max-width: 600px) {
-    .mo .panel-title {
-      padding: var(--s-3) 0;
-      line-height: 1.3;
+  /* A narrow card has no room beside the countdown: the order's name and the countdown each take a line. */
+  @container (max-width: 520px) {
+    .mo-panel > .panel-head {
+      flex-wrap: wrap;
+      row-gap: 0;
+      padding-bottom: var(--s-4);
+    }
+    .mo-panel .panel-title {
+      flex: 1 1 calc(100% - 40px);
+      padding-bottom: var(--s-2);
+    }
+    .mo-toggle {
+      flex-wrap: wrap;
     }
     .mo-name {
-      display: block;
+      flex-basis: 100%;
+      padding-left: 20px;
     }
-    .mo-name::before {
-      content: none;
+    .mo-panel .panel-right {
+      margin-left: 34px;
     }
+  }
+  /* The order's own name, on its own line under "Major Order". */
+  .mo-name {
+    display: block;
+    margin-top: var(--s-1);
+    font-size: 1rem;
+    color: var(--cta);
   }
   .mo-ends {
     display: inline-flex;
@@ -37,11 +48,14 @@
     gap: var(--s-3);
   }
   .mo-ends b {
-    padding: 2px var(--s-3);
+    padding: 2px var(--s-4);
     background: var(--cta);
     color: var(--ink-on-cta);
+    font-family: var(--font-num);
+    font-stretch: 87.5%;
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.06em;
+    font-size: var(--fs-body-s);
+    font-weight: 800;
   }
   .mo-briefing {
     margin: 0;
@@ -62,7 +76,7 @@
     letter-spacing: 0.16em;
     color: var(--label);
     padding-bottom: var(--s-3);
-    border-bottom: 1px solid var(--line);
+    border-bottom: 2px solid var(--line);
   }
   .mo-tasks {
     list-style: none;
@@ -96,9 +110,11 @@
     color: var(--good);
   }
   .mo-pct {
-    font-weight: 700;
+    font-stretch: 75%;
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1;
     color: var(--text-hi);
-    text-shadow: 0 0 10px color-mix(in srgb, var(--k) 55%, transparent);
   }
   .mo-task.done .mo-pct {
     color: var(--good);
@@ -143,7 +159,7 @@
     gap: var(--s-4);
     padding: var(--s-4) var(--s-5);
     background: var(--surface-2);
-    border: 1px solid var(--line);
+    border-left: 3px solid var(--cta);
     color: var(--cta);
   }
   .mo-reward .caps {
@@ -157,14 +173,20 @@
     color: var(--text-hi);
   }
   .mo-amount {
-    font-size: var(--fs-value);
+    font-stretch: 75%;
+    font-size: 1.5rem;
+    font-weight: 800;
     color: var(--text-hi);
   }
 
   /* Major Order panels keep the hot colour; every other panel head is neutral. */
-  .panel.mo,
+  .panel.mo-panel,
   .panel.mo-strip {
     --tone: var(--cta);
+    --frame: color-mix(in srgb, var(--cta) 70%, var(--line-strong));
+  }
+  .panel.mo-panel > .panel-head {
+    background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--cta) 12%, transparent) 0 2px, transparent 2px 9px);
   }
 
   /* ---------- Progress bar ---------- */
@@ -175,7 +197,6 @@
     position: relative;
     height: 12px;
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--k) 35%, var(--line));
     /* Quarter marks over the hatched remainder. */
     background:
       linear-gradient(
@@ -189,7 +210,7 @@
         transparent 0
       ),
       repeating-linear-gradient(-45deg, color-mix(in srgb, var(--rest) var(--rest-mix), transparent) 0 3px, transparent 3px 6px),
-      var(--void);
+      var(--surface-3);
   }
   /* The remainder is the enemy's share, so it shows more strongly. */
   .mo-bar.versus {
@@ -206,8 +227,7 @@
     /* Cut into 4px cells, brightening toward the leading edge; opaque, so the remainder's hatch stays out of it. */
     background:
       repeating-linear-gradient(90deg, transparent 0 4px, color-mix(in srgb, var(--void) 70%, transparent) 4px 5px),
-      linear-gradient(90deg, color-mix(in srgb, var(--k) 40%, var(--void)), var(--k));
-    box-shadow: 0 0 12px color-mix(in srgb, var(--k) var(--strong), transparent);
+      linear-gradient(90deg, color-mix(in srgb, var(--k) 55%, var(--void)), var(--k));
   }
   .mo-bar-sheen {
     position: absolute;
@@ -222,10 +242,7 @@
     bottom: 0;
     width: 2px;
     margin-left: -1px;
-    background: color-mix(in srgb, var(--k) 35%, #fff);
-    box-shadow:
-      0 0 4px 1px var(--k),
-      0 0 12px 2px color-mix(in srgb, var(--k) 60%, transparent);
+    background: var(--text-hi);
     animation: mo-pulse 1.6s ease-in-out var(--mo-grow) infinite;
   }
   /* Drawn only when the projection falls short, so it glows in the warning colour. */
@@ -235,10 +252,9 @@
     bottom: 0;
     width: 2px;
     margin-left: -1px;
-    background: var(--text-hi);
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--void) 60%, transparent),
-      0 0 6px 1px var(--bad);
+    width: 3px;
+    background: var(--bad);
+    box-shadow: 0 0 0 1px var(--void);
     animation: mo-mark-in 400ms var(--ease) var(--mo-grow) backwards;
   }
   /* Forced colours drop the gradients the bar is painted with. */
@@ -283,7 +299,7 @@
     }
   }
 
-  .mo.folded .panel-body {
+  .mo-panel.folded .panel-body {
     display: none;
   }
   .mo-toggle {

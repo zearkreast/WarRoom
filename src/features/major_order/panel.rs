@@ -207,7 +207,7 @@ pub fn OrderCard(
     };
     view! {
         <Panel
-            class=Signal::derive(move || if open.get() { "mo ".to_string() } else { "mo folded".to_string() })
+            class=Signal::derive(move || if open.get() { "mo-panel".to_string() } else { "mo-panel folded".to_string() })
             icon=icons::TARGET
             title=heading
             title_extra=extra
