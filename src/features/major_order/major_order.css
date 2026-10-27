@@ -35,7 +35,6 @@
       margin-left: 34px;
     }
   }
-  /* The order's own name, on its own line under "Major Order". */
   .mo-name {
     display: block;
     margin-top: var(--s-1);

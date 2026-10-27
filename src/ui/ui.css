@@ -1,8 +1,7 @@
 @layer primitives {
   /* ---------- Panel ----------
-     A 2px frame with two cut corners. The cuts are painted in --behind, so a panel shows them only on a flat
-     ground; a container on another surface sets --behind to that surface. Glass panels float over the map
-     instead and are cut with clip-path. */
+     The cut corners are painted in --behind, so they only read on a flat ground. Glass panels float over the
+     map and are cut with clip-path instead. */
   .panel {
     --tone: var(--cta);
     position: relative;
@@ -764,8 +763,8 @@
     background: var(--cta);
     color: var(--ink-on-cta);
   }
-  /* Emblems colour themselves inline; on the yellow fill they go dark like the text. The activity chart's
-     chips tint in their series colour instead, so they keep theirs. */
+  /* Emblems colour themselves inline, hence !important. The activity chart's chips tint instead of filling, so
+     they keep their colour. */
   .filter-chip.on:not(.ov-chips > *) .emblem g {
     color: var(--ink-on-cta) !important;
   }

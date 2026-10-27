@@ -10,8 +10,7 @@
     min-width: 0;
   }
 
-  /* The card's 2px frame is the button's own background showing round the inset body; both are cut at two
-     corners. */
+  /* The 2px frame is the button's own background showing round the inset body. */
   .cc-card {
     --frame: var(--line-strong);
     display: block;

@@ -452,7 +452,7 @@
   }
 
   /* ---------- Touch screens ----------
-     Anything smaller than 16px makes iOS zoom into a field on focus; small icon buttons get 44px targets. */
+     Below 16px, iOS zooms into a field on focus. */
   @media (pointer: coarse) {
     input,
     select,

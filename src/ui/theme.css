@@ -1,7 +1,7 @@
 /* Design tokens and element defaults. */
 @layer tokens {
   :root {
-    /* Ground and surfaces, darkest first. Warm near-blacks, so the Super Earth yellow reads as signal. */
+    /* Ground and surfaces, darkest first. */
     --void: #030303;
     --ground: #070706;
     /* Keep in sync with BAR_COLOR in src-tauri/android/MainActivity.kt.template and theme-color in index.html. */
@@ -57,7 +57,7 @@
 
     --font: "Chakra Petch", "Segoe UI", sans-serif;
     --font-head: "Archivo Variable", "Arial Narrow", "Chakra Petch", sans-serif;
-    /* Figures: Archivo has tabular digits (Chakra Petch has none), so counters and clocks stay still. */
+    /* Figures: Archivo has tabular digits; Chakra Petch has none. */
     --font-num: "Archivo Variable", "Chakra Petch", sans-serif;
 
     --fs-micro: 0.6875rem;
@@ -82,7 +82,7 @@
     --s-7: 24px;
     --s-8: 32px;
 
-    /* Chamfer sizes: the cut-off corners on panels, cards and buttons. */
+    /* The cut corners of panels, cards and buttons. */
     --cut: 14px;
     --cut-s: 7px;
     /* What shows through a panel's cut corner; a container on another surface sets it. */
