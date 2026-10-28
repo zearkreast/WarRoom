@@ -1014,6 +1014,9 @@
   .hc-effects li.seaf {
     border-color: color-mix(in srgb, var(--f-humans) 70%, transparent);
   }
+  .hc-effects li.threat {
+    border-color: color-mix(in srgb, var(--bad) 70%, transparent);
+  }
   .hc-augments {
     display: flex;
     flex-direction: column;

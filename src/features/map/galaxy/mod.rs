@@ -71,6 +71,7 @@ fn planet_look(
     selected: bool,
     dss: Option<DssInfo>,
     style: MapPlanets,
+    now: f64,
 ) -> PlanetLook {
     let [x, y] = project(p.position);
     let faction = p.event.as_ref().map(|e| e.faction).unwrap_or(p.current_owner);
@@ -121,7 +122,7 @@ fn planet_look(
             mo,
             enemy: p.current_owner != Faction::Humans || p.event.is_some(),
             pinned,
-            pawns: effects.iter().filter(|e| has_pawn(e)).cloned().collect(),
+            pawns: effects.iter().filter(|e| has_pawn(e) && e.until.is_none_or(|u| u > now)).cloned().collect(),
             dss,
             seed: p.index,
             pois,
@@ -428,6 +429,7 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                         u.selected_planet.get() == Some(index),
                         dss.with(|d| d.get(&index).cloned()),
                         style.get(),
+                        clock.get(),
                     )
                 }))
             })

@@ -356,6 +356,7 @@ fn pawn_tags(effects: &[PlanetEffect], faction: Faction, x: f64, class: &str) ->
                     let tone = match e.kind {
                         EffectKind::Subfaction => faction_color(Some(faction)),
                         EffectKind::Seaf => "var(--f-humans)",
+                        EffectKind::Threat => "var(--bad)",
                         _ => "var(--cta)",
                     };
                     let mark = match e.kind {

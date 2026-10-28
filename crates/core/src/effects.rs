@@ -45,7 +45,10 @@ impl EffectKind {
 pub struct PlanetEffect {
     pub id: i64,
     pub kind: EffectKind,
+    /// The category line the game shows above the name; only overrides carry one.
+    pub group: Option<String>,
     pub name: String,
+    /// With the game's `<i=N>…</i>` highlight markup.
     pub description: String,
     /// When a timed effect, such as an arsenal augmentation, ends: epoch ms.
     pub until: Option<f64>,
@@ -66,14 +69,22 @@ static NAMES: LazyLock<HashMap<i64, Named>> = LazyLock::new(|| {
 /// Names for galactic effect ids the community list (planet-effects.json) doesn't carry yet, and fixes
 /// to the ones it gets wrong. Unnamed ids are left off the map and the planet page until added here.
 /// Ids seen without a name on 24 Oct 2026: 1272 (Mastia), 1315–1317 (Esker, Erson Sands, Socorro III),
-/// 1318–1320 (Zagon Prime, Omicron), 1327 (Grafmere), 1363 (Aurora Bay),
-/// 1365 (Chort Bay), 1366 (Turing), 1418 (Calypso).
-fn override_of(id: i64) -> Option<(&'static str, &'static str)> {
+/// 1318–1320 (Zagon Prime, Omicron), 1327 (Grafmere), 1363 (Aurora Bay), 1365 (Chort Bay), 1366 (Turing),
+/// 1418 (Calypso); on 27 Oct 2026: 1178 (16 Illuminate planets, war event), 1289 and 1428 (14 Automaton planets,
+/// war event), 1427 (Choepessa IV).
+fn override_of(id: i64) -> Option<(Option<&'static str>, &'static str, &'static str)> {
     match id {
         // Named from the game's own planet tooltip, 25 Oct 2026.
         1333 => Some((
+            None,
             "E-711 EXTRACTION FACILITY",
             "Extensive mining and drilling operations are taking place to comb this former Hive World for all traces of the highly valuable substance known as E-711.",
+        )),
+        // Named from the game's own planet tooltip, 27 Oct 2026.
+        1429 => Some((
+            Some("PERILOUS POPULATION"),
+            "SCAVENGER RAMPAGE",
+            "Terrestrial scans indicate that <i=1>Scavenger</i> threat density is <i=1>2,900% higher</i> than normal.",
         )),
         _ => None,
     }
@@ -88,7 +99,7 @@ const KINDS: &[(EffectKind, &[i64])] = &[
             1379, 1380, 1386, 1402, 1403, 1413, 1414,
         ],
     ),
-    (EffectKind::Threat, &[1283, 1285, 1288, 1293, 1355, 1357, 1359]),
+    (EffectKind::Threat, &[1283, 1285, 1288, 1293, 1355, 1357, 1359, 1429]),
     (EffectKind::Seaf, &[1400, 1401]),
     (EffectKind::Dss, &[1209, 1210, 1211, 1214, 1215, 1216, 1217, 1238, 1261, 1262]),
     (EffectKind::Condition, &[1373, 1374, 1375]),
@@ -116,16 +127,15 @@ pub const GLOOM_IDS: [i64; 5] = [1186, 1187, 1188, 1190, 1193];
 
 static SIDE_SUFFIX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\s*\((enemies|marker|old map marker)\)\s*$").unwrap());
-static MARKUP_TAG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<i=\d+>|</i>").unwrap());
 
 fn kind_of(id: i64) -> Option<EffectKind> {
     KINDS.iter().find(|(_, ids)| ids.contains(&id)).map(|(k, _)| *k)
 }
 
 fn describe(id: i64) -> Option<PlanetEffect> {
-    let (name, description) = match override_of(id) {
-        Some((n, d)) => (n, d),
-        None => NAMES.get(&id).map(|n| (n.name.as_str(), n.description.as_str()))?,
+    let (group, name, description) = match override_of(id) {
+        Some(o) => o,
+        None => NAMES.get(&id).map(|n| (None, n.name.as_str(), n.description.as_str()))?,
     };
     let kind = kind_of(id).unwrap_or(if name.to_uppercase().starts_with("ARSENAL AUGMENTATION") {
         EffectKind::Arsenal
@@ -136,8 +146,9 @@ fn describe(id: i64) -> Option<PlanetEffect> {
     Some(PlanetEffect {
         id,
         kind,
+        group: group.map(str::to_string),
         name: SIDE_SUFFIX.replace(name, "").into_owned(),
-        description: MARKUP_TAG.replace_all(description, "").into_owned(),
+        description: description.to_string(),
         until: None,
     })
 }

@@ -1,6 +1,8 @@
 mod common;
 use common::*;
 use warroom_core::effects::{EffectKind, planet_effects};
+use warroom_core::format::parse_markup;
+use warroom_core::news_feed::plain_text;
 use warroom_core::snapshot::to_effects_live;
 
 fn on(index: i64) -> Vec<warroom_core::effects::PlanetEffect> {
@@ -66,4 +68,45 @@ fn leaves_out_unnamed_ids_and_bookkeeping_like_the_campaign_blocker() {
     let zagon = live.planets.iter().find(|p| p.ids.contains(&1318)).unwrap();
     assert!(!planet_effects(&zagon.ids).iter().any(|e| e.name == "CAMPAIGN BLOCKER"));
     assert!(planet_effects(&[1318, 1319]).is_empty());
+}
+
+#[test]
+fn names_scavenger_rampage_as_the_games_tooltip_does() {
+    let [e]: [_; 1] = planet_effects(&[1429]).try_into().unwrap();
+    assert_eq!(
+        (e.kind, e.group.as_deref(), e.name.as_str()),
+        (EffectKind::Threat, Some("PERILOUS POPULATION"), "SCAVENGER RAMPAGE")
+    );
+    let hot: Vec<String> =
+        parse_markup(&e.description).into_iter().filter(|s| s.style.is_some()).map(|s| s.text).collect();
+    assert_eq!(hot, ["Scavenger", "2,900% higher"]);
+    assert_eq!(
+        plain_text(&e.description),
+        "Terrestrial scans indicate that Scavenger threat density is 2,900% higher than normal."
+    );
+    assert_eq!(planet_effects(&[1333, 1209]).into_iter().map(|e| e.group).collect::<Vec<_>>(), [None, None]);
+}
+
+#[test]
+fn shows_scavenger_rampage_on_the_planets_its_war_event_grants_it_to() {
+    let status: warroom_core::api::WarStatusRaw = serde_json::from_value(serde_json::json!({
+        "time": 85_118_800,
+        "planetActiveEffects": [],
+        "spaceStations": [],
+        "globalEvents": [{ "effectIds": [1429], "planetIndices": [171], "expireTime": 85_331_977 }],
+    }))
+    .unwrap();
+    let [t]: [_; 1] = to_effects_live(&status, ms("2026-10-26T23:57:00Z")).timed.try_into().unwrap();
+    assert_eq!((t.ids.clone(), t.planets.clone()), (vec![1429], vec![171]));
+    assert_eq!(t.until, ms("2026-10-29T11:10:00Z"));
+    let names: Vec<String> = planet_effects(&t.ids).into_iter().map(|e| e.name).collect();
+    assert_eq!(names, ["SCAVENGER RAMPAGE"]);
+}
+
+#[test]
+fn keeps_the_games_highlights_in_descriptions() {
+    let [e]: [_; 1] = planet_effects(&[1209]).try_into().unwrap();
+    assert_eq!(e.name, "EAGLE STORM");
+    assert_eq!(e.description, "The DSS deploys <i=1>Eagle Strafing Runs</i> during missions.");
+    assert_eq!(plain_text(&e.description), "The DSS deploys Eagle Strafing Runs during missions.");
 }

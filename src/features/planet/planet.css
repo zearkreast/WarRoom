@@ -546,6 +546,18 @@
     color: var(--text-dim);
     line-height: 1.5;
   }
+  .pd-env-row.threat b,
+  .pd-env-row .hl:not(.hl-planet) {
+    color: var(--k, var(--text-hi));
+  }
+  .pd-env-kicker {
+    display: block;
+    margin-bottom: 2px;
+    font-size: var(--fs-kicker);
+    font-weight: 700;
+    letter-spacing: var(--track-caps);
+    color: var(--label);
+  }
   .pd-env-left {
     font-size: var(--fs-label);
     color: var(--cta);
@@ -652,14 +664,14 @@
     color: var(--label);
   }
 
-  /* Operational parameters: enemy units and allied forces wear their side's colour on the icon disc. */
+  /* Operational parameters: units and forces wear their side's colour on the icon disc, threats red. */
   .pd-env-icon.toned {
     background: color-mix(in srgb, var(--k) 22%, var(--surface-2));
     color: var(--k);
     box-shadow: inset 0 0 0 1px var(--k);
   }
   /* Stratagem icons bring their own colours, as on the game's dark stratagem tiles. */
-  .pd-env-icon.stratagem {
+  .pd-env-row.stratagem .pd-env-icon {
     border-radius: 4px;
     background: var(--void);
     box-shadow: inset 0 0 0 1px var(--line-strong);

@@ -26,6 +26,7 @@ use warroom_core::factions::faction_color;
 use warroom_core::format::{fmt_pct, js_round, to_fixed};
 use warroom_core::gww_nav::{GwwPage, LOG_ADDRESS};
 use warroom_core::gww_text::{Segment, parse_rich};
+use warroom_core::news_feed::plain_text;
 use warroom_core::progress::tracked_percent;
 use warroom_core::snapshot::StationLive;
 use warroom_core::time::parse_ms;
@@ -431,7 +432,7 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
                                     {effects
                                         .iter()
                                         .map(|e| view! {
-                                            <li class="caps" title=e.description.clone()>
+                                            <li class="caps" title=plain_text(&e.description)>
                                                 {action_icon(&e.name).map(|_| action_icon_view(&e.name, 14.0))}
                                                 {e.name.clone()}
                                             </li>

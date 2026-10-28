@@ -26,6 +26,12 @@ each entry, from `crates/core/src/changelog.rs`.
   and not at all with reduced motion; fields no longer make iOS zoom in, and small buttons are easier to tap.
 - The map's Minimal quality now drops the hologram and ember glows it promises to.
 
+### Planet effects
+
+- Scavenger Rampage, the game's Perilous Population effect, now shows beside its planets on the map, and with its
+  time left in the planet's hover card and on the planet page. Threats are marked in red, and effect descriptions
+  on the planet page keep the game's highlights.
+
 ### Fixed
 
 - Planet charts and War history read every row of the last day instead of stopping at 1000, so busy fronts

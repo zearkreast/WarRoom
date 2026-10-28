@@ -4,6 +4,7 @@ use crate::api::fronts::{Front, FrontKind};
 use crate::api::queries::queries;
 use crate::features::map::poi::{PoiGlyph, poi_kind, poi_origin};
 use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
+use crate::features::news::card::MarkupText;
 use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
 use crate::features::planet::cities::CityList;
 use crate::features::planet::record::{PlanetRecord, UNREACHABLE};
@@ -710,27 +711,35 @@ fn effect_icon(kind: EffectKind) -> IconLike {
 }
 
 fn env_row(icon: AnyView, name: String, text: String, tone: Option<String>) -> AnyView {
-    env_row_timed(icon, name, text, tone, None, "")
+    let text = (!text.is_empty()).then(|| view! { <p>{text}</p> }.into_any());
+    env_row_timed(icon, None, name, text, tone, None, "")
 }
 
-/// `left` is the time left on a timed effect, ms; `look` an extra class for its icon.
+fn markup_text(text: &str) -> Option<AnyView> {
+    (!text.is_empty()).then(|| view! { <MarkupText message=text.to_string() class="" whole=true /> }.into_any())
+}
+
+/// `group` is the game's category line over the name; `left` the time left on a timed effect, ms;
+/// `look` an extra class for the row.
 fn env_row_timed(
     icon: AnyView,
+    group: Option<String>,
     name: String,
-    text: String,
+    text: Option<AnyView>,
     tone: Option<String>,
     left: Option<f64>,
     look: &str,
 ) -> AnyView {
     view! {
-        <div class="pd-env-row" style=tone.clone().map(|t| format!("--k: {t};"))>
-            <span class=format!("pd-env-icon {} {look}", if tone.is_some() { "toned" } else { "" })>{icon}</span>
+        <div class=format!("pd-env-row {look}") style=tone.clone().map(|t| format!("--k: {t};"))>
+            <span class=if tone.is_some() { "pd-env-icon toned" } else { "pd-env-icon" }>{icon}</span>
             <div>
+                {group.map(|g| view! { <span class="pd-env-kicker caps">{g}</span> })}
                 <b class="caps">
                     {name}
                     {left.map(|l| view! { <span class="pd-env-left num">{format!(" · {} left", fmt_time_left(l))}</span> })}
                 </b>
-                {(!text.is_empty()).then(|| view! { <p>{text}</p> })}
+                {text}
             </div>
         </div>
     }
@@ -761,7 +770,11 @@ pub fn OperationsSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
                 let sub = e.kind == EffectKind::Subfaction;
                 let stratagem =
                     (e.kind == EffectKind::Arsenal).then(|| stratagem_icon(&augmented_stratagem(&e.name))).flatten();
-                let look = if stratagem.is_some() { "stratagem" } else { "" };
+                let look = match (&stratagem, e.kind) {
+                    (Some(_), _) => "stratagem",
+                    (None, EffectKind::Threat) => "threat",
+                    _ => "",
+                };
                 let icon = match (sub, enemy, stratagem) {
                     (true, Some(en), _) => {
                         view! { <SubfactionEmblem name=e.name.clone() faction=en.as_str() size=16.0 color="currentColor" /> }.into_any()
@@ -772,9 +785,11 @@ pub fn OperationsSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
                 let tone = match (sub, enemy) {
                     (true, Some(en)) => Some(faction_color(Some(en)).to_string()),
                     _ if e.kind == EffectKind::Seaf => Some("var(--f-humans)".to_string()),
+                    _ if e.kind == EffectKind::Threat => Some("var(--bad)".to_string()),
                     _ => None,
                 };
-                env_row_timed(icon, e.name.clone(), e.description.clone(), tone, e.until.map(|u| u - now), look)
+                let left = e.until.map(|u| u - now);
+                env_row_timed(icon, e.group.clone(), e.name.clone(), markup_text(&e.description), tone, left, look)
             })
             .collect_view();
         let hazards = p
@@ -854,7 +869,7 @@ pub fn PoisSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
                                         </span>
                                         <div>
                                             <b class="caps">{e.name.clone()}</b>
-                                            {(!e.description.is_empty()).then(|| view! { <p>{e.description.clone()}</p> })}
+                                            {markup_text(&e.description)}
                                         </div>
                                     </div>
                                 }
