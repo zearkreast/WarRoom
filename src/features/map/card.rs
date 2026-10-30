@@ -19,6 +19,7 @@ use warroom_core::effects::{EffectKind, PlanetEffect, has_pawn};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, fmt_pct, fmt_time_left, to_fixed};
 use warroom_core::galaxy::{Anomaly, Landmark, anomaly_of};
+use warroom_core::news_feed::plain_text;
 use warroom_core::progress::{liberation_percent, tracked_percent};
 
 #[derive(Clone)]
@@ -230,15 +231,17 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
             e.iter()
                 .filter(|e| e.kind == EffectKind::Look && poi_kind(&e.name) == PoiKind::Anomaly)
                 .chain(e.iter().filter(|e| e.kind == EffectKind::Poi))
-                .map(|e| (e.name.clone(), e.description.clone()))
+                .map(|e| (e.name.clone(), plain_text(&e.description)))
                 .collect::<Vec<_>>()
         })
     });
+    let clock = js::use_now(60_000.0);
     let chips = Memo::new(move |_| {
+        let now = clock.get();
         effects.with(|e| {
             e.iter()
-                .filter(|e| has_pawn(e) && e.kind != EffectKind::Poi)
-                .map(|e| (e.kind, e.name.clone()))
+                .filter(|e| has_pawn(e) && e.kind != EffectKind::Poi && e.until.is_none_or(|u| u > now))
+                .map(|e| (e.kind, e.name.clone(), e.until.map(|u| u - now)))
                 .collect::<Vec<_>>()
         })
     });
@@ -283,7 +286,7 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
                     <ul class="hc-effects caps">
                         {list
                             .into_iter()
-                            .map(|(kind, name)| {
+                            .map(|(kind, name, left)| {
                                 view! {
                                     <li class=kind.as_str()>
                                         {(kind == EffectKind::Subfaction).then_some(enemy).flatten().map(|f| {
@@ -293,6 +296,12 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
                                         })}
                                         {(kind == EffectKind::Seaf).then(|| view! { <SeafEmblem size=13.0 color="var(--f-humans)" /> })}
                                         {name}
+                                        {left.map(|l| view! {
+                                            <span class="hc-aug-left num" title="Time left">
+                                                <Icon icon=icons::TIMER size=11.0 />
+                                                {format!(" {}", fmt_time_left(l))}
+                                            </span>
+                                        })}
                                     </li>
                                 }
                             })
