@@ -1,5 +1,5 @@
-//! Read side of the shared war history the collector writes to Supabase. Everyone sees the
-//! same history, from whenever the collector first ran.
+//! Read side of the shared war history in Supabase: what the collector writes, and the war's earlier history
+//! imported before it ran. Everyone sees the same history.
 
 use crate::api::source::{self, encode};
 use leptos::prelude::*;
