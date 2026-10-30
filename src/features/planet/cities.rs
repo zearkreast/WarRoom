@@ -7,7 +7,7 @@ use leptos::prelude::*;
 use std::f64::consts::PI;
 use warroom_core::api::{Faction, Planet};
 use warroom_core::biomes::resistance_level;
-use warroom_core::cities::{City, CityState, cities_of, city_hours_left, size_label};
+use warroom_core::cities::{BarMark, City, CityState, bar_marks, cities_of, city_hours_left, size_label};
 use warroom_core::factions::faction_color;
 use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, to_fixed};
 
@@ -63,6 +63,53 @@ pub fn CityMark(
     }
 }
 
+/// Liberation % between two marks below which the second stacks over the first instead of overlapping it.
+const MARK_GAP: f64 = 8.0;
+
+/// A liberation bar with each city's mark standing where it opens; the map's cards and the planet page share it.
+/// Wraps the bar it marks; none while the planet is defended.
+#[component]
+pub fn CityBar(#[prop(into)] planet: Signal<Planet>, children: Children) -> impl IntoView {
+    let marks = Memo::new(move |_| planet.with(|p| bar_marks(p, MARK_GAP)));
+    let rows = Memo::new(move |_| marks.with(|m| m.iter().map(|m| m.row + 1).max().unwrap_or(0)));
+    view! {
+        <div class="city-bar" style=move || format!("--rows: {};", rows.get())>
+            {move || {
+                marks
+                    .get()
+                    .into_iter()
+                    .rev()
+                    .map(|BarMark { city: c, at, row }| {
+                        let title = if at == 0.0 {
+                            format!("{}: open from the start", c.name)
+                        } else {
+                            format!("{} opens at {}", c.name, fmt_pct(at, 1))
+                        };
+                        view! {
+                            <span
+                                class=format!("city-bar-mark {}", if c.state == CityState::Liberating { "open" } else { "" })
+                                style=format!("left: {}%; --row: {row}; --k: {};", crate::js::num(at), faction_color(Some(c.holder)))
+                                title=title
+                            >
+                                <CityMark stars=c.stars state=c.state size=16.0 holder=c.holder />
+                            </span>
+                        }
+                    })
+                    .collect_view()
+            }}
+            {children()}
+        </div>
+    }
+}
+
+/// What a city's status line says: where it opens while it waits on its planet, else its state.
+pub fn status_text(c: &City) -> String {
+    match c.opens_at.filter(|_| c.waiting) {
+        Some(at) => format!("Opens at {}", fmt_pct(at, 1)),
+        None => state_label(c.state).to_string(),
+    }
+}
+
 fn signed(n: f64) -> String {
     format!("{}{}/h", if n >= 0.0 { "+" } else { "−" }, fmt_pct(n.abs(), 2))
 }
@@ -113,12 +160,7 @@ fn CityRow(city: Memo<Option<City>>, enemy: Memo<Option<Faction>>, full: bool, o
                 <div class="city-main">
                     <div class="city-head">
                         <b class="caps">{c.name.clone()}</b>
-                        <span class="city-state caps">
-                            {match c.opens_at.filter(|_| c.waiting) {
-                                Some(at) => format!("Opens at {}", fmt_pct(at, 1)),
-                                None => state_label(c.state).to_string(),
-                            }}
-                        </span>
+                        <span class="city-state caps">{status_text(&c)}</span>
                     </div>
                     <span class="city-size caps">
                         {size_label(&c.size)}

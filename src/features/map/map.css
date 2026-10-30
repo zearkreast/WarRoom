@@ -1081,55 +1081,6 @@
     letter-spacing: 0.1em;
     color: var(--text-dim);
   }
-  .hc-bar {
-    position: relative;
-  }
-  .hc-bar.marked {
-    padding-top: 20px;
-  }
-  .hc-bar-track {
-    position: relative;
-    height: 10px;
-    overflow: hidden;
-    background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--rest) 45%, transparent) 0 3px, transparent 3px 7px),
-      var(--surface-3);
-  }
-  .hc-bar-fill {
-    position: absolute;
-    inset: 0 auto 0 0;
-    background: repeating-linear-gradient(115deg, transparent 0 7px, rgba(255, 255, 255, 0.24) 7px 10px, transparent 10px 14px),
-      var(--f-humans);
-    transition: width var(--t-value) var(--ease);
-  }
-  .hc-bar-fill::after {
-    content: "";
-    position: absolute;
-    top: -1px;
-    right: 0;
-    bottom: -1px;
-    width: 3px;
-    background: var(--text-hi);
-  }
-  .hc-bar-mark {
-    position: absolute;
-    top: 0;
-    bottom: -3px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transform: translateX(-50%);
-    pointer-events: auto;
-  }
-  .hc-bar-mark::after {
-    content: "";
-    flex: 1;
-    width: 2px;
-    margin-top: 2px;
-    background: var(--k);
-  }
-  .hc-bar-mark.open::after {
-    opacity: 0.6;
-  }
   /* Points of interest: their logo and name, then what they are, as the game's tooltip lists them. */
   .hc-art.poi {
     height: 92px;

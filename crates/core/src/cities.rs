@@ -2,7 +2,6 @@
 
 use crate::api::{Faction, Planet};
 use crate::data::{CityFateState, super_earth_city};
-use crate::progress::liberation_percent;
 use regex_lite::Regex;
 use std::sync::LazyLock;
 
@@ -54,7 +53,7 @@ pub struct City {
     pub rate: Option<f64>,
     /// The planet's liberation at which it opens; 0 for a city open from the start.
     pub opens_at: Option<f64>,
-    /// Locked, and the planet hasn't reached `opens_at` yet.
+    /// Closed on an enemy-held planet, waiting on the planet's liberation to reach `opens_at` (above 0).
     pub waiting: bool,
     /// Who holds it: Super Earth once it's liberated (or the planet is), else the planet's owner.
     pub holder: Faction,
@@ -88,10 +87,17 @@ fn state_of(p: &Planet, health: Option<f64>, open: bool) -> CityState {
     if open {
         return CityState::Liberating;
     }
-    if p.current_owner == Faction::Humans && p.event.is_none() {
+    // Cities stay Super Earth's while their planet is defended.
+    if p.current_owner == Faction::Humans {
         return CityState::Secured;
     }
     if health.is_none() { CityState::Held } else { CityState::Locked }
+}
+
+/// Liberation % at which a region opens. A factor of 0 belongs to regions outside the opening order (special
+/// sites), which give no threshold.
+fn opening(factor: Option<f64>) -> Option<f64> {
+    factor.filter(|f| *f > 0.0 && *f <= 1.0).map(|f| (1.0 - f) * 100.0)
 }
 
 fn nonzero(v: f64) -> bool {
@@ -118,7 +124,7 @@ pub fn cities_of(p: &Planet) -> Vec<City> {
                     None => live,
                 }
             };
-            let opens_at = r.availability_factor.filter(|f| (0.0..=1.0).contains(f)).map(|f| (1.0 - f) * 100.0);
+            let opens_at = opening(r.availability_factor);
             City {
                 id: r.id,
                 name: fate_name.map_or_else(|| r.name.clone(), String::from),
@@ -138,11 +144,39 @@ pub fn cities_of(p: &Planet) -> Vec<City> {
                     .map(|regen| ((regen * 3600.0) / r.max_health) * 100.0),
                 rate: r.rate,
                 opens_at,
-                waiting: state == CityState::Locked
-                    && p.event.is_none()
-                    && opens_at.is_some_and(|at| liberation_percent(p.health, p.max_health) < at),
+                waiting: matches!(state, CityState::Locked | CityState::Held) && opens_at.is_some_and(|at| at > 0.0),
                 holder: if percent.is_some_and(|p| p >= 100.0) { Faction::Humans } else { p.current_owner },
             }
         })
         .collect()
+}
+
+/// A city's mark on its planet's liberation bar.
+#[derive(Clone, Debug, PartialEq)]
+pub struct BarMark {
+    pub city: City,
+    /// Liberation % it opens at: where its stem meets the bar.
+    pub at: f64,
+    /// Row of its icon over the bar, 0 nearest; marks closer than the gap stack instead of shifting aside.
+    pub row: usize,
+}
+
+/// Where each city opens along its planet's liberation bar, left to right. None while the planet is defended:
+/// the thresholds count liberation, not defense.
+pub fn bar_marks(p: &Planet, gap: f64) -> Vec<BarMark> {
+    if p.event.is_some() || p.current_owner == Faction::Humans {
+        return Vec::new();
+    }
+    let mut marks: Vec<BarMark> =
+        cities_of(p).into_iter().filter_map(|c| Some(BarMark { at: c.opens_at?, city: c, row: 0 })).collect();
+    marks.sort_by(|a, b| a.at.total_cmp(&b.at).then(a.city.id.cmp(&b.city.id)));
+    let mut last: Vec<f64> = Vec::new();
+    for m in &mut marks {
+        m.row = last.iter().position(|x| m.at - x >= gap).unwrap_or(last.len());
+        match last.get_mut(m.row) {
+            Some(x) => *x = m.at,
+            None => last.push(m.at),
+        }
+    }
+    marks
 }

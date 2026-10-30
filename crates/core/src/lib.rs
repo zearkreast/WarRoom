@@ -9,6 +9,7 @@ pub mod chart;
 pub mod cities;
 pub mod collate;
 pub mod data;
+pub mod defense;
 pub mod dispatch;
 pub mod effects;
 pub mod faction_marks;

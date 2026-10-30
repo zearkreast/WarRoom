@@ -2,9 +2,9 @@
 
 use crate::api::history::{self, CityReading, PlayerReading};
 use crate::api::queries::{self, queries};
-use crate::features::map::card::LiberationBar;
 use crate::features::planet::activity::{ActivitySection, ProgressChart};
-use crate::features::planet::cities::{CityMark, enemy_of_cities, state_label};
+use crate::features::planet::cities::{CityMark, enemy_of_cities, status_text};
+use crate::features::planet::defense::LiberationBar;
 use crate::features::planet::tint::planet_tint;
 use crate::js;
 use crate::state::{CityRef, HellpadModule, ui};
@@ -76,12 +76,7 @@ fn opens_at(c: &City) -> Option<f64> {
 fn CityStatus(c: Signal<City>, enemy: Signal<Option<Faction>>) -> impl IntoView {
     let is_fought = Memo::new(move |_| c.with(|c| fought(c, enemy.get())));
     let tone = Memo::new(move |_| faction_color(Some(c.with(|c| c.holder))).to_string());
-    let state = move || {
-        c.with(|c| match c.opens_at.filter(|_| c.waiting) {
-            Some(at) => format!("Opens at {}", fmt_pct(at, 1)),
-            None => state_label(c.state).to_string(),
-        })
-    };
+    let state = move || c.with(status_text);
     let tiles = move || {
         let c = c.get();
         let fought = is_fought.get();

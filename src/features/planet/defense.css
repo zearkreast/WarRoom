@@ -1,0 +1,204 @@
+@layer features {
+  /* The map cards' progress bar. In a defense it is two: Super Earth's defense over the enemy's advance. */
+  .hc-bar {
+    position: relative;
+  }
+  .hc-bar-track {
+    position: relative;
+    height: 10px;
+    overflow: hidden;
+    background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--rest) 45%, transparent) 0 3px, transparent 3px 7px),
+      var(--surface-3);
+  }
+  .hc-bar-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: repeating-linear-gradient(115deg, transparent 0 7px, rgba(255, 255, 255, 0.24) 7px 10px, transparent 10px 14px),
+      var(--f-humans);
+    transition: width var(--t-value) var(--ease);
+  }
+  .hc-bar-fill::after {
+    content: "";
+    position: absolute;
+    top: -1px;
+    right: 0;
+    bottom: -1px;
+    width: 3px;
+    background: var(--text-hi);
+  }
+  .hc-bar.fight {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .hc-bar.fight .hc-bar-track {
+    background: var(--surface-3);
+  }
+  .hc-bar-track.foe {
+    height: 6px;
+  }
+  .hc-bar-track.foe .hc-bar-fill {
+    background: repeating-linear-gradient(-45deg, var(--rest) 0 3px, color-mix(in srgb, var(--rest) 55%, transparent) 3px 6px);
+  }
+  .hc-bar-track.foe .hc-bar-fill::after {
+    background: var(--rest);
+    box-shadow: 0 0 6px var(--rest);
+  }
+  .fight-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-2);
+    font-size: var(--fs-micro);
+    letter-spacing: 0.12em;
+    color: var(--f-humans);
+  }
+  .fight-head b {
+    margin-left: auto;
+    font-size: var(--fs-label);
+    color: var(--text-hi);
+  }
+  .fight-head.foe {
+    margin-top: 4px;
+    color: var(--rest);
+  }
+  .fight-head.foe b {
+    margin-left: 0;
+    order: 1;
+  }
+  .fight-head .fight-left {
+    margin-left: auto;
+    color: var(--text-dim);
+  }
+  .fight-se {
+    position: relative;
+  }
+  .fight-marker {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    background: var(--text-hi);
+    box-shadow: 0 0 0 1px var(--void);
+    transform: translateX(-50%);
+  }
+
+  /* The gambit advisory: yellow while liberating the attacker wins the defense first, grey once holding is
+     quicker or the deadline comes first. */
+  .gambit {
+    --gambit: var(--cta);
+    display: flex;
+    gap: var(--s-3);
+    padding: var(--s-3);
+    color: var(--text);
+    background: color-mix(in srgb, var(--gambit) 7%, var(--void));
+    border: 1px solid color-mix(in srgb, var(--gambit) 38%, transparent);
+    border-left: 3px solid var(--gambit);
+    font-size: var(--fs-body-s);
+    line-height: 1.45;
+  }
+  .gambit.slower,
+  .gambit.out,
+  .gambit.measuring {
+    --gambit: var(--text-dim);
+    color: var(--text-dim);
+  }
+  .gambit-mark {
+    flex: none;
+    color: var(--gambit);
+  }
+  .gambit-ring {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.2;
+    stroke-dasharray: 2.2 1.6;
+  }
+  .gambit-foe {
+    fill: var(--bad);
+  }
+  .gambit:not(.ahead) .gambit-foe {
+    fill: currentColor;
+  }
+  .gambit-arrow,
+  .gambit-cut {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .gambit-cut {
+    stroke: var(--text-hi);
+  }
+  .gambit-shield {
+    fill: color-mix(in srgb, var(--f-humans) 35%, transparent);
+    stroke: var(--f-humans);
+    stroke-width: 1.2;
+  }
+  .gambit-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .gambit-body p {
+    margin: var(--s-2) 0 0;
+  }
+  .gambit-kind {
+    font-size: var(--fs-micro);
+    letter-spacing: 0.12em;
+    color: var(--label);
+  }
+  .gambit-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s-3);
+  }
+  .gambit-title {
+    font-size: var(--fs-label);
+    letter-spacing: 0.1em;
+    color: var(--gambit);
+  }
+  .gambit-tag {
+    padding: 0 var(--s-2);
+    font-size: var(--fs-micro);
+    letter-spacing: 0.1em;
+    border: 1px solid currentColor;
+    color: var(--gambit);
+  }
+  .gambit.out .gambit-tag {
+    color: var(--bad);
+  }
+  .gambit-planet {
+    font: inherit;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .gambit-verdict {
+    color: var(--text);
+  }
+  .gambit:not(.ahead) .gambit-verdict {
+    color: var(--text-dim);
+  }
+  .gambit-fronts {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: var(--s-2) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-micro);
+    letter-spacing: 0.08em;
+    color: var(--label);
+  }
+  .gambit-fronts span {
+    color: var(--k);
+    font-weight: 700;
+  }
+  .hc-gambit {
+    margin: var(--s-3) var(--s-5) 0;
+  }
+  .pd-gambit {
+    margin-top: var(--s-4);
+  }
+}

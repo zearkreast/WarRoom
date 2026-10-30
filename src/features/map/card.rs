@@ -4,7 +4,8 @@ use crate::api::fronts::station_planets;
 use crate::features::map::poi::{PoiGlyph, PoiKind, poi_image, poi_kind, poi_origin};
 use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
 use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
-use crate::features::planet::cities::{CityList, CityMark};
+use crate::features::planet::cities::CityList;
+use crate::features::planet::defense::LiberationBar;
 use crate::features::planet::tint::planet_tint;
 use crate::js::{self, num};
 use crate::state::{HellpadModule, settings, ui};
@@ -14,7 +15,6 @@ use crate::ui::primitives::use_escape;
 use leptos::prelude::*;
 use warroom_core::api::{Faction, Planet};
 use warroom_core::biomes::{biome_tint, regen_pct_per_hour, resistance_level};
-use warroom_core::cities::{CityState, cities_of};
 use warroom_core::effects::{EffectKind, PlanetEffect, has_pawn};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, fmt_pct, fmt_time_left, to_fixed};
@@ -94,73 +94,6 @@ fn poi_row(name: String, description: String, kind: PoiKind, faction: Faction) -
     }
 }
 
-/// What the map's hover card and planet panel both show: picture, name, what's there and the fight.
-/// The planet's progress, with a mark where each city opens; cities opening at the same point stand side by side.
-#[component]
-pub fn LiberationBar(
-    #[prop(into)] p: Signal<Planet>,
-    #[prop(into)] pct: Signal<f64>,
-    #[prop(into)] enemy: Signal<Faction>,
-) -> impl IntoView {
-    let marks = Memo::new(move |_| {
-        p.with(|p| {
-            if p.event.is_some() {
-                Vec::new()
-            } else {
-                cities_of(p).into_iter().filter(|c| c.opens_at.is_some()).collect::<Vec<_>>()
-            }
-        })
-    });
-    let defended = Memo::new(move |_| p.with(|p| p.event.is_some()));
-    view! {
-        <div
-            class=move || format!("hc-bar {}", if marks.with(|m| m.is_empty()) { "" } else { "marked" })
-            style=move || format!("--rest: {};", faction_color(Some(enemy.get())))
-        >
-            <div
-                class="hc-bar-track"
-                role="progressbar"
-                aria-valuenow=move || num(warroom_core::format::js_round(pct.get()))
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-label=move || if defended.get() { "Defended" } else { "Liberated" }
-            >
-                <div class="hc-bar-fill" style=move || format!("width: {}%;", num(pct.get().clamp(0.0, 100.0)))></div>
-            </div>
-            {move || {
-                let marks = marks.get();
-                marks
-                    .iter()
-                    .enumerate()
-                    .map(|(i, c)| {
-                        let at = c.opens_at.unwrap_or(0.0);
-                        let beside = marks[..i].iter().filter(|m| (m.opens_at.unwrap_or(0.0) - at).abs() < 4.0).count();
-                        view! {
-                            <span
-                                class=format!("hc-bar-mark {}", if c.waiting { "" } else { "open" })
-                                style=format!(
-                                    "left: calc({}% + {}px); --k: {};",
-                                    num(at),
-                                    beside * 18,
-                                    faction_color(Some(c.holder)),
-                                )
-                                title=format!("{} opens at {}", c.name, fmt_pct(at, 1))
-                            >
-                                <CityMark
-                                    stars=c.stars
-                                    state=if c.waiting { CityState::Locked } else { CityState::Liberating }
-                                    size=16.0
-                                    holder=c.holder
-                                />
-                            </span>
-                        }
-                    })
-                    .collect_view()
-            }}
-        </div>
-    }
-}
-
 /// Arsenal augmentations: stratagems High Command adds to every loadout on the planet for a while.
 #[component]
 fn Augmentations(list: Signal<Vec<PlanetEffect>>) -> impl IntoView {
@@ -203,6 +136,7 @@ fn Augmentations(list: Signal<Vec<PlanetEffect>>) -> impl IntoView {
     }
 }
 
+/// What the map's hover card and planet panel both show: picture, name, what's there and the fight.
 fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<PlanetEffect>>) -> impl IntoView {
     let enemy = Memo::new(move |_| p.with(enemy_of));
     let anomaly = Memo::new(move |_| p.with(|p| effects.with(|e| anomaly_of(&p.name, &ids(e)))));
