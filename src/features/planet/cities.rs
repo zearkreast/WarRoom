@@ -66,8 +66,7 @@ pub fn CityMark(
 /// Liberation % between two marks below which the second stacks over the first instead of overlapping it.
 const MARK_GAP: f64 = 8.0;
 
-/// A liberation bar with each city's mark standing where it opens; the map's cards and the planet page share it.
-/// Wraps the bar it marks; none while the planet is defended.
+/// Stands each city's mark over the liberation bar it wraps, where the city opens; none while the planet is defended.
 #[component]
 pub fn CityBar(#[prop(into)] planet: Signal<Planet>, children: Children) -> impl IntoView {
     let marks = Memo::new(move |_| planet.with(|p| bar_marks(p, MARK_GAP)));

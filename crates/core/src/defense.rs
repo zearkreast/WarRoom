@@ -42,7 +42,7 @@ pub fn needed_rate(percent: f64, now: f64, deadline: f64) -> Option<f64> {
 /// measured rate is enough. None while the rate is unknown or not gaining.
 pub fn divers_short(rate: Option<f64>, needed: f64, players: f64) -> Option<f64> {
     let rate = rate.filter(|r| *r > 0.0)?;
-    if !(players > 0.0) {
+    if players.is_nan() || players <= 0.0 {
         return None;
     }
     if rate >= needed {

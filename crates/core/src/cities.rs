@@ -94,8 +94,7 @@ fn state_of(p: &Planet, health: Option<f64>, open: bool) -> CityState {
     if health.is_none() { CityState::Held } else { CityState::Locked }
 }
 
-/// Liberation % at which a region opens. A factor of 0 belongs to regions outside the opening order (special
-/// sites), which give no threshold.
+/// Liberation % at which a region opens. A factor of 0 marks a special site outside the opening order: no threshold.
 fn opening(factor: Option<f64>) -> Option<f64> {
     factor.filter(|f| *f > 0.0 && *f <= 1.0).map(|f| (1.0 - f) * 100.0)
 }

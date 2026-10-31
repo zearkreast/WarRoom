@@ -110,11 +110,11 @@ pub fn write_camera(k: f64, rot: f64, tilt: f64) {
     set("holoFloor", "transform", format!("scale(1, {})", to_fixed(0.5 * tilt.cos(), 4)));
     set("holoBeam", "transform", format!("scale(1, {})", to_fixed(lift + 6.0, 4)));
     set("holoLift", "transform", format!("translateY({})", px(-lift)));
-    // Defense beacons grow slower than the markers: big beside them when zoomed out, not swamping the map zoomed in.
+    // Beacons grow slower than markers: big when zoomed out without swamping the map zoomed in.
     let beacon = to_fixed(1.4 / k.powf(0.75), 4);
     set("beaconZone", "transform", format!("scale({beacon})"));
-    // The chevron's tip sits on top of a marker and its logo, over its name once that shows; over the active-planet
-    // tag above a sphere. The rules' order breaks their ties.
+    // The chevron sits over the marker and its logo, over the name once shown, over a sphere's active tag. The
+    // rules' order breaks their ties.
     let mark = |y: f64| format!("translateY({}) scale({beacon})", px(y));
     set("beaconMark", "transform", mark(-10.0 * marker - 2.0 / k));
     set("poiBeaconMark", "transform", mark(-15.5 * marker - 2.0 / k));

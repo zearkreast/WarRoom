@@ -169,8 +169,7 @@
     color: var(--text);
   }
 
-  /* A bar with city marks over it: one 18px row per stack of marks, each stem reaching down through the bar
-     at the liberation the city opens at. */
+  /* One row per stack of marks; each stem reaches down through the bar at the city's threshold. */
   .city-bar {
     --mark-row: 18px;
     position: relative;

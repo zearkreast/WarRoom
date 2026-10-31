@@ -56,14 +56,13 @@ pub fn use_gambits(p: Signal<Planet>) -> Memo<Vec<Gambit>> {
     })
 }
 
-/// "Automatons" from "Automaton", for the advance label.
+/// "Automatons advance".
 pub fn advance_label(f: Faction) -> String {
     format!("{} advance", faction_label(Some(f)))
 }
 
 /// The planet's progress as the map's cards show it. A liberation is one bar with a mark where each city opens;
-/// a defense is two, as in the game: Super Earth's defense right over the enemy's advance, so whichever leads
-/// shows at a glance.
+/// a defense is two, as in the game: Super Earth's defense right over the enemy's advance.
 #[component]
 pub fn LiberationBar(
     #[prop(into)] p: Signal<Planet>,
@@ -167,7 +166,7 @@ fn planet_links(list: &[&Planet]) -> AnyView {
         .into_any()
 }
 
-/// The game's attack-and-hold idea drawn small: the attacking world in its sights, its line cut short of the shield.
+/// A gambit drawn small: the attacking world in its sights, its line cut short of the shield.
 #[component]
 pub fn GambitMark(#[prop(default = 30.0)] size: f64) -> impl IntoView {
     view! {
