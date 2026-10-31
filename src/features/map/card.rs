@@ -18,7 +18,7 @@ use warroom_core::cities::{CityState, cities_of};
 use warroom_core::effects::{EffectKind, PlanetEffect, has_pawn};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, fmt_pct, fmt_time_left, to_fixed};
-use warroom_core::galaxy::{Anomaly, Landmark, anomaly_of};
+use warroom_core::galaxy::{Anomaly, Landmark, anomaly_of, landmark};
 use warroom_core::news_feed::plain_text;
 use warroom_core::progress::{liberation_percent, tracked_percent};
 
@@ -208,7 +208,9 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
     let anomaly = Memo::new(move |_| p.with(|p| effects.with(|e| anomaly_of(&p.name, &ids(e)))));
     let kind = move || {
         p.with(|p| {
-            if p.event.is_some() {
+            if let Some(l) = landmark(p.index) {
+                l.biome
+            } else if p.event.is_some() {
                 "Defense"
             } else if active.get() {
                 "Liberation"
@@ -227,6 +229,9 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
     };
     // Black holes and broken worlds list what they are too, as the game's tooltip does.
     let rows = Memo::new(move |_| {
+        if let Some(l) = p.with(|p| landmark(p.index)) {
+            return l.pois.iter().map(|poi| (poi.name.to_string(), poi.description.to_string())).collect();
+        }
         effects.with(|e| {
             e.iter()
                 .filter(|e| e.kind == EffectKind::Look && poi_kind(&e.name) == PoiKind::Anomaly)
@@ -262,6 +267,7 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
             <b class="hc-name">{move || p.with(|p| p.name.clone())}</b>
             <span class="hc-sector caps">{move || p.with(|p| p.sector.clone())}" sector"</span>
         </div>
+        {move || p.with(|p| landmark(p.index)).map(|l| view! { <p class="hc-desc">{l.note}</p> })}
         {move || {
             let list = rows.get();
             if list.is_empty() {
@@ -383,7 +389,10 @@ pub fn hover_card(h: &Hover, active: Signal<bool>, effects: Signal<Vec<PlanetEff
                                 .collect_view()}
                         }
                     })}
-                    <div class="hc-foot caps">"No campaign data"</div>
+                    <div class="hc-foot caps">
+                        <Icon icon=icons::MOUSE_POINTER_CLICK size=14.0 />
+                        " Click for the planet panel"
+                    </div>
                 </div>
             }
             .into_any()
@@ -442,7 +451,9 @@ pub fn planet_panel(
                 <dl class="pp-stats">
                     <div>
                         <dt class="caps">"Helldivers"</dt>
-                        <dd class="num">{move || p.with(|p| fmt_int(p.statistics.player_count))}</dd>
+                        <dd class="num">
+                            {move || p.with(|p| if landmark(p.index).is_some() { "—".to_string() } else { fmt_int(p.statistics.player_count) })}
+                        </dd>
                     </div>
                     <div>
                         <dt class="caps">"Held by"</dt>
