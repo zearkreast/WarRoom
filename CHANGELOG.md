@@ -32,6 +32,14 @@ each entry, from `crates/core/src/changelog.rs`.
   time left in the planet's hover card and on the planet page. Threats are marked in red, and effect descriptions
   on the planet page keep the game's highlights.
 
+### City liberations
+
+- Front line activity puts the city's mark, with its stars for size, on the progress line where freeing it jumped
+  the front forward. Point at the mark for the city's name and the boost it gave. Same-sized cities are told apart
+  by the collector's city readings; when those can't settle it, the box names each city it could be.
+- A city's boost on a defended planet counts against the defense's own health, so it now shows what freeing the
+  city really adds, and says so.
+
 ### Fixed
 
 - Planet charts and War history read every row of the last day instead of stopping at 1000, so busy fronts

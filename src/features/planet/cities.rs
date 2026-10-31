@@ -41,11 +41,16 @@ pub fn CityMark(
     state: CityState,
     #[prop(default = 32.0)] size: f64,
     #[prop(optional)] holder: Option<Faction>,
+    /// Top left corner, when drawn inside a chart.
+    #[prop(optional)]
+    at: Option<(f64, f64)>,
 ) -> impl IntoView {
     let size = crate::js::num(size);
     view! {
         <svg
             class=format!("city-mark {}", state.as_str())
+            x=at.map(|a| crate::js::num(a.0))
+            y=at.map(|a| crate::js::num(a.1))
             width=size.clone()
             height=size
             viewBox="0 0 24 24"
@@ -188,7 +193,11 @@ fn CityRow(city: Memo<Option<City>>, enemy: Memo<Option<Faction>>, full: bool, o
                         <span class="city-boost caps">
                             <Icon icon=icons::TRENDING_UP size=12.0 />
                             <b class="num">{format!("+{}", fmt_pct(c.boost.unwrap_or(0.0), 1))}</b>
-                            {if full { " planet liberation when freed" } else { " boost" }}
+                            {match (full, c.defense) {
+                                (false, _) => " boost",
+                                (true, true) => " defense when freed",
+                                (true, false) => " planet liberation when freed",
+                            }}
                         </span>
                     })}
                     {c.note.filter(|_| full).map(|n| view! { <p class="city-note">{n}</p> })}

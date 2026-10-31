@@ -5,6 +5,7 @@ use crate::api::source::{self, encode};
 use leptos::prelude::*;
 use serde::Deserialize;
 use std::sync::OnceLock;
+use warroom_core::cities::CityProgress;
 use warroom_core::factions::faction_by_id;
 use warroom_core::owner_changes::OwnerChange;
 use warroom_core::progress::Sample;
@@ -79,6 +80,13 @@ struct ReadingRow {
     at: String,
     players: f64,
     percent: Option<f64>,
+}
+
+#[derive(Deserialize)]
+struct ProgressRow {
+    region: i64,
+    at: String,
+    percent: f64,
 }
 
 fn to_change(r: ChangeRow) -> Option<ChangeRecord> {
@@ -172,6 +180,13 @@ pub async fn city_readings(planet: i64, region: i64, since_ms: f64) -> Result<Ve
         .rev()
         .map(|r| CityReading { at: parse_ms(&r.at), players: r.players, percent: r.percent })
         .collect())
+}
+
+/// The liberation of a planet's cities while they were fought over, oldest first.
+pub async fn city_progress(planet: i64, since_ms: f64) -> Result<Vec<CityProgress>, String> {
+    let filter = format!("select=region,at,percent&planet=eq.{planet}&percent=not.is.null");
+    let rows: Vec<ProgressRow> = unless_missing(select_all("region_samples", &filter, Some(since_ms)).await)?;
+    Ok(rows.into_iter().map(|r| CityProgress { region: r.region, at: parse_ms(&r.at), percent: r.percent }).collect())
 }
 
 /// Time of the oldest stored sample for a planet (or for any planet), or None if none.
