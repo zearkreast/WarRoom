@@ -2,7 +2,7 @@ mod common;
 use common::*;
 use std::collections::HashSet;
 use warroom_core::api::{Faction, PlanetEvent};
-use warroom_core::regions::{build_regions, chaikin};
+use warroom_core::regions::{build_attack_regions, build_regions, chaikin};
 
 #[test]
 fn chaikin_doubles_the_points_each_pass() {
@@ -24,13 +24,14 @@ fn outlines_enemy_territory_only() {
 #[test]
 fn a_planet_under_attack_joins_its_attackers_territory_hatched() {
     let mut planets = planets();
-    let quiet = build_regions(&planets);
+    let quiet = build_attack_regions(&planets);
     assert!(quiet.iter().all(|r| r.contested.is_empty()));
     let target =
         planets.iter().position(|p| p.current_owner == Faction::Humans && p.index != 0 && p.position.x != 0.0).unwrap();
     planets[target].event = Some(PlanetEvent { faction: Faction::Automaton, ..Default::default() });
     let index = planets[target].index;
-    let regions = build_regions(&planets);
+    assert!(build_regions(&planets).iter().all(|r| !r.planets.contains(&planets[target].index)));
+    let regions = build_attack_regions(&planets);
     let bots: Vec<_> = regions.iter().filter(|r| r.owner == Faction::Automaton).collect();
     assert!(bots.iter().any(|r| r.planets.contains(&index)));
     assert!(bots.iter().any(|r| r.contested.starts_with('M')));

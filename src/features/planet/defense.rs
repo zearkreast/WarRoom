@@ -9,11 +9,10 @@ use crate::state::ui;
 use leptos::prelude::*;
 use std::collections::HashMap;
 use warroom_core::api::{Faction, Planet};
-use warroom_core::defense::{Gambit, GambitOutlook, attackers, enemy_advance, gambit, gambits_from};
+use warroom_core::defense::{Gambit, GambitOutlook, attackers, enemy_advance, event_span, gambit, gambits_from};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_duration, fmt_pct, fmt_rate, fmt_time_left, js_round};
 use warroom_core::progress::projected_at;
-use warroom_core::time::parse_ms;
 
 /// The enemy's advance in a defense, 0-100, kept current; None without one.
 pub fn use_enemy_advance(p: Signal<Planet>) -> Memo<Option<f64>> {
@@ -56,6 +55,11 @@ pub fn use_gambits(p: Signal<Planet>) -> Memo<Vec<Gambit>> {
     })
 }
 
+/// "8h 57m left", or that the deadline has passed while the API still lists the event.
+pub fn time_left(ms: f64) -> String {
+    if ms > 0.0 { format!("{} left", fmt_time_left(ms)) } else { "Deadline passed".to_string() }
+}
+
 /// "Automatons advance".
 pub fn advance_label(f: Faction) -> String {
     format!("{} advance", faction_label(Some(f)))
@@ -72,7 +76,7 @@ pub fn LiberationBar(
     let advance = use_enemy_advance(p);
     let defended = Memo::new(move |_| p.with(|p| p.event.is_some()));
     let clock = js::use_now(30_000.0);
-    let deadline = Memo::new(move |_| p.with(|p| p.event.as_ref().map(|e| parse_ms(&e.end_time))));
+    let deadline = Memo::new(move |_| p.with(|p| p.event.as_ref().and_then(event_span).map(|(_, end)| end)));
     let projected = Memo::new(move |_| {
         let end = deadline.get()?;
         let index = p.with(|p| p.index);
@@ -128,7 +132,7 @@ pub fn LiberationBar(
                     <div class="fight-head foe caps">
                         <span>{move || advance_label(enemy.get())}</span>
                         <span class="fight-left num">
-                            {move || deadline.get().map(|d| format!("{} left", fmt_time_left(d - clock.get())))}
+                            {move || deadline.get().map(|d| time_left(d - clock.get()))}
                         </span>
                         <b class="num">{move || fmt_pct(foe.get(), 0)}</b>
                     </div>

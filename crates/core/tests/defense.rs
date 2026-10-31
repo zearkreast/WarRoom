@@ -97,6 +97,8 @@ fn a_gambit_needs_every_attacker_to_be_a_front() {
     assert_eq!(g.attackers[0].percent, 50.0);
     assert_eq!(g.done_at, Some(now + 10.0 * H));
     assert_eq!(g.deadline, parse_ms(END));
+    let late = parse_ms(END) + H;
+    assert!(gambit(&planets[0], &planets, &rates(&[(1, Some(1.0)), (2, Some(5.0))]), late).is_none());
 }
 
 #[test]

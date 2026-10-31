@@ -1,7 +1,9 @@
 //! A front's card: progress, pace, ETA or deadline, Helldivers and badges.
 
 use crate::api::fronts::{Front, FrontKind, fronts};
-use crate::features::planet::defense::{GambitMark, advance_label, use_attackers, use_enemy_advance, use_gambits};
+use crate::features::planet::defense::{
+    GambitMark, advance_label, time_left, use_attackers, use_enemy_advance, use_gambits,
+};
 use crate::features::planet::tint::planet_tint;
 use crate::js;
 use crate::state::{OptionsAnchor, ui};
@@ -14,7 +16,7 @@ use warroom_core::api::{Faction, Named, Planet};
 use warroom_core::biomes::regen_pct_per_hour;
 use warroom_core::defense::{GambitOutlook, divers_short, event_span, needed_rate};
 use warroom_core::factions::{faction_color, faction_label};
-use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, fmt_time_left, to_fixed};
+use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, to_fixed};
 
 /// What a card shows that rarely changes; the card is rebuilt only when it does.
 #[derive(Clone, PartialEq)]
@@ -80,7 +82,7 @@ fn advance_view(a: Advance) -> impl IntoView {
     view! {
         <span class="cc-advance" title=format!("Under attack for {}", fmt_duration(a.since))>
             <span class="caps">{advance_label(a.enemy)}</span>
-            <b class="num caps">{format!("{} · {} left", fmt_pct(a.percent, 0), fmt_time_left(a.left))}</b>
+            <b class="num caps">{format!("{} · {}", fmt_pct(a.percent, 0), time_left(a.left))}</b>
         </span>
     }
 }
@@ -236,11 +238,11 @@ pub fn CampaignCard(
         gambits.with(|list| {
             list.iter().find(|g| g.outlook == GambitOutlook::Ahead).map(|g| {
                 let from: Vec<&str> = g.attackers.iter().map(|a| a.planet.name.as_str()).collect();
-                format!(
-                    "Gambit: liberating {} ends the defense of {} before its deadline",
-                    from.join(" and "),
-                    g.defended.name
-                )
+                let from = match from.split_last() {
+                    Some((last, rest)) if !rest.is_empty() => format!("{} and {last}", rest.join(", ")),
+                    _ => from.concat(),
+                };
+                format!("Gambit: liberating {from} ends the defense of {} before its deadline", g.defended.name)
             })
         })
     });

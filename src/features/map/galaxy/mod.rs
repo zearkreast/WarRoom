@@ -39,7 +39,7 @@ use warroom_core::faction_marks::faction_marks;
 use warroom_core::factions::faction_color;
 use warroom_core::galaxy::{GALAXY_SCALE, LANDMARKS, Pt, anomaly_of, project, sector_at, supply_lines};
 use warroom_core::planets::{by_index, ownership_key};
-use warroom_core::regions::build_regions;
+use warroom_core::regions::build_attack_regions;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 
@@ -443,7 +443,7 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
     let owners = Memo::new(move |_| planets.with(|p| ownership_key(p)));
     let regions = Memo::new(move |_| {
         owners.with(|_| ());
-        planets.with_untracked(|p| build_regions(p))
+        planets.with_untracked(|p| build_attack_regions(p))
     });
     let marks = Memo::new(move |_| {
         owners.with(|_| ());

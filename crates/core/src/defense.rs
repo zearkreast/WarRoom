@@ -88,12 +88,12 @@ pub struct Gambit {
     pub outlook: GambitOutlook,
 }
 
-/// The gambit open to the defense of `defended`: None unless it is under attack and every planet attacking it is
-/// a liberation front. `rates` holds every front's measured %/h by planet index (None while measuring).
+/// The gambit open to the defense of `defended`: None unless it is under attack with time left and every planet
+/// attacking it is a liberation front. `rates` holds every front's measured %/h by planet index (None while measuring).
 pub fn gambit(defended: &Planet, planets: &[Planet], rates: &HashMap<i64, Option<f64>>, now: f64) -> Option<Gambit> {
     let event = defended.event.as_ref()?;
     let deadline = parse_ms(&event.end_time);
-    if !deadline.is_finite() {
+    if !deadline.is_finite() || deadline <= now {
         return None;
     }
     let from = attackers(defended, planets);

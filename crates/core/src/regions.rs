@@ -25,9 +25,13 @@ const VOID_RING_POINTS: usize = 72;
 const VOID_RING_RADIUS: f64 = 1.07 * GALAXY_SCALE;
 const BOUNDS: f64 = 1.25 * GALAXY_SCALE;
 
-/// Enemy territory outlines: same-owner cells merged into smooth fronts. A planet under attack joins its
-/// attacker's territory.
+/// Enemy territory outlines: same-owner cells merged into smooth fronts.
 pub fn build_regions(planets: &[Planet]) -> Vec<RegionShape> {
+    build_outlines(planets, |p| (p.current_owner != Faction::Humans).then_some(p.current_owner), 4)
+}
+
+/// As `build_regions`, with each planet under attack drawn into its attacker's territory.
+pub fn build_attack_regions(planets: &[Planet]) -> Vec<RegionShape> {
     build_outlines(planets, holder, 4)
 }
 

@@ -8,7 +8,7 @@ use crate::features::news::card::MarkupText;
 use crate::features::overview::activity::chart_color;
 use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
 use crate::features::planet::cities::{CityBar, CityList};
-use crate::features::planet::defense::{GambitNotes, advance_label, use_attackers, use_enemy_advance};
+use crate::features::planet::defense::{GambitNotes, advance_label, time_left, use_attackers, use_enemy_advance};
 use crate::features::planet::record::{PlanetRecord, UNREACHABLE};
 use crate::js::{self, fmt_date, fmt_date_time};
 use crate::state::ui;
@@ -198,7 +198,7 @@ fn DefenseBars(
                         title=format!("Began {} · deadline {}", fmt_date_time(start), fmt_date_time(end))
                     >
                         <span>{format!("Under attack for {} of {}", fmt_time_left(now - start), span_text(end - start))}</span>
-                        <span>{format!("{} left", fmt_time_left(end - now))}</span>
+                        <span>{time_left(end - now)}</span>
                     </div>
                 })
             }}
@@ -242,11 +242,11 @@ fn Holding(front: Memo<Option<Front>>) -> impl IntoView {
     let clock = js::use_now(60_000.0);
     move || {
         let f = front.get().filter(|f| f.kind == FrontKind::Defense)?;
-        let needed = needed_rate(f.percent, clock.get(), f.fail_at?);
+        let needed = needed_rate(f.percent, clock.get(), f.fail_at?)?;
         let tone = |good: bool| Some(if good { "var(--good)" } else { "var(--bad)" }.to_string());
         let pace_sub = f.rate.map_or("measuring".to_string(), |r| format!("measured {}", per_hour(r)));
         let at_deadline = f.projected.map(|v| v.clamp(0.0, 100.0));
-        let short = needed.and_then(|n| divers_short(f.rate, n, f.players)).map(|n| (n / 50.0).ceil() * 50.0);
+        let short = divers_short(f.rate, needed, f.players).map(|n| (n / 50.0).ceil() * 50.0);
         let short_text = match short {
             Some(0.0) => "On pace".to_string(),
             Some(n) => format!("~{}", fmt_int(n)),
@@ -265,9 +265,9 @@ fn Holding(front: Memo<Option<Front>>) -> impl IntoView {
                     <Tile
                         icon=icons::GAUGE
                         label="Needed pace"
-                        value=needed.map_or("—".to_string(), |n| format!("+{}% / h", to_fixed(n, 2))).into_any()
+                        value=format!("+{}% / h", to_fixed(needed, 2)).into_any()
                         sub=pace_sub.into_any()
-                        color=needed.zip(f.rate).and_then(|(n, r)| tone(r >= n))
+                        color=f.rate.and_then(|r| tone(r >= needed))
                     />
                     <Tile
                         icon=icons::SHIELD
