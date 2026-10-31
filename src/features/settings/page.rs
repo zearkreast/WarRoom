@@ -3,7 +3,9 @@
 use crate::alerts::{ToastKind, ask_permission, notify, web_permission};
 use crate::api::queries::queries;
 use crate::config::APP_VERSION;
-use crate::features::map::options::{dispatch_options, overlay_options, planet_options, quality_options};
+use crate::features::map::options::{
+    beacon_options, dispatch_options, overlay_options, planet_options, quality_options,
+};
 use crate::js::{self, num};
 use crate::state::{AlertSettings, Popups, settings};
 use crate::tauri;
@@ -222,6 +224,17 @@ pub fn SettingsPage() -> impl IntoView {
                             options=planet_options()
                             value=Signal::derive(move || s.get(|s| s.map_planets))
                             on_change=move |v| s.set(|s| s.map_planets = v)
+                        />
+                    </Row>
+                    <Row
+                        title="Defense beacon"
+                        text="How a planet under attack stands out from afar: a ring pinging out from it, a soft glow round it, or a chevron over it. Minimal quality and reduced motion keep it still."
+                    >
+                        <Stepper
+                            label="Defense beacon"
+                            options=beacon_options()
+                            value=Signal::derive(move || s.get(|s| s.map_beacon))
+                            on_change=move |v| s.set(|s| s.map_beacon = v)
                         />
                     </Row>
                     <Row

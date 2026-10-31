@@ -53,7 +53,12 @@
   .galaxy.moving .bh-flow,
   .galaxy.moving .holo-unit,
   .galaxy.moving .holo-ticks,
-  .galaxy.moving .holo-sweep {
+  .galaxy.moving .holo-sweep,
+  .galaxy.moving .attack-ring,
+  .galaxy.moving .beacon-ping,
+  .galaxy.moving .beacon-glow,
+  .galaxy.moving .beacon-mark path,
+  .galaxy.moving .attack-chev {
     animation-play-state: paused;
   }
   /* camera.rs sets the transforms and sizes of .upright, .pbody and the labels each frame. */
@@ -73,6 +78,9 @@
   .q-max .region-glow {
     stroke-width: 12;
     stroke-opacity: 0.2;
+  }
+  .region-contested {
+    stroke: none;
   }
   /* Enemy emblems: read at galaxy scale, then step aside for the planets once zoomed in. */
   .faction-marks {
@@ -100,11 +108,42 @@
     stroke: rgba(228, 240, 255, 0.5);
     stroke-width: 1.2;
   }
-  .attacks line {
+  .attacks {
+    pointer-events: none;
+  }
+  .attack-line line {
+    stroke: currentColor;
     stroke-width: 1.5;
     stroke-dasharray: 4 4;
     stroke-opacity: 0.75;
     vector-effect: non-scaling-stroke;
+  }
+  /* --at spaces the chevrons evenly along the line when they stand still; camera.rs keeps their size on screen. */
+  .attack-chev {
+    transform: translateX(var(--at));
+    animation: attack-run var(--run) linear infinite;
+  }
+  .attack-arrow {
+    fill: currentColor;
+    stroke: var(--void);
+    stroke-width: 1.2;
+    stroke-linejoin: round;
+    paint-order: stroke;
+  }
+  /* Faded in and out at the ends, where the planets' markers sit. */
+  @keyframes attack-run {
+    from {
+      transform: translateX(0);
+      opacity: 0;
+    }
+    20%,
+    80% {
+      opacity: 1;
+    }
+    to {
+      transform: translateX(var(--len));
+      opacity: 0;
+    }
   }
 
   /* ---------- Planets ---------- */
@@ -142,6 +181,98 @@
   .planet .owner-ring {
     fill: none;
     stroke-width: 1;
+  }
+  .planet .attack-ring {
+    fill: none;
+    stroke-width: 1;
+    /* In the ring's pathLength of 36 (marks.rs): twelve dashes at any radius. */
+    stroke-dasharray: 2 1;
+    stroke-opacity: 0.9;
+    animation: spin 18s linear infinite;
+  }
+
+  /* The map's bc-* class picks which defense beacon shows. */
+  .beacon {
+    pointer-events: none;
+  }
+  .beacon-ping,
+  .beacon-glow,
+  .beacon-mark {
+    display: none;
+  }
+  .bc-ping .beacon-ping,
+  .bc-glow .beacon-glow,
+  .bc-beacon .beacon-mark {
+    display: inline;
+  }
+  .beacon-ping {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75px;
+    vector-effect: non-scaling-stroke;
+    transform: scale(2.2);
+    opacity: 0.5;
+    animation: beacon-ping 2.6s cubic-bezier(0.25, 0.6, 0.35, 1) infinite;
+  }
+  @keyframes beacon-ping {
+    from {
+      transform: scale(1);
+      opacity: 1;
+    }
+    to {
+      transform: scale(4.5);
+      opacity: 0;
+    }
+  }
+  .beacon-glow {
+    opacity: 0.7;
+    animation: beacon-breathe 3.4s ease-in-out infinite;
+  }
+  @keyframes beacon-breathe {
+    0%,
+    100% {
+      transform: scale(0.8);
+      opacity: 0.35;
+    }
+    50% {
+      transform: scale(1.15);
+      opacity: 0.9;
+    }
+  }
+  .beacon-mark path {
+    fill: currentColor;
+    stroke: var(--void);
+    stroke-width: 1.2px;
+    stroke-linejoin: round;
+    paint-order: stroke;
+    animation: beacon-bob 2.2s ease-in-out infinite;
+  }
+  @keyframes beacon-bob {
+    0%,
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(-2px);
+      opacity: 0.55;
+    }
+  }
+  .q-min .attack-ring,
+  .q-min .beacon-ping,
+  .q-min .beacon-glow,
+  .q-min .beacon-mark path,
+  .q-min .attack-chev {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .attack-ring,
+    .beacon-ping,
+    .beacon-glow,
+    .beacon-mark path,
+    .attack-chev {
+      animation: none !important;
+    }
   }
   .planet.selected .sphere,
   .planet:hover .sphere {
@@ -1079,55 +1210,6 @@
     font-size: var(--fs-label);
     letter-spacing: 0.1em;
     color: var(--text-dim);
-  }
-  .hc-bar {
-    position: relative;
-  }
-  .hc-bar.marked {
-    padding-top: 20px;
-  }
-  .hc-bar-track {
-    position: relative;
-    height: 10px;
-    overflow: hidden;
-    background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--rest) 45%, transparent) 0 3px, transparent 3px 7px),
-      var(--surface-3);
-  }
-  .hc-bar-fill {
-    position: absolute;
-    inset: 0 auto 0 0;
-    background: repeating-linear-gradient(115deg, transparent 0 7px, rgba(255, 255, 255, 0.24) 7px 10px, transparent 10px 14px),
-      var(--f-humans);
-    transition: width var(--t-value) var(--ease);
-  }
-  .hc-bar-fill::after {
-    content: "";
-    position: absolute;
-    top: -1px;
-    right: 0;
-    bottom: -1px;
-    width: 3px;
-    background: var(--text-hi);
-  }
-  .hc-bar-mark {
-    position: absolute;
-    top: 0;
-    bottom: -3px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transform: translateX(-50%);
-    pointer-events: auto;
-  }
-  .hc-bar-mark::after {
-    content: "";
-    flex: 1;
-    width: 2px;
-    margin-top: 2px;
-    background: var(--k);
-  }
-  .hc-bar-mark.open::after {
-    opacity: 0.6;
   }
   /* Points of interest: their logo and name, then what they are, as the game's tooltip lists them. */
   .hc-art.poi {

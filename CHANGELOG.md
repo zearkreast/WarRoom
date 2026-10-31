@@ -56,10 +56,31 @@ each entry, from `crates/core/src/changelog.rs`.
   drill or with the crosshair on the collection's cards), or the permit colours you choose. Its march and sound
   effects are synthesised in the app; the best ten scores of each mode stay on this device.
 
+### Defenses and planet status
+
+- A defense shows both sides as the game does: Super Earth's defense over the enemy's advance on the deadline. Both
+  bars are on the map's hover card and planet panel and on the campaign card, the planet page's bar and the ring
+  round its sphere show both, and Front line activity charts the enemy's advance up to 100% at the deadline.
+- Defenses say where the attack comes from and how long it has run. The planet page works out what holding needs:
+  the pace to hold by the deadline, the projection at the deadline and roughly how many more Helldivers it takes,
+  as estimates at today's pace. The campaign card shows the needed pace.
+- Gambit: when every planet attacking a defense is a liberation front, the defended planet and its attackers carry
+  an advisory saying whether liberating them ends the defense before the deadline, and whether holding outright is
+  quicker.
+- Map: in the Regions overlay a planet under attack joins its attacker's territory, hatched, and every planet under
+  attack turns a dashed ring in the attacker's colour. A defense beacon picks it out from afar: Ping, Glow, Beacon
+  or Off, in the map settings. Chevrons run along the attack line from each attacking world, and the dashed lines
+  from Super Earth's planets to liberation fronts are gone.
+
 ### Fixed
 
 - Opening the map's Controls no longer shoves the Regions, Sectors and Galaxy switch aside or off the screen.
 - New Haven is no longer drawn scorched.
+- Cities: the liberation bar's marks stand exactly where each city opens, stacking when close instead of shifting
+  aside, and the planet page's bar carries them too. A closed city says where it opens instead of a bare Locked,
+  special sites no longer read "Opens at 100%", a defended planet's cities stay Super Earth's, and city lists
+  follow the bar's order.
+- Switching the map's overlay or planet style no longer hides labels and holograms until the camera moves.
 - Planet charts and War history read every row of the last day instead of stopping at 1000, so busy fronts
   chart the whole 24 hours and recent or ongoing defenses no longer vanish or read as held. The G.W.W. war log
   says "latest" when older changes aren't loaded and can show older ones; the FTL jump log says when it is cut

@@ -69,6 +69,11 @@ pub fn halo_defs() -> impl IntoView {
                             {stop("25%", c, 0.55)}
                             {stop("100%", c, 0.0)}
                         </radialGradient>
+                        <radialGradient id=format!("beacon-glow-{}", f.as_str())>
+                            {stop("0%", c, 0.7)}
+                            {stop("45%", c, 0.32)}
+                            {stop("100%", c, 0.0)}
+                        </radialGradient>
                     }
                 })
                 .collect_view()}
@@ -490,6 +495,23 @@ fn poi_marks(kinds: &[PoiKind], faction: Faction) -> AnyView {
     .into_any()
 }
 
+/// Calls out a planet under attack from afar. Every look is drawn and the map's `bc-*` class shows the chosen one;
+/// camera.rs sizes and places them.
+fn beacon(faction: Faction, color: &str) -> AnyView {
+    view! {
+        <g class="beacon" style=format!("color: {color};")>
+            <g class="beacon-zone">
+                <circle r="20" class="beacon-glow" fill=format!("url(#beacon-glow-{})", faction.as_str())></circle>
+                <circle r="8" class="beacon-ping"></circle>
+            </g>
+            <g class="beacon-mark">
+                <path d="M-4.5,-6.5L0,-3L4.5,-6.5V-3.5L0,0L-4.5,-3.5Z"></path>
+            </g>
+        </g>
+    }
+    .into_any()
+}
+
 fn pin_mark() -> AnyView {
     view! {
         <g class="pin-mark" transform="translate(7,-7)">
@@ -555,10 +577,20 @@ pub fn planet_body(b: &Body) -> AnyView {
         }
         .into_any(),
     };
+    let ring = match b.anomaly {
+        Some(a) if a != Anomaly::Scorched => 11.5,
+        _ if b.style == MapPlanets::Spheres => 7.8,
+        _ => 9.5,
+    };
     view! {
+        {b.defense.then(|| beacon(b.faction, &b.color))}
         <g class="pbody">
             <circle r="10" class="hit"></circle>
             {shape}
+            {b.defense
+                .then(|| {
+                    view! { <circle r=num(ring) class="attack-ring" stroke=b.color.clone() pathLength="36"></circle> }
+                })}
             {(b.style == MapPlanets::Spheres && b.active).then(|| active_tag(b.defense, b.mo, &b.color))}
             {b.pinned.then(pin_mark)}
             {(!b.pois.is_empty()).then(|| poi_marks(&b.pois, b.faction))}

@@ -5,8 +5,10 @@ use crate::api::queries::queries;
 use crate::features::map::poi::{PoiGlyph, poi_kind, poi_origin};
 use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
 use crate::features::news::card::MarkupText;
+use crate::features::overview::activity::chart_color;
 use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
-use crate::features::planet::cities::{CityList, CityMark};
+use crate::features::planet::cities::{CityBar, CityList, CityMark};
+use crate::features::planet::defense::{GambitNotes, advance_label, time_left, use_attackers, use_enemy_advance};
 use crate::features::planet::record::{PlanetRecord, UNREACHABLE};
 use crate::js::{self, fmt_date, fmt_date_time};
 use crate::state::ui;
@@ -24,6 +26,7 @@ use std::sync::Arc;
 use warroom_core::api::{Faction, Planet};
 use warroom_core::biomes::regen_pct_per_hour;
 use warroom_core::cities::{CityLiberation, CityState, city_liberations};
+use warroom_core::defense::{divers_short, event_span, needed_rate};
 use warroom_core::effects::EffectKind;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, fmt_time_left, js_round, js_sum, to_fixed};
@@ -79,10 +82,7 @@ pub fn LiberationSection(#[prop(into)] p: Signal<Planet>, front: Memo<Option<Fro
                 <Tile
                     icon=icons::TRENDING_UP
                     label=format!("{} rate", if defense { "Defense" } else { "Liberation" })
-                    value=f
-                        .rate
-                        .map_or("Measuring…".to_string(), |r| format!("{}{}% / h", if r > 0.0 { "+" } else { "" }, to_fixed(r, 2)))
-                        .into_any()
+                    value=f.rate.map_or("Measuring…".to_string(), per_hour).into_any()
                     color=f.rate.map(|r| if r > 0.0 { "var(--good)".to_string() } else { "var(--bad)".to_string() })
                 />
                 <Tile
@@ -97,26 +97,39 @@ pub fn LiberationSection(#[prop(into)] p: Signal<Planet>, front: Memo<Option<Fro
                     }
                 />
             </div>
-            <div class="pd-tiles three">
-                <div class="pd-pill" style=format!("color: {enemy};")>
-                    <FactionEmblem faction=f.enemy.as_str() size=18.0 />
-                    " "
-                    <span class="num">{regen.map_or("—".to_string(), |r| format!("-{}% / h", to_fixed(r, 2)))}</span>
-                    <span class="muted caps">"enemy regen"</span>
+            {(!defense).then(|| view! {
+                <div class="pd-tiles three">
+                    <div class="pd-pill" style=format!("color: {enemy};")>
+                        <FactionEmblem faction=f.enemy.as_str() size=18.0 />
+                        " "
+                        <span class="num">{regen.map_or("—".to_string(), |r| format!("-{}% / h", to_fixed(r, 2)))}</span>
+                        <span class="muted caps">"enemy regen"</span>
+                    </div>
+                    <div class="pd-pill" style="color: var(--f-humans);">
+                        <FactionEmblem faction="Humans" size=18.0 />
+                        <span class="num">{f.rate.map_or("—".to_string(), |r| format!("+{}% / h", to_fixed(r + regen.unwrap_or(0.0), 2)))}</span>
+                        <span class="muted caps">"Helldiver impact"</span>
+                    </div>
+                    <div class="pd-pill" style="color: var(--cta);">
+                        <Icon icon=icons::USERS size=16.0 />
+                        " "
+                        <span class="num">{fmt_int(f.players)}</span>
+                        <span class="muted caps">"deployed"</span>
+                    </div>
                 </div>
-                <div class="pd-pill" style="color: var(--f-humans);">
-                    <FactionEmblem faction="Humans" size=18.0 />
-                    <span class="num">{f.rate.map_or("—".to_string(), |r| format!("+{}% / h", to_fixed(r + regen.unwrap_or(0.0), 2)))}</span>
-                    <span class="muted caps">"Helldiver impact"</span>
-                </div>
-                <div class="pd-pill" style="color: var(--cta);">
-                    <Icon icon=icons::USERS size=16.0 />
-                    " "
-                    <span class="num">{fmt_int(f.players)}</span>
-                    <span class="muted caps">"deployed"</span>
-                </div>
-            </div>
+            })}
         })
+    };
+    let bar = move || {
+        if defense.get() {
+            return view! { <DefenseBars p=p front=front percent=percent projected=projected /> }.into_any();
+        }
+        view! {
+            <CityBar planet=p>
+                <Meter value=percent color="var(--f-humans)".to_string() rest=enemy marker=projected size=MeterSize::L chevron=true label="Progress" />
+            </CityBar>
+        }
+        .into_any()
     };
     view! {
         <Panel
@@ -125,10 +138,158 @@ pub fn LiberationSection(#[prop(into)] p: Signal<Planet>, front: Memo<Option<Fro
             tone=enemy.get_untracked()
         >
             <div class="pd-stack">
-                <Meter value=percent color="var(--f-humans)".to_string() rest=enemy marker=projected size=MeterSize::L chevron=true label="Progress" />
+                {bar}
                 {tiles}
+                <Holding front=front />
+                <GambitNotes p=p class="pd-gambit".to_string() />
             </div>
         </Panel>
+    }
+}
+
+fn per_hour(r: f64) -> String {
+    format!("{}{}% / h", if r > 0.0 { "+" } else { "" }, to_fixed(r, 2))
+}
+
+/// The game's two defense bars, Super Earth's defense over the enemy's advance on the deadline, with how long the
+/// attack has run and where it comes from.
+#[component]
+fn DefenseBars(
+    p: Signal<Planet>,
+    front: Memo<Option<Front>>,
+    percent: Signal<f64>,
+    projected: Signal<Option<f64>>,
+) -> impl IntoView {
+    let advance = use_enemy_advance(p);
+    let attackers = use_attackers(p);
+    let clock = js::use_now(30_000.0);
+    let foe = Memo::new(move |_| front.with(|f| f.as_ref().map(|f| f.enemy)));
+    let color = Signal::derive(move || faction_color(foe.get()).to_string());
+    let label = move || foe.get().map_or("Enemy advance".to_string(), advance_label);
+    let span = Memo::new(move |_| p.with(|p| p.event.as_ref().and_then(event_span)));
+    view! {
+        <div class="pd-fight" style=move || format!("--k: {};", color.get())>
+            <div class="pd-fight-head caps">
+                <span>"Defended"</span>
+                <b class="num">{move || fmt_pct(percent.get(), 2)}</b>
+            </div>
+            <Meter
+                value=percent
+                color="var(--f-humans)".to_string()
+                rest="var(--surface-3)".to_string()
+                marker=projected
+                size=MeterSize::L
+                chevron=true
+                label="Defended"
+            />
+            <div class="pd-fight-head foe caps">
+                <span>{label}</span>
+                <b class="num">{move || advance.get().map_or("—".to_string(), |a| fmt_pct(a, 1))}</b>
+            </div>
+            <Meter
+                value=Signal::derive(move || advance.get().unwrap_or(0.0))
+                color=color
+                rest="var(--surface-3)".to_string()
+                label=foe.get_untracked().map_or("Enemy advance".to_string(), advance_label)
+            />
+            {move || {
+                let (start, end) = span.get()?;
+                let now = clock.get();
+                Some(view! {
+                    <div
+                        class="pd-fight-foot caps num"
+                        title=format!("Began {} · deadline {}", fmt_date_time(start), fmt_date_time(end))
+                    >
+                        <span>{format!("Under attack for {} of {}", fmt_time_left(now - start), span_text(end - start))}</span>
+                        <span>{time_left(end - now)}</span>
+                    </div>
+                })
+            }}
+            {move || {
+                let from = attackers.get();
+                (!from.is_empty()).then(|| view! {
+                    <div class="pd-from caps">
+                        <span>"Attacked from"</span>
+                        {from
+                            .into_iter()
+                            .map(|a| {
+                                let index = a.index;
+                                view! {
+                                    <button
+                                        class="pd-from-planet"
+                                        style=format!("--k: {};", faction_color(Some(a.current_owner)))
+                                        on:click=move |_| ui().open_detail(Some(index))
+                                    >
+                                        <FactionEmblem faction=a.current_owner.as_str() size=16.0 />
+                                        {a.name.clone()}
+                                    </button>
+                                }
+                            })
+                            .collect_view()}
+                    </div>
+                })
+            }}
+        </div>
+    }
+}
+
+/// "2d" rather than "2d 0h" for an attack's whole span.
+fn span_text(ms: f64) -> String {
+    let s = fmt_time_left(ms);
+    s.strip_suffix(" 0h").map_or_else(|| s.clone(), str::to_string)
+}
+
+/// What holding a defense by its deadline takes, at today's pace.
+#[component]
+fn Holding(front: Memo<Option<Front>>) -> impl IntoView {
+    let clock = js::use_now(60_000.0);
+    move || {
+        let f = front.get().filter(|f| f.kind == FrontKind::Defense)?;
+        let needed = needed_rate(f.percent, clock.get(), f.fail_at?)?;
+        let tone = |good: bool| Some(if good { "var(--good)" } else { "var(--bad)" }.to_string());
+        let pace_sub = f.rate.map_or("measuring".to_string(), |r| format!("measured {}", per_hour(r)));
+        let at_deadline = f.projected.map(|v| v.clamp(0.0, 100.0));
+        let short = divers_short(f.rate, needed, f.players).map(|n| (n / 50.0).ceil() * 50.0);
+        let short_text = match short {
+            Some(0.0) => "On pace".to_string(),
+            Some(n) => format!("~{}", fmt_int(n)),
+            None => "—".to_string(),
+        };
+        let short_sub = match (short, f.rate) {
+            (Some(0.0), _) => format!("the {} deployed are enough", fmt_int(f.players)),
+            (Some(_), _) => format!("more than the {} deployed", fmt_int(f.players)),
+            (None, Some(r)) if r <= 0.0 => "not gaining ground".to_string(),
+            _ => "measuring".to_string(),
+        };
+        Some(view! {
+            <div class="pd-holding">
+                <div class="pd-chart-label caps">"What holding needs"</div>
+                <div class="pd-tiles three">
+                    <Tile
+                        icon=icons::GAUGE
+                        label="Needed pace"
+                        value=format!("+{}% / h", to_fixed(needed, 2)).into_any()
+                        sub=pace_sub.into_any()
+                        color=f.rate.and_then(|r| tone(r >= needed))
+                    />
+                    <Tile
+                        icon=icons::SHIELD
+                        label="At the deadline"
+                        value=at_deadline.map_or("—".to_string(), |v| fmt_pct(v, if v >= 100.0 { 0 } else { 1 })).into_any()
+                        sub=(if at_deadline.is_some() { "projected" } else { "measuring" }).into_any()
+                        color=at_deadline.and_then(|v| tone(v >= 100.0))
+                    />
+                    <Tile
+                        icon=icons::USERS
+                        label="Helldivers short"
+                        value=short_text.into_any()
+                        sub=short_sub.into_any()
+                        color=short.and_then(|n| tone(n == 0.0))
+                    />
+                </div>
+                <p class="pd-note caps">"Estimates at today's pace, counting each extra Helldiver at what one adds now."</p>
+            </div>
+        })
     }
 }
 
@@ -139,6 +300,9 @@ struct FrontRow {
     players: Option<f64>,
     percent: Option<f64>,
     projection: Option<f64>,
+    /// A defense's enemy advance, up to the last sample and then ahead of it.
+    enemy: Option<f64>,
+    enemy_ahead: Option<f64>,
 }
 
 /// How near a city's mark the pointer must be for its story, as a share of the chart's width.
@@ -165,32 +329,55 @@ pub fn FrontLineSection(
     record: ReadSignal<PlanetRecord>,
 ) -> impl IntoView {
     let hover = RwSignal::new(None::<usize>);
+    let advance = use_enemy_advance(p);
+    let span = Memo::new(move |_| p.with(|p| p.event.as_ref().and_then(event_span)));
     let freed = Memo::new(move |_| p.with(|p| record.with(|r| Arc::new(city_liberations(p, &r.samples, &r.fought)))));
     let rows = Memo::new(move |_| {
         let now = js::now();
         let (rate, percent) = front.with(|f| f.as_ref().map_or((None, 0.0), |f| (f.rate, f.percent)));
+        let span = span.get();
+        let advance_at = move |t: f64| span.filter(|(s, e)| t >= *s && t <= *e).map(|(s, e)| (t - s) / (e - s) * 100.0);
         record.with(|r| {
             let mut rows: Vec<FrontRow> = r
                 .samples
                 .iter()
-                .map(|s| FrontRow { at: s.at, players: Some(s.players), percent: Some(s.percent), projection: None })
+                .map(|s| FrontRow {
+                    at: s.at,
+                    players: Some(s.players),
+                    percent: Some(s.percent),
+                    enemy: advance_at(s.at),
+                    ..Default::default()
+                })
                 .collect();
             let last = rows.last().copied();
             if let Some(l) = rows.last_mut() {
                 l.projection = l.percent;
+                l.enemy_ahead = l.enemy;
             }
-            if let Some(rate) = rate {
+            if rate.is_some() || span.is_some() {
                 let base = last.and_then(|l| l.percent).unwrap_or(percent);
                 let t0 = last.map_or(now, |l| l.at);
-                for h in 1..=24 {
-                    let v = (base + rate * h as f64).clamp(0.0, 100.0);
-                    rows.push(FrontRow { at: t0 + h as f64 * HOUR, projection: Some(v), ..Default::default() });
+                let mut ahead: Vec<f64> = (1..=24).map(|h| t0 + h as f64 * HOUR).collect();
+                // A row at the deadline, so the enemy's line ends on 100% there.
+                if let Some((_, end)) = span.filter(|(_, e)| *e > t0 && *e < t0 + 24.0 * HOUR) {
+                    ahead.push(end);
+                    ahead.sort_by(f64::total_cmp);
+                    ahead.dedup();
+                }
+                for at in ahead {
+                    rows.push(FrontRow {
+                        at,
+                        projection: rate.map(|r| (base + r * (at - t0) / HOUR).clamp(0.0, 100.0)),
+                        enemy_ahead: advance_at(at),
+                        ..Default::default()
+                    });
                 }
             }
             let now_at = r.samples.last().map_or(now, |s| s.at);
             Arc::new((rows, now_at))
         })
     });
+    let foe = Memo::new(move |_| p.with(|p| p.event.as_ref().map(|e| e.faction)));
     let x_axis = move |hide: bool| {
         let (rows, _) = &*rows.get();
         let now = js::now();
@@ -205,6 +392,26 @@ pub fn FrontLineSection(
     let progress = Signal::derive(move || {
         let data = rows.get();
         let (rows, now_at) = &*data;
+        let mut series = vec![
+            Series::line("percent", rows.iter().map(|r| r.percent).collect(), "var(--c-humans)", 2.0),
+            Series {
+                dash: Some("4 4".into()),
+                ..Series::line("projection", rows.iter().map(|r| r.projection).collect(), "var(--c-humans)", 2.0)
+            },
+        ];
+        let mut lines = ref_lines(*now_at, Some("Now".into()));
+        if let (Some(f), Some((_, end))) = (foe.get(), span.get()) {
+            let color = chart_color(f);
+            series.push(Series::line("enemy", rows.iter().map(|r| r.enemy).collect(), color, 2.0));
+            series.push(Series {
+                dash: Some("4 4".into()),
+                ..Series::line("enemy_ahead", rows.iter().map(|r| r.enemy_ahead).collect(), color, 2.0)
+            });
+            let inside = rows.first().zip(rows.last()).is_some_and(|(a, b)| end >= a.at && end <= b.at);
+            if inside {
+                lines.push(RefLine { x: end, stroke: color.into(), label: Some("Deadline".into()) });
+            }
+        }
         Arc::new(Plot {
             xs: rows.iter().map(|r| r.at).collect(),
             x: x_axis(true),
@@ -214,14 +421,8 @@ pub fn FrontLineSection(
                 Arc::new(|v| format!("{}%", js::num(v))),
             )],
             grid: Some(Grid { stroke: crate::ui::chart::GRID.into(), opacity: None, edges_only: false }),
-            series: vec![
-                Series::line("percent", rows.iter().map(|r| r.percent).collect(), "var(--c-humans)", 2.0),
-                Series {
-                    dash: Some("4 4".into()),
-                    ..Series::line("projection", rows.iter().map(|r| r.projection).collect(), "var(--c-humans)", 2.0)
-                },
-            ],
-            ref_lines: ref_lines(*now_at, Some("Now".into())),
+            series,
+            ref_lines: lines,
         })
     });
     let players = Signal::derive(move || {
@@ -262,9 +463,13 @@ pub fn FrontLineSection(
         if let Some(c) = freed.get().iter().find(|c| (c.at - at).abs() <= reach) {
             return Some(default_tooltip(fmt_date_time(c.at), freed_rows(c)));
         }
-        let rows = series_rows(plot, i, |s, v| {
-            (fmt_pct(v, 2), if s.name == "percent" { "Progress".into() } else { "Projection".into() })
+        let mut rows = series_rows(plot, i, |s, v| match s.name.as_str() {
+            "percent" => (fmt_pct(v, 2), "Progress".into()),
+            "projection" => (fmt_pct(v, 2), "Projection".into()),
+            _ => (fmt_pct(v, 1), "Enemy advance".into()),
         });
+        // Both enemy series hold the sample where the solid line turns dashed.
+        rows.dedup_by(|a, b| a.name == b.name);
         Some(default_tooltip(fmt_date_time(at), rows))
     });
     let players_tip: Tooltip = Arc::new(|plot, i| {
@@ -300,10 +505,27 @@ pub fn FrontLineSection(
                     <span class="pd-key" style="--k: var(--cta);">"Peak Helldivers"</span>
                     <b class="num">{if peak != 0.0 { fmt_int(peak) } else { "—".into() }}</b>
                 </div>
-                <div>
-                    <span class="pd-key" style="--k: var(--bad);">"Enemy impact"</span>
-                    <b class="num" style="color: var(--bad);">{regen.map_or("—".to_string(), |r| format!("-{}%/h", to_fixed(r, 2)))}</b>
-                </div>
+                {match (defense, foe.get()) {
+                    (true, Some(foe)) => {
+                        let color = faction_color(Some(foe));
+                        view! {
+                            <div>
+                                <span class="pd-key" style=format!("--k: {color};")>{advance_label(foe)}</span>
+                                <b class="num" style=format!("color: {color};")>
+                                    {advance.get().map_or("—".to_string(), |a| fmt_pct(a, 1))}
+                                </b>
+                            </div>
+                        }
+                        .into_any()
+                    }
+                    _ => view! {
+                        <div>
+                            <span class="pd-key" style="--k: var(--bad);">"Enemy impact"</span>
+                            <b class="num" style="color: var(--bad);">{regen.map_or("—".to_string(), |r| format!("-{}%/h", to_fixed(r, 2)))}</b>
+                        </div>
+                    }
+                    .into_any(),
+                }}
                 <div>
                     <span class="pd-key dashed" style="--k: var(--f-humans);">"24 h projection"</span>
                     <b class="num">{proj.map_or("—".to_string(), |v| fmt_pct(v, 2))}</b>
@@ -1000,9 +1222,11 @@ pub fn SupplyLinesSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
         q.campaigns.with(|c| c.iter().flat_map(|l| l.iter()).map(|c| c.planet.index).collect::<HashSet<_>>())
     });
     let siege = use_circumvallation(p);
+    let attackers = use_attackers(p);
     move || {
         let list = linked.get();
         let active = active.get();
+        let from: HashSet<i64> = attackers.with(|a| a.iter().map(|x| x.index).collect());
         view! {
             <Panel title="Supply lines" icon=icons::ROUTE right=view! { <span class="num">{list.len()}</span> }.into_any()>
                 {move || siege.get().map(|c| circumvallation_note(&p.get(), &c, "pd-siege"))}
@@ -1015,12 +1239,14 @@ pub fn SupplyLinesSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
                                 .iter()
                                 .map(|l| {
                                     let campaign = active.contains(&l.index);
+                                    let attacking = from.contains(&l.index);
                                     let pct = if l.current_owner == Faction::Humans && l.event.is_none() {
                                         100.0
                                     } else {
                                         tracked_percent(l)
                                     };
                                     let state = match (campaign, l.event.is_some(), l.current_owner == Faction::Humans) {
+                                        _ if attacking => "Attacking",
                                         (true, true, _) => "Defense",
                                         (true, false, _) => "Campaign",
                                         (false, _, true) => "Secured",
@@ -1035,7 +1261,7 @@ pub fn SupplyLinesSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
                                             >
                                                 <FactionEmblem faction=l.current_owner.as_str() size=18.0 />
                                                 <span class="pd-line-name caps">{l.name.clone()}</span>
-                                                <span class=format!("pd-line-state caps {}", if campaign { "on" } else { "" })>{state}</span>
+                                                <span class=format!("pd-line-state caps {}", if campaign || attacking { "on" } else { "" })>{state}</span>
                                                 <span class="num pd-line-pct">{fmt_pct(pct, 0)}</span>
                                             </button>
                                         </li>

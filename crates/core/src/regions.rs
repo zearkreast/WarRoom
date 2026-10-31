@@ -2,7 +2,7 @@
 
 use crate::api::{Faction, Planet};
 use crate::format::to_fixed;
-use crate::galaxy::{GALAXY_SCALE, Pt, majority, project};
+use crate::galaxy::{GALAXY_SCALE, Pt, project};
 use crate::voronoi::Delaunay;
 use std::collections::HashMap;
 
@@ -15,6 +15,8 @@ pub struct RegionShape {
     pub path: String,
     /// Planet indices in this region.
     pub planets: Vec<i64>,
+    /// The cells of its planets under attack, unsmoothed: hatched inside the outline. Empty when none.
+    pub contested: String,
     /// Label anchor: the centroid of its planets.
     pub center: Pt,
 }
@@ -25,7 +27,19 @@ const BOUNDS: f64 = 1.25 * GALAXY_SCALE;
 
 /// Enemy territory outlines: same-owner cells merged into smooth fronts.
 pub fn build_regions(planets: &[Planet]) -> Vec<RegionShape> {
-    build_outlines(planets, |p| (p.current_owner != Faction::Humans).then(|| p.current_owner.as_str().to_string()), 4)
+    build_outlines(planets, |p| (p.current_owner != Faction::Humans).then_some(p.current_owner), 4)
+}
+
+/// As `build_regions`, with each planet under attack drawn into its attacker's territory.
+pub fn build_attack_regions(planets: &[Planet]) -> Vec<RegionShape> {
+    build_outlines(planets, holder, 4)
+}
+
+fn holder(p: &Planet) -> Option<Faction> {
+    match &p.event {
+        Some(e) => Some(e.faction),
+        None => (p.current_owner != Faction::Humans).then_some(p.current_owner),
+    }
 }
 
 fn key(p: Pt) -> String {
@@ -37,15 +51,16 @@ fn edge_key(a: Pt, b: Pt) -> String {
     if ka < kb { format!("{ka}|{kb}") } else { format!("{kb}|{ka}") }
 }
 
-/// Builds one outline per group (`key_of`) by merging the Voronoi cells of its planets: an
-/// edge shared by two cells of the same group is interior and dropped; the remaining edges
-/// are chained into loops and smoothed. Planets keyed None belong to no outline. A ring of
+/// Builds one outline per faction (`owner_of`) by merging the Voronoi cells of its planets: an
+/// edge shared by two cells of the same faction is interior and dropped; the remaining edges
+/// are chained into loops and smoothed. Planets owned by None belong to no outline. A ring of
 /// "void" sites around the galaxy keeps the outer cells from stretching to the bounds.
 fn build_outlines(
     planets: &[Planet],
-    key_of: impl Fn(&Planet) -> Option<String>,
+    owner_of: impl Fn(&Planet) -> Option<Faction>,
     smoothing: usize,
 ) -> Vec<RegionShape> {
+    let key_of = |p: &Planet| owner_of(p).map(|f| f.as_str().to_string());
     // Several planets can share a position (e.g. at the origin). Delaunay gives duplicates
     // no cell, so only the first planet at a position becomes a site.
     let mut sites: Vec<Pt> = Vec::new();
@@ -118,11 +133,20 @@ fn build_outlines(
             }
         }
         let path = chain_loops(&segments).iter().map(|l| to_path(&chaikin(l, smoothing))).collect::<Vec<_>>().join(" ");
+        let contested = members
+            .iter()
+            .filter(|&&i| planets[i].event.is_some() && sector_sites.contains(&planet_site[i]))
+            .map(|&i| &cells[planet_site[i]])
+            .filter(|c| c.len() >= 3)
+            .map(|c| to_path(c))
+            .collect::<Vec<_>>()
+            .join(" ");
         shapes.push(RegionShape {
             name: name.clone(),
-            owner: majority(members.iter().map(|&i| planets[i].current_owner)).unwrap_or_default(),
+            owner: owner_of(&planets[members[0]]).unwrap_or_default(),
             path,
             planets: members.iter().map(|&i| planets[i].index).collect(),
+            contested,
             center: centroid(&sector_sites.iter().map(|&i| sites[i]).collect::<Vec<_>>()),
         });
     }

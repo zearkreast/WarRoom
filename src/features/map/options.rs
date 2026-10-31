@@ -1,6 +1,6 @@
 //! The choices for each map setting, with their labels.
 
-use crate::state::{MapDispatches, MapOverlay, MapPlanets, MapQuality};
+use crate::state::{MapBeacon, MapDispatches, MapOverlay, MapPlanets, MapQuality};
 
 pub fn overlay_options() -> Vec<(MapOverlay, &'static str)> {
     vec![(MapOverlay::Regions, "Regions"), (MapOverlay::Sectors, "Sectors"), (MapOverlay::Galaxy, "Galaxy")]
@@ -21,4 +21,8 @@ pub fn dispatch_options() -> Vec<(MapDispatches, &'static str)> {
 
 pub fn planet_options() -> Vec<(MapPlanets, &'static str)> {
     vec![(MapPlanets::Markers, "Markers"), (MapPlanets::Spheres, "Spheres")]
+}
+
+pub fn beacon_options() -> Vec<(MapBeacon, &'static str)> {
+    vec![(MapBeacon::Ping, "Ping"), (MapBeacon::Glow, "Glow"), (MapBeacon::Beacon, "Beacon"), (MapBeacon::Off, "Off")]
 }

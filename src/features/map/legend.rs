@@ -67,21 +67,51 @@ const ENTRIES: &[Entry] = &[
         mark: || {
             swatch(
                 view! {
+                    <circle r="10" fill="none" stroke="var(--f-automaton)" stroke-width="0.8" opacity="0.45"></circle>
+                    <circle
+                        r="6"
+                        fill="none"
+                        stroke="var(--f-automaton)"
+                        stroke-width="1.2"
+                        stroke-dasharray="2.4 1.2"
+                    ></circle>
+                    <circle r="2.4" fill="var(--f-automaton)"></circle>
+                }
+                .into_any(),
+            )
+        },
+        name: "Under attack",
+        text: "A dashed ring in the attacker's colour turns round a planet Super Earth must defend, and a beacon calls it out from afar. Pick the beacon in the map settings.",
+    },
+    Entry {
+        mark: || {
+            swatch(
+                view! {
                     <line
                         x1="-9"
                         y1="6"
                         x2="9"
                         y2="-6"
-                        stroke="var(--f-illuminate)"
+                        stroke="var(--f-automaton)"
                         stroke-width="1.5"
                         stroke-dasharray="3 3"
                     ></line>
+                    <path
+                        d="M-4 -4.5 2 0 -4 4.5 -2 0Z"
+                        transform="translate(-3 2) rotate(-33.7) scale(0.75)"
+                        fill="var(--f-automaton)"
+                    ></path>
+                    <path
+                        d="M-4 -4.5 2 0 -4 4.5 -2 0Z"
+                        transform="translate(4.5 -3) rotate(-33.7) scale(0.75)"
+                        fill="var(--f-automaton)"
+                    ></path>
                 }
                 .into_any(),
             )
         },
-        name: "Attack line",
-        text: "From an enemy world to the planet it is attacking.",
+        name: "Attack",
+        text: "Chevrons run from the enemy world an attack comes from to the planet under attack.",
     },
     Entry {
         mark: || {
@@ -113,6 +143,28 @@ const ENTRIES: &[Entry] = &[
         },
         name: "Enemy territory",
         text: "Regions outline each enemy's ground; Sectors hatch the sectors it holds.",
+    },
+    Entry {
+        mark: || {
+            swatch(
+                view! {
+                    <clipPath id="ml-contested">
+                        <path d="M-9 -7 7 -9 9 6 -6 8Z"></path>
+                    </clipPath>
+                    <path
+                        d="M-9 -9 9 9M-3 -9 9 3M3 -9 9 -3M-9 -3 3 9M-9 3 -3 9"
+                        stroke="var(--f-automaton)"
+                        stroke-width="1.8"
+                        stroke-opacity="0.6"
+                        clip-path="url(#ml-contested)"
+                    ></path>
+                    <path d="M-9 -7 7 -9 9 6 -6 8Z" fill="none" stroke="var(--f-automaton)" stroke-width="1.2"></path>
+                }
+                .into_any(),
+            )
+        },
+        name: "Contested ground",
+        text: "In Regions, a planet under attack is drawn into its attacker's ground, hatched.",
     },
     Entry {
         mark: || {

@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use warroom_core::format::to_fixed;
 use wasm_bindgen::JsCast;
 
-const SELECTORS: [(&str, &str); 11] = [
+const SELECTORS: [(&str, &str); 19] = [
     ("upright", ".galaxy .upright"),
     ("body", ".galaxy .pbody"),
     ("label", ".galaxy .planet-label"),
@@ -20,6 +20,21 @@ const SELECTORS: [(&str, &str); 11] = [
     ("holoFloor", ".galaxy .holo-floor"),
     ("holoBeam", ".galaxy .holo-beam, .galaxy .holo-edge"),
     ("holoLift", ".galaxy .holo-lift"),
+    ("beaconZone", ".galaxy .beacon-zone"),
+    ("beaconMark", ".galaxy .beacon-mark"),
+    ("poiBeaconMark", ".galaxy .planet.poi .beacon-mark"),
+    (
+        "namedBeaconMark",
+        ".galaxy.z-labels .beacon-mark, .galaxy .planet:hover .beacon-mark, .galaxy .planet.selected .beacon-mark",
+    ),
+    (
+        "namedPoiBeaconMark",
+        ".galaxy.z-labels .planet.poi .beacon-mark, .galaxy .planet.poi:hover .beacon-mark, \
+         .galaxy .planet.poi.selected .beacon-mark",
+    ),
+    ("sphereBeaconMark", ".galaxy.pl-spheres .planet .beacon-mark"),
+    ("poiSphereBeaconMark", ".galaxy.pl-spheres .planet.poi .beacon-mark"),
+    ("attackArrow", ".galaxy .attack-arrow"),
 ];
 
 thread_local! {
@@ -95,4 +110,17 @@ pub fn write_camera(k: f64, rot: f64, tilt: f64) {
     set("holoFloor", "transform", format!("scale(1, {})", to_fixed(0.5 * tilt.cos(), 4)));
     set("holoBeam", "transform", format!("scale(1, {})", to_fixed(lift + 6.0, 4)));
     set("holoLift", "transform", format!("translateY({})", px(-lift)));
+    // Beacons grow slower than markers: big when zoomed out without swamping the map zoomed in.
+    let beacon = to_fixed(1.4 / k.powf(0.75), 4);
+    set("beaconZone", "transform", format!("scale({beacon})"));
+    // The chevron sits over the marker and its logo, over the name once shown, over a sphere's active tag. The
+    // rules' order breaks their ties.
+    let mark = |y: f64| format!("translateY({}) scale({beacon})", px(y));
+    set("beaconMark", "transform", mark(-10.0 * marker - 2.0 / k));
+    set("poiBeaconMark", "transform", mark(-15.5 * marker - 2.0 / k));
+    set("namedBeaconMark", "transform", mark(-8.0 * marker - 13.5 / k));
+    set("namedPoiBeaconMark", "transform", mark(-16.5 * marker - 13.5 / k));
+    set("sphereBeaconMark", "transform", mark(-14.0 * marker - 3.0 / k));
+    set("poiSphereBeaconMark", "transform", mark(-25.5 * marker - 3.0 / k));
+    set("attackArrow", "transform", format!("scale({})", to_fixed(1.0 / k.powf(0.8), 4)));
 }
