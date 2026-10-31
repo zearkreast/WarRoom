@@ -210,6 +210,28 @@ pub enum MapPlanets {
     Spheres,
 }
 
+/// How a planet under attack draws the eye from afar.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MapBeacon {
+    #[default]
+    Ping,
+    Glow,
+    Beacon,
+    Off,
+}
+
+impl MapBeacon {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            MapBeacon::Ping => "ping",
+            MapBeacon::Glow => "glow",
+            MapBeacon::Beacon => "beacon",
+            MapBeacon::Off => "off",
+        }
+    }
+}
+
 impl MapQuality {
     pub fn as_str(self) -> &'static str {
         match self {
@@ -273,6 +295,7 @@ pub struct SettingsData {
     pub map_overlay: MapOverlay,
     pub map_quality: MapQuality,
     pub map_planets: MapPlanets,
+    pub map_beacon: MapBeacon,
     pub show_inactive: bool,
     /// Whether the Galactic control ring is unfolded on the planet index.
     pub planets_control_open: bool,
@@ -308,6 +331,7 @@ impl Default for SettingsData {
             map_overlay: MapOverlay::Regions,
             map_quality: MapQuality::Normal,
             map_planets: MapPlanets::Markers,
+            map_beacon: MapBeacon::Ping,
             show_inactive: false,
             planets_control_open: true,
             mo_strip_open: false,

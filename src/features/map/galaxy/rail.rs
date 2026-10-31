@@ -1,7 +1,7 @@
 //! The map's button rail and its settings popover.
 
 use crate::features::map::legend::close_outside;
-use crate::features::map::options::{overlay_options, planet_options, quality_options};
+use crate::features::map::options::{beacon_options, overlay_options, planet_options, quality_options};
 use crate::state::{View, settings, ui};
 use crate::ui::icons::{self, Icon, IconData};
 use crate::ui::primitives::Stepper;
@@ -41,6 +41,15 @@ pub(super) fn MapSettings(on_close: Callback<()>) -> impl IntoView {
                     options=planet_options()
                     value=Signal::derive(move || s.get(|s| s.map_planets))
                     on_change=move |v| s.set(|s| s.map_planets = v)
+                />
+            </div>
+            <div class="ms-row">
+                <span class="caps">"Defense beacon"</span>
+                <Stepper
+                    label="Defense beacon"
+                    options=beacon_options()
+                    value=Signal::derive(move || s.get(|s| s.map_beacon))
+                    on_change=move |v| s.set(|s| s.map_beacon = v)
                 />
             </div>
             <div class="ms-row">

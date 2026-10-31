@@ -205,18 +205,23 @@ impl Ctl {
         self.draw_stars();
     }
 
-    /// Queues a paint and marks the map as moving, which drops the glow filters until it settles.
-    pub(super) fn schedule(&self) {
-        let Some(svg) = self.svg.get_untracked() else { return };
-        let w = js::window();
+    /// Queues a paint for the next frame.
+    pub(super) fn repaint(&self) {
         if self.frame.get().is_none() {
             let id = self
                 .paint_fn
                 .borrow()
                 .as_ref()
-                .and_then(|f| w.request_animation_frame(f.as_ref().unchecked_ref()).ok());
+                .and_then(|f| js::window().request_animation_frame(f.as_ref().unchecked_ref()).ok());
             self.frame.set(id);
         }
+    }
+
+    /// Queues a paint and marks the map as moving, which drops the glow filters until it settles.
+    pub(super) fn schedule(&self) {
+        let Some(svg) = self.svg.get_untracked() else { return };
+        let w = js::window();
+        self.repaint();
         let _ = svg.class_list().add_1("moving");
         if let Some(id) = self.settle.take() {
             w.clear_timeout_with_handle(id);

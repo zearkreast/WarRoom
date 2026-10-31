@@ -33,10 +33,11 @@ use std::f64::consts::PI;
 use std::rc::Rc;
 use std::sync::Arc;
 use warroom_core::api::{Faction, Planet};
+use warroom_core::defense::attackers;
 use warroom_core::effects::{EffectKind, PlanetEffect, has_pawn};
 use warroom_core::faction_marks::faction_marks;
 use warroom_core::factions::faction_color;
-use warroom_core::galaxy::{GALAXY_SCALE, LANDMARKS, anomaly_of, project, sector_at, supply_lines};
+use warroom_core::galaxy::{GALAXY_SCALE, LANDMARKS, Pt, anomaly_of, project, sector_at, supply_lines};
 use warroom_core::planets::{by_index, ownership_key};
 use warroom_core::regions::build_regions;
 use wasm_bindgen::JsCast;
@@ -130,6 +131,68 @@ fn planet_look(
     }
 }
 
+/// Hatches for a planet under attack inside its attacker's region, in the attacker's colour.
+fn contested_hatches() -> impl IntoView {
+    Faction::ENEMIES
+        .iter()
+        .map(|f| {
+            let c = faction_color(Some(*f));
+            view! {
+                <pattern
+                    id=format!("region-hatch-{}", f.as_str())
+                    class="hatch"
+                    width=num(HATCH)
+                    height=num(HATCH)
+                    patternUnits="userSpaceOnUse"
+                    patternTransform="rotate(45)"
+                >
+                    <rect width=num(HATCH) height=num(HATCH) fill=c fill-opacity="0.08"></rect>
+                    <line
+                        x1=num(HATCH * 0.15)
+                        y1="0"
+                        x2=num(HATCH * 0.15)
+                        y2=num(HATCH)
+                        stroke=c
+                        stroke-opacity="0.6"
+                        stroke-width=num(HATCH * 0.3)
+                    ></line>
+                </pattern>
+            }
+        })
+        .collect_view()
+}
+
+/// Chevrons along an attack line: one per this many map units, moving this many map units a second.
+const CHEVRON_GAP: f64 = 16.0;
+const CHEVRON_SPEED: f64 = 9.0;
+
+/// The line from an attacking world to the planet it attacks, with chevrons running along it to the target.
+fn attack_line(from: Pt, to: Pt, color: &'static str) -> impl IntoView {
+    let (dx, dy) = (to[0] - from[0], to[1] - from[1]);
+    let len = dx.hypot(dy);
+    let n = (len / CHEVRON_GAP).floor().max(1.0);
+    let run = len / CHEVRON_SPEED;
+    view! {
+        <g
+            class="attack-line"
+            transform=format!("translate({},{}) rotate({})", num(from[0]), num(from[1]), num(dy.atan2(dx).to_degrees()))
+            style=format!("color: {color}; --len: {}px; --run: {}s;", num(len), num(run))
+        >
+            <line x2=num(len)></line>
+            {(0..n as usize)
+                .map(|i| {
+                    let at = (i as f64 + 0.5) / n;
+                    view! {
+                        <g class="attack-chev" style=format!("--at: {}px; animation-delay: {}s;", num(len * at), num(-run * at))>
+                            <path class="attack-arrow" d="M-4.5,-5L2.5,0L-4.5,5L-2,0Z"></path>
+                        </g>
+                    }
+                })
+                .collect_view()}
+        </g>
+    }
+}
+
 /// `on_hover_sector` hears the sector under the pointer, whatever the overlay, or None off the disc.
 #[component]
 pub fn GalaxyMap(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
@@ -157,6 +220,7 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
     let overlay = Memo::new(move |_| s.get(|s| s.map_overlay));
     let style = Memo::new(move |_| s.get(|s| s.map_planets));
     let quality = Memo::new(move |_| s.get(|s| s.map_quality));
+    let beacon = Memo::new(move |_| s.get(|s| s.map_beacon));
     let pinned = Memo::new(move |_| s.get(|s| s.pinned.iter().copied().collect::<HashSet<i64>>()));
     let mo = major_order_planets();
     let active = Memo::new(move |_| {
@@ -210,6 +274,15 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
             if let Some(svg) = ctl.svg.get_untracked() {
                 scale_hatches(&svg, ctl.t.get().k);
             }
+        });
+    }
+    // A new overlay or planet style rewrites the map's class, dropping the zoom classes the paint sets.
+    {
+        let ctl = SendWrapper::new(ctl.clone());
+        Effect::new(move |_| {
+            overlay.with(|_| ());
+            style.with(|_| ());
+            ctl.repaint();
         });
     }
 
@@ -391,23 +464,24 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
         })
     });
     let attacks = Memo::new(move |_| {
-        active.with(|active| {
-            planets.with(|p| {
-                let lookup = by_index(p);
-                p.iter()
-                    .flat_map(|p| {
-                        p.attacking.iter().filter(|t| active.contains(t)).filter_map(|t| {
-                            let target = lookup.get(t)?;
-                            let [x1, y1] = project(p.position);
-                            let [x2, y2] = project(target.position);
-                            Some((x1, y1, x2, y2, faction_color(Some(p.current_owner))))
-                        })
-                    })
-                    .collect::<Vec<_>>()
-            })
+        planets.with(|p| {
+            p.iter()
+                .filter(|t| t.event.is_some())
+                .flat_map(|t| {
+                    attackers(t, p)
+                        .into_iter()
+                        .map(|a| (project(a.position), project(t.position), faction_color(Some(a.current_owner))))
+                })
+                .collect::<Vec<_>>()
         })
     });
-    let indices = Memo::new(move |_| planets.with(|p| p.iter().map(|p| p.index).collect::<Vec<_>>()));
+    // Planets under attack go last, so their beacons draw over their neighbours.
+    let indices = Memo::new(move |_| {
+        planets.with(|p| {
+            let (attacked, rest): (Vec<&Planet>, Vec<&Planet>) = p.iter().partition(|p| p.event.is_some());
+            rest.into_iter().chain(attacked).map(|p| p.index).collect::<Vec<_>>()
+        })
+    });
     let gloom =
         Signal::derive(move || effects.with(|e| Arc::new(e.as_ref().map(|e| e.gloom.clone()).unwrap_or_default())));
 
@@ -485,7 +559,7 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
     });
 
     view! {
-        <div class=move || format!("map-wrap q-{}", quality.get().as_str())>
+        <div class=move || format!("map-wrap q-{} bc-{}", quality.get().as_str(), beacon.get().as_str())>
             <canvas node_ref=canvas_ref class="starfield-canvas" aria-hidden="true"></canvas>
             <div node_ref=stage_ref class="map-stage">
                 <svg
@@ -510,15 +584,33 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                                 .then(|| {
                                     view! {
                                         <g class="regions">
+                                            <defs>{contested_hatches()}</defs>
                                             {move || {
                                                 regions
                                                     .get()
                                                     .into_iter()
-                                                    .map(|r| {
+                                                    .enumerate()
+                                                    .map(|(i, r)| {
                                                         let c = faction_color(Some(r.owner));
+                                                        let contested = (!r.contested.is_empty())
+                                                            .then(|| {
+                                                                let clip = format!("region-clip-{i}");
+                                                                view! {
+                                                                    <clipPath id=clip.clone()>
+                                                                        <path d=r.path.clone()></path>
+                                                                    </clipPath>
+                                                                    <path
+                                                                        d=r.contested.clone()
+                                                                        class="region-contested"
+                                                                        fill=format!("url(#region-hatch-{})", r.owner.as_str())
+                                                                        clip-path=format!("url(#{clip})")
+                                                                    ></path>
+                                                                }
+                                                            });
                                                         view! {
                                                             <g>
                                                                 <path d=r.path.clone() fill=c fill-opacity="0.05" stroke="none"></path>
+                                                                {contested}
                                                                 <path d=r.path.clone() class="region-glow" stroke=c></path>
                                                                 <path d=r.path class="region-line" stroke=c></path>
                                                             </g>
@@ -572,15 +664,7 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                             }}
                         </g>
                         <g class="attacks">
-                            {move || {
-                                attacks
-                                    .get()
-                                    .into_iter()
-                                    .map(|(x1, y1, x2, y2, c)| {
-                                        view! { <line x1=num(x1) y1=num(y1) x2=num(x2) y2=num(y2) stroke=c></line> }
-                                    })
-                                    .collect_view()
-                            }}
+                            {move || attacks.get().into_iter().map(|(from, to, c)| attack_line(from, to, c)).collect_view()}
                         </g>
                         <g class="planets">
                             <For each=move || indices.get() key=|i| *i children=planet_view />
