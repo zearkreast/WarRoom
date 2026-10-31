@@ -8,6 +8,23 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.6.0",
+        date: "2026-10-31",
+        items: &[
+            "Stratagem collection: the Hellpad opens all 118 stratagems by permit and type, each with its code, cooldown, call-in time, uses, traits and where it is unlocked.",
+            "Stratagem drill: the G.W.W. gains a game of keying stratagem codes against a burning fuse, with every stratagem, your own loadout or the permit colours you choose. The best ten scores of each mode stay on this device.",
+            "Defenses show both sides as the game does: Super Earth's defense over the enemy's advance on the deadline, on the map, the campaign cards and the planet page, with where the attack comes from and what holding needs.",
+            "Gambit: when every planet attacking a defense is a liberation front, an advisory says whether liberating them ends the defense before the deadline, and whether holding outright is quicker.",
+            "Map: a planet under attack joins its attacker's territory, hatched, and wears a dashed ring and a defense beacon you can pick in the map settings. Chevrons run along the attack lines.",
+            "Front line activity marks where freeing a city jumped the front forward, with the city's name and the boost it gave. A city's boost on a defended planet now counts against the defense's own health.",
+            "War history reaches back to the war's first days: changes of hands since 10 February 2024, Helldivers online and campaign progress since 2 March 2024, and the DSS's jumps since November 2024.",
+            "Mars has a planet page, opens the map's planet panel like any other planet and appears in Planets.",
+            "A new Super Earth Command look across the app, with a navigation rail on desktop and a tab bar on phones.",
+            "Scavenger Rampage shows on the map and the planet page, and effect descriptions keep the game's highlights.",
+            "Fixes: busy fronts chart their whole last day, recent defenses no longer vanish or read as held, and Major Order tasks, city thresholds, alerts and the map's controls behave as they should.",
+        ],
+    },
+    ChangelogEntry {
         version: "0.5.0",
         date: "2026-10-27",
         items: &[
