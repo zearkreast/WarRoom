@@ -7,8 +7,8 @@ use crate::features::planet::activity::ActivitySection;
 use crate::features::planet::globe::SuperEarthGlobe;
 use crate::features::planet::record::{UNREACHABLE, use_planet_record};
 use crate::features::planet::sections::{
-    DispatchSection, FrontLineSection, LiberationSection, OperationsSection, PoisSection, ServiceRecordSection,
-    SupplyLinesSection, WarHistorySection,
+    DispatchSection, FrontLineSection, LandmarkSection, LiberationSection, OperationsSection, PoisSection,
+    ServiceRecordSection, SupplyLinesSection, WarHistorySection,
 };
 use crate::features::planet::tint::planet_tint;
 use crate::js::{self, num};
@@ -25,6 +25,7 @@ use std::sync::Arc;
 use warroom_core::api::{Faction, Planet};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, sest_clock, sest_date};
+use warroom_core::galaxy::{Landmark, landmark, landmark_planet};
 use warroom_core::progress::tracked_percent;
 
 /// Planet sphere ringed by the liberation split: Super Earth arc vs the enemy's.
@@ -100,6 +101,9 @@ pub fn PlanetSphere(
 }
 
 fn status_line(p: &Planet, front: Option<&Front>) -> String {
+    if let Some(l) = landmark(p.index) {
+        return l.status.into();
+    }
     let owner = faction_label(Some(p.current_owner));
     match front {
         Some(f) if f.kind == FrontKind::Defense => {
@@ -173,11 +177,13 @@ fn Hero(p: Signal<Planet>, front: Memo<Option<Front>>) -> impl IntoView {
                             </span>
                         })
                     }}
-                    <span class="chip num">
-                        <Icon icon=icons::USERS size=13.0 />
-                        {move || format!(" {} ", fmt_int(p.with(|p| p.statistics.player_count)))}
-                        <span class="muted">"deployed"</span>
-                    </span>
+                    <Show when=move || landmark(index()).is_none()>
+                        <span class="chip num">
+                            <Icon icon=icons::USERS size=13.0 />
+                            {move || format!(" {} ", fmt_int(p.with(|p| p.statistics.player_count)))}
+                            <span class="muted">"deployed"</span>
+                        </span>
+                    </Show>
                     <Show when=move || stations.with(|s| s.contains(&index()))>
                         <button class="chip chip-dss" on:click=move |_| ui().open_module(Some(HellpadModule::Stations))>
                             <DssIcon size=13.0 />
@@ -288,6 +294,17 @@ fn Body(index: i64) -> impl IntoView {
     }
 }
 
+/// A world the war data leaves out has no fronts or record to read, only what's known of it.
+#[component]
+fn LandmarkBody(l: &'static Landmark) -> impl IntoView {
+    view! {
+        <div class="pd">
+            <Hero p=Signal::stored(landmark_planet(l)) front=Memo::new(|_| None) />
+            <LandmarkSection l=l />
+        </div>
+    }
+}
+
 #[component]
 pub fn PlanetDetail() -> impl IntoView {
     let detail = ui().detail;
@@ -314,7 +331,10 @@ pub fn PlanetDetail() -> impl IntoView {
                 }
                 .into_any()
             >
-                <Body index=index />
+                {match landmark(index) {
+                    Some(l) => view! { <LandmarkBody l=l /> }.into_any(),
+                    None => view! { <Body index=index /> }.into_any(),
+                }}
             </Overlay>
         })
     }

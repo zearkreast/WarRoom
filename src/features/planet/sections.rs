@@ -27,6 +27,7 @@ use warroom_core::cities::{CityLiberation, CityState, city_liberations};
 use warroom_core::effects::EffectKind;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, fmt_time_left, js_round, js_sum, to_fixed};
+use warroom_core::galaxy::Landmark;
 use warroom_core::progress::tracked_percent;
 use warroom_core::time::parse_ms;
 use warroom_core::war_history::{HistoryInput, LogEntry, build_war_history, defense_events, fmt_long_duration};
@@ -145,6 +146,7 @@ const MARK_REACH: f64 = 0.02;
 const MARK_SIZE: f64 = 26.0;
 /// Between a city's mark and the line, so the hovered point doesn't cover it.
 const MARK_GAP: f64 = 6.0;
+const MARK_LINE: &str = "color-mix(in srgb, var(--f-humans) 50%, transparent)";
 
 fn freed_rows(c: &CityLiberation) -> Vec<TipRow> {
     let row = |name: String, value: String, color: &str| TipRow { name, value, color: color.into() };
@@ -163,6 +165,7 @@ pub fn FrontLineSection(
     record: ReadSignal<PlanetRecord>,
 ) -> impl IntoView {
     let hover = RwSignal::new(None::<usize>);
+    let freed = Memo::new(move |_| p.with(|p| record.with(|r| Arc::new(city_liberations(p, &r.samples, &r.fought)))));
     let rows = Memo::new(move |_| {
         let now = js::now();
         let (rate, percent) = front.with(|f| f.as_ref().map_or((None, 0.0), |f| (f.rate, f.percent)));
@@ -194,6 +197,11 @@ pub fn FrontLineSection(
         let domain = (rows.first().map_or(now, |r| r.at), rows.last().map_or(now, |r| r.at));
         XAxis { hide, ..XAxis::time(domain, hour_ticks(domain.0, domain.1, 4.0)) }
     };
+    let ref_lines = move |now_at: f64, label: Option<String>| {
+        let mut lines = vec![RefLine { x: now_at, stroke: "var(--text-dim)".into(), label }];
+        lines.extend(freed.get().iter().map(|c| RefLine { x: c.at, stroke: MARK_LINE.into(), label: None }));
+        lines
+    };
     let progress = Signal::derive(move || {
         let data = rows.get();
         let (rows, now_at) = &*data;
@@ -213,7 +221,7 @@ pub fn FrontLineSection(
                     ..Series::line("projection", rows.iter().map(|r| r.projection).collect(), "var(--c-humans)", 2.0)
                 },
             ],
-            ref_lines: vec![RefLine { x: *now_at, stroke: "var(--text-dim)".into(), label: Some("Now".into()) }],
+            ref_lines: ref_lines(*now_at, Some("Now".into())),
         })
     });
     let players = Signal::derive(move || {
@@ -227,10 +235,9 @@ pub fn FrontLineSection(
             y: vec![YAxis::auto(max, Arc::new(fmt_compact))],
             grid: Some(Grid { stroke: crate::ui::chart::GRID.into(), opacity: None, edges_only: false }),
             series: vec![Series::area("players", values, "var(--cta)", 2.0, "url(#pd-players)")],
-            ref_lines: vec![RefLine { x: *now_at, stroke: "var(--text-dim)".into(), label: None }],
+            ref_lines: ref_lines(*now_at, None),
         })
     });
-    let freed = Memo::new(move |_| p.with(|p| record.with(|r| Arc::new(city_liberations(p, &r.samples, &r.fought)))));
     let city_marks: Overlay = Arc::new(move |f: &Frame| {
         freed
             .get()
@@ -876,6 +883,39 @@ pub fn OperationsSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
 }
 
 /// What stands on the planet: its points of interest, then its cities.
+/// What's known of a world the war data leaves out.
+#[component]
+pub fn LandmarkSection(l: &'static Landmark) -> impl IntoView {
+    view! {
+        <Panel title="Intel" icon=icons::FILE_TEXT>
+            <p class="muted">{l.note}</p>
+        </Panel>
+        <Panel title="Points of interest" icon=icons::LANDMARK right=view! { <span class="num">{l.pois.len()}</span> }.into_any()>
+            <div class="pd-env">
+                {l.pois
+                    .iter()
+                    .map(|poi| {
+                        let kind = poi_kind(poi.name);
+                        view! {
+                            <div class="pd-env-row">
+                                <span class="pd-env-icon poi">
+                                    <svg viewBox="-12 -12 24 24" width="18" height="18" aria-hidden="true">
+                                        <PoiGlyph kind=kind faction=poi_origin(kind, None) size=24.0 />
+                                    </svg>
+                                </span>
+                                <div>
+                                    <b class="caps">{poi.name}</b>
+                                    {markup_text(poi.description)}
+                                </div>
+                            </div>
+                        }
+                    })
+                    .collect_view()}
+            </div>
+        </Panel>
+    }
+}
+
 #[component]
 pub fn PoisSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
     let effects = queries().effects;
