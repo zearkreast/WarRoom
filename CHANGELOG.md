@@ -47,6 +47,15 @@ each entry, from `crates/core/src/changelog.rs`.
   other planet, and appears in Planets in the Sol sector. Galactic control's shares still count only the war
   data's planets.
 
+### Stratagems
+
+- The Hellpad's stratagem collection opens: all 118 stratagems by permit and type, each with its icon, code,
+  cooldown, call-in time, uses, traits and where it is unlocked, with search and permit colour filters.
+- The G.W.W. gains the stratagem drill: key stratagem codes against a burning fuse, round after round, with a
+  streak multiplier and round, time and flawless bonuses. Play every stratagem, your own loadout (picked in the
+  drill or with the crosshair on the collection's cards), or the permit colours you choose. Its march and sound
+  effects are synthesised in the app; the best ten scores of each mode stay on this device.
+
 ### Fixed
 
 - Opening the map's Controls no longer shoves the Regions, Sectors and Galaxy switch aside or off the screen.

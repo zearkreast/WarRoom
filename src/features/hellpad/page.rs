@@ -6,6 +6,8 @@ use crate::features::hellpad::gww::GwwModule;
 use crate::features::hellpad::past_campaigns::PastCampaignsModule;
 use crate::features::hellpad::planets::PlanetsModule;
 use crate::features::hellpad::stations::StationsModule;
+use crate::features::hellpad::stratagems::StratagemsModule;
+use crate::features::map::stratagem_art::permit_color;
 use crate::js::{self, num};
 use crate::state::{HellpadModule, settings, ui};
 use crate::ui::emblems::{FactionEmblem, HellpadMark, IconLike, icon_view};
@@ -19,6 +21,7 @@ use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, js_round};
 use warroom_core::planet_index::control_shares;
 use warroom_core::snapshot::EpisodeStatus;
+use warroom_core::stratagems::{PERMITS, STRATAGEMS};
 use warroom_core::time::parse_ms;
 use wasm_bindgen::JsCast;
 
@@ -38,6 +41,9 @@ fn module_info(m: HellpadModule) -> ModuleInfo {
         HellpadModule::PastCampaigns => {
             ModuleInfo { title: "Past campaigns", path: "hp://archive", color: "var(--warn)" }
         }
+        HellpadModule::Stratagems => {
+            ModuleInfo { title: "Stratagem collection", path: "hp://stratagems", color: "var(--p-offensive)" }
+        }
     }
 }
 
@@ -47,6 +53,7 @@ fn module_key(m: HellpadModule) -> &'static str {
         HellpadModule::Stations => "stations",
         HellpadModule::Gww => "gww",
         HellpadModule::PastCampaigns => "campaigns",
+        HellpadModule::Stratagems => "stratagems",
     }
 }
 
@@ -329,6 +336,33 @@ fn PastTile() -> impl IntoView {
 }
 
 #[component]
+fn StratagemsTile() -> impl IntoView {
+    let label = format!(
+        "Stratagems by permit: {}",
+        PERMITS.map(|p| format!("{} {}", p.label(), STRATAGEMS.iter().filter(|s| s.permit() == p).count())).join(", ")
+    );
+    view! {
+        <ModuleTile
+            id=HellpadModule::Stratagems
+            icon=icons::ZAP.into()
+            text="Every stratagem with its code, cooldown and where it is unlocked, and the drill to learn the codes."
+            meta=Signal::stored(format!("{} stratagems", STRATAGEMS.len()))
+        >
+            <span class="hp-control">
+                <span class="hp-control-bar" role="img" aria-label=label>
+                    {PERMITS
+                        .map(|p| {
+                            let n = STRATAGEMS.iter().filter(|s| s.permit() == p).count();
+                            view! { <i style=format!("flex-grow: {n}; background: {};", permit_color(p))></i> }
+                        })
+                        .collect_view()}
+                </span>
+            </span>
+        </ModuleTile>
+    }
+}
+
+#[component]
 fn Group(title: &'static str, count: usize, children: Children) -> impl IntoView {
     view! {
         <section class="hp-group">
@@ -348,13 +382,14 @@ fn Hub() -> impl IntoView {
         <div class="hp-hub">
             <Mast />
             <StationReport />
-            <Group title="Field modules" count=4>
+            <Group title="Field modules" count=5>
                 <PlanetsTile />
                 <StationsTile />
                 <GwwTile />
                 <PastTile />
+                <StratagemsTile />
             </Group>
-            <Group title="In development" count=6>
+            <Group title="In development" count=5>
                 <LockedTile
                     icon=icons::SKULL
                     title="Enemy encyclopedia"
@@ -366,12 +401,6 @@ fn Hub() -> impl IntoView {
                     title="Weaponry"
                     path="weapons"
                     text="Primaries, secondaries, throwables and support weapons, with their stats."
-                />
-                <LockedTile
-                    icon=icons::ZAP
-                    title="Stratagem collection"
-                    path="stratagems"
-                    text="Every stratagem with its code, cooldown and where it is unlocked."
                 />
                 <LockedTile
                     icon=icons::LIBRARY
@@ -446,6 +475,7 @@ pub fn HellpadPage() -> impl IntoView {
                     Some(HellpadModule::Stations) => view! { <StationsModule /> }.into_any(),
                     Some(HellpadModule::Gww) => view! { <GwwModule /> }.into_any(),
                     Some(HellpadModule::PastCampaigns) => view! { <PastCampaignsModule /> }.into_any(),
+                    Some(HellpadModule::Stratagems) => view! { <StratagemsModule /> }.into_any(),
                 }}
             </div>
         </div>

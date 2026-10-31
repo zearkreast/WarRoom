@@ -1,6 +1,7 @@
 //! The G.W.W. (Galactic War Web): the in-universe net, its address bar, search, home page and page router.
 
 pub mod blocks;
+pub mod drill;
 pub mod figures;
 pub mod live;
 pub mod logs;
@@ -16,17 +17,20 @@ use crate::state::ui;
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::Empty;
 use blocks::HeadingRef;
+use drill::drill_page;
 use leptos::html;
 use leptos::prelude::*;
 use logs::logs_page;
 use nav::{GwwNav, icon_url, use_gww_nav};
 use pages::{company_page, dir_page, gov_page, holiday_page, holidays_page, manual_page, ministry_page, missing_page};
 use pictures::{RAIL_QUERY, ad_box, pick_one};
-use tiles::{company_tile, gov_tile, log_tile, manual_tile, ministry_tile, news_tile, site_tile};
+use tiles::{company_tile, drill_tile, gov_tile, log_tile, manual_tile, ministry_tile, news_tile, site_tile};
 use warroom_core::data::manuals::{CHAPTERS, MANUALS, TIPS};
 use warroom_core::data::sites::{ADS, COMPANIES, GOV, HOLIDAYS, MINISTRIES};
 use warroom_core::data::{Ad, AdShape};
-use warroom_core::gww_nav::{GwwPage, LOG_ADDRESS, LOG_TITLE, address_of, normalize, suggested_addresses, target_at};
+use warroom_core::gww_nav::{
+    DRILL_ADDRESS, DRILL_TITLE, GwwPage, LOG_ADDRESS, LOG_TITLE, address_of, normalize, suggested_addresses, target_at,
+};
 use warroom_core::gww_text::{next_yearly, plain_text};
 use wasm_bindgen::JsCast;
 
@@ -277,8 +281,9 @@ fn Home(log_text: Signal<String>) -> impl IntoView {
     let official = Memo::new(move |_| q.with(|q| log_text.with(|l| official_hits(q, l))));
     let manuals = Memo::new(move |_| q.with(|q| manual_hits(q)));
     let companies = Memo::new(move |_| q.with(|q| company_hits(q)));
+    let drill = Memo::new(move |_| q.with(|q| hit(q, &[DRILL_TITLE, DRILL_ADDRESS, "stratagem codes game"])));
     let none = Memo::new(move |_| {
-        official.with(Vec::is_empty) && manuals.with(Vec::is_empty) && companies.with(Vec::is_empty)
+        official.with(Vec::is_empty) && manuals.with(Vec::is_empty) && companies.with(Vec::is_empty) && !drill.get()
     });
     view! {
         <div class="gww-home">
@@ -344,6 +349,7 @@ fn Home(log_text: Signal<String>) -> impl IntoView {
                         };
                         group("Training manuals", MANUALS.len(), None, tile.into_any())
                     })}
+                    {move || drill.get().then(|| group("Training", 1, None, drill_tile()))}
                     {move || (!searching.get()).then(|| banner.map(|a| ad_box(a, None, false)))}
                     {move || {
                         let list = companies.get();
@@ -376,6 +382,7 @@ fn page_view(page: &GwwPage, heading: HeadingRef, log_text: Signal<String>) -> O
         GwwPage::Holiday { id } => holiday_page(HOLIDAYS.iter().find(|h| h.id == id)?, heading),
         GwwPage::Site { id } if id == "log" => logs_page(heading),
         GwwPage::Site { id } if id == "holidays" => holidays_page(heading),
+        GwwPage::Site { id } if id == "drill" => drill_page(heading),
         GwwPage::Site { id } => gov_page(id, heading),
         GwwPage::Dir { id } => dir_page(id, heading, log_text),
         GwwPage::Missing { address } => missing_page(address.clone(), heading),
