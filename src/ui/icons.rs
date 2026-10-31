@@ -142,6 +142,10 @@ pub const GAUGE: IconData = IconData {
     class: "lucide lucide-gauge",
     body: r#"<path d="m12 14 4-4"></path><path d="M3.34 19a10 10 0 1 1 17.32 0"></path>"#,
 };
+pub const GAMEPAD_2: IconData = IconData {
+    class: "lucide lucide-gamepad-2",
+    body: r#"<line x1="6" x2="10" y1="11" y2="11"></line><line x1="8" x2="8" y1="9" y2="13"></line><line x1="15" x2="15.01" y1="12" y2="12"></line><line x1="18" x2="18.01" y1="10" y2="10"></line><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"></path>"#,
+};
 pub const GIFT: IconData = IconData {
     class: "lucide lucide-gift",
     body: r#"<path d="M12 7v14"></path><path d="M20 11v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"></path><path d="M7.5 7a1 1 0 0 1 0-5A4.8 8 0 0 1 12 7a4.8 8 0 0 1 4.5-5 1 1 0 0 1 0 5"></path><rect x="3" y="7" width="18" height="4" rx="1"></rect>"#,
@@ -231,6 +235,10 @@ pub const MOUSE_POINTER_CLICK: IconData = IconData {
 pub const MOVE: IconData = IconData {
     class: "lucide lucide-move",
     body: r#"<path d="M12 2v20"></path><path d="m15 19-3 3-3-3"></path><path d="m19 9 3 3-3 3"></path><path d="M2 12h20"></path><path d="m5 9-3 3 3 3"></path><path d="m9 5 3-3 3 3"></path>"#,
+};
+pub const MUSIC: IconData = IconData {
+    class: "lucide lucide-music",
+    body: r#"<path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>"#,
 };
 pub const NETWORK: IconData = IconData {
     class: "lucide lucide-network",
@@ -381,6 +389,14 @@ pub const TROPHY: IconData = IconData {
 pub const USERS: IconData = IconData {
     class: "lucide lucide-users",
     body: r#"<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle>"#,
+};
+pub const VOLUME_2: IconData = IconData {
+    class: "lucide lucide-volume-2",
+    body: r#"<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"></path><path d="M16 9a5 5 0 0 1 0 6"></path><path d="M19.364 18.364a9 9 0 0 0 0-12.728"></path>"#,
+};
+pub const VOLUME_X: IconData = IconData {
+    class: "lucide lucide-volume-x",
+    body: r#"<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"></path><line x1="22" x2="16" y1="9" y2="15"></line><line x1="16" x2="22" y1="9" y2="15"></line>"#,
 };
 pub const WIND: IconData = IconData {
     class: "lucide lucide-wind",

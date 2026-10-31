@@ -139,7 +139,7 @@ fn CityStatus(p: Signal<Planet>, c: Signal<City>, enemy: Signal<Option<Faction>>
                     icon=icons::TRENDING_UP
                     label="Planet boost"
                     value=c.boost.map_or("—".to_string(), |b| format!("+{}", fmt_pct(b, 1))).into_any()
-                    sub="planet liberation when freed".into_any()
+                    sub=if c.defense { "defense when freed" } else { "planet liberation when freed" }.into_any()
                     color=c.boost.map(|_| "var(--good)".to_string())
                 />
                 {match p.with(|p| opens_at(&c, p)) {

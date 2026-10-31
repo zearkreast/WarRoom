@@ -8,7 +8,9 @@ use leptos::prelude::*;
 use warroom_core::data::manuals::MANUALS;
 use warroom_core::data::sites::{GOV, MINISTRIES};
 use warroom_core::data::{Company, Manual, Ministry};
-use warroom_core::gww_nav::{LOG_ADDRESS, LOG_TITLE};
+use warroom_core::drill::{Mode, best};
+use warroom_core::format::fmt_int;
+use warroom_core::gww_nav::{DRILL_ADDRESS, DRILL_TITLE, LOG_ADDRESS, LOG_TITLE};
 
 #[allow(clippy::too_many_arguments)]
 pub fn site_tile(
@@ -201,4 +203,26 @@ pub fn CourseProgress(#[prop(optional)] compact: bool) -> impl IntoView {
             })}
         </section>
     }
+}
+
+pub fn drill_tile() -> AnyView {
+    let top = Memo::new(move |_| settings().get(|d| best(&d.drill_scores, Mode::Classic).map(|s| s.score)));
+    let tile = move || {
+        let mut text =
+            "Key stratagem codes against the fuse: every stratagem, your own loadout, or by permit colour.".to_string();
+        if let Some(s) = top.get() {
+            text.push_str(&format!(" Best classic score: {}.", fmt_int(s as f64)));
+        }
+        site_tile(
+            "site:drill".into(),
+            DRILL_ADDRESS,
+            DRILL_TITLE.into(),
+            text,
+            view! { <Icon icon=icons::GAMEPAD_2 size=28.0 stroke_width=1.5 /> }.into_any(),
+            Some("var(--cta)".into()),
+            Signal::stored(false),
+            false,
+        )
+    };
+    tile.into_any()
 }

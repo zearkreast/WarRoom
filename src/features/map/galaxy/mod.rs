@@ -37,7 +37,9 @@ use warroom_core::defense::attackers;
 use warroom_core::effects::{EffectKind, PlanetEffect, has_pawn};
 use warroom_core::faction_marks::faction_marks;
 use warroom_core::factions::faction_color;
-use warroom_core::galaxy::{GALAXY_SCALE, LANDMARKS, Pt, anomaly_of, project, sector_at, supply_lines};
+use warroom_core::galaxy::{
+    GALAXY_SCALE, LANDMARKS, Pt, anomaly_of, landmark, landmark_planet, project, sector_at, supply_lines,
+};
 use warroom_core::planets::{by_index, ownership_key};
 use warroom_core::regions::build_attack_regions;
 use wasm_bindgen::JsCast;
@@ -349,14 +351,12 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
             }
             FOCUS_DONE.set(seq);
             let Some(index) = u.selected_planet.get_untracked() else { return };
-            let Some(p) =
-                fresh.with_untracked(|f| f.as_ref().and_then(|f| f.iter().find(|p| p.index == index).cloned()))
-            else {
-                return;
-            };
+            let charted = fresh
+                .with_untracked(|f| f.as_ref().and_then(|f| f.iter().find(|p| p.index == index).map(|p| p.position)));
+            let Some(position) = charted.or(landmark(index).map(|l| l.position)) else { return };
             let (Some(z), Some((w, h))) = (ctl.zoom(), ctl.rect()) else { return };
-            panel.set(Some(p.index));
-            let [x, y] = to_layer(project(p.position), ctl.cam.get());
+            panel.set(Some(index));
+            let [x, y] = to_layer(project(position), ctl.cam.get());
             let k = 3f64.max(w.min(h) / 280.0);
             z.fly_to(Transform::at(w / 2.0 - x * k, h / 2.0 - y * k, k), 700.0);
         });
@@ -541,8 +541,10 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
     let ctl_out = ctl.clone();
     let (stage_ref, svg_ref, canvas_ref, layer_ref, compass_ref, tilt_ref) =
         (ctl.stage, ctl.svg, ctl.canvas, ctl.layer, ctl.compass, ctl.tilt);
-    let panel_planet =
-        Memo::new(move |_| panel.get().and_then(|i| planets.with(|p| p.iter().find(|p| p.index == i).cloned())));
+    let panel_planet = Memo::new(move |_| {
+        let i = panel.get()?;
+        planets.with(|p| p.iter().find(|p| p.index == i).cloned()).or_else(|| landmark(i).map(landmark_planet))
+    });
     let panel_open = Memo::new(move |_| panel_planet.with(Option::is_some));
     let effects_of = move |index: Signal<Option<i64>>| {
         Signal::derive(move || {
@@ -674,8 +676,11 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                                     let [x, y] = project(l.position);
                                     view! {
                                         <g
-                                            class="planet landmark"
+                                            class=move || {
+                                                format!("planet landmark {}", if u.selected_planet.get() == Some(l.index) { "selected" } else { "" })
+                                            }
                                             transform=format!("translate({},{})", num(x), num(y))
+                                            on:click=move |_| open.run(l.index)
                                             on:pointerenter=move |e: web_sys::PointerEvent| {
                                                 hover.set(Some(Hover { x: e.client_x() as f64, y: e.client_y() as f64, what: Hovered::Landmark(l) }));
                                             }

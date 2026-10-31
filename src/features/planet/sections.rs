@@ -7,13 +7,14 @@ use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
 use crate::features::news::card::MarkupText;
 use crate::features::overview::activity::chart_color;
 use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
-use crate::features::planet::cities::{CityBar, CityList};
+use crate::features::planet::cities::{CityBar, CityList, CityMark};
 use crate::features::planet::defense::{GambitNotes, advance_label, time_left, use_attackers, use_enemy_advance};
 use crate::features::planet::record::{PlanetRecord, UNREACHABLE};
 use crate::js::{self, fmt_date, fmt_date_time};
 use crate::state::ui;
 use crate::ui::chart::{
-    Chart, Grid, HOUR, Plot, RefLine, Series, Tooltip, XAxis, YAxis, default_tooltip, hour_ticks, series_rows,
+    Chart, Frame, Grid, HOUR, Overlay, Plot, RefLine, Series, TipRow, Tooltip, XAxis, YAxis, default_tooltip,
+    hour_ticks, series_rows,
 };
 use crate::ui::emblems::{FactionEmblem, IconLike, SubfactionEmblem, icon_view};
 use crate::ui::hazard_icons::hazard_icon;
@@ -24,10 +25,12 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use warroom_core::api::{Faction, Planet};
 use warroom_core::biomes::regen_pct_per_hour;
+use warroom_core::cities::{CityLiberation, CityState, city_liberations};
 use warroom_core::defense::{divers_short, event_span, needed_rate};
 use warroom_core::effects::EffectKind;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, fmt_time_left, js_round, js_sum, to_fixed};
+use warroom_core::galaxy::Landmark;
 use warroom_core::progress::tracked_percent;
 use warroom_core::time::parse_ms;
 use warroom_core::war_history::{HistoryInput, LogEntry, build_war_history, defense_events, fmt_long_duration};
@@ -302,6 +305,23 @@ struct FrontRow {
     enemy_ahead: Option<f64>,
 }
 
+/// How near a city's mark the pointer must be for its story, as a share of the chart's width.
+const MARK_REACH: f64 = 0.02;
+const MARK_SIZE: f64 = 26.0;
+/// Between a city's mark and the line, so the hovered point doesn't cover it.
+const MARK_GAP: f64 = 6.0;
+const MARK_LINE: &str = "color-mix(in srgb, var(--f-humans) 50%, transparent)";
+
+fn freed_rows(c: &CityLiberation) -> Vec<TipRow> {
+    let row = |name: String, value: String, color: &str| TipRow { name, value, color: color.into() };
+    let front = if c.defending { "Defense" } else { "Liberation" };
+    vec![
+        row("Progress".into(), fmt_pct(c.percent, 2), "var(--c-humans)"),
+        row("City liberated".into(), c.cities.join(" or "), "var(--cta)"),
+        row(format!("{front} boost"), format!("+{}", fmt_pct(c.boost, 2)), "var(--cta)"),
+    ]
+}
+
 #[component]
 pub fn FrontLineSection(
     #[prop(into)] p: Signal<Planet>,
@@ -311,6 +331,7 @@ pub fn FrontLineSection(
     let hover = RwSignal::new(None::<usize>);
     let advance = use_enemy_advance(p);
     let span = Memo::new(move |_| p.with(|p| p.event.as_ref().and_then(event_span)));
+    let freed = Memo::new(move |_| p.with(|p| record.with(|r| Arc::new(city_liberations(p, &r.samples, &r.fought)))));
     let rows = Memo::new(move |_| {
         let now = js::now();
         let (rate, percent) = front.with(|f| f.as_ref().map_or((None, 0.0), |f| (f.rate, f.percent)));
@@ -363,6 +384,11 @@ pub fn FrontLineSection(
         let domain = (rows.first().map_or(now, |r| r.at), rows.last().map_or(now, |r| r.at));
         XAxis { hide, ..XAxis::time(domain, hour_ticks(domain.0, domain.1, 4.0)) }
     };
+    let ref_lines = move |now_at: f64, label: Option<String>| {
+        let mut lines = vec![RefLine { x: now_at, stroke: "var(--text-dim)".into(), label }];
+        lines.extend(freed.get().iter().map(|c| RefLine { x: c.at, stroke: MARK_LINE.into(), label: None }));
+        lines
+    };
     let progress = Signal::derive(move || {
         let data = rows.get();
         let (rows, now_at) = &*data;
@@ -373,7 +399,7 @@ pub fn FrontLineSection(
                 ..Series::line("projection", rows.iter().map(|r| r.projection).collect(), "var(--c-humans)", 2.0)
             },
         ];
-        let mut ref_lines = vec![RefLine { x: *now_at, stroke: "var(--text-dim)".into(), label: Some("Now".into()) }];
+        let mut lines = ref_lines(*now_at, Some("Now".into()));
         if let (Some(f), Some((_, end))) = (foe.get(), span.get()) {
             let color = chart_color(f);
             series.push(Series::line("enemy", rows.iter().map(|r| r.enemy).collect(), color, 2.0));
@@ -383,7 +409,7 @@ pub fn FrontLineSection(
             });
             let inside = rows.first().zip(rows.last()).is_some_and(|(a, b)| end >= a.at && end <= b.at);
             if inside {
-                ref_lines.push(RefLine { x: end, stroke: color.into(), label: Some("Deadline".into()) });
+                lines.push(RefLine { x: end, stroke: color.into(), label: Some("Deadline".into()) });
             }
         }
         Arc::new(Plot {
@@ -396,7 +422,7 @@ pub fn FrontLineSection(
             )],
             grid: Some(Grid { stroke: crate::ui::chart::GRID.into(), opacity: None, edges_only: false }),
             series,
-            ref_lines,
+            ref_lines: lines,
         })
     });
     let players = Signal::derive(move || {
@@ -410,10 +436,33 @@ pub fn FrontLineSection(
             y: vec![YAxis::auto(max, Arc::new(fmt_compact))],
             grid: Some(Grid { stroke: crate::ui::chart::GRID.into(), opacity: None, edges_only: false }),
             series: vec![Series::area("players", values, "var(--cta)", 2.0, "url(#pd-players)")],
-            ref_lines: vec![RefLine { x: *now_at, stroke: "var(--text-dim)".into(), label: None }],
+            ref_lines: ref_lines(*now_at, None),
         })
     });
-    let progress_tip: Tooltip = Arc::new(|plot, i| {
+    let city_marks: Overlay = Arc::new(move |f: &Frame| {
+        freed
+            .get()
+            .iter()
+            .map(|c| {
+                let y = f.y(0, c.percent);
+                let above = y - MARK_GAP - MARK_SIZE;
+                let top = if above < 0.0 { y + MARK_GAP } else { above };
+                let at = (f.x(c.at) - MARK_SIZE / 2.0, top);
+                view! {
+                    <g class="chart-layer chart-reference-dot">
+                        <CityMark stars=c.stars state=CityState::Secured size=MARK_SIZE holder=Faction::Humans at=at />
+                    </g>
+                }
+            })
+            .collect_view()
+            .into_any()
+    });
+    let progress_tip: Tooltip = Arc::new(move |plot, i| {
+        let at = *plot.xs.get(i)?;
+        let reach = (plot.x.domain.1 - plot.x.domain.0) * MARK_REACH;
+        if let Some(c) = freed.get().iter().find(|c| (c.at - at).abs() <= reach) {
+            return Some(default_tooltip(fmt_date_time(c.at), freed_rows(c)));
+        }
         let mut rows = series_rows(plot, i, |s, v| match s.name.as_str() {
             "percent" => (fmt_pct(v, 2), "Progress".into()),
             "projection" => (fmt_pct(v, 2), "Projection".into()),
@@ -421,7 +470,7 @@ pub fn FrontLineSection(
         });
         // Both enemy series hold the sample where the solid line turns dashed.
         rows.dedup_by(|a, b| a.name == b.name);
-        Some(default_tooltip(fmt_date_time(*plot.xs.get(i)?), rows))
+        Some(default_tooltip(fmt_date_time(at), rows))
     });
     let players_tip: Tooltip = Arc::new(|plot, i| {
         let rows = series_rows(plot, i, |_, v| (fmt_int(v), "Helldivers".into()));
@@ -518,7 +567,14 @@ pub fn FrontLineSection(
                 >
                     <div class="pd-charts">
                         <div class="pd-chart-label caps">"Progress"</div>
-                        <Chart plot=progress height=170.0 margin=(8.0, 8.0, 0.0, 0.0) hover=hover tooltip=progress_tip.clone() />
+                        <Chart
+                            plot=progress
+                            height=170.0
+                            margin=(8.0, 8.0, 0.0, 0.0)
+                            hover=hover
+                            tooltip=progress_tip.clone()
+                            overlay=city_marks.clone()
+                        />
                         <div class="pd-chart-label caps">"Helldivers deployed"</div>
                         <Chart
                             plot=players
@@ -1049,6 +1105,39 @@ pub fn OperationsSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
 }
 
 /// What stands on the planet: its points of interest, then its cities.
+/// What's known of a world the war data leaves out.
+#[component]
+pub fn LandmarkSection(l: &'static Landmark) -> impl IntoView {
+    view! {
+        <Panel title="Intel" icon=icons::FILE_TEXT>
+            <p class="muted">{l.note}</p>
+        </Panel>
+        <Panel title="Points of interest" icon=icons::LANDMARK right=view! { <span class="num">{l.pois.len()}</span> }.into_any()>
+            <div class="pd-env">
+                {l.pois
+                    .iter()
+                    .map(|poi| {
+                        let kind = poi_kind(poi.name);
+                        view! {
+                            <div class="pd-env-row">
+                                <span class="pd-env-icon poi">
+                                    <svg viewBox="-12 -12 24 24" width="18" height="18" aria-hidden="true">
+                                        <PoiGlyph kind=kind faction=poi_origin(kind, None) size=24.0 />
+                                    </svg>
+                                </span>
+                                <div>
+                                    <b class="caps">{poi.name}</b>
+                                    {markup_text(poi.description)}
+                                </div>
+                            </div>
+                        }
+                    })
+                    .collect_view()}
+            </div>
+        </Panel>
+    }
+}
+
 #[component]
 pub fn PoisSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
     let effects = queries().effects;

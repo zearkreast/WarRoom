@@ -35,8 +35,15 @@ pub enum GwwPage {
 const HOME: &str = "se://gww";
 pub const LOG_ADDRESS: &str = "se://hc/logs";
 pub const LOG_TITLE: &str = "Galactic logs";
-const SITES: [(&str, &str); 4] =
-    [("gov", GOV.address), ("citizens", CITIZENS.address), ("holidays", HOLIDAYS_SITE.address), ("log", LOG_ADDRESS)];
+pub const DRILL_ADDRESS: &str = "se://hc/drill";
+pub const DRILL_TITLE: &str = "Stratagem drill";
+const SITES: [(&str, &str); 5] = [
+    ("gov", GOV.address),
+    ("citizens", CITIZENS.address),
+    ("holidays", HOLIDAYS_SITE.address),
+    ("log", LOG_ADDRESS),
+    ("drill", DRILL_ADDRESS),
+];
 const DIR_ADDRESSES: [(&str, &str); 3] =
     [("manuals", "se://hc/manuals"), ("gov", "se://gov/directory"), ("corps", "se://corp")];
 
@@ -45,7 +52,7 @@ pub const DIRS: [(&str, &str); 3] =
     [("manuals", "Training manuals"), ("gov", "Super Earth"), ("corps", "Corporations")];
 
 /// `app:` link targets and their titles.
-pub const APP_PAGES: [(&str, &str); 7] = [
+pub const APP_PAGES: [(&str, &str); 8] = [
     ("news", "Strohmann News"),
     ("overview", "High Command overview"),
     ("map", "Galaxy map"),
@@ -53,6 +60,7 @@ pub const APP_PAGES: [(&str, &str); 7] = [
     ("stations", "Space stations"),
     ("past", "Past campaigns"),
     ("planets", "Planet index"),
+    ("stratagems", "Stratagem collection"),
 ];
 
 pub fn app_page_title(id: &str) -> Option<&'static str> {
@@ -139,7 +147,7 @@ pub fn page_of(target: &str) -> Option<GwwPage> {
         "ministry" if MINISTRIES.iter().any(|m| m.id == id) => Some(GwwPage::Ministry { id: id_s }),
         "company" if COMPANIES.iter().any(|c| c.id == id) => Some(GwwPage::Company { id: id_s }),
         "holiday" if HOLIDAYS.iter().any(|h| h.id == id) => Some(GwwPage::Holiday { id: id_s }),
-        "site" if matches!(id, "log" | "gov" | "citizens" | "holidays") => Some(GwwPage::Site { id: id_s }),
+        "site" if matches!(id, "log" | "gov" | "citizens" | "holidays" | "drill") => Some(GwwPage::Site { id: id_s }),
         "dir" if lookup(&DIRS, id).is_some() => Some(GwwPage::Dir { id: id_s }),
         _ => None,
     }
@@ -159,6 +167,7 @@ pub fn title_of(target: &str) -> String {
             "gov" => GOV.title.into(),
             "citizens" => CITIZENS.title.into(),
             "holidays" => HOLIDAYS_SITE.title.into(),
+            "drill" => DRILL_TITLE.into(),
             _ => LOG_TITLE.into(),
         },
         Some(GwwPage::Dir { id }) => lookup(&DIRS, &id).unwrap_or_default().into(),

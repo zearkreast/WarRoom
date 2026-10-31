@@ -4,8 +4,8 @@ use std::collections::{HashMap, HashSet};
 use std::f64::consts::PI;
 use warroom_core::api::Faction;
 use warroom_core::galaxy::{
-    Anomaly, PolarSectors, SectorPlanet, anomaly_of, build_polar_sectors, human_control, sector_at, sector_territory,
-    supply_lines,
+    Anomaly, LANDMARKS, PolarSectors, SectorPlanet, anomaly_of, build_polar_sectors, human_control, landmark,
+    landmark_planet, sector_at, sector_territory, supply_lines,
 };
 use warroom_core::planets::is_placeholder;
 
@@ -60,6 +60,8 @@ fn marks_meridia_and_penta_as_anomalies() {
     assert_eq!(anomaly_of("MERIDIA", &[]), Some(Anomaly::Wormhole));
     assert_eq!(anomaly_of("Penta", &[]), Some(Anomaly::Blackhole));
     assert_eq!(anomaly_of("FURY", &[]), None);
+    assert_eq!(anomaly_of("PILEN V", &[]), Some(Anomaly::Scorched));
+    assert_eq!(anomaly_of("NEW HAVEN", &[]), None);
 }
 
 #[test]
@@ -146,4 +148,20 @@ fn gives_two_sectors_one_boundary_angle_in_every_ring_where_their_planets_allow_
     }
     let shared = angles.values().filter(|s| s.len() == 1).count();
     assert!(shared as f64 / angles.len() as f64 > 0.9);
+}
+
+#[test]
+fn a_landmark_reads_as_a_planet_with_an_index_of_its_own() {
+    let war_data = planets();
+    for l in LANDMARKS {
+        assert!(!war_data.iter().any(|p| p.index == l.index), "{} shares an index", l.name);
+        assert_eq!(landmark(l.index).map(|found| found.name), Some(l.name));
+    }
+    assert!(landmark(0).is_none());
+
+    let mars = landmark_planet(landmark(-1).unwrap());
+    assert_eq!((mars.name.as_str(), mars.sector.as_str()), ("MARS", "Sol"));
+    assert_eq!(mars.current_owner, Faction::Humans);
+    assert_eq!(mars.biome.name, "Scorched");
+    assert_eq!(mars.statistics.player_count, 0.0);
 }

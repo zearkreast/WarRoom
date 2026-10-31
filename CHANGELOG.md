@@ -32,6 +32,30 @@ each entry, from `crates/core/src/changelog.rs`.
   time left in the planet's hover card and on the planet page. Threats are marked in red, and effect descriptions
   on the planet page keep the game's highlights.
 
+### City liberations
+
+- Front line activity puts the city's mark, with its stars for size, on the progress line where freeing it jumped
+  the front forward, and a faint line down both charts at that moment. Point at the mark for the city's name and
+  the boost it gave. Same-sized cities are told apart by the collector's city readings; when those can't settle
+  it, the box names each city it could be.
+- A city's boost on a defended planet counts against the defense's own health, so it now shows what freeing the
+  city really adds, and says so.
+
+### Mars
+
+- Mars has a planet page with what's known of it and its points of interest, opens the map's planet panel like any
+  other planet, and appears in Planets in the Sol sector. Galactic control's shares still count only the war
+  data's planets.
+
+### Stratagems
+
+- The Hellpad's stratagem collection opens: all 118 stratagems by permit and type, each with its icon, code,
+  cooldown, call-in time, uses, traits and where it is unlocked, with search and permit colour filters.
+- The G.W.W. gains the stratagem drill: key stratagem codes against a burning fuse, round after round, with a
+  streak multiplier and round, time and flawless bonuses. Play every stratagem, your own loadout (picked in the
+  drill or with the crosshair on the collection's cards), or the permit colours you choose. Its march and sound
+  effects are synthesised in the app; the best ten scores of each mode stay on this device.
+
 ### Defenses and planet status
 
 - A defense shows both sides as the game does: Super Earth's defense over the enemy's advance on the deadline. Both
@@ -50,6 +74,8 @@ each entry, from `crates/core/src/changelog.rs`.
 
 ### Fixed
 
+- Opening the map's Controls no longer shoves the Regions, Sectors and Galaxy switch aside or off the screen.
+- New Haven is no longer drawn scorched.
 - Cities: the liberation bar's marks stand exactly where each city opens, stacking when close instead of shifting
   aside, and the planet page's bar carries them too. A closed city says where it opens instead of a bare Locked,
   special sites no longer read "Opens at 100%", a defended planet's cities stay Super Earth's, and city lists
