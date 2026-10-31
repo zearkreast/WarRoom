@@ -3,13 +3,17 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
-## [Unreleased]
+## [0.6.0] - 2026-10-31
+
+Everything since v0.5.0.
 
 ### Upgrading
 
 - Redeploy the collector (`git pull && docker compose up -d --build`) before releasing an APK from this version:
   new APKs follow one push topic per alert setting, and only the updated collector sends to them. There are no
   new database migrations.
+- The war's earlier history lives in the project's shared database. Migrations don't bring it to a database of
+  your own, which starts from its collector's first run.
 
 ### New look
 
