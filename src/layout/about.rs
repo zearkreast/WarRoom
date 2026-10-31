@@ -29,7 +29,7 @@ pub fn About() -> impl IntoView {
                 </p>
                 <h3>"Privacy"</h3>
                 <p>
-                    "The app collects no personal data: no account, analytics, ads or tracking. Settings and pins stay on this device, alerts are worked out here, and the only thing downloaded is war data from the project's read-only database. The full policy is in PRIVACY.md at github.com/zearkreast/WarRoom."
+                    "The app collects no personal data: no account, analytics, ads or tracking. Settings, pins and drill scores stay on this device, alerts are worked out here, and the only thing downloaded is war data from the project's read-only database. The full policy is in PRIVACY.md at github.com/zearkreast/WarRoom."
                 </p>
                 <h3>"Not affiliated"</h3>
                 <p>
@@ -49,7 +49,7 @@ pub fn About() -> impl IntoView {
                     {GWW_SOURCES.iter().map(|s| view! { <li><OutLink href=s.url>{s.title}</OutLink></li> }).collect_view()}
                 </ul>
                 <p>
-                    "The ministry, campaign, difficulty and stratagem icons and the SEAF emblem (vector tracings by the wiki's contributors), corporation logos, product pictures and city adverts are the game's, taken from the Helldivers Wiki, and belong to Arrowhead Game Studios and Sony Interactive Entertainment. Martian Armory's logo is drawn for the app."
+                    "The ministry, campaign, difficulty and stratagem icons and the SEAF emblem (vector tracings by the wiki's contributors), corporation logos, product pictures and city adverts are the game's, taken from the Helldivers Wiki, and belong to Arrowhead Game Studios and Sony Interactive Entertainment. Martian Armory's logo is drawn for the app. The stratagem collection's codes, cooldowns, call-in times, uses and unlocks come from the wiki's stratagem pages. The stratagem drill's music and sounds are synthesised in the app."
                 </p>
             </div>
         </Panel>

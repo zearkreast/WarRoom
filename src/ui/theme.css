@@ -40,6 +40,12 @@
     --f-automaton: #ff6b6b;
     --f-illuminate: #cd8ae9;
 
+    /* Stratagem permits, in the colours of the game's icons. */
+    --p-offensive: #dc6455;
+    --p-supply: #55b9d2;
+    --p-defensive: #699655;
+    --p-mission: #c9b269;
+
     /* Chart fills: the faction hues stepped into the dark-mode lightness band (OKLCH L ≤ 0.67),
        validated with the dataviz palette checker. Stack order Terminids, Illuminate, Automatons
        keeps orange and red apart. UI identity keeps the brighter --f-* tokens above. */

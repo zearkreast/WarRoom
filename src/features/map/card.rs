@@ -4,7 +4,8 @@ use crate::api::fronts::station_planets;
 use crate::features::map::poi::{PoiGlyph, PoiKind, poi_image, poi_kind, poi_origin};
 use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
 use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
-use crate::features::planet::cities::{CityList, CityMark};
+use crate::features::planet::cities::CityList;
+use crate::features::planet::defense::{GambitNotes, LiberationBar, use_attackers};
 use crate::features::planet::tint::planet_tint;
 use crate::js::{self, num};
 use crate::state::{HellpadModule, settings, ui};
@@ -14,11 +15,10 @@ use crate::ui::primitives::use_escape;
 use leptos::prelude::*;
 use warroom_core::api::{Faction, Planet};
 use warroom_core::biomes::{biome_tint, regen_pct_per_hour, resistance_level};
-use warroom_core::cities::{CityState, cities_of};
 use warroom_core::effects::{EffectKind, PlanetEffect, has_pawn};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, fmt_pct, fmt_time_left, to_fixed};
-use warroom_core::galaxy::{Anomaly, Landmark, anomaly_of};
+use warroom_core::galaxy::{Anomaly, Landmark, anomaly_of, landmark};
 use warroom_core::news_feed::plain_text;
 use warroom_core::progress::{liberation_percent, tracked_percent};
 
@@ -94,73 +94,6 @@ fn poi_row(name: String, description: String, kind: PoiKind, faction: Faction) -
     }
 }
 
-/// What the map's hover card and planet panel both show: picture, name, what's there and the fight.
-/// The planet's progress, with a mark where each city opens; cities opening at the same point stand side by side.
-#[component]
-pub fn LiberationBar(
-    #[prop(into)] p: Signal<Planet>,
-    #[prop(into)] pct: Signal<f64>,
-    #[prop(into)] enemy: Signal<Faction>,
-) -> impl IntoView {
-    let marks = Memo::new(move |_| {
-        p.with(|p| {
-            if p.event.is_some() {
-                Vec::new()
-            } else {
-                cities_of(p).into_iter().filter(|c| c.opens_at.is_some()).collect::<Vec<_>>()
-            }
-        })
-    });
-    let defended = Memo::new(move |_| p.with(|p| p.event.is_some()));
-    view! {
-        <div
-            class=move || format!("hc-bar {}", if marks.with(|m| m.is_empty()) { "" } else { "marked" })
-            style=move || format!("--rest: {};", faction_color(Some(enemy.get())))
-        >
-            <div
-                class="hc-bar-track"
-                role="progressbar"
-                aria-valuenow=move || num(warroom_core::format::js_round(pct.get()))
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-label=move || if defended.get() { "Defended" } else { "Liberated" }
-            >
-                <div class="hc-bar-fill" style=move || format!("width: {}%;", num(pct.get().clamp(0.0, 100.0)))></div>
-            </div>
-            {move || {
-                let marks = marks.get();
-                marks
-                    .iter()
-                    .enumerate()
-                    .map(|(i, c)| {
-                        let at = c.opens_at.unwrap_or(0.0);
-                        let beside = marks[..i].iter().filter(|m| (m.opens_at.unwrap_or(0.0) - at).abs() < 4.0).count();
-                        view! {
-                            <span
-                                class=format!("hc-bar-mark {}", if c.waiting { "" } else { "open" })
-                                style=format!(
-                                    "left: calc({}% + {}px); --k: {};",
-                                    num(at),
-                                    beside * 18,
-                                    faction_color(Some(c.holder)),
-                                )
-                                title=format!("{} opens at {}", c.name, fmt_pct(at, 1))
-                            >
-                                <CityMark
-                                    stars=c.stars
-                                    state=if c.waiting { CityState::Locked } else { CityState::Liberating }
-                                    size=16.0
-                                    holder=c.holder
-                                />
-                            </span>
-                        }
-                    })
-                    .collect_view()
-            }}
-        </div>
-    }
-}
-
 /// Arsenal augmentations: stratagems High Command adds to every loadout on the planet for a while.
 #[component]
 fn Augmentations(list: Signal<Vec<PlanetEffect>>) -> impl IntoView {
@@ -203,12 +136,15 @@ fn Augmentations(list: Signal<Vec<PlanetEffect>>) -> impl IntoView {
     }
 }
 
+/// What the map's hover card and planet panel both show: picture, name, what's there and the fight.
 fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<PlanetEffect>>) -> impl IntoView {
     let enemy = Memo::new(move |_| p.with(enemy_of));
     let anomaly = Memo::new(move |_| p.with(|p| effects.with(|e| anomaly_of(&p.name, &ids(e)))));
     let kind = move || {
         p.with(|p| {
-            if p.event.is_some() {
+            if let Some(l) = landmark(p.index) {
+                l.biome
+            } else if p.event.is_some() {
                 "Defense"
             } else if active.get() {
                 "Liberation"
@@ -227,6 +163,9 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
     };
     // Black holes and broken worlds list what they are too, as the game's tooltip does.
     let rows = Memo::new(move |_| {
+        if let Some(l) = p.with(|p| landmark(p.index)) {
+            return l.pois.iter().map(|poi| (poi.name.to_string(), poi.description.to_string())).collect();
+        }
         effects.with(|e| {
             e.iter()
                 .filter(|e| e.kind == EffectKind::Look && poi_kind(&e.name) == PoiKind::Anomaly)
@@ -253,8 +192,8 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
     let pct = Signal::derive(move || if enemy.get().is_some() { p.with(tracked_percent) } else { 100.0 });
     let regen = Memo::new(move |_| p.with(|p| regen_pct_per_hour(p.regen_per_second, p.max_health)));
     let defended = Memo::new(move |_| p.with(|p| p.event.is_some()));
-    let shown_pct =
-        move || if defended.get() { pct.get() } else { p.with(|p| liberation_percent(p.health, p.max_health)) };
+    let liberated = move || p.with(|p| liberation_percent(p.health, p.max_health));
+    let attackers = use_attackers(p);
     view! {
         <div class=art_class></div>
         <div class="hc-head">
@@ -262,6 +201,7 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
             <b class="hc-name">{move || p.with(|p| p.name.clone())}</b>
             <span class="hc-sector caps">{move || p.with(|p| p.sector.clone())}" sector"</span>
         </div>
+        {move || p.with(|p| landmark(p.index)).map(|l| view! { <p class="hc-desc">{l.note}</p> })}
         {move || {
             let list = rows.get();
             if list.is_empty() {
@@ -316,11 +256,10 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
                 view! {
                     <div class="hc-progress">
                         <LiberationBar p=p pct=pct enemy=f />
-                        <span class="num caps">
-                            {move || fmt_pct(shown_pct(), 4)}
-                            " "
-                            {move || if defended.get() { "defended" } else { "liberated" }}
-                        </span>
+                        <Show when=move || !defended.get()>
+                            <span class="num caps">{move || fmt_pct(liberated(), 4)}" liberated"</span>
+                        </Show>
+                        {move || attackers.with(|list| (!list.is_empty()).then(|| attacked_from(list)))}
                     </div>
                     {move || {
                         (!defended.get())
@@ -341,7 +280,38 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
             })
         }}
         {move || siege.get().map(|c| circumvallation_note(&p.get(), &c, "hc-siege"))}
+        <GambitNotes p=p class="hc-gambit".to_string() />
     }
+}
+
+/// "Attacked from USTOTU": the planets a defense is attacked from.
+fn attacked_from(list: &[Planet]) -> AnyView {
+    view! {
+        <p class="hc-from caps">
+            <Icon icon=icons::SWORDS size=12.0 />
+            <span>
+                "Attacked from "
+                {list
+                    .iter()
+                    .enumerate()
+                    .map(|(i, a)| {
+                        let index = a.index;
+                        view! {
+                            {(i > 0).then(|| if i == list.len() - 1 { " and " } else { ", " })}
+                            <button
+                                class="link"
+                                style=format!("color: {};", faction_color(Some(a.current_owner)))
+                                on:click=move |_| ui().focus(index)
+                            >
+                                {a.name.clone()}
+                            </button>
+                        }
+                    })
+                    .collect_view()}
+            </span>
+        </p>
+    }
+    .into_any()
 }
 
 /// Beside the pointer; in the window's lower half the card grows upward so its foot stays on screen.
@@ -383,7 +353,10 @@ pub fn hover_card(h: &Hover, active: Signal<bool>, effects: Signal<Vec<PlanetEff
                                 .collect_view()}
                         }
                     })}
-                    <div class="hc-foot caps">"No campaign data"</div>
+                    <div class="hc-foot caps">
+                        <Icon icon=icons::MOUSE_POINTER_CLICK size=14.0 />
+                        " Click for the planet panel"
+                    </div>
                 </div>
             }
             .into_any()
@@ -442,7 +415,9 @@ pub fn planet_panel(
                 <dl class="pp-stats">
                     <div>
                         <dt class="caps">"Helldivers"</dt>
-                        <dd class="num">{move || p.with(|p| fmt_int(p.statistics.player_count))}</dd>
+                        <dd class="num">
+                            {move || p.with(|p| if landmark(p.index).is_some() { "—".to_string() } else { fmt_int(p.statistics.player_count) })}
+                        </dd>
                     </div>
                     <div>
                         <dt class="caps">"Held by"</dt>

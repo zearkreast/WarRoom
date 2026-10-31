@@ -214,6 +214,18 @@
     filter: drop-shadow(0 0 6px color-mix(in srgb, var(--f-humans) 60%, transparent));
     transition: stroke-dasharray var(--t-value) var(--ease);
   }
+  .sphere-arc.foe {
+    filter: drop-shadow(0 0 5px color-mix(in srgb, currentColor 55%, transparent));
+  }
+  .sphere-track {
+    fill: none;
+    stroke: var(--surface-3);
+  }
+  .pd-rings {
+    justify-content: center;
+    gap: var(--s-2) var(--s-5);
+    margin-top: var(--s-3);
+  }
   .sphere-grid {
     fill: none;
     stroke: rgba(234, 244, 250, 0.16);
@@ -262,6 +274,74 @@
   }
 
   /* ---------- Section bits ---------- */
+  .pd-fight {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+  .pd-fight-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-4);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--f-humans);
+  }
+  .pd-fight-head b {
+    font-size: var(--fs-body);
+    color: var(--text-hi);
+  }
+  .pd-fight-head.foe {
+    margin-top: var(--s-3);
+    color: var(--k);
+  }
+  .pd-fight-foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--s-2) var(--s-5);
+    font-size: var(--fs-label);
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+  }
+  .pd-from {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2) var(--s-4);
+    margin-top: var(--s-3);
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--label);
+  }
+  .pd-from-planet {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: 2px var(--s-3);
+    background: color-mix(in srgb, var(--k) var(--wash), var(--surface-2));
+    border: 1px solid color-mix(in srgb, var(--k) var(--edge), var(--line));
+    color: var(--k);
+    font: inherit;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: border-color var(--t-state);
+  }
+  .pd-from-planet:hover,
+  .pd-from-planet:focus-visible {
+    border-color: var(--k);
+  }
+  .pd-holding {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .pd-stack > .pd-gambit {
+    margin-top: 0;
+  }
   .pd-pill {
     display: flex;
     align-items: center;

@@ -5,8 +5,10 @@
     gap: var(--s-6);
   }
 
+  /* Cards in a row share its height; the outlook row takes up the slack. */
   .cc {
     --enemy: var(--f-automaton);
+    display: grid;
     min-width: 0;
   }
 
@@ -40,6 +42,7 @@
   .cc-in {
     display: flex;
     flex-direction: column;
+    height: 100%;
     background: var(--surface-1);
     clip-path: polygon(
       calc(var(--cut) - 1px) 0,
@@ -192,6 +195,12 @@
     color: var(--warn);
     border-color: color-mix(in srgb, var(--warn) var(--strong), transparent);
   }
+  .cc-badge.is-gambit {
+    gap: var(--s-1);
+    padding-left: var(--s-1);
+    color: var(--cta);
+    border-color: color-mix(in srgb, var(--cta) var(--strong), transparent);
+  }
   .cc-biome {
     font-size: var(--fs-micro);
     font-weight: 700;
@@ -216,7 +225,28 @@
   .cc-meter {
     padding: var(--s-5) var(--s-6) 0;
   }
+  .cc-foe {
+    margin-top: var(--s-2);
+  }
+  .cc-advance {
+    margin-left: auto;
+    display: grid;
+    justify-items: end;
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--enemy);
+  }
+  .cc-advance b {
+    font-size: var(--fs-label);
+    font-weight: 700;
+    color: var(--text-hi);
+  }
+  .cc-sector b {
+    font-weight: 700;
+  }
   .cc-outlook {
+    flex: 1;
     display: flex;
     align-items: center;
     gap: var(--s-4);

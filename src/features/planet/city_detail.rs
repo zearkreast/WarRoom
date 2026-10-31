@@ -2,9 +2,9 @@
 
 use crate::api::history::{self, CityReading, PlayerReading};
 use crate::api::queries::{self, queries};
-use crate::features::map::card::LiberationBar;
 use crate::features::planet::activity::{ActivitySection, ProgressChart};
-use crate::features::planet::cities::{CityMark, enemy_of_cities, state_label};
+use crate::features::planet::cities::{CityMark, enemy_of_cities, status_text};
+use crate::features::planet::defense::LiberationBar;
 use crate::features::planet::tint::planet_tint;
 use crate::js;
 use crate::state::{CityRef, HellpadModule, ui};
@@ -67,21 +67,21 @@ fn fought(c: &City, enemy: Option<Faction>) -> bool {
     enemy.is_some() && c.percent.is_some() && (c.state == CityState::Liberating || c.percent > Some(0.0))
 }
 
-fn opens_at(c: &City) -> Option<f64> {
-    c.opens_at.filter(|a| *a != 0.0)
+/// The planet liberation a city opens at, while its planet is the enemy's to liberate.
+fn opens_at(c: &City, p: &Planet) -> Option<f64> {
+    c.opens_at.filter(|a| *a != 0.0 && p.current_owner != Faction::Humans)
+}
+
+fn opened(c: &City) -> bool {
+    c.state == CityState::Liberating
 }
 
 /// Where the city stands: its liberation while it's fought over, and what freeing it is worth.
 #[component]
-fn CityStatus(c: Signal<City>, enemy: Signal<Option<Faction>>) -> impl IntoView {
+fn CityStatus(p: Signal<Planet>, c: Signal<City>, enemy: Signal<Option<Faction>>) -> impl IntoView {
     let is_fought = Memo::new(move |_| c.with(|c| fought(c, enemy.get())));
     let tone = Memo::new(move |_| faction_color(Some(c.with(|c| c.holder))).to_string());
-    let state = move || {
-        c.with(|c| match c.opens_at.filter(|_| c.waiting) {
-            Some(at) => format!("Opens at {}", fmt_pct(at, 1)),
-            None => state_label(c.state).to_string(),
-        })
-    };
+    let state = move || c.with(status_text);
     let tiles = move || {
         let c = c.get();
         let fought = is_fought.get();
@@ -139,14 +139,14 @@ fn CityStatus(c: Signal<City>, enemy: Signal<Option<Faction>>) -> impl IntoView 
                     icon=icons::TRENDING_UP
                     label="Planet boost"
                     value=c.boost.map_or("—".to_string(), |b| format!("+{}", fmt_pct(b, 1))).into_any()
-                    sub="planet liberation when freed".into_any()
+                    sub=if c.defense { "defense when freed" } else { "planet liberation when freed" }.into_any()
                     color=c.boost.map(|_| "var(--good)".to_string())
                 />
-                {match opens_at(&c) {
+                {match p.with(|p| opens_at(&c, p)) {
                     Some(at) => view! {
                         <Tile
                             icon=icons::LOCK
-                            label="Opens at"
+                            label=if opened(&c) { "Opened at" } else { "Opens at" }
                             value=fmt_pct(at, 1).into_any()
                             sub="planet liberation".into_any()
                         />
@@ -232,16 +232,21 @@ fn Found(p: Signal<Planet>, c: Signal<City>, readings: ReadSignal<Readings>) -> 
         view! { <CityMark stars=stars state=state size=46.0 holder=holder /> }
     };
     let opening = Memo::new(move |_| {
-        Some((enemy.get()?, c.with(opens_at)?, c.with(|c| c.name.clone()), p.with(|p| p.name.clone())))
+        let at = p.with(|p| c.with(|c| opens_at(c, p)))?;
+        Some((enemy.get()?, at, c.with(opened), c.with(|c| c.name.clone()), p.with(|p| p.name.clone())))
     });
     let liberation = move || {
-        let (e, at, name, planet) = opening.get()?;
+        let (e, at, open, name, planet) = opening.get()?;
         Some(view! {
             <Panel title=format!("{planet} liberation") icon=icons::COMPASS tone=faction_color(Some(e)).to_string()>
                 <div class="pd-stack">
                     <LiberationBar p=p pct=planet_pct enemy=Signal::derive(move || enemy.get().unwrap_or(e)) />
                     <p class="muted">
-                        {format!("{name} opens once {planet} is {} liberated; the planet stands at", fmt_pct(at, 1))}
+                        {if open {
+                            format!("{name} opened when {planet} reached {} liberation; the planet stands at", fmt_pct(at, 1))
+                        } else {
+                            format!("{name} opens once {planet} is {} liberated; the planet stands at", fmt_pct(at, 1))
+                        }}
                         " "
                         {move || fmt_pct(planet_pct.get(), 2)}
                         "."
@@ -291,7 +296,7 @@ fn Found(p: Signal<Planet>, c: Signal<City>, readings: ReadSignal<Readings>) -> 
                     </div>
                 </div>
             </section>
-            <CityStatus c=c enemy=enemy />
+            <CityStatus p=p c=c enemy=enemy />
             {liberation}
             <ActivitySection
                 title="City activity · last 24 h".to_string()

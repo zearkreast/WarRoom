@@ -7,7 +7,7 @@ use leptos::prelude::*;
 use std::f64::consts::PI;
 use warroom_core::api::{Faction, Planet};
 use warroom_core::biomes::resistance_level;
-use warroom_core::cities::{City, CityState, cities_of, city_hours_left, size_label};
+use warroom_core::cities::{BarMark, City, CityState, bar_marks, cities_of, city_hours_left, size_label};
 use warroom_core::factions::faction_color;
 use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, to_fixed};
 
@@ -41,11 +41,16 @@ pub fn CityMark(
     state: CityState,
     #[prop(default = 32.0)] size: f64,
     #[prop(optional)] holder: Option<Faction>,
+    /// Top left corner, when drawn inside a chart.
+    #[prop(optional)]
+    at: Option<(f64, f64)>,
 ) -> impl IntoView {
     let size = crate::js::num(size);
     view! {
         <svg
             class=format!("city-mark {}", state.as_str())
+            x=at.map(|a| crate::js::num(a.0))
+            y=at.map(|a| crate::js::num(a.1))
             width=size.clone()
             height=size
             viewBox="0 0 24 24"
@@ -60,6 +65,54 @@ pub fn CityMark(
             <path class="city-towers" d="M4.5 23V12.5l3.5-2V23ZM10 23V9l2-3 2 3v14ZM16 23V10.5l3.5 2V23Z" />
             {(state == CityState::Destroyed).then(|| view! { <path class="city-razed" d="M3 9l18 14M21 9L3 23" /> })}
         </svg>
+    }
+}
+
+/// Liberation % between two marks below which the second stacks over the first instead of overlapping it.
+const MARK_GAP: f64 = 8.0;
+
+/// Stands each city's mark over the liberation bar it wraps, where the city opens; none while the planet is defended.
+#[component]
+pub fn CityBar(#[prop(into)] planet: Signal<Planet>, children: Children) -> impl IntoView {
+    let marks = Memo::new(move |_| planet.with(|p| bar_marks(p, MARK_GAP)));
+    let rows = Memo::new(move |_| marks.with(|m| m.iter().map(|m| m.row + 1).max().unwrap_or(0)));
+    view! {
+        <div class="city-bar" style=move || format!("--rows: {};", rows.get())>
+            {move || {
+                marks
+                    .get()
+                    .into_iter()
+                    .rev()
+                    .map(|BarMark { city: c, at, row }| {
+                        let open = c.state == CityState::Liberating;
+                        let title = match (at > 0.0, open) {
+                            (true, true) => format!("{} opened at {}", c.name, fmt_pct(at, 1)),
+                            (true, false) => format!("{} opens at {}", c.name, fmt_pct(at, 1)),
+                            (false, true) => format!("{}: open from the start", c.name),
+                            (false, false) => format!("{}: {}", c.name, state_label(c.state)),
+                        };
+                        view! {
+                            <span
+                                class=format!("city-bar-mark {}", if open { "open" } else { "" })
+                                style=format!("left: {}%; --row: {row}; --k: {};", crate::js::num(at), faction_color(Some(c.holder)))
+                                title=title
+                            >
+                                <CityMark stars=c.stars state=c.state size=16.0 holder=c.holder />
+                            </span>
+                        }
+                    })
+                    .collect_view()
+            }}
+            {children()}
+        </div>
+    }
+}
+
+/// What a city's status line says: where it opens while it waits on its planet, else its state.
+pub fn status_text(c: &City) -> String {
+    match c.opens_at.filter(|_| c.waiting) {
+        Some(at) => format!("Opens at {}", fmt_pct(at, 1)),
+        None => state_label(c.state).to_string(),
     }
 }
 
@@ -113,12 +166,7 @@ fn CityRow(city: Memo<Option<City>>, enemy: Memo<Option<Faction>>, full: bool, o
                 <div class="city-main">
                     <div class="city-head">
                         <b class="caps">{c.name.clone()}</b>
-                        <span class="city-state caps">
-                            {match c.opens_at.filter(|_| c.waiting) {
-                                Some(at) => format!("Opens at {}", fmt_pct(at, 1)),
-                                None => state_label(c.state).to_string(),
-                            }}
-                        </span>
+                        <span class="city-state caps">{status_text(&c)}</span>
                     </div>
                     <span class="city-size caps">
                         {size_label(&c.size)}
@@ -188,7 +236,11 @@ fn CityRow(city: Memo<Option<City>>, enemy: Memo<Option<Faction>>, full: bool, o
                         <span class="city-boost caps">
                             <Icon icon=icons::TRENDING_UP size=12.0 />
                             <b class="num">{format!("+{}", fmt_pct(c.boost.unwrap_or(0.0), 1))}</b>
-                            {if full { " planet liberation when freed" } else { " boost" }}
+                            {match (full, c.defense) {
+                                (false, _) => " boost",
+                                (true, true) => " defense when freed",
+                                (true, false) => " planet liberation when freed",
+                            }}
                         </span>
                     })}
                     {c.note.filter(|_| full).map(|n| view! { <p class="city-note">{n}</p> })}
@@ -203,11 +255,18 @@ pub fn enemy_of_cities(p: &Planet) -> Option<Faction> {
     p.event.as_ref().map(|e| e.faction).or((p.current_owner != Faction::Humans).then_some(p.current_owner))
 }
 
-/// A planet's cities: size class, standing, and while one is fought over its progress, pace and payoff. Each
-/// opens its own page.
+/// A planet's cities, in the order their marks stand on the bar: size class, standing, and while one is fought
+/// over its progress, pace and payoff. Each opens its own page.
 #[component]
 pub fn CityList(#[prop(into)] planet: Signal<Option<Planet>>, #[prop(optional)] full: bool) -> impl IntoView {
-    let cities = Memo::new(move |_| planet.with(|p| p.as_ref().map(cities_of).unwrap_or_default()));
+    let cities = Memo::new(move |_| {
+        let mut list = planet.with(|p| p.as_ref().map(cities_of).unwrap_or_default());
+        list.sort_by(|a, b| match (a.opens_at, b.opens_at) {
+            (Some(x), Some(y)) => x.total_cmp(&y).then(a.id.cmp(&b.id)),
+            (x, y) => y.is_some().cmp(&x.is_some()).then(a.id.cmp(&b.id)),
+        });
+        list
+    });
     let enemy = Memo::new(move |_| planet.with(|p| p.as_ref().and_then(enemy_of_cities)));
     let index = Memo::new(move |_| planet.with(|p| p.as_ref().map(|p| p.index)));
     view! {

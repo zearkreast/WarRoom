@@ -4,11 +4,12 @@ use crate::api::fronts::{Front, FrontKind, build_front, major_order_planets, pla
 use crate::api::history::PlayerReading;
 use crate::api::queries::{self, queries};
 use crate::features::planet::activity::ActivitySection;
+use crate::features::planet::defense::{advance_label, use_attackers, use_enemy_advance};
 use crate::features::planet::globe::SuperEarthGlobe;
 use crate::features::planet::record::{UNREACHABLE, use_planet_record};
 use crate::features::planet::sections::{
-    DispatchSection, FrontLineSection, LiberationSection, OperationsSection, PoisSection, ServiceRecordSection,
-    SupplyLinesSection, WarHistorySection,
+    DispatchSection, FrontLineSection, LandmarkSection, LiberationSection, OperationsSection, PoisSection,
+    ServiceRecordSection, SupplyLinesSection, WarHistorySection,
 };
 use crate::features::planet::tint::planet_tint;
 use crate::js::{self, num};
@@ -24,10 +25,12 @@ use std::f64::consts::PI;
 use std::sync::Arc;
 use warroom_core::api::{Faction, Planet};
 use warroom_core::factions::{faction_color, faction_label};
-use warroom_core::format::{fmt_int, sest_clock, sest_date};
+use warroom_core::format::{fmt_int, fmt_pct, sest_clock, sest_date};
+use warroom_core::galaxy::{Landmark, landmark, landmark_planet};
 use warroom_core::progress::tracked_percent;
 
-/// Planet sphere ringed by the liberation split: Super Earth arc vs the enemy's.
+/// Planet sphere ringed by the liberation split: Super Earth arc vs the enemy's. In a defense, two rings like the
+/// game's two bars: Super Earth's defense outside the enemy's advance.
 #[component]
 pub fn PlanetSphere(
     #[prop(into)] planet: Signal<Planet>,
@@ -41,12 +44,55 @@ pub fn PlanetSphere(
             (p.index, t.sky, t.ground)
         })
     });
-    let r = 100.0;
-    let c = 2.0 * PI * r;
-    let se = move || percent.get().clamp(0.0, 100.0) / 100.0 * c;
+    let advance = use_enemy_advance(planet);
+    let defended = Memo::new(move |_| advance.with(Option::is_some));
+    let arc = |r: f64, pct: f64| {
+        let c = 2.0 * PI * r;
+        format!("{} {}", num(pct.clamp(0.0, 100.0) / 100.0 * c), num(c))
+    };
     move || {
         let (index, sky, ground) = look.get();
         let id = format!("sph-{index}");
+        let rings = if defended.get() {
+            view! {
+                <circle r="105" class="sphere-track" stroke-width="8" />
+                <circle
+                    r="105"
+                    fill="none"
+                    stroke="var(--f-humans)"
+                    stroke-width="8"
+                    stroke-dasharray=move || arc(105.0, percent.get())
+                    transform="rotate(-90)"
+                    class="sphere-arc"
+                />
+                <circle r="94" class="sphere-track" stroke-width="6" />
+                <circle
+                    r="94"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="6"
+                    stroke-dasharray=move || arc(94.0, advance.get().unwrap_or(0.0))
+                    transform="rotate(-90)"
+                    style=move || format!("color: {};", enemy.get())
+                    class="sphere-arc foe"
+                />
+            }
+            .into_any()
+        } else {
+            view! {
+                <circle r="100" fill="none" stroke=enemy stroke-width="9" opacity="0.9" />
+                <circle
+                    r="100"
+                    fill="none"
+                    stroke="var(--f-humans)"
+                    stroke-width="9"
+                    stroke-dasharray=move || arc(100.0, percent.get())
+                    transform="rotate(-90)"
+                    class="sphere-arc"
+                />
+            }
+            .into_any()
+        };
         view! {
             <svg class="sphere" width=num(size) height=num(size) viewBox="-120 -120 240 240" aria-hidden="true">
                 <defs>
@@ -60,16 +106,7 @@ pub fn PlanetSphere(
                     </clipPath>
                 </defs>
                 <circle r="114" class="sphere-dots" />
-                <circle r=num(r) fill="none" stroke=enemy stroke-width="9" opacity="0.9" />
-                <circle
-                    r=num(r)
-                    fill="none"
-                    stroke="var(--f-humans)"
-                    stroke-width="9"
-                    stroke-dasharray=move || format!("{} {}", num(se()), num(c))
-                    transform="rotate(-90)"
-                    class="sphere-arc"
-                />
+                {rings}
                 <circle r="88" fill="var(--void)" />
                 <g clip-path=format!("url(#{id}-clip)")>
                     {if index == 0 {
@@ -99,11 +136,20 @@ pub fn PlanetSphere(
     }
 }
 
-fn status_line(p: &Planet, front: Option<&Front>) -> String {
+fn status_line(p: &Planet, front: Option<&Front>, from: &[Planet]) -> String {
+    if let Some(l) = landmark(p.index) {
+        return l.status.into();
+    }
     let owner = faction_label(Some(p.current_owner));
     match front {
         Some(f) if f.kind == FrontKind::Defense => {
-            format!("Defense campaign · {} attacking", faction_label(Some(f.enemy)))
+            let foe = faction_label(Some(f.enemy));
+            if from.is_empty() {
+                format!("Defense campaign · {foe} attacking")
+            } else {
+                let names: Vec<&str> = from.iter().map(|a| a.name.as_str()).collect();
+                format!("Defense campaign · {foe} attacking from {}", names.join(", "))
+            }
         }
         Some(_) => format!("Liberation campaign · {owner} control"),
         None if p.current_owner == Faction::Humans => "Secured · Super Earth control".into(),
@@ -116,6 +162,8 @@ fn Hero(p: Signal<Planet>, front: Memo<Option<Front>>) -> impl IntoView {
     let stations = station_planets();
     let mo = major_order_planets();
     let now = js::use_now(1000.0);
+    let attackers = use_attackers(p);
+    let advance = use_enemy_advance(p);
     let enemy_faction = Memo::new(move |_| {
         front
             .with(|f| f.as_ref().map(|f| f.enemy))
@@ -158,7 +206,9 @@ fn Hero(p: Signal<Planet>, front: Memo<Option<Front>>) -> impl IntoView {
                     }}
                     <h1 class="pd-name">{name}</h1>
                 </div>
-                <div class="pd-status caps">{move || p.with(|p| status_line(p, front.get().as_ref()))}</div>
+                <div class="pd-status caps">
+                    {move || attackers.with(|from| p.with(|p| status_line(p, front.get().as_ref(), from)))}
+                </div>
                 <div class="pd-chips">
                     <span class="chip">
                         <Icon icon=icons::COMPASS size=13.0 />
@@ -173,11 +223,13 @@ fn Hero(p: Signal<Planet>, front: Memo<Option<Front>>) -> impl IntoView {
                             </span>
                         })
                     }}
-                    <span class="chip num">
-                        <Icon icon=icons::USERS size=13.0 />
-                        {move || format!(" {} ", fmt_int(p.with(|p| p.statistics.player_count)))}
-                        <span class="muted">"deployed"</span>
-                    </span>
+                    <Show when=move || landmark(index()).is_none()>
+                        <span class="chip num">
+                            <Icon icon=icons::USERS size=13.0 />
+                            {move || format!(" {} ", fmt_int(p.with(|p| p.statistics.player_count)))}
+                            <span class="muted">"deployed"</span>
+                        </span>
+                    </Show>
                     <Show when=move || stations.with(|s| s.contains(&index()))>
                         <button class="chip chip-dss" on:click=move |_| ui().open_module(Some(HellpadModule::Stations))>
                             <DssIcon size=13.0 />
@@ -197,6 +249,17 @@ fn Hero(p: Signal<Planet>, front: Memo<Option<Front>>) -> impl IntoView {
             </div>
             <div class="pd-hero-sphere">
                 <PlanetSphere planet=p percent=percent enemy=enemy />
+                {move || {
+                    let foe = advance.get()?;
+                    Some(view! {
+                        <div class="pd-legend pd-rings num">
+                            <span style="--k: var(--f-humans);">{format!("Defended {}", fmt_pct(percent.get(), 1))}</span>
+                            <span style=format!("--k: {};", enemy.get())>
+                                {format!("{} {}", enemy_faction.get().map_or("Enemy advance".to_string(), advance_label), fmt_pct(foe, 0))}
+                            </span>
+                        </div>
+                    })
+                }}
             </div>
             <footer class="pd-hero-foot caps">
                 <span>{move || format!("Satcom / {} / {}", sector(), name())}</span>
@@ -288,6 +351,17 @@ fn Body(index: i64) -> impl IntoView {
     }
 }
 
+/// A world the war data leaves out has no fronts or record to read, only what's known of it.
+#[component]
+fn LandmarkBody(l: &'static Landmark) -> impl IntoView {
+    view! {
+        <div class="pd">
+            <Hero p=Signal::stored(landmark_planet(l)) front=Memo::new(|_| None) />
+            <LandmarkSection l=l />
+        </div>
+    }
+}
+
 #[component]
 pub fn PlanetDetail() -> impl IntoView {
     let detail = ui().detail;
@@ -314,7 +388,10 @@ pub fn PlanetDetail() -> impl IntoView {
                 }
                 .into_any()
             >
-                <Body index=index />
+                {match landmark(index) {
+                    Some(l) => view! { <LandmarkBody l=l /> }.into_any(),
+                    None => view! { <Body index=index /> }.into_any(),
+                }}
             </Overlay>
         })
     }

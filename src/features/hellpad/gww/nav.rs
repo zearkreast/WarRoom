@@ -38,6 +38,21 @@ pub fn use_gww_nav() -> GwwNav {
     expect_context::<GwwNav>()
 }
 
+/// Opens the G.W.W. on a page from outside it, in one step so Back returns to where it was opened from.
+pub fn open_in_gww(page: GwwPage) {
+    let u = ui();
+    if u.gww.with_untracked(|g| g.last() != Some(&page)) {
+        u.gww.update(|g| {
+            g.push(page);
+            let n = g.len();
+            if n > 50 {
+                g.drain(..n - 50);
+            }
+        });
+    }
+    u.open_module(Some(HellpadModule::Gww));
+}
+
 pub fn planet_named(name: &str) -> Option<Planet> {
     let name = name.to_lowercase();
     queries().fresh_planets.with_untracked(|p| p.as_ref()?.iter().find(|p| p.name.to_lowercase() == name).cloned())
@@ -86,6 +101,7 @@ impl GwwNav {
             "stations" => u.open_module(Some(HellpadModule::Stations)),
             "planets" => u.open_module(Some(HellpadModule::Planets)),
             "past" => u.open_module(Some(HellpadModule::PastCampaigns)),
+            "stratagems" => u.open_module(Some(HellpadModule::Stratagems)),
             "news" => u.set_view(View::News),
             "overview" => u.set_view(View::Overview),
             "map" => u.set_view(View::Map),

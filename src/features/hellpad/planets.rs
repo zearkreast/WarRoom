@@ -22,6 +22,7 @@ use warroom_core::faction_planets::{
 };
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, fmt_pct, js_round};
+use warroom_core::galaxy::{LANDMARKS, landmark, landmark_planet};
 use warroom_core::planet_index::{
     PlanetFilter, SectorSort, control_shares, group_by_sector, matches_filter, matches_search,
 };
@@ -48,7 +49,9 @@ fn PlanetRow(
         let face = enemy.unwrap_or(p.current_owner);
         let tint = planet_tint(&p, &[]);
         let pct = if p.event.is_some() { tracked_percent(&p) } else { liberation_percent(p.health, p.max_health) };
-        let status = if active {
+        let status = if let Some(l) = landmark(p.index) {
+            l.status.to_string()
+        } else if active {
             format!("{} campaign · {}", if p.event.is_some() { "Defense" } else { "Liberation" }, fmt_pct(pct, 1))
         } else {
             let owner = if p.current_owner == Faction::Humans {
@@ -332,15 +335,21 @@ pub fn PlanetsModule() -> impl IntoView {
         q.campaigns.with(|c| c.iter().flat_map(|c| c.iter()).map(|c| c.planet.index).collect::<HashSet<_>>())
     });
     let planets = Signal::derive(move || q.fresh_planets.get().unwrap_or_default());
+    // Galactic control reads `planets`: a landmark is listed here but isn't a share of the galaxy.
+    let listed = Memo::new(move |_| {
+        let mut list = planets.with(|p| (**p).clone());
+        list.extend(LANDMARKS.iter().map(landmark_planet));
+        Arc::new(list)
+    });
     let by_index = Memo::new(move |_| {
-        planets.with(|p| Arc::new(p.iter().map(|p| (p.index, p.clone())).collect::<HashMap<_, _>>()))
+        listed.with(|p| Arc::new(p.iter().map(|p| (p.index, p.clone())).collect::<HashMap<_, _>>()))
     });
 
     let groups = Memo::new(move |_| {
         let (qs, f, s) = (query.get(), filter.get(), sort.get());
         active.with(|a| {
             pinned.with(|pn| {
-                planets.with(|p| {
+                listed.with(|p| {
                     let shown: Vec<Planet> =
                         p.iter().filter(|p| matches_search(p, &qs) && matches_filter(p, f, a, pn)).cloned().collect();
                     group_by_sector(&shown, a, s)
@@ -383,7 +392,7 @@ pub fn PlanetsModule() -> impl IntoView {
         let qs = query.get();
         active.with(|a| {
             pinned.with(|pn| {
-                planets.with(|p| p.iter().filter(|p| matches_search(p, &qs) && matches_filter(p, f, a, pn)).count())
+                listed.with(|p| p.iter().filter(|p| matches_search(p, &qs) && matches_filter(p, f, a, pn)).count())
             })
         })
     };
@@ -421,7 +430,7 @@ pub fn PlanetsModule() -> impl IntoView {
                 <div class="page-head">
                     <h1 class="page-title">
                         "Planets "
-                        <span class="pi-count num">{move || planets.with(|p| p.len())}</span>
+                        <span class="pi-count num">{move || listed.with(|p| p.len())}</span>
                     </h1>
                 </div>
                 <GalacticControl

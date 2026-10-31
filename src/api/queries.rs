@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, OnceLock};
 use warroom_core::api::{Assignment, Campaign, Dispatch, Planet, War, from_value};
 use warroom_core::effects::{GLOOM_IDS, PlanetEffect, planet_effects};
-use warroom_core::galaxy::{PolarSectors, SectorPlanet, build_polar_sectors};
+use warroom_core::galaxy::{PolarSectors, SectorPlanet, build_polar_sectors, landmark, landmark_planet};
 use warroom_core::planets::{fix_static, is_off_map};
 use warroom_core::snapshot::{
     CampaignLive, EffectsLive, EpisodeLive, OrderSample, PlanetLive, PlanetStatic, SnapshotKind, StationLive, to_planet,
@@ -309,5 +309,8 @@ pub fn start_polling() {
 /// One planet by index, fresh copy preferred; None while loading or unknown.
 pub fn planet(index: Option<i64>) -> Option<Planet> {
     let index = index?;
+    if let Some(l) = landmark(index) {
+        return Some(landmark_planet(l));
+    }
     queries().fresh_planets.with(|list| list.as_ref()?.iter().find(|p| p.index == index).cloned())
 }

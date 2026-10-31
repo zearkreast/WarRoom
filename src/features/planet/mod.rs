@@ -4,6 +4,7 @@ pub mod activity;
 pub mod circumvallation;
 pub mod cities;
 pub mod city_detail;
+pub mod defense;
 pub mod detail;
 pub mod globe;
 pub mod options;

@@ -169,6 +169,34 @@
     color: var(--text);
   }
 
+  /* One row per stack of marks; each stem reaches down through the bar at the city's threshold. */
+  .city-bar {
+    --mark-row: 18px;
+    position: relative;
+    isolation: isolate;
+    padding-top: calc(var(--rows) * var(--mark-row));
+  }
+  .city-bar-mark {
+    position: absolute;
+    z-index: 1;
+    top: calc((var(--rows) - 1 - var(--row)) * var(--mark-row));
+    bottom: -3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translateX(-50%);
+  }
+  .city-bar-mark::after {
+    content: "";
+    flex: 1;
+    width: 2px;
+    margin-top: 2px;
+    background: var(--k);
+    box-shadow: 0 0 0 1px var(--void);
+  }
+  .city-bar-mark.open::after {
+    opacity: 0.6;
+  }
   .pp-cities {
     margin: var(--s-4) var(--s-5) 0;
   }
