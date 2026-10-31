@@ -34,9 +34,9 @@ each entry, from `crates/core/src/changelog.rs`.
 
 ### War history
 
-- The shared history reaches back to the war's first days: every planet that changed hands since 8 February
-  2024, Helldivers online, the fronts and campaign progress since 2 March 2024, and the DSS's FTL jumps since it
-  first deployed in November 2024.
+- The shared history reaches back to the war's first days: every planet that changed hands since the first
+  capture on 10 February 2024, Helldivers online, the fronts and campaign progress since 2 March 2024, and the
+  DSS's FTL jumps since it first deployed in November 2024.
 - A planet's war history starts at its oldest change of hands when that is older than its first reading.
 
 ### Fixed
