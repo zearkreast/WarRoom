@@ -98,8 +98,9 @@ table makes that one job fail, the others keep running. The tables of `0005_acti
 low, Helldivers on planets without a campaign, city readings) are the exception: until it is applied those
 writes are skipped and the jobs carry on.
 
-On the free plan, the history stays well under the 500 MB limit (about 140 MB a year). Free projects pause
-after a week without activity; a running collector keeps it active.
+On the free plan, the history stays under the 500 MB limit: about 140 MB a year, plus about 125 MB for the history
+imported from before the collector first ran. Free projects pause after a week without activity; a running
+collector keeps it active.
 
 ## Source
 

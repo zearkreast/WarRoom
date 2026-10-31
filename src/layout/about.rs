@@ -17,7 +17,7 @@ pub fn About() -> impl IntoView {
                 </p>
                 <h3>"Where the data comes from"</h3>
                 <p>
-                    "A collector polls the community Helldivers 2 API (api.helldivers2.dev) every one to five minutes, and the game's own API for Galactic Campaigns and planet effects, and stores snapshots in a shared database. The app only reads that database, so every user sees the same history from the day the collector first ran. Planet ownership changes, campaign progress, galaxy-wide telemetry and the space station's jumps are kept; that record is what powers each planet's war history."
+                    "A collector polls the community Helldivers 2 API (api.helldivers2.dev) every one to five minutes, and the game's own API for Galactic Campaigns and planet effects, and stores snapshots in a shared database. The app only reads that database, so every user sees the same history. It reaches back to the war's first days: who held each planet since 8 February 2024, Helldivers online and campaign progress since 2 March 2024, and the space station's jumps since it first deployed. What came before the collector first ran, on 21 October 2026, was filled in from the game's public war data. Planet ownership changes, campaign progress, galaxy-wide telemetry and the space station's jumps are kept; that record is what powers each planet's war history."
                 </p>
                 <h3>"Freshness"</h3>
                 <p>
