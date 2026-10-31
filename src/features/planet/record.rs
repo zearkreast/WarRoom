@@ -22,7 +22,8 @@ pub struct PlanetRecord {
     pub fought: Arc<Vec<CityProgress>>,
     pub changes: Arc<Vec<OwnerChange>>,
     pub defending_at: Arc<Vec<f64>>,
-    /// When the collector first recorded this planet (or anything, if never this one).
+    /// Where the planet's record begins: its first reading or first change of hands, whichever is older (the first
+    /// reading of any planet if it has neither).
     pub record_start: Option<f64>,
 }
 
@@ -69,16 +70,23 @@ pub fn use_planet_record(planet: i64) -> ReadSignal<PlanetRecord> {
                 return;
             }
             match result {
-                Ok((samples, idle, fought, changes, defending_at, record_start)) => set_rec.set(PlanetRecord {
-                    loading: false,
-                    error: false,
-                    samples: Arc::new(samples),
-                    idle: Arc::new(idle),
-                    fought: Arc::new(fought),
-                    changes: Arc::new(changes.into_iter().map(|c| c.change).collect()),
-                    defending_at: Arc::new(defending_at),
-                    record_start,
-                }),
+                Ok((samples, idle, fought, changes, defending_at, first_sample)) => {
+                    let changes: Vec<OwnerChange> = changes.into_iter().map(|c| c.change).collect();
+                    let first_change = changes.iter().map(|c| c.at).reduce(f64::min);
+                    set_rec.set(PlanetRecord {
+                        loading: false,
+                        error: false,
+                        samples: Arc::new(samples),
+                        idle: Arc::new(idle),
+                        fought: Arc::new(fought),
+                        changes: Arc::new(changes),
+                        defending_at: Arc::new(defending_at),
+                        record_start: match (first_sample, first_change) {
+                            (Some(s), Some(c)) => Some(s.min(c)),
+                            (s, c) => s.or(c),
+                        },
+                    })
+                }
                 Err(_) => set_rec.update(|r| {
                     r.loading = false;
                     r.error = true;
