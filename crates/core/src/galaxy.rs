@@ -1,6 +1,6 @@
 //! Galaxy geometry: map projection, the game's sector rings, sector territory, supply lines and anomalies.
 
-use crate::api::{Faction, Planet, Position};
+use crate::api::{Faction, Named, Planet, Position};
 use crate::format::{js_round, to_fixed};
 use std::collections::{HashMap, HashSet};
 use std::f64::consts::PI;
@@ -20,8 +20,12 @@ pub struct Poi {
 }
 
 pub struct Landmark {
+    /// Stands in for the war data's planet index; below zero, so it can't meet a real one.
+    pub index: i64,
     pub name: &'static str,
     pub sector: &'static str,
+    /// Shown where a planet says who controls it.
+    pub status: &'static str,
     pub note: &'static str,
     pub biome: &'static str,
     pub position: Position,
@@ -30,8 +34,10 @@ pub struct Landmark {
 
 /// Worlds the game's galaxy map shows but the war API leaves out; positions measured off the map.
 pub const LANDMARKS: &[Landmark] = &[Landmark {
+    index: -1,
     name: "Mars",
     sector: "Sol",
+    status: "Glassed · no war data",
     note: "Glassed by the Illuminate. No war data is published for Mars.",
     biome: "Scorched",
     position: Position { x: 0.043, y: 0.035 },
@@ -46,6 +52,25 @@ pub const LANDMARKS: &[Landmark] = &[Landmark {
         },
     ],
 }];
+
+pub fn landmark(index: i64) -> Option<&'static Landmark> {
+    LANDMARKS.iter().find(|l| l.index == index)
+}
+
+/// A landmark in the shape of a planet, for the pages that list and show planets. Everything the war data would
+/// say stays at zero, so it must stay out of anything that counts the galaxy.
+pub fn landmark_planet(l: &Landmark) -> Planet {
+    Planet {
+        index: l.index,
+        name: l.name.to_uppercase(),
+        sector: l.sector.into(),
+        biome: Named { name: l.biome.into(), ..Default::default() },
+        position: l.position,
+        current_owner: Faction::Humans,
+        initial_owner: Faction::Humans,
+        ..Default::default()
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Anomaly {
@@ -90,9 +115,7 @@ fn look_effect(id: i64) -> Option<Anomaly> {
 /// Re-seeding has begun on the Illuminate's targets, so drop a name once the game draws it whole again.
 pub fn scorched_note(name: &str) -> Option<&'static str> {
     match name {
-        "WIDOW'S HARBOR" | "PILEN V" | "NEW HAVEN" => {
-            Some("Razed by the Illuminate as they fled Super Earth, May 2025.")
-        }
+        "WIDOW'S HARBOR" | "PILEN V" => Some("Razed by the Illuminate as they fled Super Earth, May 2025."),
         "MERAK" | "LESATH" | "CHORT BAY" => {
             Some("Razed by the DSS on the Helldivers' vote, on the way to Cyberstan, 2026.")
         }

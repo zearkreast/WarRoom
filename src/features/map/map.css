@@ -165,9 +165,6 @@
   .act-tag .act-stem {
     stroke-opacity: 0.7;
   }
-  .planet.landmark {
-    cursor: default;
-  }
   /* Points of interest, as the game's logos over the planet. */
   .poi-marks {
     pointer-events: none;
@@ -517,10 +514,7 @@
     z-index: 3;
   }
   .map-controls-hint {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: var(--s-3);
+    position: relative;
   }
   .map-overlays {
     display: flex;
@@ -550,7 +544,12 @@
     color: var(--ink-on-cta);
     background: var(--cta);
   }
+  /* Hangs from its button, so opening it doesn't move the overlay switch beside it. */
   .map-keys {
+    position: absolute;
+    top: calc(100% + var(--s-3));
+    right: 0;
+    width: max-content;
     display: grid;
     grid-template-columns: repeat(2, auto);
     gap: var(--s-3) var(--s-6);

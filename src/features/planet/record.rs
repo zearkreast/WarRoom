@@ -5,6 +5,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use warroom_core::cities::CityProgress;
 use warroom_core::owner_changes::OwnerChange;
 use warroom_core::progress::Sample;
 
@@ -17,6 +18,8 @@ pub struct PlanetRecord {
     pub samples: Arc<Vec<Sample>>,
     /// Helldivers on the planet over the same 24 hours while it had no campaign.
     pub idle: Arc<Vec<PlayerReading>>,
+    /// The planet's cities over the same 24 hours while they were fought over.
+    pub fought: Arc<Vec<CityProgress>>,
     pub changes: Arc<Vec<OwnerChange>>,
     pub defending_at: Arc<Vec<f64>>,
     /// When the collector first recorded this planet (or anything, if never this one).
@@ -57,6 +60,7 @@ pub fn use_planet_record(planet: i64) -> ReadSignal<PlanetRecord> {
             let result = futures::try_join!(
                 history::samples(planet, since),
                 history::idle_players(planet, since),
+                history::city_progress(planet, since),
                 history::changes(Some(planet), 200),
                 history::defending_times(planet),
                 start
@@ -65,11 +69,12 @@ pub fn use_planet_record(planet: i64) -> ReadSignal<PlanetRecord> {
                 return;
             }
             match result {
-                Ok((samples, idle, changes, defending_at, record_start)) => set_rec.set(PlanetRecord {
+                Ok((samples, idle, fought, changes, defending_at, record_start)) => set_rec.set(PlanetRecord {
                     loading: false,
                     error: false,
                     samples: Arc::new(samples),
                     idle: Arc::new(idle),
+                    fought: Arc::new(fought),
                     changes: Arc::new(changes.into_iter().map(|c| c.change).collect()),
                     defending_at: Arc::new(defending_at),
                     record_start,

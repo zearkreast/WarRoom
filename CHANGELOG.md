@@ -32,6 +32,21 @@ each entry, from `crates/core/src/changelog.rs`.
   time left in the planet's hover card and on the planet page. Threats are marked in red, and effect descriptions
   on the planet page keep the game's highlights.
 
+### City liberations
+
+- Front line activity puts the city's mark, with its stars for size, on the progress line where freeing it jumped
+  the front forward, and a faint line down both charts at that moment. Point at the mark for the city's name and
+  the boost it gave. Same-sized cities are told apart by the collector's city readings; when those can't settle
+  it, the box names each city it could be.
+- A city's boost on a defended planet counts against the defense's own health, so it now shows what freeing the
+  city really adds, and says so.
+
+### Mars
+
+- Mars has a planet page with what's known of it and its points of interest, opens the map's planet panel like any
+  other planet, and appears in Planets in the Sol sector. Galactic control's shares still count only the war
+  data's planets.
+
 ### Stratagems
 
 - The Hellpad's stratagem collection opens: all 118 stratagems by permit and type, each with its icon, code,
@@ -43,6 +58,8 @@ each entry, from `crates/core/src/changelog.rs`.
 
 ### Fixed
 
+- Opening the map's Controls no longer shoves the Regions, Sectors and Galaxy switch aside or off the screen.
+- New Haven is no longer drawn scorched.
 - Planet charts and War history read every row of the last day instead of stopping at 1000, so busy fronts
   chart the whole 24 hours and recent or ongoing defenses no longer vanish or read as held. The G.W.W. war log
   says "latest" when older changes aren't loaded and can show older ones; the FTL jump log says when it is cut
