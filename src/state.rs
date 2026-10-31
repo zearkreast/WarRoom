@@ -5,6 +5,7 @@ use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::OnceLock;
+use warroom_core::drill::{DrillScore, Mode};
 use warroom_core::gww_nav::GwwPage;
 use wasm_bindgen::JsCast;
 
@@ -27,6 +28,7 @@ pub enum HellpadModule {
     Gww,
     #[serde(rename = "campaigns")]
     PastCampaigns,
+    Stratagems,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -298,6 +300,14 @@ pub struct SettingsData {
     pub gww_read: Vec<String>,
     /// Time of the newest Strohmann News item on the last visit; 0 before the first.
     pub news_seen_at: f64,
+    pub drill_mode: Mode,
+    /// The custom loadout, by stratagem id.
+    pub drill_picks: Vec<String>,
+    /// The permit colours the permit mode deals from.
+    pub drill_permits: Vec<String>,
+    pub drill_music: bool,
+    pub drill_effects: bool,
+    pub drill_scores: Vec<DrillScore>,
 }
 
 impl Default for SettingsData {
@@ -323,6 +333,12 @@ impl Default for SettingsData {
             seen_changelog: String::new(),
             gww_read: Vec::new(),
             news_seen_at: 0.0,
+            drill_mode: Mode::Classic,
+            drill_picks: Vec::new(),
+            drill_permits: ["offensive", "supply", "defensive"].map(String::from).to_vec(),
+            drill_music: true,
+            drill_effects: true,
+            drill_scores: Vec::new(),
         }
     }
 }
@@ -439,6 +455,22 @@ impl Settings {
 
     pub fn mark_news_seen(&self, at: f64) {
         self.change(|d| d.news_seen_at = d.news_seen_at.max(at));
+    }
+
+    pub fn toggle_drill_pick(&self, id: &str) {
+        self.change(|d| match d.drill_picks.iter().position(|p| p == id) {
+            Some(i) => {
+                d.drill_picks.remove(i);
+            }
+            None => d.drill_picks.push(id.into()),
+        });
+    }
+
+    /// Files a finished drill among the bests; its place from 1, if it made the board.
+    pub fn record_drill(&self, score: DrillScore) -> Option<usize> {
+        let mut place = None;
+        self.change(|d| place = warroom_core::drill::record(&mut d.drill_scores, score));
+        place
     }
 }
 

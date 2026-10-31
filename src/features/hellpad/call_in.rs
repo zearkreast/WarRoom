@@ -1,7 +1,7 @@
 //! The Call In Super Destroyer stratagem, keyed in on the Hellpad mark, which opens its G.W.W. manual.
 
+use crate::features::hellpad::gww::nav::open_in_gww;
 use crate::js;
-use crate::state::{HellpadModule, View, ui};
 use crate::ui::please_wait::{PLEASE_WAIT_MS, PleaseWait};
 use leptos::html;
 use leptos::prelude::*;
@@ -11,32 +11,8 @@ use warroom_core::stratagems::{Arrow, CALL_IN, arrow_of, step};
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 
-fn arrow_name(a: Arrow) -> &'static str {
-    match a {
-        Arrow::Up => "up",
-        Arrow::Down => "down",
-        Arrow::Left => "left",
-        Arrow::Right => "right",
-    }
-}
-
-/// Opens the G.W.W. on its Super Destroyer manual, in one step so Back returns to the Hellpad.
 fn open_manual() {
-    let u = ui();
-    let there = u.gww.with_untracked(|g| matches!(g.last(), Some(GwwPage::Manual { id }) if id == "super-destroyers"));
-    if !there {
-        u.gww.update(|g| {
-            g.push(GwwPage::Manual { id: "super-destroyers".into() });
-            let n = g.len();
-            if n > 50 {
-                g.drain(..n - 50);
-            }
-        });
-    }
-    u.view.set(View::Hellpad);
-    u.module.set(Some(HellpadModule::Gww));
-    u.options.set(None);
-    u.detail.set(None);
+    open_in_gww(GwwPage::Manual { id: "super-destroyers".into() });
 }
 
 /// Keying in Call In Super Destroyer: how far it has got, a miss, and the hold once it is complete.
@@ -147,8 +123,7 @@ pub fn CallInCode(c: CallIn) -> impl IntoView {
         let at = c.at.get();
         at > 0 && at < len
     };
-    let label =
-        format!("{}: {}", CALL_IN.name, CALL_IN.code.iter().map(|a| arrow_name(*a)).collect::<Vec<_>>().join(", "));
+    let label = format!("{}: {}", CALL_IN.name, CALL_IN.code.iter().map(|a| a.as_str()).collect::<Vec<_>>().join(", "));
     view! {
         <div
             node_ref=boxed
@@ -163,7 +138,7 @@ pub fn CallInCode(c: CallIn) -> impl IntoView {
                     .iter()
                     .enumerate()
                     .map(|(i, a)| {
-                        let name = arrow_name(*a);
+                        let name = a.as_str();
                         view! {
                             <i class=move || format!("hp-key {name} {}", if !keying() || i < c.at.get() { "on" } else { "" })></i>
                         }
@@ -186,7 +161,7 @@ pub fn MarkPad(c: CallIn) -> impl IntoView {
             {pad
                 .map(|(arrow, label)| view! {
                     <button
-                        class=format!("hp-mark-key {}", arrow_name(arrow))
+                        class=format!("hp-mark-key {}", arrow.as_str())
                         aria-label=format!("Stratagem key: {label}")
                         on:click=move |_| {
                             c.press(arrow);

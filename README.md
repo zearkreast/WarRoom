@@ -74,14 +74,14 @@ lists the modules. Each file opens with a one-line summary of what it holds, or 
 
 ### Pages
 
-| On screen               | `View`      | Code                                                                    |
-| ----------------------- | ----------- | ----------------------------------------------------------------------- |
-| Galaxy map              | `Map`       | `features/map/`, the map itself in `galaxy/`                            |
-| Active planets          | `Campaigns` | `features/campaigns/`                                                   |
-| Hellpad                 | `Hellpad`   | `features/hellpad/`: `planets`, `stations/`, `gww/`, `past_campaigns`   |
-| Overview (High Command) | `Overview`  | `features/overview/`                                                    |
-| Strohmann News          | `News`      | `features/news/`                                                        |
-| Settings                | `Settings`  | `features/settings/`                                                    |
+| On screen               | `View`      | Code                                                                                |
+| ----------------------- | ----------- | ----------------------------------------------------------------------------------- |
+| Galaxy map              | `Map`       | `features/map/`, the map itself in `galaxy/`                                        |
+| Active planets          | `Campaigns` | `features/campaigns/`                                                               |
+| Hellpad                 | `Hellpad`   | `features/hellpad/`: `planets`, `stations/`, `gww/`, `past_campaigns`, `stratagems` |
+| Overview (High Command) | `Overview`  | `features/overview/`                                                                |
+| Strohmann News          | `News`      | `features/news/`                                                                    |
+| Settings                | `Settings`  | `features/settings/`                                                                |
 
 Panels several pages share: `features/major_order/`, `features/galactic_campaigns/`, and `features/planet/`
 (the planet detail overlay, cities, charts and the planet options menu).
@@ -93,9 +93,10 @@ levels and the shell's sizes. Class names carry a
 short prefix for their area: `cc-` campaign cards and `ms-` the Major Order strip (`campaigns.css`), `mo-`
 Major Orders, `hc-` and `map-` the map and its hover card, `pd-` planet detail and `po-` planet options
 (`planet.css`), `city-` and `cd-` cities, `hp-` Hellpad, `pi-` its planet index, `st-` space stations,
-`pc-` past campaigns and `cmp-` the Galactic Campaign panel, `gww-` the G.W.W., `ni-` and `news-` Strohmann
-News, `ov-` Overview, `tw-` the Theater of War, `wa-` War Activity, `nr-` the neon ring chart, `chart-`
-charts, and `top-`, `strip-`, `nav-` and `bp-` (briefing popup) the shell.
+`pc-` past campaigns, `sg-` the stratagem collection and `cmp-` the Galactic Campaign panel, `gww-` the G.W.W.,
+`dr-` its stratagem drill, `ni-` and `news-` Strohmann News, `ov-` Overview, `tw-` the Theater of War, `wa-` War
+Activity, `nr-` the neon ring chart, `chart-` charts, and `top-`, `strip-`, `nav-` and `bp-` (briefing popup)
+the shell.
 
 ### Words used in the code
 
@@ -105,8 +106,8 @@ charts, and `top-`, `strip-`, `nav-` and `bp-` (briefing popup) the shell.
   (`EpisodeLive`).
 - **Major Order**: High Command's current objectives; the API calls them assignments.
 - **Dispatch**: a message from Super Earth. Strohmann News is where the app collects them.
-- **Hellpad**: the app's field terminal, a hub for the planet index, space stations, the G.W.W. and past
-  campaigns.
+- **Hellpad**: the app's field terminal, a hub for the planet index, space stations, the G.W.W., past
+  campaigns and the stratagem collection.
 - **G.W.W.** (Galactic War Web): an in-universe net of training manuals, ministries, corporations, holidays
   and logs, adapted from the Helldivers Wiki. Pages are drawn in `features/hellpad/gww/`; their text is in
   `crates/core/src/data/`.

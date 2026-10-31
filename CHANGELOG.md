@@ -32,6 +32,15 @@ each entry, from `crates/core/src/changelog.rs`.
   time left in the planet's hover card and on the planet page. Threats are marked in red, and effect descriptions
   on the planet page keep the game's highlights.
 
+### Stratagems
+
+- The Hellpad's stratagem collection opens: all 118 stratagems by permit and type, each with its icon, code,
+  cooldown, call-in time, uses, traits and where it is unlocked, with search and permit colour filters.
+- The G.W.W. gains the stratagem drill: key stratagem codes against a burning fuse, round after round, with a
+  streak multiplier and round, time and flawless bonuses. Play every stratagem, your own loadout (picked in the
+  drill or with the crosshair on the collection's cards), or the permit colours you choose. Its march and sound
+  effects are synthesised in the app; the best ten scores of each mode stay on this device.
+
 ### Fixed
 
 - Planet charts and War history read every row of the last day instead of stopping at 1000, so busy fronts

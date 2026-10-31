@@ -1,0 +1,264 @@
+@layer features {
+  /* ---------- Stratagem collection ---------- */
+  .sg {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-6);
+  }
+  .sg-swatch {
+    width: 10px;
+    height: 10px;
+    background: var(--p);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  }
+
+  .sg-drill {
+    display: flex;
+    align-items: center;
+    gap: var(--s-5);
+    width: 100%;
+    padding: var(--s-5) var(--s-6);
+    text-align: left;
+    color: var(--text-dim);
+    background:
+      radial-gradient(circle at 0% 50%, color-mix(in srgb, var(--cta) 14%, transparent), transparent 45%),
+      repeating-linear-gradient(-45deg, color-mix(in srgb, var(--cta) 5%, transparent) 0 2px, transparent 2px 9px),
+      var(--surface-1);
+    border: 1px solid color-mix(in srgb, var(--cta) 35%, var(--line));
+    border-left: 3px solid var(--cta);
+    cursor: pointer;
+    transition: border-color var(--t-state);
+  }
+  .sg-drill:hover,
+  .sg-drill:focus-visible {
+    border-color: var(--cta);
+  }
+  .sg-drill-keys {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(2, 14px);
+    gap: 3px;
+  }
+  .sg-drill-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+    min-width: 0;
+  }
+  .sg-drill-text b {
+    font-size: var(--fs-label);
+    letter-spacing: 0.16em;
+    color: var(--cta);
+  }
+  .sg-drill-best {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    color: var(--text-hi);
+    font-weight: 700;
+  }
+
+  .sg-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+  }
+  .sg-group-head {
+    display: flex;
+    align-items: center;
+    gap: var(--s-5);
+  }
+  .sg-group-head h2 {
+    margin: 0;
+    font-size: var(--fs-value);
+    white-space: nowrap;
+  }
+  .sg-group-head h2::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: var(--s-4);
+    background: var(--p);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    vertical-align: 0.1em;
+  }
+  .sg-group-rule {
+    flex: 1;
+    min-width: 16px;
+    height: 1px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--p) var(--strong), transparent), var(--line-strong));
+  }
+  .sg-group-meta {
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--label);
+    white-space: nowrap;
+  }
+  .sg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: var(--s-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sg-card {
+    position: relative;
+    display: flex;
+    gap: var(--s-5);
+    padding: var(--s-5);
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--p) var(--wash), transparent), transparent 50%),
+      var(--surface-1);
+    border: 1px solid var(--line-strong);
+    border-left: 2px solid var(--p);
+    animation: sg-in var(--t-reveal) var(--ease) both;
+    animation-delay: calc(min(var(--i), 12) * 20ms);
+  }
+  .sg-icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    background: color-mix(in srgb, var(--p) var(--wash), var(--surface-0));
+    border: 1px solid color-mix(in srgb, var(--p) var(--strong), transparent);
+  }
+  .sg-icon img {
+    display: block;
+    width: 56px;
+    height: 56px;
+  }
+  .sg-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    min-width: 0;
+    padding-right: var(--s-7);
+  }
+  .sg-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s-2) var(--s-4);
+    margin: 0;
+    font-size: var(--fs-body);
+    line-height: 1.25;
+  }
+  .sg-name {
+    color: var(--text-hi);
+  }
+  .sg-desig {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--label);
+  }
+  .sg-card .hp-key {
+    width: 18px;
+    height: 18px;
+  }
+  .sg-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-6);
+    margin: 0;
+    font-size: var(--fs-body-s);
+  }
+  .sg-stats div {
+    display: flex;
+    gap: var(--s-3);
+  }
+  .sg-stats dt {
+    color: var(--label);
+  }
+  .sg-stats dd {
+    margin: 0;
+    color: var(--text-hi);
+    font-weight: 600;
+  }
+  .sg-unlock {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-3);
+    margin: 0;
+    font-size: var(--fs-body-s);
+    color: var(--text-dim);
+  }
+  .sg-unlock svg {
+    flex: none;
+    align-self: center;
+    color: var(--p);
+  }
+  .sg-traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .sg-traits li {
+    padding: 1px var(--s-3);
+    font-size: var(--fs-micro);
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    border: 1px solid var(--line-strong);
+    background: var(--surface-2);
+  }
+  .sg-pick {
+    position: absolute;
+    top: var(--s-4);
+    right: var(--s-4);
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    color: var(--label);
+    background: var(--surface-2);
+    border: 1px solid var(--control);
+    cursor: pointer;
+    transition:
+      color var(--t-state),
+      border-color var(--t-state),
+      background var(--t-state);
+  }
+  .sg-pick:hover,
+  .sg-pick:focus-visible {
+    color: var(--cta);
+    border-color: var(--cta);
+  }
+  .sg-pick.on {
+    color: var(--ink-on-cta);
+    background: var(--cta);
+    border-color: var(--cta);
+  }
+
+  @keyframes sg-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sg-card {
+      animation: none;
+    }
+  }
+  @media (max-width: 759px) {
+    .sg-group-rule {
+      display: none;
+    }
+    .sg-group-head {
+      justify-content: space-between;
+    }
+    .sg-drill-keys {
+      display: none;
+    }
+  }
+}

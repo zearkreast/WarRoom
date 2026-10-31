@@ -10,6 +10,7 @@ pub mod cities;
 pub mod collate;
 pub mod data;
 pub mod dispatch;
+pub mod drill;
 pub mod effects;
 pub mod faction_marks;
 pub mod faction_planets;

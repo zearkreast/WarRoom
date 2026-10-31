@@ -1,9 +1,10 @@
-//! Game knowledge the APIs don't carry: the G.W.W.'s manuals and sites, station history, campaign rewards
-//! and the fate of Super Earth's cities.
+//! Game knowledge the APIs don't carry: the G.W.W.'s manuals and sites, station history, campaign rewards,
+//! the stratagems and the fate of Super Earth's cities.
 
 pub mod manuals;
 pub mod sites;
 pub mod stations;
+pub mod stratagems;
 
 use crate::api::Faction;
 
