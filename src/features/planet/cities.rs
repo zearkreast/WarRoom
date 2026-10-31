@@ -80,14 +80,16 @@ pub fn CityBar(#[prop(into)] planet: Signal<Planet>, children: Children) -> impl
                     .into_iter()
                     .rev()
                     .map(|BarMark { city: c, at, row }| {
-                        let title = if at == 0.0 {
-                            format!("{}: open from the start", c.name)
-                        } else {
-                            format!("{} opens at {}", c.name, fmt_pct(at, 1))
+                        let open = c.state == CityState::Liberating;
+                        let title = match (at > 0.0, open) {
+                            (true, true) => format!("{} opened at {}", c.name, fmt_pct(at, 1)),
+                            (true, false) => format!("{} opens at {}", c.name, fmt_pct(at, 1)),
+                            (false, true) => format!("{}: open from the start", c.name),
+                            (false, false) => format!("{}: {}", c.name, state_label(c.state)),
                         };
                         view! {
                             <span
-                                class=format!("city-bar-mark {}", if c.state == CityState::Liberating { "open" } else { "" })
+                                class=format!("city-bar-mark {}", if open { "open" } else { "" })
                                 style=format!("left: {}%; --row: {row}; --k: {};", crate::js::num(at), faction_color(Some(c.holder)))
                                 title=title
                             >
@@ -245,11 +247,18 @@ pub fn enemy_of_cities(p: &Planet) -> Option<Faction> {
     p.event.as_ref().map(|e| e.faction).or((p.current_owner != Faction::Humans).then_some(p.current_owner))
 }
 
-/// A planet's cities: size class, standing, and while one is fought over its progress, pace and payoff. Each
-/// opens its own page.
+/// A planet's cities, in the order their marks stand on the bar: size class, standing, and while one is fought
+/// over its progress, pace and payoff. Each opens its own page.
 #[component]
 pub fn CityList(#[prop(into)] planet: Signal<Option<Planet>>, #[prop(optional)] full: bool) -> impl IntoView {
-    let cities = Memo::new(move |_| planet.with(|p| p.as_ref().map(cities_of).unwrap_or_default()));
+    let cities = Memo::new(move |_| {
+        let mut list = planet.with(|p| p.as_ref().map(cities_of).unwrap_or_default());
+        list.sort_by(|a, b| match (a.opens_at, b.opens_at) {
+            (Some(x), Some(y)) => x.total_cmp(&y).then(a.id.cmp(&b.id)),
+            (x, y) => y.is_some().cmp(&x.is_some()).then(a.id.cmp(&b.id)),
+        });
+        list
+    });
     let enemy = Memo::new(move |_| planet.with(|p| p.as_ref().and_then(enemy_of_cities)));
     let index = Memo::new(move |_| planet.with(|p| p.as_ref().map(|p| p.index)));
     view! {

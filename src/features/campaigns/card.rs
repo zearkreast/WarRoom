@@ -1,17 +1,20 @@
 //! A front's card: progress, pace, ETA or deadline, Helldivers and badges.
 
 use crate::api::fronts::{Front, FrontKind, fronts};
+use crate::features::planet::defense::{GambitMark, advance_label, use_attackers, use_enemy_advance, use_gambits};
 use crate::features::planet::tint::planet_tint;
+use crate::js;
 use crate::state::{OptionsAnchor, ui};
 use crate::ui::emblems::{DssIcon, FactionEmblem};
 use crate::ui::hazard_icons::hazard_icon;
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Countdown, Meter, MeterSize};
 use leptos::prelude::*;
-use warroom_core::api::{Faction, Named};
+use warroom_core::api::{Faction, Named, Planet};
 use warroom_core::biomes::regen_pct_per_hour;
+use warroom_core::defense::{GambitOutlook, divers_short, event_span, needed_rate};
 use warroom_core::factions::{faction_color, faction_label};
-use warroom_core::format::{fmt_int, fmt_pct, to_fixed};
+use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, fmt_time_left, to_fixed};
 
 /// What a card shows that rarely changes; the card is rebuilt only when it does.
 #[derive(Clone, PartialEq)]
@@ -56,12 +59,30 @@ fn eta(f: &Front, deadline: Option<f64>) -> Option<EtaView> {
     None
 }
 
+/// The enemy's side of a defense: its advance, and the ms since the attack began and until its deadline.
+#[derive(Clone, Copy, PartialEq)]
+struct Advance {
+    enemy: Faction,
+    percent: f64,
+    since: f64,
+    left: f64,
+}
+
 #[derive(Clone, Copy, PartialEq)]
 struct OutlookView {
     holding: bool,
     percent: f64,
-    defense: bool,
+    advance: Option<Advance>,
     rate: Option<f64>,
+}
+
+fn advance_view(a: Advance) -> impl IntoView {
+    view! {
+        <span class="cc-advance" title=format!("Under attack for {}", fmt_duration(a.since))>
+            <span class="caps">{advance_label(a.enemy)}</span>
+            <b class="num caps">{format!("{} · {} left", fmt_pct(a.percent, 0), fmt_time_left(a.left))}</b>
+        </span>
+    }
 }
 
 fn outlook_view(o: OutlookView) -> AnyView {
@@ -89,9 +110,27 @@ fn outlook_view(o: OutlookView) -> AnyView {
                     .into_any()
                 }
             }}
+            {o.advance.map(advance_view)}
         </div>
     }
     .into_any()
+}
+
+/// " · from USTOTU": the planets a defense is attacked from, in their owner's colour.
+fn attacked_from(list: &[Planet]) -> Option<AnyView> {
+    (!list.is_empty()).then(|| {
+        let names = list
+            .iter()
+            .enumerate()
+            .map(|(i, a)| {
+                view! {
+                    {(i > 0).then_some(if i == list.len() - 1 { " and " } else { ", " })}
+                    <b style=format!("color: {};", faction_color(Some(a.current_owner)))>{a.name.clone()}</b>
+                }
+            })
+            .collect_view();
+        view! { " · from " {names} }.into_any()
+    })
 }
 
 /// The game's own campaign-type glyph, tinted with the text colour.
@@ -148,13 +187,60 @@ pub fn CampaignCard(
     let flag = move |pick: fn(&Front) -> bool| Memo::new(move |_| front.with(|f| f.as_ref().is_some_and(pick)));
     let (in_mo, pinned, station) = (flag(|f| f.in_major_order), flag(|f| f.pinned), flag(|f| f.station));
     let eta = Memo::new(move |_| front.with(|f| f.as_ref().and_then(|f| eta(f, deadline.get()))));
+    let planet = Memo::new(move |_| front.with(|f| f.as_ref().map(|f| f.planet.clone()).unwrap_or_default()));
+    let advance = use_enemy_advance(planet.into());
+    let attackers = use_attackers(planet.into());
+    let gambits = use_gambits(planet.into());
+    let clock = js::use_now(30_000.0);
     let outlook = Memo::new(move |_| {
+        let now = clock.get();
+        let advance = advance.get();
         front.with(|f| {
             f.as_ref().map(|f| OutlookView {
                 holding: f.rate.is_none() && f.kind == FrontKind::Liberation && f.percent == 0.0,
                 percent: f.percent,
-                defense: f.kind == FrontKind::Defense,
+                advance: advance.zip(f.planet.event.as_ref().and_then(event_span)).map(|(percent, (start, end))| {
+                    Advance { enemy: f.enemy, percent, since: now - start, left: end - now }
+                }),
                 rate: f.rate,
+            })
+        })
+    });
+    let needed = Memo::new(move |_| {
+        let now = clock.get();
+        front.with(|f| {
+            let f = f.as_ref().filter(|f| f.kind == FrontKind::Defense)?;
+            let need = needed_rate(f.percent, now, f.fail_at?)?;
+            Some((need, divers_short(f.rate, need, f.players)))
+        })
+    });
+    let needed_tone = move || {
+        let k = match (needed.get(), rate.get()) {
+            (Some((n, _)), Some(r)) if r >= n => "var(--good)",
+            (Some(_), Some(_)) => "var(--bad)",
+            _ => "var(--text-hi)",
+        };
+        format!("--k: {k};")
+    };
+    let needed_title = move || {
+        let base = "Progress per hour needed to win the defense before its deadline";
+        match needed.get() {
+            Some((_, Some(n))) if n <= 0.0 => format!("{base}; the measured pace is enough"),
+            Some((_, Some(n))) => {
+                format!("{base}; roughly {} more Helldivers at today's progress per Helldiver (estimate)", fmt_int(n))
+            }
+            _ => base.to_string(),
+        }
+    };
+    let gambit = Memo::new(move |_| {
+        gambits.with(|list| {
+            list.iter().find(|g| g.outlook == GambitOutlook::Ahead).map(|g| {
+                let from: Vec<&str> = g.attackers.iter().map(|a| a.planet.name.as_str()).collect();
+                format!(
+                    "Gambit: liberating {} ends the defense of {} before its deadline",
+                    from.join(" and "),
+                    g.defended.name
+                )
             })
         })
     });
@@ -165,6 +251,7 @@ pub fn CampaignCard(
     move || {
         let l = look.get()?;
         let enemy = faction_color(Some(l.enemy)).to_string();
+        let foe = enemy.clone();
         let kind = l.kind.as_str();
         let index = l.index;
         let aria = format!("{}, {kind} against {}. Open options", l.name, faction_label(Some(l.enemy)));
@@ -195,7 +282,10 @@ pub fn CampaignCard(
                             <FactionEmblem faction=l.enemy.as_str() size=28.0 />
                             <div class="cc-title">
                                 <h3 class="cc-name">{l.name.clone()}</h3>
-                                <div class="cc-sector caps">{format!("{} sector", l.sector)}</div>
+                                <div class="cc-sector caps">
+                                    {format!("{} sector", l.sector)}
+                                    {move || attackers.with(|list| attacked_from(list))}
+                                </div>
                             </div>
                             <div class="cc-pct">
                                 <b class="num">{move || outlook.get().map(|o| fmt_pct(o.percent, 2)).unwrap_or_default()}</b>
@@ -221,6 +311,18 @@ pub fn CampaignCard(
                                         <Icon icon=icons::PIN size=14.0 label="Pinned" />
                                     </span>
                                 </Show>
+                                {move || {
+                                    gambit
+                                        .get()
+                                        .map(|t| {
+                                            view! {
+                                                <span class="cc-badge is-gambit" title=t>
+                                                    <GambitMark size=16.0 />
+                                                    "Gambit"
+                                                </span>
+                                            }
+                                        })
+                                }}
                                 {move || {
                                     eta.get().filter(|e| e.late).map(|_| view! { <span class="cc-badge is-late">"After MO deadline"</span> })
                                 }}
@@ -250,6 +352,17 @@ pub fn CampaignCard(
                                 chevron=true
                                 label=format!("{} progress", l.name)
                             />
+                            <Show when=move || advance.with(Option::is_some)>
+                                <div class="cc-foe">
+                                    <Meter
+                                        value=Signal::derive(move || advance.get().unwrap_or(0.0))
+                                        color=foe.clone()
+                                        rest="transparent".to_string()
+                                        size=MeterSize::S
+                                        label=advance_label(l.enemy)
+                                    />
+                                </div>
+                            </Show>
                         </div>
                         {move || outlook.get().map(outlook_view)}
                         <footer class="cc-foot">
@@ -269,10 +382,27 @@ pub fn CampaignCard(
                                     }}
                                 </b>
                             </span>
-                            <span title="Enemy regeneration per hour" style=format!("--k: {enemy};")>
-                                <span class="cc-foot-label caps">"Regen"</span>
-                                <b class="num">{move || regen.get().map_or("—".to_string(), |r| format!("{}%", to_fixed(r, 2)))}</b>
-                            </span>
+                            {if l.kind == FrontKind::Defense {
+                                view! {
+                                    <span title=needed_title style=needed_tone>
+                                        <span class="cc-foot-label caps">"Needed"</span>
+                                        <b class="num">
+                                            {move || needed.get().map_or("—".to_string(), |(n, _)| format!("{}%", to_fixed(n, 2)))}
+                                        </b>
+                                    </span>
+                                }
+                                    .into_any()
+                            } else {
+                                view! {
+                                    <span title="Enemy regeneration per hour" style=format!("--k: {enemy};")>
+                                        <span class="cc-foot-label caps">"Regen"</span>
+                                        <b class="num">
+                                            {move || regen.get().map_or("—".to_string(), |r| format!("{}%", to_fixed(r, 2)))}
+                                        </b>
+                                    </span>
+                                }
+                                    .into_any()
+                            }}
                         </footer>
                     </div>
                 </button>

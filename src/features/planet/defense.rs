@@ -62,7 +62,8 @@ pub fn advance_label(f: Faction) -> String {
 }
 
 /// The planet's progress as the map's cards show it. A liberation is one bar with a mark where each city opens;
-/// a defense is two, as in the game: Super Earth's defense over the enemy's advance on the deadline.
+/// a defense is two, as in the game: Super Earth's defense right over the enemy's advance, so whichever leads
+/// shows at a glance.
 #[component]
 pub fn LiberationBar(
     #[prop(into)] p: Signal<Planet>,
@@ -124,14 +125,14 @@ pub fn LiberationBar(
                                 })
                         }}
                     </div>
+                    {track(foe, Signal::derive(move || advance_label(enemy.get())), "foe")}
                     <div class="fight-head foe caps">
                         <span>{move || advance_label(enemy.get())}</span>
-                        <b class="num">{move || fmt_pct(foe.get(), 0)}</b>
                         <span class="fight-left num">
                             {move || deadline.get().map(|d| format!("{} left", fmt_time_left(d - clock.get())))}
                         </span>
+                        <b class="num">{move || fmt_pct(foe.get(), 0)}</b>
                     </div>
-                    {track(foe, Signal::derive(move || advance_label(enemy.get())), "foe")}
                 }
                 .into_any()
             }}

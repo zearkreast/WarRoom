@@ -5,7 +5,7 @@ use crate::features::map::poi::{PoiGlyph, PoiKind, poi_image, poi_kind, poi_orig
 use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
 use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
 use crate::features::planet::cities::CityList;
-use crate::features::planet::defense::LiberationBar;
+use crate::features::planet::defense::{GambitNotes, LiberationBar, use_attackers};
 use crate::features::planet::tint::planet_tint;
 use crate::js::{self, num};
 use crate::state::{HellpadModule, settings, ui};
@@ -187,8 +187,8 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
     let pct = Signal::derive(move || if enemy.get().is_some() { p.with(tracked_percent) } else { 100.0 });
     let regen = Memo::new(move |_| p.with(|p| regen_pct_per_hour(p.regen_per_second, p.max_health)));
     let defended = Memo::new(move |_| p.with(|p| p.event.is_some()));
-    let shown_pct =
-        move || if defended.get() { pct.get() } else { p.with(|p| liberation_percent(p.health, p.max_health)) };
+    let liberated = move || p.with(|p| liberation_percent(p.health, p.max_health));
+    let attackers = use_attackers(p);
     view! {
         <div class=art_class></div>
         <div class="hc-head">
@@ -250,11 +250,10 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
                 view! {
                     <div class="hc-progress">
                         <LiberationBar p=p pct=pct enemy=f />
-                        <span class="num caps">
-                            {move || fmt_pct(shown_pct(), 4)}
-                            " "
-                            {move || if defended.get() { "defended" } else { "liberated" }}
-                        </span>
+                        <Show when=move || !defended.get()>
+                            <span class="num caps">{move || fmt_pct(liberated(), 4)}" liberated"</span>
+                        </Show>
+                        {move || attackers.with(|list| (!list.is_empty()).then(|| attacked_from(list)))}
                     </div>
                     {move || {
                         (!defended.get())
@@ -275,7 +274,38 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
             })
         }}
         {move || siege.get().map(|c| circumvallation_note(&p.get(), &c, "hc-siege"))}
+        <GambitNotes p=p class="hc-gambit".to_string() />
     }
+}
+
+/// "Attacked from USTOTU": the planets a defense is attacked from.
+fn attacked_from(list: &[Planet]) -> AnyView {
+    view! {
+        <p class="hc-from caps">
+            <Icon icon=icons::SWORDS size=12.0 />
+            <span>
+                "Attacked from "
+                {list
+                    .iter()
+                    .enumerate()
+                    .map(|(i, a)| {
+                        let index = a.index;
+                        view! {
+                            {(i > 0).then(|| if i == list.len() - 1 { " and " } else { ", " })}
+                            <button
+                                class="link"
+                                style=format!("color: {};", faction_color(Some(a.current_owner)))
+                                on:click=move |_| ui().focus(index)
+                            >
+                                {a.name.clone()}
+                            </button>
+                        }
+                    })
+                    .collect_view()}
+            </span>
+        </p>
+    }
+    .into_any()
 }
 
 /// Beside the pointer; in the window's lower half the card grows upward so its foot stays on screen.

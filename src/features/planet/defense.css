@@ -47,10 +47,16 @@
   .fight-head {
     display: flex;
     align-items: baseline;
-    gap: var(--s-2);
+    gap: var(--s-3);
+    white-space: nowrap;
     font-size: var(--fs-micro);
     letter-spacing: 0.12em;
     color: var(--f-humans);
+  }
+  .fight-head > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .fight-head b {
     margin-left: auto;
@@ -58,15 +64,9 @@
     color: var(--text-hi);
   }
   .fight-head.foe {
-    margin-top: 4px;
     color: var(--rest);
   }
-  .fight-head.foe b {
-    margin-left: 0;
-    order: 1;
-  }
   .fight-head .fight-left {
-    margin-left: auto;
     color: var(--text-dim);
   }
   .fight-se {
@@ -194,6 +194,25 @@
   .gambit-fronts span {
     color: var(--k);
     font-weight: 700;
+  }
+  .hc-from {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    margin: var(--s-2) 0 0;
+    font-size: var(--fs-micro);
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+  }
+  .hc-from svg {
+    flex: none;
+    color: var(--tone);
+  }
+  .hc-from .link {
+    font: inherit;
+    font-weight: 700;
+    letter-spacing: inherit;
+    text-transform: inherit;
   }
   .hc-gambit {
     margin: var(--s-3) var(--s-5) 0;
