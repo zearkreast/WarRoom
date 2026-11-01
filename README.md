@@ -48,8 +48,8 @@ src/                     the app
   layout/                the frame: header with the status and ticker, navigation rail (a tab bar on phones), About and legend, briefing popup
   ui/                    shared components: panels, meters, charts, icons, emblems
   update/                finds and installs new releases
-  assets/                pictures, fonts and map data, served next to the page; the game's pictures come
-                         from the Helldivers Wiki and are credited in About
+  assets/                pictures, fonts and map data, served next to the page; the game's pictures are
+                         credited in About
   js.rs, tauri.rs        bridges to the browser and to the Tauri shell
   nav_history.rs         makes Back and Forward step through the app
 src-tauri/               the Tauri shell for desktop and Android (built by the Tauri CLI, own Cargo.lock)
@@ -192,3 +192,21 @@ not a GitHub pre-release: installed apps only look at the latest full release. I
 
 Without the Android secrets each APK is signed with a throwaway key, and a newer APK won't install over an older
 one. Losing either signing key means installed apps can no longer take updates from new releases.
+
+## Licence
+
+The project's own code is under the [GNU General Public License v2](LICENSE). A fan project, not affiliated with
+Arrowhead Game Studios or Sony Interactive Entertainment. These parts aren't covered by that licence and keep
+their own terms:
+
+- **The game's material:** the pictures, icons, logos and adverts in `src/assets/`, and the names and lines quoted
+  from the game. They belong to Arrowhead Game Studios and Sony Interactive Entertainment and aren't offered for
+  reuse.
+- **Text adapted from the Helldivers Wiki:** the pages in `crates/core/src/data/` stay under
+  [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), so they can't be used commercially.
+- **Effect names:** `crates/core/data/planet-effects.json` comes from
+  [helldivers-2/json](https://github.com/helldivers-2/json), under the
+  [MIT licence](crates/core/data/LICENSE-planet-effects).
+- **Fonts:** each keeps the licence beside it in `src/assets/fonts/`.
+
+If something here is yours and you want it credited differently or taken down, open an issue.

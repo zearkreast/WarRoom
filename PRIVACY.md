@@ -1,7 +1,7 @@
 WARCOMMAND TRACKER - PRIVACY POLICY
 ===================================
 
-Last updated: 27 October 2026
+Last updated: 1 November 2026
 
 In short: WarCommand Tracker collects no personal data. There is no account,
 no analytics, no advertising and no tracking of any kind.
@@ -24,6 +24,12 @@ Supabase's servers see the IP address a request comes from and may keep it in
 short-lived server logs under Supabase's own privacy policy; the project does
 not use these logs to identify anyone.
 
+The installed app also asks the project's GitHub releases whether a new version
+is out, and downloads it from there if you accept. The website is hosted on
+GitHub Pages. Either way GitHub's servers see the IP address a request comes
+from, under GitHub's own privacy policy; the project sees no more than how many
+times a release was downloaded.
+
 Links you choose to open, such as Helldivers Wiki pages, open in your web
 browser and fall under that site's own policy.
 
@@ -33,8 +39,9 @@ NOTIFICATIONS
 Alerts for new Major Orders, dispatches, captures and defenses are worked out
 on your device from the war data it downloads.
 
-On Android, the app can also receive Strohmann News while it is closed,
-through Firebase Cloud Messaging, a Google service. It subscribes only to the
+Android builds with pushed news switched on can also receive Strohmann News
+while the app is closed, through Firebase Cloud Messaging, a Google service.
+Current releases don't have it switched on. Such a build subscribes only to the
 news topics your alert settings switch on. Google's servers handle the
 device's messaging token under Google's own privacy policy; the project sends
 each push to a topic and never receives or stores a device identifier.
@@ -52,8 +59,13 @@ sent unless you paste it somewhere yourself.
 
 PERMISSIONS
 
-- Internet: to download the war data.
+- Internet: to download the war data and look for new versions.
 - Notifications: optional, for alerts. On Android the system asks you first.
+- Install apps (Android): to hand a new version you chose to download to
+  Android's installer. Android asks you first, and the app installs nothing else.
+- Network state, cloud messages, running at startup and keeping the device
+  awake (Android): used by the notification and messaging libraries to keep
+  scheduled alerts across restarts and to deliver them.
 
 
 CHILDREN
