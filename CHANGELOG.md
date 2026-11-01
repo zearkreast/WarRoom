@@ -3,6 +3,26 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.6.2] - 2026-11-01
+
+Everything since v0.6.0.
+
+### Upgrading
+
+- On a database of your own, apply `supabase/migrations/0007_samples_defending.sql`. The collector is unchanged, so
+  it needs no redeploy.
+
+### Galactic logs
+
+- Helldivers online opens on the newest day. Press Peak online or Lowest online to sort the days from most to
+  fewest, and again for fewest to most. SEST day goes back to newest first, and again to oldest first.
+- Helldivers online reaches every logged day back to 2 March 2024, not only the last year.
+
+### Fixed
+
+- A planet's page could lose its record and show "Could not reach the war archive" when the read of its defenses
+  took too long. An index on those readings makes that read quick.
+
 ## [0.6.0] - 2026-10-31
 
 Everything since v0.5.0.
