@@ -167,7 +167,7 @@ fn PhoneMenu() -> impl IntoView {
                 on:click=move |_| open.update(|o| *o = !*o)
             >
                 <Icon icon=icons::ELLIPSIS size=20.0 stroke_width=2.0 />
-                {move || (seen.get() != APP_VERSION).then(|| view! { <span class="unread" aria-label="Unread"></span> })}
+                {move || (seen.get() != APP_VERSION).then(|| view! { <span class="nav-unread" aria-label="Unread"></span> })}
             </button>
             <Show when=move || open.get()>
                 <div class="more-scrim" on:click=move |_| open.set(false)></div>
@@ -320,7 +320,7 @@ fn Nav(#[prop(into)] unread_news: Signal<usize>) -> impl IntoView {
                     on:click=move |_| u.toggle_dispatch(None)
                 >
                     <Icon icon=icons::SCROLL_TEXT size=20.0 stroke_width=1.75 />
-                    {move || (seen.get() != APP_VERSION).then(|| view! { <span class="unread" aria-label="Unread"></span> })}
+                    {move || (seen.get() != APP_VERSION).then(|| view! { <span class="nav-unread" aria-label="Unread"></span> })}
                 </button>
             </div>
         </nav>

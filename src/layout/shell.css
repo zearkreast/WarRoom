@@ -292,7 +292,7 @@
     border-color: var(--cta);
     color: var(--cta);
   }
-  .unread {
+  .nav-unread {
     position: absolute;
     top: -2px;
     right: -2px;
