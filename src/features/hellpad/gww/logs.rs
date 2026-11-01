@@ -3,7 +3,7 @@
 use crate::api::history::history;
 use crate::api::queries::queries;
 use crate::api::stations::{JUMP_LIMIT, use_station_jumps};
-use crate::api::war_samples::use_war_days;
+use crate::api::war_samples::{WarDay, use_war_days};
 use crate::features::hellpad::gww::blocks::{HeadingRef, banner, crumb, related};
 use crate::features::hellpad::stations::jumps::JumpRoute;
 use crate::js::{self, fmt_date, fmt_date_time, num};
@@ -180,6 +180,70 @@ fn war_log() -> AnyView {
 
 const ACTIVITY_DAYS: usize = 14;
 
+#[derive(Clone, Copy, PartialEq)]
+enum DayColumn {
+    Day,
+    Peak,
+    Low,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+struct DayOrder {
+    column: DayColumn,
+    highest_first: bool,
+}
+
+impl DayOrder {
+    const NEWEST_FIRST: Self = Self { column: DayColumn::Day, highest_first: true };
+
+    /// A column starts with its highest value on top; pressing it again turns the list over.
+    fn press(self, column: DayColumn) -> Self {
+        Self { column, highest_first: self.column != column || !self.highest_first }
+    }
+}
+
+/// Equal counts keep the newest day on top, the order `days` arrive in.
+fn sort_days(days: &[WarDay], order: DayOrder) -> Vec<WarDay> {
+    let value = |d: &WarDay| match order.column {
+        DayColumn::Day => d.day,
+        DayColumn::Peak => d.peak,
+        DayColumn::Low => d.low,
+    };
+    let mut sorted = days.to_vec();
+    if order.highest_first {
+        sorted.sort_by(|a, b| value(b).total_cmp(&value(a)));
+    } else {
+        sorted.sort_by(|a, b| value(a).total_cmp(&value(b)));
+    }
+    sorted
+}
+
+fn day_sort(order: RwSignal<DayOrder>, column: DayColumn, label: &'static str) -> AnyView {
+    let on = move || order.get().column == column;
+    let direction = move || match (column, order.get().highest_first) {
+        _ if !on() => "",
+        (DayColumn::Day, true) => ", newest first",
+        (DayColumn::Day, false) => ", oldest first",
+        (_, true) => ", highest first",
+        (_, false) => ", lowest first",
+    };
+    view! {
+        <button
+            class=move || {
+                let up = !order.get().highest_first;
+                format!("gww-days-sort {}", if !on() { "" } else if up { "on up" } else { "on" })
+            }
+            aria-pressed=move || on().to_string()
+            on:click=move |_| order.update(|o| *o = o.press(column))
+        >
+            {label}
+            <span class="sr-only">{direction}</span>
+            <Icon icon=icons::CHEVRON_DOWN size=12.0 />
+        </button>
+    }
+    .into_any()
+}
+
 fn day_stat(peak: bool, value: f64, at: String, top: f64) -> AnyView {
     view! {
         <span class=format!("gww-day-stat {}", if peak { "peak" } else { "low" })>
@@ -202,6 +266,7 @@ fn day_stat(peak: bool, value: f64, at: String, top: f64) -> AnyView {
 fn activity_days(now: Memo<f64>) -> AnyView {
     let q = use_war_days();
     let all = RwSignal::new(false);
+    let order = RwSignal::new(DayOrder::NEWEST_FIRST);
     let hm = |ms: f64| sest_clock(ms).chars().take(5).collect::<String>();
     (move || {
         if q.loading.get() && q.data.with(Option::is_none) {
@@ -212,20 +277,17 @@ fn activity_days(now: Memo<f64>) -> AnyView {
             return view! { <Empty>"No days logged yet. Logging starts with the next telemetry update."</Empty> }
                 .into_any();
         }
-        let shown: Vec<_> = days.iter().take(if all.get() { days.len() } else { ACTIVITY_DAYS }).copied().collect();
-        let top = shown.iter().fold(1.0, |m: f64, d| m.max(d.peak));
-        let today = (now.get() / 86_400_000.0).floor() * 86_400_000.0;
         let n = days.len();
-        view! {
-            <div class="gww-days-head caps" aria-hidden="true">
-                <span>"SEST day"</span>
-                <span>"Peak online"</span>
-                <span>"Lowest online"</span>
-            </div>
-            <ol class="gww-days">
-                {shown
-                    .into_iter()
-                    .map(|d| view! {
+        // In its own closure, so pressing a heading keeps the focus on it.
+        let rows = move || {
+            let shown: Vec<_> =
+                sort_days(&days, order.get()).into_iter().take(if all.get() { n } else { ACTIVITY_DAYS }).collect();
+            let top = shown.iter().fold(1.0, |m: f64, d| m.max(d.peak));
+            let today = (now.get() / 86_400_000.0).floor() * 86_400_000.0;
+            shown
+                .into_iter()
+                .map(|d| {
+                    view! {
                         <li class=(d.day == today).then_some("today")>
                             <span class="gww-day-date num">
                                 {sest_date(d.day)}
@@ -234,13 +296,21 @@ fn activity_days(now: Memo<f64>) -> AnyView {
                             {day_stat(true, d.peak, hm(d.peak_at), top)}
                             {day_stat(false, d.low, hm(d.low_at), top)}
                         </li>
-                    })
-                    .collect_view()}
-            </ol>
+                    }
+                })
+                .collect_view()
+        };
+        view! {
+            <div class="gww-days-head caps" role="group" aria-label="Sort days by">
+                {day_sort(order, DayColumn::Day, "SEST day")}
+                {day_sort(order, DayColumn::Peak, "Peak online")}
+                {day_sort(order, DayColumn::Low, "Lowest online")}
+            </div>
+            <ol class="gww-days">{rows}</ol>
             <p class="gww-note">"Each bar is the day's count against the busiest day listed."</p>
             {(n > ACTIVITY_DAYS).then(|| view! {
                 <button class="gww-chip gww-more" on:click=move |_| all.update(|a| *a = !*a)>
-                    {if all.get_untracked() { "Show fewer days".to_string() } else { format!("Show all {n} days") }}
+                    {move || if all.get() { "Show fewer days".to_string() } else { format!("Show all {n} days") }}
                 </button>
             })}
         }
@@ -337,4 +407,56 @@ pub fn logs_page(heading: HeadingRef) -> AnyView {
         </article>
     }
     .into_any()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn day(day: f64, peak: f64, low: f64) -> WarDay {
+        WarDay { day, peak, peak_at: day, low, low_at: day }
+    }
+
+    fn sorted(order: DayOrder) -> Vec<f64> {
+        let days = [day(3.0, 100.0, 20.0), day(2.0, 300.0, 10.0), day(1.0, 200.0, 30.0)];
+        sort_days(&days, order).iter().map(|d| d.day).collect()
+    }
+
+    #[test]
+    fn opens_on_the_newest_day() {
+        assert_eq!(sorted(DayOrder::NEWEST_FIRST), [3.0, 2.0, 1.0]);
+    }
+
+    #[test]
+    fn a_first_press_puts_the_highest_on_top_and_a_second_the_lowest() {
+        let peak = DayOrder::NEWEST_FIRST.press(DayColumn::Peak);
+        assert_eq!(sorted(peak), [2.0, 1.0, 3.0]);
+        assert_eq!(sorted(peak.press(DayColumn::Peak)), [3.0, 1.0, 2.0]);
+
+        let low = DayOrder::NEWEST_FIRST.press(DayColumn::Low);
+        assert_eq!(sorted(low), [1.0, 3.0, 2.0]);
+        assert_eq!(sorted(low.press(DayColumn::Low)), [2.0, 3.0, 1.0]);
+    }
+
+    #[test]
+    fn another_column_starts_with_its_highest_on_top() {
+        let lowest_peak = DayOrder::NEWEST_FIRST.press(DayColumn::Peak).press(DayColumn::Peak);
+        assert_eq!(sorted(lowest_peak.press(DayColumn::Low)), [1.0, 3.0, 2.0]);
+    }
+
+    #[test]
+    fn the_day_heading_brings_back_the_newest_day() {
+        let peak = DayOrder::NEWEST_FIRST.press(DayColumn::Peak);
+        assert_eq!(sorted(peak.press(DayColumn::Day)), [3.0, 2.0, 1.0]);
+        assert_eq!(sorted(DayOrder::NEWEST_FIRST.press(DayColumn::Day)), [1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn equal_counts_keep_the_newest_day_on_top() {
+        let days = [day(2.0, 100.0, 10.0), day(1.0, 100.0, 10.0)];
+        let peak = DayOrder::NEWEST_FIRST.press(DayColumn::Peak);
+        for order in [peak, peak.press(DayColumn::Peak)] {
+            assert_eq!(sort_days(&days, order)[0].day, 2.0);
+        }
+    }
 }

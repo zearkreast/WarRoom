@@ -83,14 +83,27 @@ struct WarDayRow {
     low_at: String,
 }
 
-/// The last year of days, newest first. Empty while the `war_days` table doesn't exist yet (older backends).
+/// The most rows PostgREST answers with in one request.
+const DAY_PAGE: usize = 1000;
+
+/// Every logged day, newest first. Empty while the `war_days` table doesn't exist yet (older backends).
 pub fn use_war_days() -> Query<Arc<Vec<WarDay>>> {
     let last = queries().last_update;
     use_query(
         move || last.get().map(|end| format!("war_days:{}", (end / (POLL_MS * 5.0)).floor())),
         POLL_MS * 5.0,
         |_key: String| async move {
-            let list: Vec<WarDayRow> = rows(source::select("war_days", "select=*&order=day.desc&limit=366").await)?;
+            let mut list: Vec<WarDayRow> = Vec::new();
+            loop {
+                let before = list.last().map(|r| format!("&day=lt.{}", r.day)).unwrap_or_default();
+                let query = format!("select=*{before}&order=day.desc&limit={DAY_PAGE}");
+                let page: Vec<WarDayRow> = rows(source::select("war_days", &query).await)?;
+                let last_page = page.len() < DAY_PAGE;
+                list.extend(page);
+                if last_page {
+                    break;
+                }
+            }
             Ok(Arc::new(
                 list.into_iter()
                     .map(|r| WarDay {
