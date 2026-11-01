@@ -8,6 +8,15 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.6.2",
+        date: "2026-11-01",
+        items: &[
+            "Helldivers online opens on the newest day. Press SEST day, Peak online or Lowest online to sort the days by it, and again to turn the list over.",
+            "Helldivers online reaches every logged day back to 2 March 2024, not only the last year.",
+            "Fixed: a planet's page no longer loses its record to one slow read of its defenses.",
+        ],
+    },
+    ChangelogEntry {
         version: "0.6.0",
         date: "2026-10-31",
         items: &[
