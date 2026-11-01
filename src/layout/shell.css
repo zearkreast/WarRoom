@@ -468,7 +468,8 @@
       min-width: 44px;
       min-height: 44px;
     }
-    .gww-chip {
+    .gww-chip,
+    .gww-days-sort {
       min-height: 40px;
     }
   }

@@ -1923,6 +1923,38 @@
     letter-spacing: 0.16em;
     color: var(--label);
   }
+  .gww-days-sort {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    gap: var(--s-1);
+    max-width: 100%;
+    padding: 0;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    white-space: nowrap;
+    color: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color var(--t-state);
+  }
+  .gww-days-sort:hover,
+  .gww-days-sort.on {
+    color: var(--text-hi);
+  }
+  .gww-days-sort svg {
+    flex: none;
+    opacity: 0.45;
+  }
+  .gww-days-sort.on svg {
+    opacity: 1;
+    color: var(--site);
+  }
+  .gww-days-sort.up svg {
+    transform: rotate(180deg);
+  }
   .gww-days {
     display: flex;
     flex-direction: column;
@@ -1990,6 +2022,10 @@
     .gww-days li {
       grid-template-columns: 84px minmax(0, 1fr) minmax(0, 1fr);
       gap: var(--s-4);
+    }
+    .gww-days-sort {
+      white-space: normal;
+      text-align: left;
     }
   }
 }
