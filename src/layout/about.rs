@@ -29,11 +29,11 @@ pub fn About() -> impl IntoView {
                 </p>
                 <h3>"Privacy"</h3>
                 <p>
-                    "The app collects no personal data: no account, analytics, ads or tracking. Settings, pins and drill scores stay on this device, alerts are worked out here, and the only thing downloaded is war data from the project's read-only database. The full policy is in PRIVACY.md at github.com/zearkreast/WarRoom."
+                    "The app collects no personal data: no account, analytics, ads or tracking. Settings, pins and drill scores stay on this device and alerts are worked out here. The app downloads war data from the project's read-only database, and the installed app asks GitHub for new releases. The full policy is in PRIVACY.md at github.com/zearkreast/WarRoom."
                 </p>
                 <h3>"Not affiliated"</h3>
                 <p>
-                    "A fan project, not affiliated with Arrowhead Game Studios or Sony Interactive Entertainment. Map artwork is drawn for the app. The faction and sub-faction emblems and the DSS glyph (as traced by Helldivers Wiki editors), the DSS's summary hologram, the biome landscapes and the black hole and fractured planet pictures are the game's, taken from the Helldivers Wiki (helldivers.wiki.gg), and belong to their owners. Effect names come from the Helldivers 2 community's data set (github.com/helldivers-2/json, MIT licence)."
+                    "A fan project, not affiliated with Arrowhead Game Studios or Sony Interactive Entertainment. The faction and sub-faction emblems and the DSS glyph (as traced by Helldivers Wiki editors), the DSS's summary hologram, the biome landscapes and the black hole and fractured planet pictures are the game's, taken from the Helldivers Wiki (helldivers.wiki.gg), and belong to their owners. The holograms beside planets, the pictures and marks for points of interest and the DSS action icons show the game's units, sites and icons; they weren't made for this project and belong to their owners too. The rest of the map's artwork is drawn for the app. Effect names come from the Helldivers 2 community's data set (github.com/helldivers-2/json, MIT licence)."
                 </p>
                 <h3>"Credits"</h3>
                 <p>
@@ -50,6 +50,10 @@ pub fn About() -> impl IntoView {
                 </ul>
                 <p>
                     "The ministry, campaign, difficulty and stratagem icons and the SEAF emblem (vector tracings by the wiki's contributors), corporation logos, product pictures and city adverts are the game's, taken from the Helldivers Wiki, and belong to Arrowhead Game Studios and Sony Interactive Entertainment. Martian Armory's logo is drawn for the app. The stratagem collection's codes, cooldowns, call-in times, uses and unlocks come from the wiki's stratagem pages. The stratagem drill's music and sounds are synthesised in the app."
+                </p>
+                <h3>"Licence"</h3>
+                <p>
+                    "The app's own code is under the GNU General Public License v2. That doesn't cover the game's material or the pages adapted from the wiki, which keep their own terms. If something here is yours and you want it credited differently or taken down, open an issue at github.com/zearkreast/WarRoom."
                 </p>
             </div>
         </Panel>
