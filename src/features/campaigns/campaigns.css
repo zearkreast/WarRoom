@@ -195,6 +195,23 @@
     color: var(--warn);
     border-color: color-mix(in srgb, var(--warn) var(--strong), transparent);
   }
+  .cc-sort {
+    align-items: center;
+    margin-top: calc(var(--s-3) * -1);
+  }
+  .cc-sort-label {
+    font-size: var(--fs-label);
+    font-weight: 700;
+    color: var(--label);
+  }
+  .cc-badge.is-losing {
+    color: var(--bad);
+    border-color: color-mix(in srgb, var(--bad) var(--strong), transparent);
+  }
+  .cc-badge.is-counts {
+    color: var(--good);
+    border-color: color-mix(in srgb, var(--good) var(--strong), transparent);
+  }
   .cc-badge.is-gambit {
     gap: var(--s-1);
     padding-left: var(--s-1);

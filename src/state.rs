@@ -212,6 +212,18 @@ pub enum MapPlanets {
     Spheres,
 }
 
+/// The order of the cards on Active planets.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FrontSort {
+    /// Pinned, then Major Order targets, then defenses, then by Helldivers.
+    #[default]
+    Priority,
+    Need,
+    Divers,
+    Victory,
+}
+
 /// How a planet under attack draws the eye from afar.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -299,6 +311,7 @@ pub struct SettingsData {
     pub map_planets: MapPlanets,
     pub map_beacon: MapBeacon,
     pub show_inactive: bool,
+    pub front_sort: FrontSort,
     /// Whether the Galactic control ring is unfolded on the planet index.
     pub planets_control_open: bool,
     /// Whether the Major Order strip on Active planets is unfolded.
@@ -343,6 +356,7 @@ impl Default for SettingsData {
             map_planets: MapPlanets::Markers,
             map_beacon: MapBeacon::Ping,
             show_inactive: false,
+            front_sort: FrontSort::Priority,
             planets_control_open: true,
             mo_strip_open: false,
             overview_mo_open: true,

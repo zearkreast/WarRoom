@@ -17,6 +17,7 @@ use warroom_core::biomes::regen_pct_per_hour;
 use warroom_core::defense::{GambitOutlook, divers_short, event_span, needed_rate};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, to_fixed};
+use warroom_core::most_needed::NeedReason;
 
 /// What a card shows that rarely changes; the card is rebuilt only when it does.
 #[derive(Clone, PartialEq)]
@@ -147,6 +148,9 @@ pub fn CampaignCard(
     id: i64,
     #[prop(into)] total_players: Signal<f64>,
     #[prop(into)] deadline: Signal<Option<f64>>,
+    /// Why the front ranks where it does in the Most needed order; empty in any other.
+    #[prop(into, optional)]
+    reasons: Signal<Vec<NeedReason>>,
 ) -> impl IntoView {
     let all = fronts();
     let front = Memo::new(move |_| all.with(|l| l.iter().find(|f| f.campaign.id == id).cloned()));
@@ -327,6 +331,21 @@ pub fn CampaignCard(
                                 }}
                                 {move || {
                                     eta.get().filter(|e| e.late).map(|_| view! { <span class="cc-badge is-late">"After MO deadline"</span> })
+                                }}
+                                {move || {
+                                    reasons
+                                        .get()
+                                        .into_iter()
+                                        .filter(|r| *r != NeedReason::MajorOrder)
+                                        .map(|r| {
+                                            let tone = match r {
+                                                NeedReason::EachDiverCounts => "is-counts",
+                                                NeedReason::MissesDeadline => "is-late",
+                                                _ => "is-losing",
+                                            };
+                                            view! { <span class=format!("cc-badge {tone}")>{r.label()}</span> }
+                                        })
+                                        .collect_view()
                                 }}
                             </div>
                             <span class="cc-biome caps">{l.biome.clone()}</span>
