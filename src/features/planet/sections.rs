@@ -1,7 +1,6 @@
 //! The planet detail's sections, from liberation and the front line to points of interest and supply lines.
 
 use crate::api::fronts::{Front, FrontKind};
-use crate::api::history;
 use crate::api::queries::queries;
 use crate::features::map::poi::{PoiGlyph, poi_kind, poi_origin};
 use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
@@ -33,7 +32,7 @@ use warroom_core::effects::EffectKind;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, fmt_time_left, js_round, js_sum, to_fixed};
 use warroom_core::galaxy::Landmark;
-use warroom_core::progress::{Sample, tracked_percent};
+use warroom_core::progress::tracked_percent;
 use warroom_core::time::parse_ms;
 use warroom_core::war_history::{HistoryInput, LogEntry, build_war_history, defense_events, fmt_long_duration};
 
@@ -339,7 +338,7 @@ pub fn FrontLineSection(
     let freed = Memo::new(move |_| p.with(|p| record.with(|r| Arc::new(city_liberations(p, &r.samples, &r.fought)))));
     let hours = RwSignal::new(24_u32);
     // The longer ranges' readings, by the range they were read for; None inside while the store lacks them.
-    let long = RwSignal::new(None::<(u32, Option<Arc<Vec<Sample>>>)>);
+    let long = RwSignal::new(None::<(u32, Option<Arc<Vec<warroom_core::progress::Sample>>>)>);
     let index = Memo::new(move |_| p.with(|p| p.index));
     Effect::new(move |_| {
         let h = hours.get();
@@ -349,7 +348,7 @@ pub fn FrontLineSection(
         }
         let planet = index.get_untracked();
         spawn_local(async move {
-            if let Ok(list) = history::planet_history(planet, h).await
+            if let Ok(list) = crate::api::history::planet_history(planet, h).await
                 && hours.get_untracked() == h
             {
                 long.set(Some((h, list.map(Arc::new))));
