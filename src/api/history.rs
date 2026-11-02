@@ -196,6 +196,12 @@ pub async fn earliest(planet: Option<i64>) -> Result<Option<f64>, String> {
     Ok(rows.first().map(|r| parse_ms(&r.at)))
 }
 
+/// Every change after `since_ms`, oldest first.
+pub async fn changes_since(since_ms: f64) -> Result<Vec<ChangeRecord>, String> {
+    let rows: Vec<ChangeRow> = typed(select_all("owner_changes", "select=*", Some(since_ms)).await)?;
+    Ok(rows.into_iter().filter_map(to_change).collect())
+}
+
 /// Times of samples taken while the planet was under attack, oldest first.
 pub async fn defending_times(planet: i64) -> Result<Vec<f64>, String> {
     let rows: Vec<AtRow> =
@@ -207,12 +213,6 @@ pub async fn changes(planet: Option<i64>, limit: usize) -> Result<Vec<ChangeReco
     let filter = planet.map(|p| format!("&planet=eq.{p}")).unwrap_or_default();
     let rows: Vec<ChangeRow> =
         typed(source::select("owner_changes", &format!("select=*{filter}&order=id.desc&limit={limit}")).await)?;
-    Ok(rows.into_iter().filter_map(to_change).collect())
-}
-
-/// Every change after `since_ms`, oldest first.
-pub async fn changes_since(since_ms: f64) -> Result<Vec<ChangeRecord>, String> {
-    let rows: Vec<ChangeRow> = typed(select_all("owner_changes", "select=*", Some(since_ms)).await)?;
     Ok(rows.into_iter().filter_map(to_change).collect())
 }
 

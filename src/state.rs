@@ -5,7 +5,6 @@ use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::OnceLock;
-use warroom_core::away::is_away;
 use warroom_core::drill::{DrillScore, Mode};
 use warroom_core::gww_nav::GwwPage;
 use wasm_bindgen::JsCast;
@@ -322,12 +321,12 @@ pub struct SettingsData {
     pub seen_campaign_events: Vec<String>,
     /// App version whose changelog the user has opened.
     pub seen_changelog: String,
+    /// The last minute the app was open and in view, epoch ms; 0 before the first.
+    pub last_seen: f64,
     /// G.W.W. training manuals read to the end, by id.
     pub gww_read: Vec<String>,
     /// Time of the newest Strohmann News item on the last visit; 0 before the first.
     pub news_seen_at: f64,
-    /// The last minute the app was open and in view, epoch ms; 0 before the first.
-    pub last_seen: f64,
     pub drill_mode: Mode,
     /// The custom loadout, by stratagem id.
     pub drill_picks: Vec<String>,
@@ -360,9 +359,9 @@ impl Default for SettingsData {
             seen_dispatch: 0,
             seen_campaign_events: Vec::new(),
             seen_changelog: String::new(),
+            last_seen: 0.0,
             gww_read: Vec::new(),
             news_seen_at: 0.0,
-            last_seen: 0.0,
             drill_mode: Mode::Classic,
             drill_picks: Vec::new(),
             drill_permits: ["offensive", "supply", "defensive"].map(String::from).to_vec(),
@@ -562,7 +561,7 @@ pub fn track_visits() {
             return;
         }
         let last = settings().untracked(|s| s.last_seen);
-        if is_away(last, now) {
+        if warroom_core::away::is_away(last, now) {
             ui().away_since.set(Some(last));
         }
         settings().set(|s| s.last_seen = now);
