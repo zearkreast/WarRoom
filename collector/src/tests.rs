@@ -747,3 +747,36 @@ fn words_campaign_launches_and_outcomes_as_the_app_does() {
         ]
     );
 }
+
+#[test]
+fn keeps_the_galaxys_mission_and_kill_counters_once_an_hour() {
+    let (db, calls) = fake_db(&[]);
+    let mut c = collector(db, 1_000_000.0);
+    assert!(c.run(Job::War).ok);
+    let war = raw(fixture!("war.json"));
+    let rows: Vec<Value> =
+        calls.borrow().iter().filter(|c| c.path == "combat_stats").map(|c| c.body[0].clone()).collect();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0]["planet"], json!(-1));
+    assert_eq!(rows[0]["missions_won"], war["statistics"]["missionsWon"]);
+    c.now = Box::new(|| 1_000_000.0 + 30.0 * 60_000.0);
+    c.run(Job::War);
+    assert_eq!(calls.borrow().iter().filter(|c| c.path == "combat_stats").count(), 1);
+}
+
+#[test]
+fn keeps_each_campaign_planets_counters_and_carries_on_without_the_table() {
+    let (db, calls) = fake_db(&[]);
+    let mut c = collector(db, 1_000_000.0);
+    c.run(Job::Campaigns);
+    assert!(c.run(Job::Planets).ok);
+    let calls = calls.borrow();
+    let rows = &calls.iter().find(|c| c.path == "combat_stats").unwrap().body;
+    let campaigns = raw(fixture!("campaigns.json"));
+    assert_eq!(rows.as_array().unwrap().len(), campaigns.as_array().unwrap().len());
+    let (db, _) = fake_db_missing(&[], &["combat_stats"]);
+    let mut c = collector(db, 1_000_000.0);
+    c.run(Job::Campaigns);
+    assert!(c.run(Job::Planets).ok);
+    assert!(c.run(Job::War).ok);
+}

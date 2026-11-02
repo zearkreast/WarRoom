@@ -9,6 +9,7 @@ use crate::features::overview::activity::chart_color;
 use crate::features::planet::circumvallation::{circumvallation_note, use_circumvallation};
 use crate::features::planet::cities::{CityBar, CityList, CityMark};
 use crate::features::planet::defense::{GambitNotes, advance_label, time_left, use_attackers, use_enemy_advance};
+use crate::features::planet::fighting::CombatTrendLine;
 use crate::features::planet::record::{PlanetRecord, UNREACHABLE};
 use crate::js::{self, fmt_date, fmt_date_time};
 use crate::state::ui;
@@ -632,9 +633,11 @@ pub fn ServiceRecordSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
             .into_any();
         }
         let won_pct = if missions != 0.0 { s.missions_won / missions * 100.0 } else { 0.0 };
+        let index = p.with_untracked(|p| p.index);
         view! {
             <Panel title="Service record" icon=icons::MEDAL>
                 <div class="pd-stack">
+                    <CombatTrendLine planet=index />
                     <div class=if combat { "pd-tiles two" } else { "pd-tiles" }>
                         <div class="pd-card">
                             <div class="pd-card-head">

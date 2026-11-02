@@ -16,6 +16,7 @@ pub mod effects;
 pub mod faction_marks;
 pub mod faction_planets;
 pub mod factions;
+pub mod fighting;
 pub mod format;
 pub mod front_activity;
 pub mod galaxy;

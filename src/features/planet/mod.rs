@@ -6,6 +6,7 @@ pub mod cities;
 pub mod city_detail;
 pub mod defense;
 pub mod detail;
+pub mod fighting;
 pub mod globe;
 pub mod options;
 pub mod record;

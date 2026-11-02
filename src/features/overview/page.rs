@@ -5,6 +5,7 @@ use crate::features::galactic_campaigns::CampaignPanel;
 use crate::features::major_order::panel::MajorOrderList;
 use crate::features::overview::activity::{ENEMIES, WarActivity, chart_color};
 use crate::features::overview::theater::TheaterOfWar;
+use crate::features::planet::fighting::CombatTrendLine;
 use crate::js::{self, num};
 use crate::ui::emblems::FactionEmblem;
 use crate::ui::icons::{self, Icon};
@@ -16,6 +17,7 @@ use std::collections::HashSet;
 use warroom_core::api::Faction;
 use warroom_core::faction_planets::LIST_SIZE;
 use warroom_core::factions::faction_label;
+use warroom_core::fighting::GALAXY;
 use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, js_sum, sest_clock, sest_date, to_fixed, war_day};
 use warroom_core::snapshot::players_by_enemy;
 use warroom_core::war_history::fmt_long_duration;
@@ -509,6 +511,7 @@ fn Distribution() -> impl IntoView {
             {move || {
                 let rows = stats.get();
                 (!rows.is_empty()).then(|| view! {
+                    <CombatTrendLine planet=GALAXY />
                     <dl class="ov-stats">
                         {rows
                             .into_iter()
