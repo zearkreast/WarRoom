@@ -287,6 +287,34 @@ fn keeps_a_day_of_major_order_readings_only_for_running_orders() {
 }
 
 #[test]
+fn archives_each_running_order_and_a_reading_of_its_progress() {
+    let (db, calls) = fake_db(&[]);
+    let mut c = collector(db, 1_000_000.0);
+    assert!(c.run(Job::Assignments).ok);
+    let calls = calls.borrow();
+    let order = &raw(fixture!("assignments.json"))[0];
+    let orders = calls.iter().find(|c| c.path == "orders").unwrap();
+    assert_eq!(orders.body[0]["id"], order["id"]);
+    assert_eq!(orders.body[0]["tasks"], order["tasks"]);
+    assert_eq!(orders.body[0]["last_seen"], json!(iso_string(1_000_000.0)));
+    assert!(orders.prefer.as_deref().unwrap().contains("merge-duplicates"));
+    let reading = calls.iter().find(|c| c.path == "order_progress").unwrap();
+    assert_eq!(
+        reading.body[0],
+        json!({ "id": order["id"], "at": iso_string(1_000_000.0), "progress": order["progress"] })
+    );
+}
+
+#[test]
+fn keeps_polling_orders_before_the_archive_migration_is_applied() {
+    let (db, _) = fake_db_missing(&[], &["orders"]);
+    let mut c = collector(db, 1_000_000.0);
+    let run = c.run(Job::Assignments);
+    assert!(run.ok);
+    assert!(run.message.ends_with("no orders table yet"), "{}", run.message);
+}
+
+#[test]
 fn carries_on_from_the_stored_major_order_readings_after_a_restart() {
     let assignments = raw(fixture!("assignments.json"));
     let id = assignments[0]["id"].as_i64().unwrap();

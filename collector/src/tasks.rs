@@ -352,6 +352,7 @@ impl Collector {
         let samples = add_order_samples(self.order_samples.as_deref().unwrap_or_default(), &list, (self.now)());
         self.snapshot(SnapshotKind::OrderSamples, serde_json::to_value(&samples).unwrap())?;
         self.order_samples = Some(samples);
+        let archived = self.archive_orders(&list)?;
         let mut pushed = String::new();
         if let Some(announced) = self.announced_orders.clone() {
             let fresh: Vec<&Assignment> = list.iter().filter(|x| !announced.contains(&x.id)).collect();
@@ -369,7 +370,33 @@ impl Collector {
             let ids: Vec<i64> = fresh.iter().map(|x| x.id).collect();
             self.announced_orders.as_mut().unwrap().extend(ids);
         }
-        Ok(format!("{} orders{pushed}", list.len()))
+        let missing = if archived { "" } else { ", no orders table yet" };
+        Ok(format!("{} orders{pushed}{missing}", list.len()))
+    }
+
+    /// Keeps each running order and a reading of its progress; false until the tables exist.
+    fn archive_orders(&self, list: &[Assignment]) -> Result<bool, String> {
+        let at = iso_string((self.now)());
+        let orders: Vec<Value> = list
+            .iter()
+            .map(|a| {
+                json!({
+                    "id": a.id,
+                    "title": a.title,
+                    "briefing": a.briefing,
+                    "expires": a.expiration,
+                    "tasks": a.tasks,
+                    "progress": a.progress,
+                    "last_seen": at,
+                })
+            })
+            .collect();
+        if !unless_missing(self.db.upsert("orders", &orders, None, false))? {
+            return Ok(false);
+        }
+        let readings: Vec<Value> =
+            list.iter().map(|a| json!({ "id": a.id, "at": at, "progress": a.progress })).collect();
+        unless_missing(self.db.upsert("order_progress", &readings, None, true))
     }
 
     fn dispatches(&mut self) -> Result<String, JobError> {
