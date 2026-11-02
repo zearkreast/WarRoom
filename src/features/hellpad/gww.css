@@ -1475,6 +1475,53 @@
     flex-wrap: wrap;
     gap: var(--s-3);
   }
+  .gww-log-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+  }
+  .gww-search,
+  .gww-select {
+    height: 32px;
+    background: var(--surface-1);
+    border: 1px solid var(--line-strong);
+    color: var(--text-hi);
+    font: inherit;
+    font-size: var(--fs-body-s);
+    transition: border-color var(--t-state);
+  }
+  .gww-search {
+    flex: 1 1 220px;
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: 0 var(--s-4);
+    color: var(--text-dim);
+  }
+  .gww-search input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: var(--text-hi);
+    font: inherit;
+  }
+  .gww-search input::placeholder {
+    color: var(--label);
+  }
+  .gww-select {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 0 var(--s-3);
+    cursor: pointer;
+  }
+  .gww-search:focus-within,
+  .gww-select:focus-visible,
+  .gww-select:hover {
+    border-color: var(--site);
+  }
   .gww-log-day {
     gap: var(--s-3) !important;
   }
