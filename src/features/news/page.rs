@@ -1,8 +1,8 @@
 //! The Strohmann News page: the latest dispatch, then the feed by day with search.
 
 use crate::alerts::{ToastKind, toasts};
-use crate::api::news::{older_dispatches, search_dispatches};
 use crate::api::queries::queries;
+use crate::api::strohmann::{older_dispatches, search_dispatches};
 use crate::features::news::card::kind_label;
 use crate::features::news::feed::{campaign_item, dispatch_item};
 use crate::features::news::items::{NewsBody, NewsItem, NewsKind, dispatch_news_item, news_items};
