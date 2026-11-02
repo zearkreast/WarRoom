@@ -1889,4 +1889,46 @@
       grid-template-columns: 1fr;
     }
   }
+
+  .gc-history {
+    display: grid;
+    gap: var(--s-4);
+    padding: var(--s-6);
+    border-top: 1px solid var(--line);
+  }
+  .gc-history-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-4);
+  }
+  .gc-history-head h3 {
+    margin: 0;
+    font-size: var(--fs-label);
+    font-weight: 700;
+    color: var(--label);
+  }
+  .gc-week {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3) var(--s-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-body-s);
+  }
+  .gc-week li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    color: var(--k, var(--label));
+  }
+  .gc-week li.caps {
+    font-size: var(--fs-label);
+    font-weight: 700;
+  }
+  .gc-week span {
+    color: var(--text);
+  }
 }

@@ -8,6 +8,7 @@ pub mod changelog;
 pub mod chart;
 pub mod cities;
 pub mod collate;
+pub mod control_history;
 pub mod data;
 pub mod defense;
 pub mod dispatch;
