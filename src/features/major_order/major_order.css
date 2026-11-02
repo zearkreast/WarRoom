@@ -129,6 +129,30 @@
     color: var(--text-hi);
     font-weight: 600;
   }
+  .mo-chart-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-label);
+    color: var(--text-dim);
+  }
+  .mo-chart-key li::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 2px;
+    margin-right: var(--s-2);
+    vertical-align: middle;
+    background: var(--k);
+  }
+  .mo-chart-toggle {
+    justify-self: start;
+    font-size: var(--fs-label);
+    font-weight: 700;
+  }
   .mo-outlook {
     display: inline-flex;
     align-items: center;

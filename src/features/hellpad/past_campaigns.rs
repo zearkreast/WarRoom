@@ -1,3 +1,4 @@
+use crate::api::orders::{ArchivedOrder, archived_orders};
 use crate::api::queries::queries;
 use crate::features::galactic_campaigns::{CampaignBody, CampaignHead, outcome};
 use crate::js::{self, fmt_date, num};
@@ -5,10 +6,13 @@ use crate::ui::emblems::FactionEmblem;
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Empty, Loading, Panel, Tile};
 use leptos::prelude::*;
+use leptos::task::spawn_local;
 use warroom_core::data::reward_label;
 use warroom_core::factions::faction_color;
-use warroom_core::format::js_round;
+use warroom_core::format::{fmt_compact, fmt_pct, js_round};
+use warroom_core::major_order::{TaskView, describe_assignment, task_name, task_percent};
 use warroom_core::snapshot::{EpisodeLive, EpisodeStatus, campaign_record, campaign_tally};
+use warroom_core::time::parse_ms;
 use wasm_bindgen::JsCast;
 
 const DAY_MS: f64 = 86_400_000.0;
@@ -225,6 +229,83 @@ pub fn PastCampaignsModule() -> impl IntoView {
                 }
                 .into_any()
             }}
+        </Panel>
+        <OrderArchive />
+    }
+}
+
+fn archived_task(t: &TaskView) -> AnyView {
+    let text = if t.is_planet {
+        format!("{} {}", t.label, task_name(t))
+    } else {
+        format!("{} · {} / {}", task_name(t), fmt_compact(t.current), fmt_compact(t.goal))
+    };
+    view! {
+        <li class=if t.done { "done" } else { "" }>
+            <Icon icon=if t.done { icons::CHECK_SQUARE } else { icons::SQUARE } size=14.0 />
+            <span>{text}</span>
+            {(!t.is_planet).then(|| view! { <b class="num">{fmt_pct(task_percent(t), 1)}</b> })}
+        </li>
+    }
+    .into_any()
+}
+
+/// Major Orders the collector has kept, with where each objective stood at the order's last reading.
+#[component]
+fn OrderArchive() -> impl IntoView {
+    let q = queries();
+    let archive = RwSignal::new(None::<Result<Option<Vec<ArchivedOrder>>, String>>);
+    spawn_local(async move { archive.set(Some(archived_orders().await)) });
+    let past = Memo::new(move |_| {
+        let running: Vec<i64> = q.assignments.with(|a| a.iter().flat_map(|l| l.iter()).map(|a| a.id).collect());
+        archive.with(|a| match a {
+            Some(Ok(Some(list))) => {
+                Some(list.iter().filter(|o| !running.contains(&o.order.id)).cloned().collect::<Vec<_>>())
+            }
+            _ => None,
+        })
+    });
+    let body = move || {
+        let planets = q.fresh_planets.get();
+        match archive.with(|a| a.as_ref().map(|r| r.as_ref().map(Option::is_some).map_err(Clone::clone))) {
+            None => return view! { <Loading what="the order archive" rows=2 /> }.into_any(),
+            Some(Err(_)) => return view! { <Empty>"Could not reach the war archive."</Empty> }.into_any(),
+            Some(Ok(false)) => {
+                return view! { <Empty>"The order archive arrives with its database update."</Empty> }.into_any();
+            }
+            Some(Ok(true)) => {}
+        }
+        let list = past.get().unwrap_or_default();
+        if list.is_empty() {
+            return view! { <Empty>"No archived order has ended yet. Orders are kept from the collector update on."</Empty> }.into_any();
+        }
+        view! {
+            <ol class="oa-list">
+                {list
+                    .into_iter()
+                    .map(|o| {
+                        let tasks = describe_assignment(&o.order, planets.as_deref().map(|p| p.as_slice()));
+                        let won = !tasks.is_empty() && tasks.iter().all(|t| t.done);
+                        view! {
+                            <li class="oa">
+                                <div class="oa-head">
+                                    <b class="oa-title">{o.order.title.clone().unwrap_or_else(|| "Major Order".into())}</b>
+                                    <span class="oa-when caps num">{format!("{} – {}", fmt_date(o.first_seen), fmt_date(parse_ms(&o.order.expiration)))}</span>
+                                    <span class=format!("oa-result caps {}", if won { "won" } else { "lost" })>{if won { "Complete" } else { "Not complete" }}</span>
+                                </div>
+                                {o.order.briefing.clone().map(|b| view! { <p class="oa-brief">{b}</p> })}
+                                <ul class="oa-tasks">{tasks.iter().map(archived_task).collect_view()}</ul>
+                            </li>
+                        }
+                    })
+                    .collect_view()}
+            </ol>
+        }
+        .into_any()
+    };
+    view! {
+        <Panel title="Major Orders on record" icon=icons::TARGET>
+            {body}
         </Panel>
     }
 }

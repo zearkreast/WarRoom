@@ -3,6 +3,7 @@
 pub mod cache;
 pub mod fronts;
 pub mod history;
+pub mod orders;
 pub mod queries;
 pub mod source;
 pub mod stations;
