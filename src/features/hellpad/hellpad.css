@@ -1889,4 +1889,19 @@
       grid-template-columns: 1fr;
     }
   }
+
+  .st-record {
+    margin: 0;
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    color: var(--label);
+  }
+  .st-alerts {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    color: var(--text-dim);
+  }
 }
