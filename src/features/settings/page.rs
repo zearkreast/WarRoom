@@ -81,15 +81,25 @@ fn OnOff(
     view! { <Switch label=label value=value on_change=move |v: bool| on_change(v) /> }
 }
 
-const ALERTS: [(&str, &str, &str); 5] = [
+const ALERTS: [(&str, &str, &str); 7] = [
     (
         "orders",
         "Major Orders and campaigns",
         "When High Command issues a new order, and when a Galactic Campaign starts or ends.",
     ),
+    (
+        "progress",
+        "Major Order progress",
+        "When the order turns to losing, has 6 hours or 1 hour left, or completes an objective.",
+    ),
     ("dispatches", "New dispatches", "Messages from Super Earth."),
     ("captures", "Planets liberated or lost", "Whenever a planet changes hands."),
     ("defenses", "New defenses", "When an enemy attacks a Super Earth planet."),
+    (
+        "pinned",
+        "Pinned planets",
+        "When a pinned front is an hour from victory, starts losing ground, or a city opens on it.",
+    ),
     ("system", "System notifications", "Also show alerts outside the app, as OS notifications."),
 ];
 
@@ -99,6 +109,8 @@ fn alert_value(a: &AlertSettings, key: &str) -> bool {
         "dispatches" => a.dispatches,
         "captures" => a.captures,
         "defenses" => a.defenses,
+        "pinned" => a.pinned,
+        "progress" => a.progress,
         _ => a.system,
     }
 }
@@ -109,6 +121,8 @@ fn alert_flag<'a>(a: &'a mut AlertSettings, key: &str) -> &'a mut bool {
         "dispatches" => &mut a.dispatches,
         "captures" => &mut a.captures,
         "defenses" => &mut a.defenses,
+        "pinned" => &mut a.pinned,
+        "progress" => &mut a.progress,
         _ => &mut a.system,
     }
 }
