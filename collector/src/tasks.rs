@@ -341,6 +341,10 @@ impl Collector {
             _ => Vec::new(),
         };
         items.sort_by_key(|(d, _)| std::cmp::Reverse(d.id));
+        let archive: Vec<Value> = items
+            .iter()
+            .map(|(d, _)| json!({ "id": d.id, "published": d.published, "kind": d.kind, "message": d.message }))
+            .collect();
         items.truncate(DISPATCH_LIMIT);
         if self.push.is_some() && self.announced_dispatch.is_none() {
             let stored: Vec<Dispatch> = match self.stored(SnapshotKind::Dispatches)? {
@@ -356,6 +360,7 @@ impl Collector {
             return Ok("unchanged".into());
         }
         self.snapshot(SnapshotKind::Dispatches, data)?;
+        let archived = unless_missing(self.db.upsert("dispatches", &archive, None, false))?;
         self.last_dispatches = json;
         let mut pushed = String::new();
         if let Some(since) = self.announced_dispatch {
@@ -370,7 +375,8 @@ impl Collector {
             pushed = self.announce(Topic::Dispatches, &fresh);
             self.announced_dispatch = Some(items.iter().map(|(d, _)| d.id).fold(since, i64::max));
         }
-        Ok(format!("newest #{}{pushed}", items.first().map_or(0, |(d, _)| d.id)))
+        let missing = if archived { "" } else { ", no dispatches table yet" };
+        Ok(format!("newest #{}{pushed}{missing}", items.first().map_or(0, |(d, _)| d.id)))
     }
 
     fn stations(&mut self) -> Result<String, JobError> {

@@ -6,4 +6,5 @@ pub mod history;
 pub mod queries;
 pub mod source;
 pub mod stations;
+pub mod strohmann;
 pub mod war_samples;

@@ -54,6 +54,16 @@ fn thread_text(t: &CampaignThread) -> String {
     parts.join(" ")
 }
 
+pub fn dispatch_news_item(d: &Dispatch) -> NewsItem {
+    NewsItem {
+        kind: NewsKind::Dispatch(dispatch_kind(&d.message)),
+        at: parse_ms(&d.published),
+        key: format!("d{}", d.id),
+        text: plain_text(&d.message),
+        body: NewsBody::Dispatch(d.clone()),
+    }
+}
+
 static ITEMS: OnceLock<Memo<Arc<Vec<NewsItem>>>> = OnceLock::new();
 
 /// Dispatches and Galactic Campaign threads, newest first.
@@ -67,17 +77,8 @@ pub fn news_items() -> Memo<Arc<Vec<NewsItem>>> {
                 let dispatches: &[Dispatch] = dispatches.as_deref().map_or(&[], Vec::as_slice);
                 // Dispatches about a campaign live on its thread, so its orders and outcomes read as one story.
                 let (threads, claimed) = campaign_threads(episodes.as_deref().map_or(&[], Vec::as_slice), dispatches);
-                let mut items: Vec<NewsItem> = dispatches
-                    .iter()
-                    .filter(|d| !claimed.contains(&d.id))
-                    .map(|d| NewsItem {
-                        kind: NewsKind::Dispatch(dispatch_kind(&d.message)),
-                        at: parse_ms(&d.published),
-                        key: format!("d{}", d.id),
-                        text: plain_text(&d.message),
-                        body: NewsBody::Dispatch(d.clone()),
-                    })
-                    .collect();
+                let mut items: Vec<NewsItem> =
+                    dispatches.iter().filter(|d| !claimed.contains(&d.id)).map(dispatch_news_item).collect();
                 items.extend(threads.into_iter().map(|t| NewsItem {
                     kind: NewsKind::Campaign,
                     at: t.at,
