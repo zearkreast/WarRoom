@@ -1,10 +1,11 @@
 //! The Strohmann News page: the latest dispatch, then the feed by day with search.
 
 use crate::alerts::{ToastKind, toasts};
+use crate::api::news::{older_dispatches, search_dispatches};
 use crate::api::queries::queries;
 use crate::features::news::card::kind_label;
 use crate::features::news::feed::{campaign_item, dispatch_item};
-use crate::features::news::items::{NewsBody, NewsItem, NewsKind, news_items};
+use crate::features::news::items::{NewsBody, NewsItem, NewsKind, dispatch_news_item, news_items};
 use crate::js;
 use crate::state::settings;
 use crate::ui::emblems::SuperEarthSeal;
@@ -12,7 +13,8 @@ use crate::ui::hint::Hint;
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{CtaButton, Empty, Loading};
 use leptos::prelude::*;
-use std::collections::HashMap;
+use leptos::task::spawn_local;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use warroom_core::api::Dispatch;
 use warroom_core::format::{dispatch_title, fmt_ago};
@@ -20,6 +22,8 @@ use warroom_core::news_feed::{group_by_day, matches_query};
 use warroom_core::time::parse_ms;
 
 const PAGE: usize = 20;
+/// Dispatches read from the archive at a time.
+const ARCHIVE_PAGE: usize = 50;
 
 /// The newest dispatch, to read again as the game shows it in case its popup was missed.
 #[component]
@@ -74,9 +78,72 @@ pub fn NewsPage() -> impl IntoView {
         }
     });
     let loading = Memo::new(move |_| q.raw.loading.get() && q.dispatches.with(Option::is_none));
+    // Dispatches read from the archive and those a search found there; `more_archived` turns false at its end.
+    let archive = RwSignal::new(Vec::<Dispatch>::new());
+    let found = RwSignal::new(Vec::<Dispatch>::new());
+    let more_archived = RwSignal::new(true);
+    let reading = RwSignal::new(false);
+    let all = Memo::new(move |_| {
+        let held: HashSet<i64> = q.dispatches.with(|d| d.iter().flat_map(|l| l.iter()).map(|d| d.id).collect());
+        let mut extra: Vec<NewsItem> = Vec::new();
+        let mut seen = held;
+        for d in archive.get().iter().chain(found.get().iter()) {
+            if seen.insert(d.id) {
+                extra.push(dispatch_news_item(d));
+            }
+        }
+        if extra.is_empty() {
+            return items.get();
+        }
+        let mut list: Vec<NewsItem> = items.with(|l| l.to_vec());
+        list.extend(extra);
+        list.sort_by(|a, b| b.at.total_cmp(&a.at));
+        Arc::new(list)
+    });
+    let searches = StoredValue::new(0_u64);
+    Effect::new(move |_| {
+        let words: Vec<String> = query.with(|q| q.split_whitespace().map(str::to_string).collect());
+        let run = searches.get_value() + 1;
+        searches.set_value(run);
+        if words.iter().map(String::len).sum::<usize>() < 3 {
+            found.set(Vec::new());
+            return;
+        }
+        spawn_local(async move {
+            // Waits for typing to pause before asking the archive.
+            js::sleep(400.0).await;
+            if searches.get_value() != run {
+                return;
+            }
+            if let Ok(Some(list)) = search_dispatches(&words, 100).await
+                && searches.get_value() == run
+            {
+                found.set(list);
+            }
+        });
+    });
+    let read_older = move || {
+        let oldest = all.with(|l| {
+            l.iter().filter_map(|i| if let NewsBody::Dispatch(d) = &i.body { Some(d.id) } else { None }).min()
+        });
+        let Some(oldest) = oldest else { return };
+        reading.set(true);
+        spawn_local(async move {
+            match older_dispatches(oldest, ARCHIVE_PAGE).await {
+                Ok(Some(list)) => {
+                    more_archived.set(list.len() == ARCHIVE_PAGE);
+                    archive.update(|a| a.extend(list));
+                    shown.update(|n| *n += PAGE);
+                }
+                Ok(None) => more_archived.set(false),
+                Err(_) => {}
+            }
+            reading.set(false);
+        });
+    };
     let kinds = Memo::new(move |_| {
         let mut out: Vec<(NewsKind, usize)> = Vec::new();
-        items.with(|l| {
+        all.with(|l| {
             for i in l.iter() {
                 match out.iter_mut().find(|(k, _)| *k == i.kind) {
                     Some((_, n)) => *n += 1,
@@ -89,7 +156,7 @@ pub fn NewsPage() -> impl IntoView {
     let list = Memo::new(move |_| {
         let f = filter.get();
         query.with(|q| {
-            items.with(|l| {
+            all.with(|l| {
                 l.iter()
                     .filter(|i| f.is_none_or(|k| i.kind == k) && matches_query(&i.text, q))
                     .cloned()
@@ -182,7 +249,7 @@ pub fn NewsPage() -> impl IntoView {
                             on:click=move |_| filter.set(None)
                         >
                             "All "
-                            <span class="count">{move || items.with(|l| l.len())}</span>
+                            <span class="count">{move || all.with(|l| l.len())}</span>
                         </button>
                         <For each=kind_keys key=|k| k.as_str() let:k>
                             <button
@@ -231,8 +298,18 @@ pub fn NewsPage() -> impl IntoView {
                     }
                     .into_any(),
                 }}
-                <Show when=move || { shown.get() < list.with(|l| l.len()) }>
-                    <button class="hud-btn news-more" on:click=move |_| shown.update(|n| *n += PAGE)>
+                <Show when=move || { shown.get() < list.with(|l| l.len()) || (more_archived.get() && query.with(String::is_empty)) }>
+                    <button
+                        class="hud-btn news-more"
+                        disabled=move || reading.get()
+                        on:click=move |_| {
+                            if shown.get_untracked() < list.with_untracked(|l| l.len()) {
+                                shown.update(|n| *n += PAGE);
+                            } else {
+                                read_older();
+                            }
+                        }
+                    >
                         "Load older news"
                     </button>
                 </Show>

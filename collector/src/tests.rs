@@ -409,6 +409,22 @@ fn kinds_in(calls: &[Call]) -> Vec<String> {
 }
 
 #[test]
+fn archives_every_dispatch_and_carries_on_without_the_table() {
+    let (db, calls) = fake_db(&[]);
+    let mut c = collector(db, 1_000_000.0);
+    assert!(c.run(Job::Dispatches).ok);
+    let calls = calls.borrow();
+    let archive = calls.iter().find(|c| c.path == "dispatches").unwrap();
+    let all = raw(fixture!("dispatches.json"));
+    assert_eq!(archive.body.as_array().unwrap().len(), all.as_array().unwrap().len());
+    assert!(archive.prefer.as_deref().unwrap().contains("merge-duplicates"));
+    let (db, _) = fake_db_missing(&[], &["dispatches"]);
+    let mut c = collector(db, 1_000_000.0);
+    let run = c.run(Job::Dispatches);
+    assert!(run.ok && run.message.ends_with("no dispatches table yet"), "{}", run.message);
+}
+
+#[test]
 fn rewrites_the_dispatches_when_the_newest_ones_text_changes_under_the_same_id() {
     let (db, calls) = fake_db(&[]);
     let mut c = collector(db, 1_000_000.0);
