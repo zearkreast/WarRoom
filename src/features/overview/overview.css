@@ -24,6 +24,61 @@
   .ov-col > * {
     flex: none;
   }
+  .ov-away-list {
+    display: grid;
+    gap: var(--s-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .ov-away-list li {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-4);
+    font-size: var(--fs-body-s);
+    color: var(--text);
+  }
+  .ov-away-list b {
+    flex: none;
+    min-width: 3.5em;
+    text-align: right;
+    font-family: var(--font-head);
+    font-stretch: 75%;
+    font-weight: 800;
+    font-size: 1.25rem;
+  }
+  .ov-away-quiet {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-body-s);
+  }
+  .ov-away-for {
+    font-size: var(--fs-label);
+    font-weight: 700;
+    color: var(--label);
+  }
+  .ov-away-x {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    margin-left: var(--s-3);
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--text-dim);
+    cursor: pointer;
+  }
+  .ov-away-x:hover,
+  .ov-away-x:focus-visible {
+    border-color: var(--cta);
+    color: var(--text-hi);
+  }
+  .ov-away-news {
+    justify-self: start;
+    margin-top: var(--s-4);
+    font-size: var(--fs-label);
+    font-weight: 700;
+  }
   /* The theater takes whatever height its column leaves; the disc is sized to fit both ways. */
   .ov-col > .tw {
     flex: 1 1 0;

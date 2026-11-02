@@ -220,6 +220,12 @@ pub async fn earliest(planet: Option<i64>) -> Result<Option<f64>, String> {
     Ok(rows.first().map(|r| parse_ms(&r.at)))
 }
 
+/// Every change after `since_ms`, oldest first.
+pub async fn changes_since(since_ms: f64) -> Result<Vec<ChangeRecord>, String> {
+    let rows: Vec<ChangeRow> = typed(select_all("owner_changes", "select=*", Some(since_ms)).await)?;
+    Ok(rows.into_iter().filter_map(to_change).collect())
+}
+
 /// Times of samples taken while the planet was under attack, oldest first.
 pub async fn defending_times(planet: i64) -> Result<Vec<f64>, String> {
     let rows: Vec<AtRow> =

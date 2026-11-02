@@ -1,7 +1,7 @@
 WARCOMMAND TRACKER - PRIVACY POLICY
 ===================================
 
-Last updated: 1 November 2026
+Last updated: 2 November 2026
 
 In short: WarCommand Tracker collects no personal data. There is no account,
 no analytics, no advertising and no tracking of any kind.
@@ -13,6 +13,9 @@ Your settings, watchlist, dismissed hints, stratagem drill scores, and
 which news and alerts you have already seen are kept in the app's own storage
 on your device. They are
 never sent anywhere. Uninstalling the app, or clearing its data, deletes them.
+
+The app also notes the last time it was open, for its "While you were away"
+briefing. That stays on your device as well.
 
 
 WHAT THE APP DOWNLOADS

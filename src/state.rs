@@ -82,6 +82,8 @@ pub struct Ui {
     pub city: RwSignal<Option<CityRef>>,
     pub options: RwSignal<Option<OptionsAnchor>>,
     pub dispatch_open: RwSignal<bool>,
+    /// When the player last looked, if it was long enough ago for "While you were away".
+    pub away_since: RwSignal<Option<f64>>,
     /// The About or Icons legend dialog, when one is open.
     pub dialog: RwSignal<Option<InfoDialog>>,
     /// The G.W.W.'s page history, kept while the app runs so leaving the module and coming back resumes it.
@@ -346,6 +348,8 @@ pub struct SettingsData {
     pub seen_campaign_events: Vec<String>,
     /// App version whose changelog the user has opened.
     pub seen_changelog: String,
+    /// The last minute the app was open and in view, epoch ms; 0 before the first.
+    pub last_seen: f64,
     /// G.W.W. training manuals read to the end, by id.
     pub gww_read: Vec<String>,
     /// Time of the newest Strohmann News item on the last visit; 0 before the first.
@@ -384,6 +388,7 @@ impl Default for SettingsData {
             seen_dispatch: 0,
             seen_campaign_events: Vec::new(),
             seen_changelog: String::new(),
+            last_seen: 0.0,
             gww_read: Vec::new(),
             news_seen_at: 0.0,
             drill_mode: Mode::Classic,
@@ -559,6 +564,7 @@ pub fn init() {
         city: RwSignal::new(None),
         options: RwSignal::new(None),
         dispatch_open: RwSignal::new(false),
+        away_since: RwSignal::new(None),
         dialog: RwSignal::new(None),
         gww: RwSignal::new(vec![GwwPage::Home]),
     };
@@ -572,4 +578,21 @@ pub fn ui() -> Ui {
 
 pub fn settings() -> Settings {
     STORES.get().expect("stores initialised").settings
+}
+
+/// Notes each minute the app is open and in view; coming back after a long enough break, at startup or from
+/// the tray, opens "While you were away".
+pub fn track_visits() {
+    let clock = js::use_now(60_000.0);
+    Effect::new(move |_| {
+        let now = clock.get();
+        if js::document().hidden() {
+            return;
+        }
+        let last = settings().untracked(|s| s.last_seen);
+        if warroom_core::away::is_away(last, now) {
+            ui().away_since.set(Some(last));
+        }
+        settings().set(|s| s.last_seen = now);
+    });
 }
