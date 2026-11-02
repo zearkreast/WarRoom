@@ -287,9 +287,25 @@ impl History {
 
     /// Appends the page of changes before the oldest held.
     pub async fn load_older(&self) -> Result<(), String> {
+        self.load_before(KEEP).await
+    }
+
+    /// Loads every change not yet held.
+    pub async fn load_all(&self) -> Result<(), String> {
+        // Bounded, as a refresh can keep cutting off the end being joined.
+        for _ in 0..50 {
+            if !self.older.get_untracked() {
+                break;
+            }
+            self.load_before(SAMPLE_LIMIT).await?;
+        }
+        Ok(())
+    }
+
+    async fn load_before(&self, limit: usize) -> Result<(), String> {
         let Some(oldest) = self.changes.with_untracked(|c| c.last().map(|c| c.id)) else { return Ok(()) };
-        let page = changes_before(oldest, KEEP).await?;
-        let full = page.len() == KEEP;
+        let page = changes_before(oldest, limit).await?;
+        let full = page.len() == limit;
         let mut joined = false;
         // A refresh meanwhile may have dropped the oldest; appending then would leave a gap.
         self.changes.update(|c| {

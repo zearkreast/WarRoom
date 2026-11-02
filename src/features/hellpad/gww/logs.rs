@@ -13,10 +13,13 @@ use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Empty, Loading};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
+use std::collections::{BTreeSet, HashMap};
+use std::sync::Arc;
 use warroom_core::api::Faction;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, sest_clock, sest_date};
 use warroom_core::gww_nav::LOG_TITLE;
+use warroom_core::owner_changes::{LogQuery, log_matches};
 
 fn log_box(title: String, note: AnyView, icon: AnyView, body: AnyView) -> AnyView {
     view! {
@@ -43,19 +46,46 @@ const LOG_DAYS: usize = 7;
 
 fn war_log() -> AnyView {
     let h = history();
+    let q = queries();
     let show = RwSignal::new(LogFilter::All);
     let all_days = RwSignal::new(false);
     let changes = h.changes;
     let ready = h.ready;
     let older = h.older;
     let fetching = RwSignal::new(false);
+    let enemy = RwSignal::new(None::<Faction>);
+    let sector = RwSignal::new(None::<String>);
+    let text = RwSignal::new(String::new());
+    let query = Memo::new(move |_| LogQuery { enemy: enemy.get(), sector: sector.get(), text: text.get() });
+    let sector_of =
+        Memo::new(move |_| {
+            Arc::new(q.planets.with(|p| {
+                p.iter().flat_map(|l| l.iter()).map(|p| (p.index, p.sector.clone())).collect::<HashMap<_, _>>()
+            }))
+        });
+    let sectors = Memo::new(move |_| sector_of.with(|m| m.values().cloned().collect::<BTreeSet<_>>()));
+    let searching = RwSignal::new(false);
+    // A filter searches the whole war, not only the latest page.
+    Effect::new(move |_| {
+        if query.with(LogQuery::is_empty) || !ready.get() || !older.get() || searching.get_untracked() {
+            return;
+        }
+        searching.set(true);
+        spawn_local(async move {
+            let _ = h.load_all().await;
+            searching.set(false);
+        });
+    });
     let days = Memo::new(move |_| {
         let s = show.get();
+        let query = query.get();
+        let sector_of = sector_of.get();
         let mut days: Vec<(String, Vec<_>)> = Vec::new();
         changes.with(|c| {
-            for c in
-                c.iter().filter(|c| s == LogFilter::All || (s == LogFilter::Won) == (c.change.to == Faction::Humans))
-            {
+            for c in c.iter().filter(|c| {
+                (s == LogFilter::All || (s == LogFilter::Won) == (c.change.to == Faction::Humans))
+                    && log_matches(&c.change, sector_of.get(&c.change.planet).map(String::as_str), &query)
+            }) {
                 let day = fmt_date(c.change.at);
                 match days.last_mut() {
                     Some((d, items)) if *d == day => items.push(c.clone()),
@@ -66,11 +96,14 @@ fn war_log() -> AnyView {
         days
     });
     let body = move || {
-        if !ready.get() {
+        if !ready.get() || searching.get() {
             return view! { <Loading what="the war archive" rows=3 /> }.into_any();
         }
         let list = days.get();
         if list.is_empty() {
+            if !query.with(LogQuery::is_empty) {
+                return view! { <Empty>"No change of hands matches these filters."</Empty> }.into_any();
+            }
             let span = if older.get() {
                 format!("in the latest {} changes", changes.with(Vec::len))
             } else {
@@ -139,7 +172,7 @@ fn war_log() -> AnyView {
         };
     let load_older = move || {
         let every_day = all_days.get() || days.with(Vec::len) <= LOG_DAYS;
-        (ready.get() && older.get() && every_day).then(|| {
+        (ready.get() && older.get() && every_day && query.with(LogQuery::is_empty)).then(|| {
             view! {
                 <button
                     class="gww-chip gww-more"
@@ -170,6 +203,60 @@ fn war_log() -> AnyView {
                     </button>
                 })
                 .collect_view()}
+        </div>
+        <div class="gww-log-tools">
+            <label class="gww-search">
+                <Icon icon=icons::SEARCH size=14.0 />
+                <input
+                    id="war-log-search"
+                    type="search"
+                    placeholder="Search planets or sectors"
+                    prop:value=move || text.get()
+                    on:input=move |e| text.set(event_target_value(&e))
+                    aria-label="Search the war log"
+                />
+            </label>
+            <select
+                id="war-log-enemy"
+                class="gww-select"
+                aria-label="Enemy"
+                on:change=move |e| {
+                    let v = event_target_value(&e);
+                    enemy.set(Faction::ENEMIES.into_iter().find(|f| f.as_str() == v));
+                }
+            >
+                <option value="" selected=move || enemy.get().is_none()>"Every enemy"</option>
+                {Faction::ENEMIES
+                    .map(|f| view! {
+                        <option value=f.as_str() selected=move || enemy.get() == Some(f)>{faction_label(Some(f))}</option>
+                    })
+                    .collect_view()}
+            </select>
+            <select
+                id="war-log-sector"
+                class="gww-select"
+                aria-label="Sector"
+                on:change=move |e| {
+                    let v = event_target_value(&e);
+                    sector.set((!v.is_empty()).then_some(v));
+                }
+            >
+                <option value="" selected=move || sector.get().is_none()>"Every sector"</option>
+                {move || {
+                    sectors
+                        .get()
+                        .into_iter()
+                        .map(|s| {
+                            let pick = s.clone();
+                            view! {
+                                <option value=s.clone() selected=move || sector.with(|x| x.as_deref() == Some(pick.as_str()))>
+                                    {s.clone()}
+                                </option>
+                            }
+                        })
+                        .collect_view()
+                }}
+            </select>
         </div>
         {body}
         {more}
