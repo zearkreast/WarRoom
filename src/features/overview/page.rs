@@ -4,6 +4,7 @@ use crate::api::queries::queries;
 use crate::features::galactic_campaigns::CampaignPanel;
 use crate::features::major_order::panel::MajorOrderList;
 use crate::features::overview::activity::{ENEMIES, WarActivity, chart_color};
+use crate::features::overview::away::AwayBriefing;
 use crate::features::overview::theater::TheaterOfWar;
 use crate::js::{self, num};
 use crate::ui::emblems::FactionEmblem;
@@ -536,6 +537,7 @@ pub fn OverviewPage() -> impl IntoView {
                     <Distribution />
                 </div>
                 <div class="ov-col ov-col-mid">
+                    <AwayBriefing />
                     <MajorOrderList foldable=true />
                     <WarActivity />
                 </div>

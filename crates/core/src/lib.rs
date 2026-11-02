@@ -1,6 +1,7 @@
 //! Galactic War data shapes and logic shared by the WarRoom app (compiled to WebAssembly) and the collector.
 
 pub mod api;
+pub mod away;
 pub mod biomes;
 pub mod campaign_filter;
 pub mod campaign_news;

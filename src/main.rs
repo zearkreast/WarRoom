@@ -64,6 +64,7 @@ fn main() {
     nav_history::start();
     api::queries::start_polling();
     alerts::watch::start();
+    state::track_visits();
     tray::start();
     leptos::mount::mount_to(js::document().get_element_by_id("root").unwrap().unchecked_into(), app::App).forget();
 }

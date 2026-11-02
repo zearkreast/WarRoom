@@ -210,6 +210,12 @@ pub async fn changes(planet: Option<i64>, limit: usize) -> Result<Vec<ChangeReco
     Ok(rows.into_iter().filter_map(to_change).collect())
 }
 
+/// Every change after `since_ms`, oldest first.
+pub async fn changes_since(since_ms: f64) -> Result<Vec<ChangeRecord>, String> {
+    let rows: Vec<ChangeRow> = typed(select_all("owner_changes", "select=*", Some(since_ms)).await)?;
+    Ok(rows.into_iter().filter_map(to_change).collect())
+}
+
 /// Changes newer than `after_id`, newest first.
 pub async fn changes_after(after_id: i64, limit: usize) -> Result<Vec<ChangeRecord>, String> {
     let rows: Vec<ChangeRow> = typed(
