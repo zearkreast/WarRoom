@@ -8,8 +8,9 @@ use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use warroom_core::api::{
-    Assignment, Campaign, Dispatch, EpisodeRaw, Planet, War, WarStatusRaw, from_value, to_js_json,
+    Assignment, Campaign, Dispatch, EpisodeRaw, Planet, Statistics, War, WarStatusRaw, from_value, to_js_json,
 };
+use warroom_core::combat_trend::GALAXY;
 use warroom_core::format::dispatch_title;
 use warroom_core::snapshot::{
     DISPATCH_LIMIT, EpisodeLive, EpisodeStatus, OrderSample, SnapshotKind, StationLive, add_order_samples,
@@ -129,6 +130,25 @@ pub struct Collector {
     /// Campaigns as last written; read back once after a restart so the archive and issue dates survive it.
     episodes: Option<Vec<EpisodeLive>>,
     last_effects: String,
+    /// When the planets' and the galaxy's mission and kill counters were last kept.
+    planet_stats_at: Option<f64>,
+    galaxy_stats_at: Option<f64>,
+}
+
+/// How often the mission and kill counters are kept.
+const STATS_EVERY_MS: f64 = 3_600_000.0;
+
+fn combat_row(planet: i64, s: &Statistics, at: f64) -> Value {
+    json!({
+        "planet": planet,
+        "at": iso_string(at),
+        "missions_won": s.missions_won,
+        "missions_lost": s.missions_lost,
+        "terminid_kills": s.terminid_kills,
+        "automaton_kills": s.automaton_kills,
+        "illuminate_kills": s.illuminate_kills,
+        "deaths": s.deaths,
+    })
 }
 
 fn change_note(n: usize) -> String {
@@ -165,6 +185,8 @@ impl Collector {
             order_samples: None,
             episodes: None,
             last_effects: String::new(),
+            planet_stats_at: None,
+            galaxy_stats_at: None,
         }
     }
 
@@ -241,6 +263,17 @@ impl Collector {
             SnapshotKind::Planets,
             serde_json::to_value(planets.iter().map(to_live).collect::<Vec<_>>()).unwrap(),
         )?;
+        let due = self.planet_stats_at.is_none_or(|t| at - t >= STATS_EVERY_MS);
+        if due && !campaign.is_empty() {
+            let rows: Vec<Value> = planets
+                .iter()
+                .filter(|p| campaign.contains(&p.index))
+                .map(|p| combat_row(p.index, &p.statistics, at))
+                .collect();
+            if unless_missing(self.db.upsert("combat_stats", &rows, None, true))? {
+                self.planet_stats_at = Some(at);
+            }
+        }
         let statics: Vec<_> = planets.iter().map(to_static).collect();
         let json = to_js_json(&statics);
         // Static data barely changes; only rewrite it when it does.
@@ -284,6 +317,13 @@ impl Collector {
             let fronts: &[Campaign] = if fresh { &self.last_campaigns } else { &[] };
             let sample = to_war_sample(&war, fronts.iter().map(|c| &c.planet), at);
             self.db.upsert("war_samples", &[serde_json::to_value(sample).unwrap()], None, true)?;
+        }
+        let at = (self.now)();
+        if online > 0.0 && self.galaxy_stats_at.is_none_or(|t| at - t >= STATS_EVERY_MS) {
+            let row = combat_row(GALAXY, &war.statistics, at);
+            if unless_missing(self.db.upsert("combat_stats", &[row], None, true))? {
+                self.galaxy_stats_at = Some(at);
+            }
         }
         let noted = online > 0.0
             && unless_missing(
@@ -428,6 +468,7 @@ impl Collector {
         let removed_war = self.db.rpc("compact_war_samples", json!({}))?;
         let mut removed_activity = json!(0);
         unless_missing(self.db.rpc("compact_activity", json!({})).map(|n| removed_activity = n))?;
+        unless_missing(self.db.rpc("trim_combat_stats", json!({})))?;
         Ok(format!("{removed} old samples, {removed_war} war samples and {removed_activity} activity readings thinned"))
     }
 

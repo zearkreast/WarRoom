@@ -1,6 +1,7 @@
 //! Everything the app reads from Supabase, and the live data derived from it.
 
 pub mod cache;
+pub mod combat;
 pub mod fronts;
 pub mod history;
 pub mod queries;

@@ -729,6 +729,38 @@
     color: var(--label);
   }
 
+  .ct-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s-2) var(--s-5);
+    margin: 0;
+    font-size: var(--fs-body-s);
+    color: var(--text-dim);
+  }
+  .ct-line b {
+    margin-right: var(--s-1);
+    color: var(--text-hi);
+    font-weight: 700;
+  }
+  .ct-line b.good {
+    color: var(--good);
+  }
+  .ct-line b.bad {
+    color: var(--bad);
+  }
+  .ct-head {
+    font-size: var(--fs-label);
+    font-weight: 700;
+    color: var(--label);
+  }
+  .ct-kill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-1);
+    color: var(--k);
+    font-weight: 700;
+  }
   .filter-row {
     display: flex;
     flex-wrap: wrap;
