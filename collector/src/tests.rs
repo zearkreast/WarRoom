@@ -287,21 +287,6 @@ fn keeps_a_day_of_major_order_readings_only_for_running_orders() {
 }
 
 #[test]
-fn carries_on_from_the_stored_major_order_readings_after_a_restart() {
-    let assignments = raw(fixture!("assignments.json"));
-    let id = assignments[0]["id"].as_i64().unwrap();
-    let (db, calls) = fake_db(&[("snapshots", json!([{ "data": [{ "id": id, "at": 999_000, "progress": [0] }] }]))]);
-    let mut c = collector(db, 1_000_000.0);
-    assert!(c.run(Job::Assignments).ok);
-    let calls = calls.borrow();
-    let write = calls.iter().find(|c| c.path == "snapshots" && c.body[0]["kind"] == "order_samples").unwrap();
-    let ats: Vec<i64> = write.body[0]["data"].as_array().unwrap().iter().map(|s| s["at"].as_i64().unwrap()).collect();
-    let mut want = vec![999_000];
-    want.extend(assignments.as_array().unwrap().iter().map(|_| 1_000_000));
-    assert_eq!(ats, want);
-}
-
-#[test]
 fn archives_each_running_order_and_a_reading_of_its_progress() {
     let (db, calls) = fake_db(&[]);
     let mut c = collector(db, 1_000_000.0);
@@ -327,6 +312,21 @@ fn keeps_polling_orders_before_the_archive_migration_is_applied() {
     let run = c.run(Job::Assignments);
     assert!(run.ok);
     assert!(run.message.ends_with("no orders table yet"), "{}", run.message);
+}
+
+#[test]
+fn carries_on_from_the_stored_major_order_readings_after_a_restart() {
+    let assignments = raw(fixture!("assignments.json"));
+    let id = assignments[0]["id"].as_i64().unwrap();
+    let (db, calls) = fake_db(&[("snapshots", json!([{ "data": [{ "id": id, "at": 999_000, "progress": [0] }] }]))]);
+    let mut c = collector(db, 1_000_000.0);
+    assert!(c.run(Job::Assignments).ok);
+    let calls = calls.borrow();
+    let write = calls.iter().find(|c| c.path == "snapshots" && c.body[0]["kind"] == "order_samples").unwrap();
+    let ats: Vec<i64> = write.body[0]["data"].as_array().unwrap().iter().map(|s| s["at"].as_i64().unwrap()).collect();
+    let mut want = vec![999_000];
+    want.extend(assignments.as_array().unwrap().iter().map(|_| 1_000_000));
+    assert_eq!(ats, want);
 }
 
 #[test]
