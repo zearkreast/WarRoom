@@ -1,4 +1,4 @@
-use warroom_core::combat_trend::{CombatReading, last_day};
+use warroom_core::fighting::{CombatReading, last_day};
 
 const H: f64 = 3_600_000.0;
 

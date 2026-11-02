@@ -6,8 +6,8 @@ use crate::ui::emblems::FactionEmblem;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use warroom_core::api::Faction;
-use warroom_core::combat_trend::{CombatTrend, last_day};
 use warroom_core::factions::faction_color;
+use warroom_core::fighting::{CombatTrend, last_day};
 use warroom_core::format::{fmt_compact, fmt_int, fmt_pct};
 
 /// Re-read every half hour; the collector keeps a reading an hour.

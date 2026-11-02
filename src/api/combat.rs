@@ -1,7 +1,7 @@
 //! The hourly readings of the game's mission and kill counters that the collector keeps.
 
 use crate::api::source::{self, encode};
-use warroom_core::combat_trend::CombatReading;
+use warroom_core::fighting::CombatReading;
 use warroom_core::time::{iso_string, parse_ms};
 
 #[derive(serde::Deserialize)]

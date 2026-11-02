@@ -10,7 +10,7 @@ use std::fmt;
 use warroom_core::api::{
     Assignment, Campaign, Dispatch, EpisodeRaw, Planet, Statistics, War, WarStatusRaw, from_value, to_js_json,
 };
-use warroom_core::combat_trend::GALAXY;
+use warroom_core::fighting::GALAXY;
 use warroom_core::format::dispatch_title;
 use warroom_core::snapshot::{
     DISPATCH_LIMIT, EpisodeLive, EpisodeStatus, OrderSample, SnapshotKind, StationLive, add_order_samples,
