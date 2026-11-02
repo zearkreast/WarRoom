@@ -5,6 +5,7 @@ use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::OnceLock;
+use warroom_core::dive_log::{DIVE_LIMIT, Dive};
 use warroom_core::drill::{DrillScore, Mode};
 use warroom_core::gww_nav::GwwPage;
 use wasm_bindgen::JsCast;
@@ -29,6 +30,7 @@ pub enum HellpadModule {
     #[serde(rename = "campaigns")]
     PastCampaigns,
     Stratagems,
+    Record,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -321,6 +323,8 @@ pub struct SettingsData {
     pub seen_changelog: String,
     /// G.W.W. training manuals read to the end, by id.
     pub gww_read: Vec<String>,
+    /// The player's own dives, oldest first; never leaves the device.
+    pub dive_log: Vec<Dive>,
     /// Time of the newest Strohmann News item on the last visit; 0 before the first.
     pub news_seen_at: f64,
     pub drill_mode: Mode,
@@ -356,6 +360,7 @@ impl Default for SettingsData {
             seen_campaign_events: Vec::new(),
             seen_changelog: String::new(),
             gww_read: Vec::new(),
+            dive_log: Vec::new(),
             news_seen_at: 0.0,
             drill_mode: Mode::Classic,
             drill_picks: Vec::new(),
@@ -423,6 +428,14 @@ impl Settings {
                 d.pinned.remove(i);
             }
             None => d.pinned.push(planet),
+        });
+    }
+
+    pub fn log_dive(&self, dive: Dive) {
+        self.change(|d| {
+            d.dive_log.push(dive);
+            let over = d.dive_log.len().saturating_sub(DIVE_LIMIT);
+            d.dive_log.drain(..over);
         });
     }
 

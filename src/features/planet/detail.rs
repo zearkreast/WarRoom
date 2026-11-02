@@ -1,6 +1,6 @@
 //! The planet detail overlay: sphere, header and every section.
 
-use crate::api::fronts::{Front, FrontKind, build_front, major_order_planets, planet_rate, station_planets};
+use crate::api::fronts::{Front, FrontKind, build_front, fronts, major_order_planets, planet_rate, station_planets};
 use crate::api::history::PlayerReading;
 use crate::api::queries::{self, queries};
 use crate::features::planet::activity::ActivitySection;
@@ -24,6 +24,7 @@ use std::collections::HashSet;
 use std::f64::consts::PI;
 use std::sync::Arc;
 use warroom_core::api::{Faction, Planet};
+use warroom_core::dive_log::Dive;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, fmt_pct, sest_clock, sest_date};
 use warroom_core::galaxy::{Landmark, landmark, landmark_planet};
@@ -368,6 +369,20 @@ pub fn PlanetDetail() -> impl IntoView {
     move || {
         let index = detail.get()?;
         let pinned = Memo::new(move |_| settings().get(|s| s.pinned.contains(&index)));
+        let front = Memo::new(move |_| fronts().with(|l| l.iter().find(|f| f.planet.index == index).cloned()));
+        let logged = Memo::new(move |_| settings().get(|s| s.dive_log.iter().filter(|d| d.planet == index).count()));
+        let log_dive = move |_| {
+            if let Some(f) = front.get_untracked() {
+                settings().log_dive(Dive {
+                    planet: index,
+                    name: f.planet.name.clone(),
+                    at: js::now(),
+                    event: f.planet.event.as_ref().map(|e| e.id),
+                    enemy: f.enemy,
+                    major_order: f.in_major_order,
+                });
+            }
+        };
         Some(view! {
             <Overlay
                 on_close=Callback::new(|_| ui().open_detail(None))
@@ -385,6 +400,17 @@ pub fn PlanetDetail() -> impl IntoView {
                             }
                         }}
                     </button>
+                    <Show when=move || front.with(Option::is_some)>
+                        <button
+                            class="hud-btn pd-dive"
+                            title="Add a dive here to your service record on the Hellpad"
+                            on:click=log_dive
+                        >
+                            <Icon icon=icons::FLAG size=15.0 />
+                            " Log a dive"
+                            {move || (logged.get() > 0).then(|| view! { <span class="num">{format!(" · {}", logged.get())}</span> })}
+                        </button>
+                    </Show>
                 }
                 .into_any()
             >

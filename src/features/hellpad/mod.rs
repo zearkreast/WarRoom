@@ -5,5 +5,6 @@ pub mod gww;
 pub mod page;
 pub mod past_campaigns;
 pub mod planets;
+pub mod record;
 pub mod stations;
 pub mod stratagems;

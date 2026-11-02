@@ -5,6 +5,7 @@ use crate::features::hellpad::call_in::{CallInCode, CallInWait, MarkPad, use_cal
 use crate::features::hellpad::gww::GwwModule;
 use crate::features::hellpad::past_campaigns::PastCampaignsModule;
 use crate::features::hellpad::planets::PlanetsModule;
+use crate::features::hellpad::record::ServiceRecordModule;
 use crate::features::hellpad::stations::StationsModule;
 use crate::features::hellpad::stratagems::StratagemsModule;
 use crate::features::map::stratagem_art::permit_color;
@@ -44,6 +45,7 @@ fn module_info(m: HellpadModule) -> ModuleInfo {
         HellpadModule::Stratagems => {
             ModuleInfo { title: "Stratagem collection", path: "hp://stratagems", color: "var(--p-offensive)" }
         }
+        HellpadModule::Record => ModuleInfo { title: "Service record", path: "hp://record", color: "var(--good)" },
     }
 }
 
@@ -54,6 +56,7 @@ fn module_key(m: HellpadModule) -> &'static str {
         HellpadModule::Gww => "gww",
         HellpadModule::PastCampaigns => "campaigns",
         HellpadModule::Stratagems => "stratagems",
+        HellpadModule::Record => "record",
     }
 }
 
@@ -363,6 +366,23 @@ fn StratagemsTile() -> impl IntoView {
 }
 
 #[component]
+fn RecordTile() -> impl IntoView {
+    let dives = Memo::new(move |_| settings().get(|s| s.dive_log.len()));
+    view! {
+        <ModuleTile
+            id=HellpadModule::Record
+            icon=icons::MEDAL.into()
+            text="Your own dives, logged from a planet's page, and how each campaign you joined turned out. Kept on this device only."
+            meta=Signal::derive(move || match dives.get() {
+                0 => "Open".to_string(),
+                1 => "1 dive".to_string(),
+                n => format!("{n} dives"),
+            })
+        />
+    }
+}
+
+#[component]
 fn Group(title: &'static str, count: usize, children: Children) -> impl IntoView {
     view! {
         <section class="hp-group">
@@ -382,12 +402,13 @@ fn Hub() -> impl IntoView {
         <div class="hp-hub">
             <Mast />
             <StationReport />
-            <Group title="Field modules" count=5>
+            <Group title="Field modules" count=6>
                 <PlanetsTile />
                 <StationsTile />
                 <GwwTile />
                 <PastTile />
                 <StratagemsTile />
+                <RecordTile />
             </Group>
             <Group title="In development" count=5>
                 <LockedTile
@@ -476,6 +497,7 @@ pub fn HellpadPage() -> impl IntoView {
                     Some(HellpadModule::Gww) => view! { <GwwModule /> }.into_any(),
                     Some(HellpadModule::PastCampaigns) => view! { <PastCampaignsModule /> }.into_any(),
                     Some(HellpadModule::Stratagems) => view! { <StratagemsModule /> }.into_any(),
+                    Some(HellpadModule::Record) => view! { <ServiceRecordModule /> }.into_any(),
                 }}
             </div>
         </div>
