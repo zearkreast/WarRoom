@@ -17,7 +17,6 @@ use warroom_core::biomes::regen_pct_per_hour;
 use warroom_core::defense::{GambitOutlook, divers_short, event_span, needed_rate};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, to_fixed};
-use warroom_core::progress::liberation_divers_short;
 
 /// What a card shows that rarely changes; the card is rebuilt only when it does.
 #[derive(Clone, PartialEq)]
@@ -231,7 +230,7 @@ pub fn CampaignCard(
                     let f = f.as_ref()?;
                     let need = needed_rate(f.percent, now, d).filter(|n| *n > 0.0)?;
                     let regen = regen_pct_per_hour(f.planet.regen_per_second, f.planet.max_health);
-                    Some((need, liberation_divers_short(f.rate, regen, need, f.players)))
+                    Some((need, warroom_core::progress::liberation_divers_short(f.rate, regen, need, f.players)))
                 });
             f.as_ref().map(|f| OutlookView {
                 holding: f.rate.is_none() && f.kind == FrontKind::Liberation && f.percent == 0.0,
