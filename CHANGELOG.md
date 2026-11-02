@@ -3,6 +3,33 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.6.3] - 2026-11-02
+
+Everything since v0.6.2.
+
+### Upgrading
+
+- On a database of your own, apply `supabase/migrations/0006_compact_recent.sql`, which keeps the hourly thinning
+  within the collector's time limit. The collector is unchanged, so it needs no redeploy.
+
+### Galactic logs
+
+- Search the war log by planet or sector, and filter it by enemy and by sector. Any of these reads the whole log, so
+  the results reach back to the war's first days instead of only the latest 100.
+
+### Fixed
+
+- On the first visit after new news, the newest item was pulled out of the page and squeezed against the right edge.
+
+### Security and legal
+
+- The desktop updater moves to `zip` 9.2.1, which clears one critical, one high and one medium security alert.
+- `SECURITY.md` says how to report a vulnerability privately and what counts as one.
+- The privacy policy lists every Android permission and the update requests to GitHub, and says pushed news is off in
+  current releases.
+- About credits the holograms, points of interest and DSS action icons, and the README and About say what the GPL
+  doesn't cover and how to ask for credit or removal.
+
 ## [0.6.2] - 2026-11-01
 
 Everything since v0.6.0.

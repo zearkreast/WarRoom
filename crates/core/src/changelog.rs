@@ -8,6 +8,15 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.6.3",
+        date: "2026-11-02",
+        items: &[
+            "Search the war log by planet or sector, and filter it by enemy and by sector, back to the war's first days.",
+            "Fixed: the newest news item no longer gets squeezed against the right edge on the first visit after new news.",
+            "The updater's zip library is updated for three security alerts, and the privacy policy and credits are corrected.",
+        ],
+    },
+    ChangelogEntry {
         version: "0.6.2",
         date: "2026-11-01",
         items: &[
