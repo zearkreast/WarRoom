@@ -1,3 +1,4 @@
+use crate::alerts::watch::toggle_watch;
 use crate::api::fronts::station_planets;
 use crate::api::queries;
 use crate::js::{self, num};
@@ -12,7 +13,7 @@ use wasm_bindgen::JsCast;
 
 const SIZE: f64 = 236.0;
 
-/// Radial options for a planet: pin, show on map, station, details.
+/// Radial options for a planet: watch, show on map, station, details.
 #[component]
 pub fn PlanetOptions() -> impl IntoView {
     let u = ui();
@@ -74,10 +75,10 @@ pub fn PlanetOptions() -> impl IntoView {
         let items: Vec<(&str, String, IconLike, Run, bool)> = vec![
             (
                 "n",
-                if pinned { "Unpin" } else { "Pin to top" }.into(),
+                if pinned { "Unwatch" } else { "Watch" }.into(),
                 if pinned { icons::PIN_OFF } else { icons::PIN }.into(),
                 Box::new(move || {
-                    settings().toggle_pin(index);
+                    toggle_watch(index);
                     ui().open_options(None);
                 }),
                 false,

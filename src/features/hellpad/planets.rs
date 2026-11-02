@@ -79,7 +79,7 @@ fn PlanetRow(
                     </span>
                     <span class="pi-row-icons">
                         {pinned.get().then(|| view! {
-                            <span class="pi-icon pin" title="Pinned">
+                            <span class="pi-icon pin" title="On your watchlist">
                                 <Icon icon=icons::PIN size=13.0 />
                             </span>
                         })}
@@ -313,7 +313,7 @@ fn empty_text(filter: PlanetFilter, query: &str) -> String {
         return format!("No planets match “{query}”.");
     }
     match filter {
-        PlanetFilter::Pinned => "No pinned planets yet. Pick a planet and choose Pin to top.".into(),
+        PlanetFilter::Pinned => "No watched planets yet. Pick a planet and choose Watch.".into(),
         PlanetFilter::Active => "No front is open right now.".into(),
         PlanetFilter::Owner(f) => format!("No planet is under {} control.", faction_label(Some(f))),
         PlanetFilter::All => "No planets charted yet.".into(),
@@ -369,7 +369,7 @@ pub fn PlanetsModule() -> impl IntoView {
             })
         })
     });
-    // Pinned planets also get a shelf above the sectors, in the order they were pinned.
+    // Watched planets also get a shelf above the sectors, in the order they were added.
     let shelf = Memo::new(move |_| {
         if filter.get() == PlanetFilter::Pinned {
             return Vec::new();
@@ -481,18 +481,18 @@ pub fn PlanetsModule() -> impl IntoView {
                 <div class="filter-row" role="toolbar" aria-label="Filter planets">
                     {chip(PlanetFilter::All, "All".into_any())}
                     {chip(PlanetFilter::Active, view! { <Icon icon=icons::SWORDS size=14.0 /> " Active fronts" }.into_any())}
-                    {chip(PlanetFilter::Pinned, view! { <Icon icon=icons::PIN size=14.0 /> " Pinned" }.into_any())}
+                    {chip(PlanetFilter::Pinned, view! { <Icon icon=icons::PIN size=14.0 /> " Watchlist" }.into_any())}
                     {ORDER
                         .map(|f| chip(PlanetFilter::Owner(f), view! { <FactionEmblem faction=f.as_str() size=14.0 /> {format!(" {}", faction_label(Some(f)))} }.into_any()))
                         .collect_view()}
                 </div>
                 <Show when=move || shelf.with(|s| !s.is_empty())>
-                    <section class="pi-sector pi-pinned" aria-label="Pinned planets">
+                    <section class="pi-sector pi-pinned" aria-label="Watchlist">
                         <header class="pi-sector-head" style="--k: var(--cta);">
                             <span class="pi-sector-glyph">
                                 <Icon icon=icons::PIN size=15.0 />
                             </span>
-                            <h2>"Pinned"</h2>
+                            <h2>"Watchlist"</h2>
                             <span class="pi-sector-rule"></span>
                             <span class="pi-sector-meta caps num">
                                 <span>{move || shelf.with(|s| format!("{} planet{}", s.len(), if s.len() == 1 { "" } else { "s" }))}</span>
@@ -568,6 +568,6 @@ mod tests {
         assert_eq!(empty_text(PlanetFilter::Owner(Faction::Illuminate), ""), "No planet is under Illuminate control.");
         assert_eq!(empty_text(PlanetFilter::Active, ""), "No front is open right now.");
         assert_eq!(empty_text(PlanetFilter::Active, "mars"), "No planets match “mars”.");
-        assert!(empty_text(PlanetFilter::Pinned, "").starts_with("No pinned planets yet."));
+        assert!(empty_text(PlanetFilter::Pinned, "").starts_with("No watched planets yet."));
     }
 }

@@ -158,11 +158,23 @@ pub struct AlertSettings {
     pub dispatches: bool,
     pub captures: bool,
     pub defenses: bool,
+    /// Pinned fronts: victory within the hour, losing ground, a city opening.
+    pub pinned: bool,
+    /// The Major Order turning to losing, nearing its end, completing an objective.
+    pub progress: bool,
 }
 
 impl Default for AlertSettings {
     fn default() -> Self {
-        AlertSettings { system: true, orders: true, dispatches: true, captures: true, defenses: true }
+        AlertSettings {
+            system: true,
+            orders: true,
+            dispatches: true,
+            captures: true,
+            defenses: true,
+            pinned: true,
+            progress: true,
+        }
     }
 }
 
@@ -210,6 +222,18 @@ pub enum MapPlanets {
     #[default]
     Markers,
     Spheres,
+}
+
+/// The order of the cards on Active planets.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FrontSort {
+    /// Watched, Major Order targets, rare campaigns, defenses, gambits, circumvallations, then by Helldivers.
+    #[default]
+    Priority,
+    Need,
+    Divers,
+    Victory,
 }
 
 /// How a planet under attack draws the eye from afar.
@@ -299,6 +323,7 @@ pub struct SettingsData {
     pub map_planets: MapPlanets,
     pub map_beacon: MapBeacon,
     pub show_inactive: bool,
+    pub front_sort: FrontSort,
     /// Whether the Galactic control ring is unfolded on the planet index.
     pub planets_control_open: bool,
     /// Whether the Major Order strip on Active planets is unfolded.
@@ -343,6 +368,7 @@ impl Default for SettingsData {
             map_planets: MapPlanets::Markers,
             map_beacon: MapBeacon::Ping,
             show_inactive: false,
+            front_sort: FrontSort::Priority,
             planets_control_open: true,
             mo_strip_open: false,
             overview_mo_open: true,

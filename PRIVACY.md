@@ -9,7 +9,7 @@ no analytics, no advertising and no tracking of any kind.
 
 WHAT STAYS ON YOUR DEVICE
 
-Your settings, pinned planets, dismissed hints, stratagem drill scores, and
+Your settings, watchlist, dismissed hints, stratagem drill scores, and
 which news and alerts you have already seen are kept in the app's own storage
 on your device. They are
 never sent anywhere. Uninstalling the app, or clearing its data, deletes them.

@@ -1,6 +1,6 @@
 //! The planet detail's sections, from liberation and the front line to points of interest and supply lines.
 
-use crate::api::fronts::{Front, FrontKind};
+use crate::api::fronts::{Front, FrontKind, major_order_deadlines};
 use crate::api::queries::queries;
 use crate::features::map::poi::{PoiGlyph, poi_kind, poi_origin};
 use crate::features::map::stratagem_art::{augmented_stratagem, stratagem_icon};
@@ -31,7 +31,7 @@ use warroom_core::effects::EffectKind;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, fmt_time_left, js_round, js_sum, to_fixed};
 use warroom_core::galaxy::Landmark;
-use warroom_core::progress::tracked_percent;
+use warroom_core::progress::{liberation_divers_short, projected_at, tracked_percent};
 use warroom_core::time::parse_ms;
 use warroom_core::war_history::{HistoryInput, LogEntry, build_war_history, defense_events, fmt_long_duration};
 
@@ -239,17 +239,27 @@ fn span_text(ms: f64) -> String {
     s.strip_suffix(" 0h").map_or_else(|| s.clone(), str::to_string)
 }
 
-/// What holding a defense by its deadline takes, at today's pace.
+/// What holding a defense by its deadline takes at today's pace, or liberating a Major Order target by the order's.
 #[component]
 fn Holding(front: Memo<Option<Front>>) -> impl IntoView {
     let clock = js::use_now(60_000.0);
+    let deadlines = major_order_deadlines();
     move || {
-        let f = front.get().filter(|f| f.kind == FrontKind::Defense)?;
-        let needed = needed_rate(f.percent, clock.get(), f.fail_at?)?;
+        let f = front.get()?;
+        let now = clock.get();
+        let defense = f.kind == FrontKind::Defense;
+        let deadline = if defense { f.fail_at? } else { deadlines.with(|d| d.get(&f.planet.index).copied())? };
+        let needed = needed_rate(f.percent, now, deadline).filter(|n| defense || *n > 0.0)?;
         let tone = |good: bool| Some(if good { "var(--good)" } else { "var(--bad)" }.to_string());
         let pace_sub = f.rate.map_or("measuring".to_string(), |r| format!("measured {}", per_hour(r)));
-        let at_deadline = f.projected.map(|v| v.clamp(0.0, 100.0));
-        let short = divers_short(f.rate, needed, f.players).map(|n| (n / 50.0).ceil() * 50.0);
+        let at_deadline = if defense { f.projected } else { projected_at(f.percent, f.rate, now, deadline) }
+            .map(|v| v.clamp(0.0, 100.0));
+        let short = if defense {
+            divers_short(f.rate, needed, f.players)
+        } else {
+            liberation_divers_short(f.rate, regen_of(&f.planet), needed, f.players)
+        }
+        .map(|n| (n / 50.0).ceil() * 50.0);
         let short_text = match short {
             Some(0.0) => "On pace".to_string(),
             Some(n) => format!("~{}", fmt_int(n)),
@@ -263,7 +273,7 @@ fn Holding(front: Memo<Option<Front>>) -> impl IntoView {
         };
         Some(view! {
             <div class="pd-holding">
-                <div class="pd-chart-label caps">"What holding needs"</div>
+                <div class="pd-chart-label caps">{if defense { "What holding needs" } else { "What the Major Order needs" }}</div>
                 <div class="pd-tiles three">
                     <Tile
                         icon=icons::GAUGE
@@ -273,8 +283,8 @@ fn Holding(front: Memo<Option<Front>>) -> impl IntoView {
                         color=f.rate.and_then(|r| tone(r >= needed))
                     />
                     <Tile
-                        icon=icons::SHIELD
-                        label="At the deadline"
+                        icon=if defense { icons::SHIELD } else { icons::TARGET }
+                        label=if defense { "At the deadline" } else { "At the MO deadline" }
                         value=at_deadline.map_or("—".to_string(), |v| fmt_pct(v, if v >= 100.0 { 0 } else { 1 })).into_any()
                         sub=(if at_deadline.is_some() { "projected" } else { "measuring" }).into_any()
                         color=at_deadline.and_then(|v| tone(v >= 100.0))

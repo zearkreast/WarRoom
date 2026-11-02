@@ -129,6 +129,11 @@
     color: var(--text-hi);
     font-weight: 600;
   }
+  .mo-need {
+    color: var(--tone);
+    font-weight: 600;
+    white-space: nowrap;
+  }
   .mo-outlook {
     display: inline-flex;
     align-items: center;

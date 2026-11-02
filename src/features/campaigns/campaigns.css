@@ -195,11 +195,39 @@
     color: var(--warn);
     border-color: color-mix(in srgb, var(--warn) var(--strong), transparent);
   }
+  .cc-sort {
+    align-items: center;
+    margin-top: calc(var(--s-3) * -1);
+  }
+  .cc-sort-label {
+    font-size: var(--fs-label);
+    font-weight: 700;
+    color: var(--label);
+  }
+  .cc-badge.is-losing {
+    color: var(--bad);
+    border-color: color-mix(in srgb, var(--bad) var(--strong), transparent);
+  }
+  .cc-badge.is-counts {
+    color: var(--good);
+    border-color: color-mix(in srgb, var(--good) var(--strong), transparent);
+  }
   .cc-badge.is-gambit {
     gap: var(--s-1);
     padding-left: var(--s-1);
     color: var(--cta);
     border-color: color-mix(in srgb, var(--cta) var(--strong), transparent);
+  }
+  .cc-badge.is-gambit.is-free {
+    color: var(--good);
+    border-color: var(--good);
+  }
+  .cc-badge.is-siege {
+    --siege: var(--f-humans);
+    gap: var(--s-1);
+    padding-left: var(--s-1);
+    color: var(--f-humans);
+    border-color: color-mix(in srgb, var(--f-humans) var(--strong), transparent);
   }
   .cc-biome {
     font-size: var(--fs-micro);
@@ -242,7 +270,15 @@
     font-weight: 700;
     color: var(--text-hi);
   }
+  .cc-need b {
+    color: var(--k);
+    text-transform: none;
+  }
   .cc-sector b {
+    font-weight: 700;
+  }
+  .cc-from-res.is-free {
+    color: var(--good);
     font-weight: 700;
   }
   .cc-outlook {
