@@ -97,8 +97,8 @@ const ALERTS: [(&str, &str, &str); 7] = [
     ("defenses", "New defenses", "When an enemy attacks a Super Earth planet."),
     (
         "pinned",
-        "Pinned planets",
-        "When a pinned front is an hour from victory, starts losing ground, or a city opens on it.",
+        "Watched planets",
+        "When a watched front is an hour from victory, starts losing ground, or a city opens on it.",
     ),
     ("system", "System notifications", "Also show alerts outside the app, as OS notifications."),
 ];
@@ -207,7 +207,7 @@ pub fn SettingsPage() -> impl IntoView {
                     <Row
                         title="Stalled planets"
                         text=format!(
-                            "Fronts under {} Helldivers that gain less than +{}%/h. Major Order targets and pinned planets always show.",
+                            "Fronts under {} Helldivers that gain less than +{}%/h. Defenses, gambits, circumvallations, special campaigns, Major Order targets and watched planets always show.",
                             fmt_int(MIN_PLAYERS),
                             js_number(MIN_RATE)
                         )
@@ -356,7 +356,7 @@ pub fn SettingsPage() -> impl IntoView {
                     </button>
                     <button class="hud-btn" on:click=move |_| s.clear_pins() disabled=move || pinned.get() == 0>
                         <Icon icon=icons::PIN_OFF size=14.0 />
-                        " Clear pinned planets"
+                        " Clear watchlist"
                         {move || (pinned.get() > 0).then(|| format!(" ({})", pinned.get()))}
                     </button>
                 </div>

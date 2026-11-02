@@ -1,6 +1,7 @@
 //! A front's card: progress, pace, ETA or deadline, Helldivers and badges.
 
 use crate::api::fronts::{Front, FrontKind, fronts};
+use crate::features::planet::circumvallation::{SiegeMark, use_circumvallation};
 use crate::features::planet::defense::{
     GambitMark, advance_label, time_left, use_attackers, use_enemy_advance, use_gambits,
 };
@@ -14,6 +15,7 @@ use crate::ui::primitives::{Countdown, Meter, MeterSize};
 use leptos::prelude::*;
 use warroom_core::api::{Faction, Named, Planet};
 use warroom_core::biomes::regen_pct_per_hour;
+use warroom_core::campaign_filter::is_rare_campaign;
 use warroom_core::defense::{GambitOutlook, divers_short, event_span, needed_rate};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, to_fixed};
@@ -28,6 +30,8 @@ struct Look {
     biome: String,
     hazards: Vec<Named>,
     kind: FrontKind,
+    /// The API's campaign type, when it is a rare one.
+    special: Option<i64>,
     enemy: Faction,
     style: String,
 }
@@ -145,8 +149,18 @@ fn outlook_view(o: OutlookView) -> AnyView {
     .into_any()
 }
 
+/// An attacker's resistance, for a gambit: the lower, the cheaper.
+fn resistance_note(p: &Planet) -> AnyView {
+    if p.regen_per_second > 0.0 {
+        let regen = regen_pct_per_hour(p.regen_per_second, p.max_health);
+        view! { <span class="cc-from-res">{format!(" ({}%/h resistance)", to_fixed(regen, 1))}</span> }.into_any()
+    } else {
+        view! { <span class="cc-from-res is-free">" (0% resistance)"</span> }.into_any()
+    }
+}
+
 /// " · from USTOTU": the planets a defense is attacked from, in their owner's colour.
-fn attacked_from(list: &[Planet]) -> Option<AnyView> {
+fn attacked_from(list: &[Planet], gambit_open: bool) -> Option<AnyView> {
     (!list.is_empty()).then(|| {
         let names = list
             .iter()
@@ -155,6 +169,7 @@ fn attacked_from(list: &[Planet]) -> Option<AnyView> {
                 view! {
                     {(i > 0).then_some(if i == list.len() - 1 { " and " } else { ", " })}
                     <b style=format!("color: {};", faction_color(Some(a.current_owner)))>{a.name.clone()}</b>
+                    {gambit_open.then(|| resistance_note(a))}
                 }
             })
             .collect_view();
@@ -163,8 +178,12 @@ fn attacked_from(list: &[Planet]) -> Option<AnyView> {
 }
 
 /// The game's own campaign-type glyph, tinted with the text colour.
-fn kind_icon(kind: FrontKind) -> impl IntoView {
-    let name = if kind == FrontKind::Defense { "campaign-defense" } else { "campaign-liberation" };
+fn kind_icon(kind: FrontKind, special: bool) -> impl IntoView {
+    let name = match (special, kind) {
+        (true, _) => "campaign-high-priority",
+        (_, FrontKind::Defense) => "campaign-defense",
+        (_, FrontKind::Liberation) => "campaign-liberation",
+    };
     let url = crate::assets::url(&format!("gww/icons/{name}.svg")).unwrap_or_default();
     view! { <span class="cc-kind-icon" style=format!("--icon: url({url});") aria-hidden="true"></span> }
 }
@@ -199,6 +218,7 @@ pub fn CampaignCard(
                 biome: p.biome.name.clone(),
                 hazards: p.hazards.iter().take(4).cloned().collect(),
                 kind: f.kind,
+                special: is_rare_campaign(f.campaign.kind).then_some(f.campaign.kind),
                 enemy: f.enemy,
                 style,
             })
@@ -223,6 +243,7 @@ pub fn CampaignCard(
     let advance = use_enemy_advance(planet.into());
     let attackers = use_attackers(planet.into());
     let gambits = use_gambits(planet.into());
+    let siege = use_circumvallation(planet.into());
     let clock = js::use_now(30_000.0);
     let outlook = Memo::new(move |_| {
         let now = clock.get();
@@ -275,13 +296,26 @@ pub fn CampaignCard(
     };
     let gambit = Memo::new(move |_| {
         gambits.with(|list| {
-            list.iter().find(|g| g.outlook == GambitOutlook::Ahead).map(|g| {
+            list.iter().find(|g| g.outlook == GambitOutlook::Ahead).or(list.first()).map(|g| {
                 let from: Vec<&str> = g.attackers.iter().map(|a| a.planet.name.as_str()).collect();
                 let from = match from.split_last() {
                     Some((last, rest)) if !rest.is_empty() => format!("{} and {last}", rest.join(", ")),
                     _ => from.concat(),
                 };
-                format!("Gambit: liberating {from} ends the defense of {} before its deadline", g.defended.name)
+                let title = if g.outlook == GambitOutlook::Ahead {
+                    format!("Gambit: liberating {from} ends the defense of {} before its deadline", g.defended.name)
+                } else {
+                    format!("Gambit: liberating {from} would end the defense of {}", g.defended.name)
+                };
+                (title, g.attackers.iter().all(|a| a.planet.regen_per_second <= 0.0))
+            })
+        })
+    });
+    let siege_title = Memo::new(move |_| {
+        siege.with(|s| {
+            s.as_ref().map(|s| {
+                let names: Vec<&str> = s.targets.iter().map(|t| t.name.as_str()).collect();
+                format!("Circumvallation: liberating this planet leaves {} surrounded", names.join(", "))
             })
         })
     });
@@ -307,7 +341,11 @@ pub fn CampaignCard(
                 >
                     <div class="cc-in">
                         <div class="cc-kicker caps">
-                            <span class="cc-type">{kind_icon(l.kind)} {kind.to_string()}</span>
+                            <span class="cc-type">
+                                {kind_icon(l.kind, l.special.is_some())}
+                                " "
+                                {l.special.map_or(kind.to_string(), |n| format!("Special · type {n}"))}
+                            </span>
                             {move || {
                                 eta.get().map(|e| {
                                     view! {
@@ -325,7 +363,7 @@ pub fn CampaignCard(
                                 <h3 class="cc-name">{l.name.clone()}</h3>
                                 <div class="cc-sector caps">
                                     {format!("{} sector", l.sector)}
-                                    {move || attackers.with(|list| attacked_from(list))}
+                                    {move || attackers.with(|list| attacked_from(list, gambits.with(|g| !g.is_empty())))}
                                 </div>
                             </div>
                             <div class="cc-pct">
@@ -348,18 +386,30 @@ pub fn CampaignCard(
                                     </span>
                                 </Show>
                                 <Show when=move || pinned.get()>
-                                    <span class="cc-badge is-pin" title="Pinned">
-                                        <Icon icon=icons::PIN size=14.0 label="Pinned" />
+                                    <span class="cc-badge is-pin" title="On your watchlist">
+                                        <Icon icon=icons::PIN size=14.0 label="On your watchlist" />
                                     </span>
                                 </Show>
                                 {move || {
                                     gambit
                                         .get()
+                                        .map(|(t, free)| {
+                                            view! {
+                                                <span class=format!("cc-badge is-gambit {}", if free { "is-free" } else { "" }) title=t>
+                                                    <GambitMark size=16.0 />
+                                                    {if free { "Gambit · 0% resistance" } else { "Gambit" }}
+                                                </span>
+                                            }
+                                        })
+                                }}
+                                {move || {
+                                    siege_title
+                                        .get()
                                         .map(|t| {
                                             view! {
-                                                <span class="cc-badge is-gambit" title=t>
-                                                    <GambitMark size=16.0 />
-                                                    "Gambit"
+                                                <span class="cc-badge is-siege" title=t>
+                                                    <SiegeMark size=16.0 />
+                                                    "Circumvallation"
                                                 </span>
                                             }
                                         })

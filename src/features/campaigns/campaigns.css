@@ -218,6 +218,17 @@
     color: var(--cta);
     border-color: color-mix(in srgb, var(--cta) var(--strong), transparent);
   }
+  .cc-badge.is-gambit.is-free {
+    color: var(--good);
+    border-color: var(--good);
+  }
+  .cc-badge.is-siege {
+    --siege: var(--f-humans);
+    gap: var(--s-1);
+    padding-left: var(--s-1);
+    color: var(--f-humans);
+    border-color: color-mix(in srgb, var(--f-humans) var(--strong), transparent);
+  }
   .cc-biome {
     font-size: var(--fs-micro);
     font-weight: 700;
@@ -264,6 +275,10 @@
     text-transform: none;
   }
   .cc-sector b {
+    font-weight: 700;
+  }
+  .cc-from-res.is-free {
+    color: var(--good);
     font-weight: 700;
   }
   .cc-outlook {

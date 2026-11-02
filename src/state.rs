@@ -228,7 +228,7 @@ pub enum MapPlanets {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FrontSort {
-    /// Pinned, then Major Order targets, then defenses, then by Helldivers.
+    /// Watched, Major Order targets, rare campaigns, defenses, gambits, circumvallations, then by Helldivers.
     #[default]
     Priority,
     Need,

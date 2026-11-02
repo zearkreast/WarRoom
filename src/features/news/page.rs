@@ -154,7 +154,7 @@ pub fn NewsPage() -> impl IntoView {
                 </div>
                 <LastMessage d=last now=now />
                 <Hint id="news">
-                    "Planet names in a dispatch are links: click one to pin it, find it on the map or open its record."
+                    "Planet names in a dispatch are links: click one to watch it, find it on the map or open its record."
                 </Hint>
                 <div class="news-tools">
                     <label class="news-search">

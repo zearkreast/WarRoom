@@ -375,13 +375,13 @@ pub fn PlanetDetail() -> impl IntoView {
                 footer=view! {
                     <button
                         class=move || format!("hud-btn pd-pin {}", if pinned.get() { "on" } else { "" })
-                        on:click=move |_| settings().toggle_pin(index)
+                        on:click=move |_| crate::alerts::watch::toggle_watch(index)
                     >
                         {move || {
                             let on = pinned.get();
                             view! {
                                 <Icon icon=if on { icons::PIN_OFF } else { icons::PIN } size=15.0 />
-                                {if on { " Unpin" } else { " Pin to top" }}
+                                {if on { " Unwatch" } else { " Watch" }}
                             }
                         }}
                     </button>

@@ -1,4 +1,4 @@
-//! Fronts: each planet with a campaign, with its progress, rate, deadlines and Major Order, pin and station flags.
+//! Fronts: each planet with a campaign, with its progress, rate, deadlines and flags.
 
 use crate::api::queries::{LiveCampaign, queries};
 use crate::state::{global, settings};
@@ -6,7 +6,10 @@ use leptos::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, OnceLock};
 use warroom_core::api::{Campaign, Faction, Planet};
+use warroom_core::campaign_filter::is_rare_campaign;
+use warroom_core::defense::{gambit, gambits_from};
 use warroom_core::progress::{defense_percent, liberation_percent, projected_at, projected_completion, projected_loss};
+use warroom_core::sieges::{circumvallation, neighbours};
 use warroom_core::time::parse_ms;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -42,6 +45,10 @@ pub struct Front {
     pub in_major_order: bool,
     pub pinned: bool,
     pub station: bool,
+    /// A gambit runs through it: a defense with one open, or a front whose liberation would win one.
+    pub gambit: bool,
+    /// Liberating it would leave enemy planets surrounded.
+    pub siege: bool,
 }
 
 pub fn build_front(
@@ -70,6 +77,8 @@ pub fn build_front(
             in_major_order: marks.0,
             pinned: marks.1,
             station: marks.2,
+            gambit: false,
+            siege: false,
         };
     }
     let lib = liberation_percent(p.health, p.max_health);
@@ -87,6 +96,24 @@ pub fn build_front(
         in_major_order: marks.0,
         pinned: marks.1,
         station: marks.2,
+        gambit: false,
+        siege: false,
+    }
+}
+
+/// Marks the fronts a gambit or circumvallation runs through; these depend on the planets around each one.
+fn mark_roles(list: &mut [Front], planets: &[Planet], now: f64) {
+    let rates: HashMap<i64, Option<f64>> = list.iter().map(|f| (f.planet.index, f.rate)).collect();
+    let active: HashSet<i64> = rates.keys().copied().collect();
+    let links = neighbours(planets);
+    for f in list {
+        let Some(me) = planets.iter().find(|p| p.index == f.planet.index) else { continue };
+        f.gambit = if me.event.is_some() {
+            gambit(me, planets, &rates, now).is_some()
+        } else {
+            !gambits_from(me, planets, &rates, now).is_empty()
+        };
+        f.siege = circumvallation(me, planets, &links, &active).is_some();
     }
 }
 
@@ -149,11 +176,17 @@ fn shared() -> &'static Shared {
                     .flat_map(|l| l.iter())
                     .map(|c: &LiveCampaign| build_front(&c.campaign, c.rate, &mo, now, &pinned, &stations))
                     .collect();
+                if let Some(planets) = q.fresh_planets.get() {
+                    mark_roles(&mut list, &planets, now);
+                }
                 list.sort_by(|a, b| {
                     b.pinned
                         .cmp(&a.pinned)
                         .then(b.in_major_order.cmp(&a.in_major_order))
+                        .then(is_rare_campaign(b.campaign.kind).cmp(&is_rare_campaign(a.campaign.kind)))
                         .then((b.kind == FrontKind::Defense).cmp(&(a.kind == FrontKind::Defense)))
+                        .then(b.gambit.cmp(&a.gambit))
+                        .then(b.siege.cmp(&a.siege))
                         .then(b.players.total_cmp(&a.players))
                 });
                 Arc::new(list)

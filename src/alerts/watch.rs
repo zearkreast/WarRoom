@@ -23,6 +23,26 @@ use warroom_core::owner_changes::detect_new_defenses;
 use warroom_core::time::parse_ms;
 use warroom_core::watchlist::{FrontAlert, FrontLook, OrderAlert, OrderLook, front_alerts, order_alerts};
 
+/// Adds a planet to the watchlist or drops it, and says so: the change itself is often on another page.
+pub fn toggle_watch(planet: i64) {
+    settings().toggle_pin(planet);
+    let name = queries()
+        .fresh_planets
+        .with_untracked(|ps| ps.iter().flat_map(|l| l.iter()).find(|p| p.index == planet).map(|p| p.name.clone()));
+    let name = name.unwrap_or_else(|| "This planet".to_string());
+    if settings().untracked(|s| s.pinned.contains(&planet)) {
+        let alerts = if settings().untracked(|s| s.alerts.pinned) {
+            " You get an alert when it is an hour from victory, starts losing ground, or a city opens on it."
+        } else {
+            ""
+        };
+        let body = format!("It stays at the top of Active planets.{alerts}");
+        notify(ToastKind::Campaign, &format!("{name} is on your watchlist"), &body, false, None);
+    } else {
+        notify(ToastKind::Campaign, &format!("{name} left your watchlist"), "", false, None);
+    }
+}
+
 fn front_look(f: &Front, at: f64) -> FrontLook {
     let cities = cities_of(&f.planet);
     FrontLook {

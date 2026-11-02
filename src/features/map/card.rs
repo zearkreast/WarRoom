@@ -428,7 +428,7 @@ pub fn planet_panel(
                 </dl>
             </div>
             <div class="pp-actions">
-                <button class="pp-action" on:click=move |_| settings().toggle_pin(index.get_untracked())>
+                <button class="pp-action" on:click=move |_| crate::alerts::watch::toggle_watch(index.get_untracked())>
                     {move || {
                         if pinned.get() {
                             view! { <Icon icon=icons::PIN_OFF size=16.0 /> }
@@ -436,7 +436,7 @@ pub fn planet_panel(
                             view! { <Icon icon=icons::PIN size=16.0 /> }
                         }
                     }}
-                    <span>{move || if pinned.get() { "Unpin" } else { "Pin" }}</span>
+                    <span>{move || if pinned.get() { "Unwatch" } else { "Watch" }}</span>
                 </button>
                 <button class="pp-action" on:click=move |_| ui().focus(index.get_untracked())>
                     <Icon icon=icons::CROSSHAIR size=16.0 />
