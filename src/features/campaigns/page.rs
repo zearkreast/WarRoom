@@ -4,16 +4,21 @@ use crate::api::fronts::{Front, FrontKind, fronts, major_order_deadlines};
 use crate::api::queries::queries;
 use crate::features::campaigns::card::CampaignCard;
 use crate::features::campaigns::mo_strip::MoStrip;
-use crate::state::settings;
+use crate::js;
+use crate::state::{FrontSort, settings};
 use crate::ui::emblems::FactionEmblem;
 use crate::ui::feed_status::FeedNote;
 use crate::ui::hint::Hint;
 use crate::ui::primitives::{Empty, Loading};
 use leptos::prelude::*;
+use std::collections::HashMap;
+use std::sync::Arc;
 use warroom_core::api::Faction;
+use warroom_core::biomes::regen_pct_per_hour;
 use warroom_core::campaign_filter::{FrontActivity, MIN_PLAYERS, MIN_RATE, is_stalled};
 use warroom_core::factions::faction_label;
 use warroom_core::format::{fmt_int, js_number, js_sum};
+use warroom_core::most_needed::{FrontNeed, Need, front_need, typical_per_thousand};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum Filter {
@@ -36,6 +41,25 @@ impl Filter {
     }
 }
 
+const SORTS: [(FrontSort, &str); 4] = [
+    (FrontSort::Priority, "Priority"),
+    (FrontSort::Need, "Most needed"),
+    (FrontSort::Divers, "Most Helldivers"),
+    (FrontSort::Victory, "Soonest victory"),
+];
+
+fn need_input(f: &Front, mo_deadline: Option<f64>) -> FrontNeed {
+    let defense = f.kind == FrontKind::Defense;
+    FrontNeed {
+        percent: f.percent,
+        rate: f.rate,
+        regen: if defense { 0.0 } else { regen_pct_per_hour(f.planet.regen_per_second, f.planet.max_health) },
+        players: f.players,
+        in_major_order: f.in_major_order,
+        deadline: if defense { f.fail_at } else { mo_deadline },
+    }
+}
+
 fn stalled(f: &Front) -> bool {
     is_stalled(&FrontActivity { players: f.players, rate: f.rate, in_major_order: f.in_major_order, pinned: f.pinned })
 }
@@ -47,6 +71,8 @@ pub fn CampaignsPage() -> impl IntoView {
     let deadlines = major_order_deadlines();
     let show_inactive = Memo::new(move |_| settings().get(|s| s.show_inactive));
     let filter = RwSignal::new(Filter::All);
+    let sort = Memo::new(move |_| settings().get(|s| s.front_sort));
+    let clock = js::use_now(60_000.0);
     let loading = Memo::new(move |_| q.raw.loading.get() && q.campaigns.with(Option::is_none));
 
     let visible = Memo::new(move |_| {
@@ -54,9 +80,33 @@ pub fn CampaignsPage() -> impl IntoView {
         all.with(|l| l.iter().filter(|f| inactive || !stalled(f)).cloned().collect::<Vec<_>>())
     });
     let hidden = Memo::new(move |_| all.with(|l| l.len()) - visible.with(|v| v.len()));
+    let needs = Memo::new(move |_| {
+        let now = clock.get();
+        let inputs: Vec<(i64, FrontNeed)> = visible.with(|v| {
+            deadlines
+                .with(|d| v.iter().map(|f| (f.campaign.id, need_input(f, d.get(&f.planet.index).copied()))).collect())
+        });
+        let typical = typical_per_thousand(&inputs.iter().map(|(_, n)| *n).collect::<Vec<_>>());
+        Arc::new(inputs.into_iter().map(|(id, n)| (id, front_need(&n, now, typical))).collect::<HashMap<i64, Need>>())
+    });
     let shown = Memo::new(move |_| {
         let f = filter.get();
-        visible.with(|v| v.iter().filter(|x| f.admits(x)).map(|x| x.campaign.id).collect::<Vec<_>>())
+        visible.with(|v| {
+            let mut list: Vec<&Front> = v.iter().filter(|x| f.admits(x)).collect();
+            match sort.get() {
+                FrontSort::Priority => {}
+                FrontSort::Need => needs.with(|n| {
+                    let score = |f: &Front| n.get(&f.campaign.id).map_or(0.0, |n| n.score);
+                    list.sort_by(|a, b| score(b).total_cmp(&score(a)).then(b.players.total_cmp(&a.players)));
+                }),
+                FrontSort::Divers => list.sort_by(|a, b| b.players.total_cmp(&a.players)),
+                FrontSort::Victory => list.sort_by(|a, b| {
+                    let at = |f: &Front| f.victory_at.filter(|v| v.is_finite() && *v > 0.0).unwrap_or(f64::INFINITY);
+                    at(a).total_cmp(&at(b)).then(b.players.total_cmp(&a.players))
+                }),
+            }
+            list.iter().map(|x| x.campaign.id).collect::<Vec<_>>()
+        })
     });
     let options = Memo::new(move |_| {
         let count = |f: Filter| visible.with(|v| v.iter().filter(|x| f.admits(x)).count());
@@ -126,6 +176,20 @@ pub fn CampaignsPage() -> impl IntoView {
                         }
                     </For>
                 </div>
+                <div class="filter-row cc-sort" role="toolbar" aria-label="Sort active planets">
+                    <span class="cc-sort-label caps">"Sort"</span>
+                    {SORTS
+                        .map(|(k, label)| view! {
+                            <button
+                                class=move || format!("filter-chip {}", if sort.get() == k { "on" } else { "" })
+                                aria-pressed=move || (sort.get() == k).to_string()
+                                on:click=move |_| settings().set(|s| s.front_sort = k)
+                            >
+                                {label}
+                            </button>
+                        })
+                        .collect_view()}
+                </div>
                 {move || {
                     if loading.get() {
                         view! { <Loading what="active planets" rows=4 /> }.into_any()
@@ -141,6 +205,12 @@ pub fn CampaignsPage() -> impl IntoView {
                                         deadline=Signal::derive(move || {
                                             let index = all.with(|l| l.iter().find(|f| f.campaign.id == id).map(|f| f.planet.index))?;
                                             deadlines.with(|d| d.get(&index).copied())
+                                        })
+                                        reasons=Signal::derive(move || {
+                                            if sort.get() != FrontSort::Need {
+                                                return Vec::new();
+                                            }
+                                            needs.with(|n| n.get(&id).map(|n| n.reasons.clone()).unwrap_or_default())
                                         })
                                     />
                                 </For>
