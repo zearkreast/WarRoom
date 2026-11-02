@@ -22,6 +22,7 @@ use crate::ui::hazard_icons::hazard_icon;
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Countdown, Empty, Meter, MeterSize, Panel, Tile};
 use leptos::prelude::*;
+use leptos::task::spawn_local;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use warroom_core::api::{Faction, Planet};
@@ -316,6 +317,9 @@ struct FrontRow {
     enemy_ahead: Option<f64>,
 }
 
+/// The Front line chart's ranges, in hours.
+const RANGES: [(u32, &str); 3] = [(24, "24 h"), (168, "7 days"), (720, "30 days")];
+
 /// How near a city's mark the pointer must be for its story, as a share of the chart's width.
 const MARK_REACH: f64 = 0.02;
 const MARK_SIZE: f64 = 26.0;
@@ -343,14 +347,38 @@ pub fn FrontLineSection(
     let advance = use_enemy_advance(p);
     let span = Memo::new(move |_| p.with(|p| p.event.as_ref().and_then(event_span)));
     let freed = Memo::new(move |_| p.with(|p| record.with(|r| Arc::new(city_liberations(p, &r.samples, &r.fought)))));
+    let hours = RwSignal::new(24_u32);
+    // The longer ranges' readings, by the range they were read for; None inside while the store lacks them.
+    let long = RwSignal::new(None::<(u32, Option<Arc<Vec<warroom_core::progress::Sample>>>)>);
+    let index = Memo::new(move |_| p.with(|p| p.index));
+    Effect::new(move |_| {
+        let h = hours.get();
+        record.track();
+        if h <= 24 {
+            return;
+        }
+        let planet = index.get_untracked();
+        spawn_local(async move {
+            if let Ok(list) = crate::api::history::planet_history(planet, h).await
+                && hours.get_untracked() == h
+            {
+                long.set(Some((h, list.map(Arc::new))));
+            }
+        });
+    });
+    let missing = Memo::new(move |_| hours.get() > 24 && long.with(|l| matches!(l, Some((_, None)))));
+    let shown = Memo::new(move |_| {
+        let h = hours.get();
+        let wide = long.with(|l| l.as_ref().filter(|(at, _)| *at == h && h > 24).and_then(|(_, s)| s.clone()));
+        wide.unwrap_or_else(|| record.with(|r| r.samples.clone()))
+    });
     let rows = Memo::new(move |_| {
         let now = js::now();
         let (rate, percent) = front.with(|f| f.as_ref().map_or((None, 0.0), |f| (f.rate, f.percent)));
         let span = span.get();
         let advance_at = move |t: f64| span.filter(|(s, e)| t >= *s && t <= *e).map(|(s, e)| (t - s) / (e - s) * 100.0);
-        record.with(|r| {
-            let mut rows: Vec<FrontRow> = r
-                .samples
+        shown.with(|samples| {
+            let mut rows: Vec<FrontRow> = samples
                 .iter()
                 .map(|s| FrontRow {
                     at: s.at,
@@ -384,7 +412,7 @@ pub fn FrontLineSection(
                     });
                 }
             }
-            let now_at = r.samples.last().map_or(now, |s| s.at);
+            let now_at = samples.last().map_or(now, |s| s.at);
             Arc::new((rows, now_at))
         })
     });
@@ -393,7 +421,14 @@ pub fn FrontLineSection(
         let (rows, _) = &*rows.get();
         let now = js::now();
         let domain = (rows.first().map_or(now, |r| r.at), rows.last().map_or(now, |r| r.at));
-        XAxis { hide, ..XAxis::time(domain, hour_ticks(domain.0, domain.1, 4.0)) }
+        match hours.get() {
+            24 => XAxis { hide, ..XAxis::time(domain, hour_ticks(domain.0, domain.1, 4.0)) },
+            h => XAxis {
+                hide,
+                fmt: Arc::new(fmt_date),
+                ..XAxis::time(domain, hour_ticks(domain.0, domain.1, if h <= 168 { 24.0 } else { 120.0 }))
+            },
+        }
     };
     let ref_lines = move |now_at: f64, label: Option<String>| {
         let mut lines = vec![RefLine { x: now_at, stroke: "var(--text-dim)".into(), label }];
@@ -490,9 +525,8 @@ pub fn FrontLineSection(
     let heads = move || {
         let f = front.get()?;
         let p = p.get();
-        let (change, peak) = record.with(|r| {
-            (r.samples.first().map(|s| f.percent - s.percent), r.samples.iter().fold(0.0, |m: f64, s| m.max(s.players)))
-        });
+        let (change, peak) = shown
+            .with(|s| (s.first().map(|s| f.percent - s.percent), s.iter().fold(0.0, |m: f64, s| m.max(s.players))));
         let defense = f.kind == FrontKind::Defense;
         let regen = (!defense).then(|| regen_of(&p));
         let proj = f.rate.map(|r| (f.percent + r * 24.0).clamp(0.0, 100.0));
@@ -555,9 +589,30 @@ pub fn FrontLineSection(
     let loading = Memo::new(move |_| record.with(|r| r.loading));
     let error = Memo::new(move |_| record.with(|r| r.error));
     view! {
-        <Panel title="Front line activity · last and next 24 h" icon=icons::LINE_CHART>
+        <Panel
+            title=Signal::derive(move || {
+                format!("Front line activity · last {} and next 24 h", RANGES.iter().find(|r| r.0 == hours.get()).map_or("24 h", |r| r.1))
+            })
+            icon=icons::LINE_CHART
+        >
             <div class="pd-stack">
                 {heads}
+                <div class="filter-row pd-range" role="toolbar" aria-label="Range">
+                    {RANGES
+                        .map(|(h, label)| view! {
+                            <button
+                                class=move || format!("filter-chip {}", if hours.get() == h { "on" } else { "" })
+                                aria-pressed=move || (hours.get() == h).to_string()
+                                on:click=move |_| hours.set(h)
+                            >
+                                {label}
+                            </button>
+                        })
+                        .collect_view()}
+                    <Show when=move || missing.get()>
+                        <span class="pd-note caps">"Longer ranges need the database update; showing 24 h."</span>
+                    </Show>
+                </div>
                 <Show
                     when=move || enough.get()
                     fallback=move || {

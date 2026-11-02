@@ -160,6 +160,30 @@ pub async fn samples(planet: i64, since_ms: f64) -> Result<Vec<Sample>, String> 
         .collect())
 }
 
+/// A planet's readings over the last `hours`, the last in each bucket (15 minutes, 1 hour or 3 hours as the span
+/// grows), oldest first. None while the store lacks the function.
+pub async fn planet_history(planet: i64, hours: u32) -> Result<Option<Vec<Sample>>, String> {
+    let args = [("target", planet.to_string()), ("hours", hours.to_string())];
+    let rows: Vec<SampleRow> = match source::rpc("planet_history", &args).await {
+        Err(e) if e.status == 404 => return Ok(None),
+        r => typed(r)?,
+    };
+    Ok(Some(
+        rows.into_iter()
+            .filter_map(|r| {
+                Some(Sample {
+                    planet: r.planet,
+                    at: parse_ms(&r.at),
+                    owner: faction_by_id(r.owner)?,
+                    percent: r.percent,
+                    players: r.players,
+                    defending: r.defending,
+                })
+            })
+            .collect(),
+    ))
+}
+
 /// Helldivers on the planet while it had no campaign, oldest first.
 pub async fn idle_players(planet: i64, since_ms: f64) -> Result<Vec<PlayerReading>, String> {
     let rows: Vec<ReadingRow> = unless_missing(
