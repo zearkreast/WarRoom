@@ -135,12 +135,34 @@ fn wins_when_the_pace_reaches_100_before_the_deadline() {
     let o = task_outlook(50.0, Some(10.0), 0.0, 10.0 * H);
     assert_eq!(
         o,
-        TaskOutlook { outlook: DeadlineOutlook::OnTrack, end: Some(100.0), eta: Some(5.0 * H), rate: Some(10.0) }
+        TaskOutlook {
+            outlook: DeadlineOutlook::OnTrack,
+            end: Some(100.0),
+            eta: Some(5.0 * H),
+            rate: Some(10.0),
+            needed: Some(5.0)
+        }
     );
     let o = task_outlook(50.0, Some(2.0), 0.0, 10.0 * H);
-    assert_eq!(o, TaskOutlook { outlook: DeadlineOutlook::Behind, end: Some(70.0), eta: None, rate: Some(2.0) });
+    assert_eq!(
+        o,
+        TaskOutlook {
+            outlook: DeadlineOutlook::Behind,
+            end: Some(70.0),
+            eta: None,
+            rate: Some(2.0),
+            needed: Some(5.0)
+        }
+    );
     assert_eq!(task_outlook(50.0, None, 0.0, 10.0 * H).outlook, DeadlineOutlook::Measuring);
     assert_eq!(task_outlook(100.0, Some(3.0), 0.0, 10.0 * H).outlook, DeadlineOutlook::Done);
+}
+
+#[test]
+fn needs_the_rest_spread_over_the_hours_left() {
+    assert_eq!(task_outlook(40.0, None, 0.0, 20.0 * H).needed, Some(3.0));
+    assert_eq!(task_outlook(100.0, Some(1.0), 0.0, 20.0 * H).needed, None);
+    assert_eq!(task_outlook(40.0, Some(1.0), 30.0 * H, 20.0 * H).needed, None);
 }
 
 #[test]
@@ -154,7 +176,7 @@ fn calls_the_order_lost_if_any_objective_falls_short() {
         goal: 1.0,
         done: false,
     };
-    let o = |outlook| TaskOutlook { outlook, end: None, eta: None, rate: None };
+    let o = |outlook| TaskOutlook { outlook, end: None, eta: None, rate: None, needed: None };
     use DeadlineOutlook::*;
     let tasks = [t("A"), t("B")];
     assert!(order_verdict(&tasks, &[o(OnTrack), o(Behind)]).unwrap().0.starts_with("Losing: B"));

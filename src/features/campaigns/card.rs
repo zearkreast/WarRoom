@@ -77,6 +77,8 @@ struct OutlookView {
     percent: f64,
     advance: Option<Advance>,
     rate: Option<f64>,
+    /// A Major Order liberation target's needed %/h, and roughly how many Helldivers short.
+    need: Option<(f64, Option<f64>)>,
 }
 
 fn advance_view(a: Advance) -> impl IntoView {
@@ -88,12 +90,35 @@ fn advance_view(a: Advance) -> impl IntoView {
     }
 }
 
+fn need_view((need, short): (f64, Option<f64>), rate: Option<f64>) -> impl IntoView {
+    let tone = match rate {
+        Some(r) if r >= need => "var(--good)",
+        Some(_) => "var(--bad)",
+        None => "var(--text-hi)",
+    };
+    let base = "Progress per hour needed to liberate it before the Major Order's deadline";
+    let title = match short {
+        Some(n) if n <= 0.0 => format!("{base}; the measured pace is enough"),
+        Some(n) => {
+            format!("{base}; roughly {} more Helldivers at today's progress per Helldiver (estimate)", fmt_int(n))
+        }
+        None => base.to_string(),
+    };
+    view! {
+        <span class="cc-advance cc-need" title=title style=format!("--k: {tone};")>
+            <span class="caps">"MO needs"</span>
+            <b class="num">{format!("+{}%/h", to_fixed(need, 2))}</b>
+        </span>
+    }
+}
+
 fn outlook_view(o: OutlookView) -> AnyView {
     if o.holding {
         return view! {
             <div class="cc-outlook holding caps">
                 <Icon icon=icons::USERS size=16.0 />
                 " Holding for reinforcement"
+                {o.need.map(|n| need_view(n, o.rate))}
             </div>
         }
         .into_any();
@@ -114,6 +139,7 @@ fn outlook_view(o: OutlookView) -> AnyView {
                 }
             }}
             {o.advance.map(advance_view)}
+            {o.need.map(|n| need_view(n, o.rate))}
         </div>
     }
     .into_any()
@@ -201,7 +227,15 @@ pub fn CampaignCard(
     let outlook = Memo::new(move |_| {
         let now = clock.get();
         let advance = advance.get();
+        let mo_deadline = deadline.get();
         front.with(|f| {
+            let need =
+                mo_deadline.filter(|_| f.as_ref().is_some_and(|f| f.kind == FrontKind::Liberation)).and_then(|d| {
+                    let f = f.as_ref()?;
+                    let need = needed_rate(f.percent, now, d).filter(|n| *n > 0.0)?;
+                    let regen = regen_pct_per_hour(f.planet.regen_per_second, f.planet.max_health);
+                    Some((need, warroom_core::progress::liberation_divers_short(f.rate, regen, need, f.players)))
+                });
             f.as_ref().map(|f| OutlookView {
                 holding: f.rate.is_none() && f.kind == FrontKind::Liberation && f.percent == 0.0,
                 percent: f.percent,
@@ -209,6 +243,7 @@ pub fn CampaignCard(
                     Advance { enemy: f.enemy, percent, since: now - start, left: end - now }
                 }),
                 rate: f.rate,
+                need,
             })
         })
     });
