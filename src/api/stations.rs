@@ -1,11 +1,13 @@
 use crate::api::cache::{Query, use_query};
 use crate::api::queries::queries;
 use crate::api::source;
+use crate::api::source::encode;
 use crate::config::POLL_MS;
 use leptos::prelude::*;
 use serde::Deserialize;
 use std::sync::Arc;
-use warroom_core::time::parse_ms;
+use warroom_core::station_actions::ActionChange;
+use warroom_core::time::{iso_string, parse_ms};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StationJump {
@@ -60,6 +62,52 @@ pub fn use_station_jumps(station: impl Fn() -> i64 + 'static) -> Query<Arc<Vec<S
                     })
                     .collect(),
             ))
+        },
+    )
+}
+
+#[derive(Deserialize)]
+struct ActionRow {
+    action: i64,
+    at: String,
+    status: i64,
+}
+
+/// How far back a station's action log is read.
+pub const ACTION_DAYS: f64 = 30.0;
+
+/// A station's tactical action changes over the last 30 days, oldest first. None while the `station_actions`
+/// table doesn't exist yet.
+pub fn use_action_changes(station: impl Fn() -> i64 + 'static) -> Query<Option<Arc<Vec<ActionChange>>>> {
+    let last = queries().last_update;
+    use_query(
+        move || {
+            let l = last.get()?;
+            Some(format!("station_actions:{}:{}", station(), (l / (POLL_MS * 5.0)).floor()))
+        },
+        POLL_MS * 5.0,
+        |key: String| async move {
+            let mut parts = key.split(':').skip(1);
+            let station = parts.next().unwrap_or("0").to_string();
+            let end = parts.next().and_then(|b| b.parse::<f64>().ok()).unwrap_or(0.0) * POLL_MS * 5.0;
+            let since = encode(&iso_string(end - ACTION_DAYS * 86_400_000.0));
+            let rows = match source::select(
+                "station_actions",
+                &format!("select=action,at,status&station=eq.{station}&at=gte.{since}&order=at.asc&limit=1000"),
+            )
+            .await
+            {
+                Err(e) if e.status == 404 => return Ok(None),
+                Err(e) => return Err(e.message),
+                Ok(rows) => rows,
+            };
+            let rows: Vec<ActionRow> =
+                warroom_core::api::from_value(serde_json::Value::Array(rows)).map_err(|e| e.to_string())?;
+            Ok(Some(Arc::new(
+                rows.into_iter()
+                    .map(|r| ActionChange { action: r.action, at: parse_ms(&r.at), status: r.status })
+                    .collect(),
+            )))
         },
     )
 }

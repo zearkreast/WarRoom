@@ -5,14 +5,14 @@ pub mod jumps;
 
 use crate::api::fronts::planet_rate;
 use crate::api::queries::queries;
-use crate::api::stations::{JUMP_LIMIT, use_station_jumps};
+use crate::api::stations::{ACTION_DAYS, JUMP_LIMIT, use_action_changes, use_station_jumps};
 use crate::features::map::pawn_art::{DssState, action_icon, dss_state};
 use crate::features::planet::detail::PlanetSphere;
 use crate::js::{self, fmt_date_time};
-use crate::state::{HellpadModule, OptionsAnchor, View, ui};
+use crate::state::{HellpadModule, OptionsAnchor, View, settings, ui};
 use crate::ui::emblems::{FactionEmblem, IconLike, StationEmblem};
 use crate::ui::icons::{self, Icon};
-use crate::ui::primitives::{Countdown, Empty, Loading, OutLink, Panel, StatusChip};
+use crate::ui::primitives::{Countdown, Empty, Loading, OutLink, Panel, StatusChip, Switch};
 use holo::{CssHolo, DssHolo};
 use leptos::prelude::*;
 use regex_lite::Regex;
@@ -29,6 +29,7 @@ use warroom_core::gww_text::{Segment, parse_rich};
 use warroom_core::news_feed::plain_text;
 use warroom_core::progress::tracked_percent;
 use warroom_core::snapshot::StationLive;
+use warroom_core::station_actions::{ActionRecord, action_record};
 use warroom_core::time::parse_ms;
 use warroom_core::war_history::fmt_long_duration;
 
@@ -215,7 +216,21 @@ fn action_bar(pct: f64, mode: &'static str, label: String) -> impl IntoView {
     }
 }
 
-fn action_card(a: &TacticalAction, now: f64) -> AnyView {
+fn action_record_line(record: Option<ActionRecord>, now: f64) -> Option<AnyView> {
+    let r = record?;
+    let text = match (r.last_active, r.times) {
+        (Some(at), n) => format!(
+            "Last active {} ago · {}× in {} days",
+            fmt_long_duration((now - at) / 1000.0),
+            n,
+            js::num(ACTION_DAYS)
+        ),
+        (None, _) => format!("Not active in the last {} days", js::num(ACTION_DAYS)),
+    };
+    Some(view! { <p class="st-record caps num">{text}</p> }.into_any())
+}
+
+fn action_card(a: &TacticalAction, now: f64, record: Option<ActionRecord>) -> AnyView {
     let cost = a.costs.first();
     let active = is_active(a, now);
     let cooling = is_cooling(a, now);
@@ -264,6 +279,7 @@ fn action_card(a: &TacticalAction, now: f64) -> AnyView {
             <p class="st-strategic">{highlighted(&a.strategic_description)}</p>
             <p class="st-desc">{a.description.clone()}</p>
             {progress}
+            {action_record_line(record, now)}
         </article>
     }
     .into_any()
@@ -318,6 +334,7 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
     let q = queries();
     let now = js::use_now(30_000.0);
     let id = station.with_untracked(|s| s.as_ref().map_or(0, |s| s.id32));
+    let log = use_action_changes(move || id).data;
     // Redrawn when an action starts or ends, not on every clock tick.
     let phases = Memo::new(move |_| {
         let n = now.get();
@@ -448,7 +465,23 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
                             size=200.0
                         />
                     </section>
-                    <div class="st-actions">{s.tactical_actions.iter().map(|a| action_card(a, now_v)).collect_view()}</div>
+                    <div class="st-actions">
+                        {s.tactical_actions
+                            .iter()
+                            .map(|a| {
+                                let record = log.with(|l| l.as_ref().and_then(|l| l.as_ref()).map(|l| action_record(l, a.id32)));
+                                action_card(a, now_v, record)
+                            })
+                            .collect_view()}
+                    </div>
+                    <div class="st-alerts">
+                        <Switch
+                            label="Alert me when an action is charged or goes active"
+                            value=Signal::derive(move || settings().get(|s| s.station_alerts))
+                            on_change=move |v| settings().set(|s| s.station_alerts = v)
+                        />
+                        <span class="caps">"Alert me when an action is charged or goes active"</span>
+                    </div>
                     <JumpHistoryLink station=id />
                     <StarOfPeace />
                 </div>

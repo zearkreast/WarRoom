@@ -1,5 +1,6 @@
 //! In-app toasts and the briefing popup, and the OS notifications that go with them.
 
+pub mod stations;
 pub mod watch;
 
 use crate::js::{self, get, obj};

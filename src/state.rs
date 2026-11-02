@@ -335,6 +335,8 @@ pub struct SettingsData {
     pub map_dispatches: MapDispatches,
     /// Desktop: closing the window hides it to the tray, so alerts keep coming.
     pub close_to_tray: bool,
+    /// Alert when a space station's tactical action is charged or goes active.
+    pub station_alerts: bool,
     pub pinned: Vec<i64>,
     /// Views whose first-run hint has been dismissed.
     pub hints_seen: Vec<String>,
@@ -375,6 +377,7 @@ impl Default for SettingsData {
             tw_spin: !js::prefers_reduced_motion(),
             map_dispatches: MapDispatches::Five,
             close_to_tray: true,
+            station_alerts: true,
             pinned: Vec::new(),
             hints_seen: Vec::new(),
             seen_assignments: Vec::new(),

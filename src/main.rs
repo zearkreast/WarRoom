@@ -63,6 +63,7 @@ fn main() {
     // Before the first render, so a reload never flashes the default screen.
     nav_history::start();
     api::queries::start_polling();
+    alerts::stations::start();
     alerts::watch::start();
     tray::start();
     leptos::mount::mount_to(js::document().get_element_by_id("root").unwrap().unchecked_into(), app::App).forget();

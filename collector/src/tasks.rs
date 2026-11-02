@@ -125,6 +125,8 @@ pub struct Collector {
     campaigns_at: Option<f64>,
     /// Each station's planet as last seen; read back from the stored snapshot after a restart.
     station_at: Option<HashMap<i64, i64>>,
+    /// Each tactical action's status as last seen, by station and action; read back with `station_at`.
+    action_status: HashMap<(i64, i64), i64>,
     /// The last day of Major Order readings; read back from the stored snapshot after a restart.
     order_samples: Option<Vec<OrderSample>>,
     /// Campaigns as last written; read back once after a restart so the archive and issue dates survive it.
@@ -182,6 +184,7 @@ impl Collector {
             last_campaigns: Vec::new(),
             campaigns_at: None,
             station_at: None,
+            action_status: HashMap::new(),
             order_samples: None,
             episodes: None,
             last_effects: String::new(),
@@ -457,6 +460,10 @@ impl Collector {
             let stored: Vec<StationLive> =
                 self.stored(SnapshotKind::SpaceStations)?.map(typed).transpose()?.unwrap_or_default();
             self.station_at = Some(stored.iter().map(|s| (s.id32, s.planet_index)).collect());
+            self.action_status = stored
+                .iter()
+                .flat_map(|s| s.tactical_actions.iter().map(move |a| ((s.id32, a.id32), a.status)))
+                .collect();
         }
         let at = iso_string((self.now)());
         let station_at = self.station_at.as_mut().unwrap();
@@ -471,6 +478,26 @@ impl Collector {
         if !jumps.is_empty() {
             self.db.upsert("station_jumps", &jumps, None, true)?;
         }
+        let mut changes = Vec::new();
+        let mut seen = HashMap::new();
+        for s in &list {
+            for a in s.get("tacticalActions").and_then(Value::as_array).into_iter().flatten() {
+                let key = (int(s, "id32"), int(a, "id32"));
+                let status = int(a, "status");
+                if self.action_status.get(&key).is_some_and(|was| *was != status) {
+                    changes.push(json!({
+                        "station": key.0,
+                        "action": key.1,
+                        "at": at,
+                        "status": status,
+                        "expires": a.get("statusExpire"),
+                    }));
+                }
+                seen.insert(key, status);
+            }
+        }
+        let logged = unless_missing(self.db.upsert("station_actions", &changes, None, true))?;
+        self.action_status = seen;
         let live: Vec<Value> = list
             .iter()
             .map(|s| {
@@ -489,10 +516,16 @@ impl Collector {
             station_at.insert(int(s, "id32"), s.get("planet").map_or(0, |p| int(p, "index")));
         }
         let count = format!("{} station{}", list.len(), if list.len() == 1 { "" } else { "s" });
+        let actions = match (logged, changes.len()) {
+            (false, _) => ", no station_actions table yet".to_string(),
+            (true, 0) => String::new(),
+            (true, 1) => ", 1 action change".to_string(),
+            (true, n) => format!(", {n} action changes"),
+        };
         Ok(match jumps.len() {
-            0 => count,
-            1 => format!("{count}, 1 FTL jump"),
-            n => format!("{count}, {n} FTL jumps"),
+            0 => format!("{count}{actions}"),
+            1 => format!("{count}, 1 FTL jump{actions}"),
+            n => format!("{count}, {n} FTL jumps{actions}"),
         })
     }
 

@@ -330,6 +330,41 @@ fn carries_on_from_the_stored_major_order_readings_after_a_restart() {
 }
 
 #[test]
+fn logs_a_tactical_actions_status_change_starting_from_the_stored_snapshot() {
+    let station = raw(fixture!("space-stations.json"))[0].clone();
+    let (id, planet) = (station["id32"].as_i64().unwrap(), station["planet"]["index"].as_i64().unwrap());
+    let action = &station["tacticalActions"][0];
+    let was = action["status"].as_i64().unwrap() % 3 + 1;
+    let stored =
+        json!([{ "id32": id, "planetIndex": planet, "tacticalActions": [{ "id32": action["id32"], "status": was }] }]);
+    let (db, calls) = fake_db(&[("snapshots", json!([{ "data": stored }]))]);
+    let mut c = collector(db, 5_000_000.0);
+    assert!(c.run(Job::Stations).message.ends_with("1 action change"));
+    let calls = calls.borrow();
+    let logged = calls.iter().find(|c| c.path == "station_actions").unwrap();
+    assert_eq!(logged.body[0]["action"], action["id32"]);
+    assert_eq!(logged.body[0]["status"], action["status"]);
+    assert_eq!(logged.body[0]["at"], json!(iso_string(5_000_000.0)));
+}
+
+#[test]
+fn keeps_logging_jumps_before_the_station_actions_migration_is_applied() {
+    let station = raw(fixture!("space-stations.json"))[0].clone();
+    let action = &station["tacticalActions"][0];
+    let was = action["status"].as_i64().unwrap() % 3 + 1;
+    let stored = json!([{
+        "id32": station["id32"],
+        "planetIndex": station["planet"]["index"],
+        "tacticalActions": [{ "id32": action["id32"], "status": was }],
+    }]);
+    let (db, _) = fake_db_missing(&[("snapshots", json!([{ "data": stored }]))], &["station_actions"]);
+    let mut c = collector(db, 5_000_000.0);
+    let run = c.run(Job::Stations);
+    assert!(run.ok);
+    assert!(run.message.ends_with("no station_actions table yet"), "{}", run.message);
+}
+
+#[test]
 fn logs_a_stations_ftl_jump_when_its_planet_changes_starting_from_the_stored_snapshot() {
     let station = raw(fixture!("space-stations.json"))[0].clone();
     let (id, planet) = (station["id32"].as_i64().unwrap(), station["planet"]["index"].as_i64().unwrap());
