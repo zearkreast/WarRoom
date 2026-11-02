@@ -23,11 +23,23 @@ pub fn outlooks(a: &Assignment, tasks: &[TaskView], now: f64) -> Vec<TaskOutlook
             }
             let p = t.planet.as_ref().expect("planet task");
             if t.done || (p.current_owner == Faction::Humans && p.event.is_none()) {
-                return TaskOutlook { outlook: DeadlineOutlook::Done, end: Some(100.0), eta: None, rate: None };
+                return TaskOutlook {
+                    outlook: DeadlineOutlook::Done,
+                    end: Some(100.0),
+                    eta: None,
+                    rate: None,
+                    needed: None,
+                };
             }
             let front = campaigns.as_ref().and_then(|c| c.iter().find(|c| c.planet.index == p.index));
             if campaigns.is_some() && front.is_none() {
-                return TaskOutlook { outlook: DeadlineOutlook::NoFront, end: None, eta: None, rate: None };
+                return TaskOutlook {
+                    outlook: DeadlineOutlook::NoFront,
+                    end: None,
+                    eta: None,
+                    rate: None,
+                    needed: None,
+                };
             }
             let limit = p.event.as_ref().map_or(deadline, |e| deadline.min(parse_ms(&e.end_time)));
             task_outlook(tracked_percent(p), front.and_then(|f| f.rate), now, limit)

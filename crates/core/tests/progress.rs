@@ -2,7 +2,8 @@ mod common;
 use common::*;
 use warroom_core::api::Faction;
 use warroom_core::progress::{
-    Sample, liberation_percent, projected_at, projected_completion, projected_loss, rate_per_hour,
+    Sample, liberation_divers_short, liberation_percent, projected_at, projected_completion, projected_loss,
+    rate_per_hour,
 };
 
 fn sample(at: f64, percent: f64) -> Sample {
@@ -46,4 +47,15 @@ fn projects_completion_loss_and_the_percent_at_a_deadline() {
     assert_eq!(projected_completion(50.0, Some(-1.0), 0.0), None);
     assert_eq!(projected_loss(20.0, Some(-2.0), 0.0), Some(10.0 * H));
     assert!(close(projected_at(30.0, Some(1.5), 0.0, 10.0 * H).unwrap(), 45.0, 2));
+}
+
+#[test]
+fn counts_each_extra_liberator_before_regen_takes_its_share() {
+    // 1,000 Helldivers net +1%/h against 2%/h of regen, so each adds 0.003%/h.
+    assert_eq!(liberation_divers_short(Some(1.0), 2.0, 4.0, 1000.0), Some(1000.0));
+    assert_eq!(liberation_divers_short(Some(-1.0), 2.0, 2.0, 1000.0), Some(3000.0));
+    assert_eq!(liberation_divers_short(Some(5.0), 2.0, 4.0, 1000.0), Some(0.0));
+    assert_eq!(liberation_divers_short(Some(-2.0), 2.0, 4.0, 1000.0), None);
+    assert_eq!(liberation_divers_short(None, 2.0, 4.0, 1000.0), None);
+    assert_eq!(liberation_divers_short(Some(1.0), 2.0, 4.0, 0.0), None);
 }

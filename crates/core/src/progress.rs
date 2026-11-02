@@ -102,6 +102,20 @@ pub fn projected_loss(percent: f64, rate: Option<f64>, now: f64) -> Option<f64> 
     Some(now + (percent / -rate) * 3_600_000.0)
 }
 
+/// Roughly how many more Helldivers a liberation needs to gain `needed` %/h; 0 when the measured rate is enough.
+/// Each is counted at today's progress per Helldiver before regen, so None while that isn't positive.
+pub fn liberation_divers_short(rate: Option<f64>, regen: f64, needed: f64, players: f64) -> Option<f64> {
+    let rate = rate?;
+    if rate >= needed {
+        return Some(0.0);
+    }
+    let impact = rate + regen;
+    if impact <= 0.0 || players.is_nan() || players <= 0.0 {
+        return None;
+    }
+    Some(((needed - rate) / (impact / players)).ceil())
+}
+
 /// Percent the planet will be at by `deadline` if the current rate holds (can exceed 100).
 pub fn projected_at(percent: f64, rate: Option<f64>, now: f64, deadline: f64) -> Option<f64> {
     Some(percent + rate? * ((deadline - now) / 3_600_000.0))

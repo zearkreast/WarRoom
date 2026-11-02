@@ -22,6 +22,23 @@ pub fn signed(n: f64, text: String) -> String {
     format!("{}{text}", if n >= 0.0 { "+" } else { "−" })
 }
 
+fn needs_view(o: TaskOutlook, text: String) -> impl IntoView {
+    let tone = match o.rate.zip(o.needed) {
+        Some((r, n)) if r >= n => "var(--good)",
+        Some(_) => "var(--bad)",
+        None => "var(--text-dim)",
+    };
+    view! {
+        <span class="mo-need" style=format!("--tone: {tone};") title="Pace needed to complete this objective by its deadline">
+            {format!("needs {text}")}
+        </span>
+    }
+}
+
+fn dotted(parts: Vec<AnyView>) -> impl IntoView {
+    parts.into_iter().enumerate().map(|(i, v)| view! { {(i > 0).then_some(" · ")} {v} }).collect_view()
+}
+
 /// An order's tasks and their outlooks, kept current as snapshots arrive and the clock moves.
 #[derive(Clone, Copy)]
 pub struct OrderState {
@@ -110,13 +127,11 @@ fn PlanetTask(s: OrderState, i: usize) -> impl IntoView {
             <div class="mo-task-foot num">
                 <span>
                     {move || {
-                        let o = outlook.get()?;
-                        let rate = o.rate.filter(|_| !done.get()).map(|r| signed(r, format!("{}/h", fmt_pct(r.abs(), 2))));
-                        let end = o.end.filter(|_| !done.get());
-                        Some(view! {
-                            {rate.map(|r| view! { <b>{r}</b> {end.map(|_| " · ")} })}
-                            {end.map(|e| format!("End result {}", fmt_pct(e, 2)))}
-                        })
+                        let o = outlook.get().filter(|_| !done.get())?;
+                        let rate = o.rate.map(|r| view! { <b>{signed(r, format!("{}/h", fmt_pct(r.abs(), 2)))}</b> }.into_any());
+                        let need = o.needed.map(|n| needs_view(o, format!("+{}/h", fmt_pct(n, 2))).into_any());
+                        let end = o.end.map(|e| format!("End result {}", fmt_pct(e, 2)).into_any());
+                        Some(dotted([rate, need, end].into_iter().flatten().collect()))
                     }}
                 </span>
                 {move || outlook.get().map(|o| view! { <OutlookTag o=o /> })}
@@ -161,8 +176,12 @@ fn CountTaskRow(s: OrderState, i: usize) -> impl IntoView {
                     <b>{move || fmt_compact(js_round(shown.get()))}</b>
                     {move || format!(" / {}", fmt_compact(goal()))}
                     {move || {
-                        let per_hour = outlook.get().and_then(|o| o.rate).map(|r| r / 100.0 * goal()).filter(|_| !done.get());
-                        per_hour.map(|p| format!(" · {}", signed(p, format!("{}/h", fmt_compact(p.abs())))))
+                        let o = outlook.get().filter(|_| !done.get())?;
+                        let per_hour = o.rate.map(|r| r / 100.0 * goal());
+                        let rate = per_hour.map(|p| signed(p, format!("{}/h", fmt_compact(p.abs()))).into_any());
+                        let need = o.needed.map(|n| needs_view(o, format!("{}/h", fmt_compact(n / 100.0 * goal()))).into_any());
+                        let parts: Vec<AnyView> = [rate, need].into_iter().flatten().collect();
+                        (!parts.is_empty()).then(|| view! { " · " {dotted(parts)} })
                     }}
                 </span>
                 {move || outlook.get().map(|o| view! { <OutlookTag o=o /> })}

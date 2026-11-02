@@ -242,6 +242,10 @@
     font-weight: 700;
     color: var(--text-hi);
   }
+  .cc-need b {
+    color: var(--k);
+    text-transform: none;
+  }
   .cc-sector b {
     font-weight: 700;
   }

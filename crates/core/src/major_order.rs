@@ -1,6 +1,7 @@
 //! Major Orders: each task's target and progress, rates from recorded readings, and whether it makes the deadline.
 
 use crate::api::{Assignment, AssignmentTask, Faction, Planet};
+use crate::defense::needed_rate;
 use crate::factions::{faction_by_id, faction_label};
 use crate::progress::{projected_at, projected_completion, slope_per_hour};
 use crate::snapshot::{EpisodeLive, EpisodeStatus, OrderSample, phase_name};
@@ -186,6 +187,8 @@ pub struct TaskOutlook {
     pub eta: Option<f64>,
     /// Trend in %/h.
     pub rate: Option<f64>,
+    /// %/h it needs from now on to reach 100% by the deadline.
+    pub needed: Option<f64>,
 }
 
 /// The whole order at the current pace: it is won only if every objective makes the deadline.
@@ -211,8 +214,10 @@ pub fn order_verdict(tasks: &[TaskView], outlooks: &[TaskOutlook]) -> Option<(St
 /// A task's outlook from its percent and its trend in %/h.
 pub fn task_outlook(percent: f64, rate: Option<f64>, now: f64, deadline: f64) -> TaskOutlook {
     let (outlook, end) = deadline_outlook(percent, rate, now, deadline);
-    let eta = if outlook == DeadlineOutlook::Done { None } else { projected_completion(percent, rate, now) };
-    TaskOutlook { outlook, end, eta: eta.filter(|e| *e < deadline), rate }
+    let done = outlook == DeadlineOutlook::Done;
+    let eta = if done { None } else { projected_completion(percent, rate, now) };
+    let needed = if done { None } else { needed_rate(percent, now, deadline) };
+    TaskOutlook { outlook, end, eta: eta.filter(|e| *e < deadline), rate, needed }
 }
 
 /// Where a target ends up by the deadline if the current rate holds; `end` is clamped to 0-100.
