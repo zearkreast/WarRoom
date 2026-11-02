@@ -38,3 +38,4 @@ pub mod time;
 pub mod version;
 pub mod voronoi;
 pub mod war_history;
+pub mod watchlist;

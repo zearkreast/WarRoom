@@ -158,11 +158,23 @@ pub struct AlertSettings {
     pub dispatches: bool,
     pub captures: bool,
     pub defenses: bool,
+    /// Pinned fronts: victory within the hour, losing ground, a city opening.
+    pub pinned: bool,
+    /// The Major Order turning to losing, nearing its end, completing an objective.
+    pub progress: bool,
 }
 
 impl Default for AlertSettings {
     fn default() -> Self {
-        AlertSettings { system: true, orders: true, dispatches: true, captures: true, defenses: true }
+        AlertSettings {
+            system: true,
+            orders: true,
+            dispatches: true,
+            captures: true,
+            defenses: true,
+            pinned: true,
+            progress: true,
+        }
     }
 }
 
