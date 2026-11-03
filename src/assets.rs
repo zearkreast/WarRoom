@@ -31,6 +31,7 @@ const EMBLEMS: &[(&str, &str)] = emblems![
     "incineration-corps",
     "jet-brigade",
     "mindless-masses",
+    "noxious-strain",
     "predator-strain",
     "rupture-strain",
     "seaf",
