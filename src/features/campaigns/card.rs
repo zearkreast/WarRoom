@@ -44,8 +44,11 @@ struct EtaView {
     late: bool,
 }
 
+/// Past this, a victory at today's pace says nothing, so the card shows none.
+const ETA_HORIZON_MS: f64 = 7.0 * 24.0 * 3_600_000.0;
+
 /// "Victory in …" / "Falls in …" above the card, if the rate says anything.
-fn eta(f: &Front, deadline: Option<f64>) -> Option<EtaView> {
+fn eta(f: &Front, deadline: Option<f64>, now: f64) -> Option<EtaView> {
     f.rate?;
     if f.kind == FrontKind::Defense {
         let wins = matches!((f.victory_at, f.fail_at), (Some(v), Some(d)) if v < d);
@@ -57,7 +60,7 @@ fn eta(f: &Front, deadline: Option<f64>) -> Option<EtaView> {
             late: false,
         });
     }
-    if let Some(v) = f.victory_at.filter(|v| *v != 0.0 && !v.is_nan()) {
+    if let Some(v) = f.victory_at.filter(|v| *v != 0.0 && !v.is_nan() && *v - now <= ETA_HORIZON_MS) {
         return Some(EtaView { good: true, label: "Victory in", to: v, late: deadline.is_some_and(|d| v > d) });
     }
     if let Some(d) = f.fail_at.filter(|d| *d != 0.0 && !d.is_nan()) {
@@ -132,9 +135,14 @@ fn outlook_view(o: OutlookView) -> AnyView {
             {match o.rate {
                 None => view! { <span class="cc-rate measuring caps">"Measuring rate…"</span> }.into_any(),
                 Some(r) => {
+                    let (tone, icon) = match r {
+                        r if r >= 0.005 => ("up", icons::TRENDING_UP),
+                        r if r <= -0.005 => ("down", icons::TRENDING_DOWN),
+                        _ => ("flat", icons::ARROW_RIGHT),
+                    };
                     view! {
-                        <span class=format!("cc-rate {}", if r > 0.0 { "up" } else { "down" })>
-                            <Icon icon=if r < 0.0 { icons::TRENDING_DOWN } else { icons::TRENDING_UP } size=18.0 />
+                        <span class=format!("cc-rate {tone}")>
+                            <Icon icon=icon size=18.0 />
                             <b class="num">{format!("{}{}%", if r > 0.0 { "+" } else { "" }, to_fixed(r, 2))}</b>
                             <span class="caps">"per hour"</span>
                         </span>
@@ -238,7 +246,7 @@ pub fn CampaignCard(
     let rate = Memo::new(move |_| front.with(|f| f.as_ref().and_then(|f| f.rate)));
     let flag = move |pick: fn(&Front) -> bool| Memo::new(move |_| front.with(|f| f.as_ref().is_some_and(pick)));
     let (in_mo, pinned, station) = (flag(|f| f.in_major_order), flag(|f| f.pinned), flag(|f| f.station));
-    let eta = Memo::new(move |_| front.with(|f| f.as_ref().and_then(|f| eta(f, deadline.get()))));
+    let eta = Memo::new(move |_| front.with(|f| f.as_ref().and_then(|f| eta(f, deadline.get(), js::now()))));
     let planet = Memo::new(move |_| front.with(|f| f.as_ref().map(|f| f.planet.clone()).unwrap_or_default()));
     let advance = use_enemy_advance(planet.into());
     let attackers = use_attackers(planet.into());
@@ -258,7 +266,7 @@ pub fn CampaignCard(
                     Some((need, warroom_core::progress::liberation_divers_short(f.rate, regen, need, f.players)))
                 });
             f.as_ref().map(|f| OutlookView {
-                holding: f.rate.is_none() && f.kind == FrontKind::Liberation && f.percent == 0.0,
+                holding: f.kind == FrontKind::Liberation && f.percent == 0.0 && f.rate.is_none_or(|r| r <= 0.0),
                 percent: f.percent,
                 advance: advance.zip(f.planet.event.as_ref().and_then(event_span)).map(|(percent, (start, end))| {
                     Advance { enemy: f.enemy, percent, since: now - start, left: end - now }
@@ -341,10 +349,10 @@ pub fn CampaignCard(
                 >
                     <div class="cc-in">
                         <div class="cc-kicker caps">
-                            <span class="cc-type">
+                            <span class="cc-type" title=l.special.map(|n| format!("Campaign type {n}"))>
                                 {kind_icon(l.kind, l.special.is_some())}
                                 " "
-                                {l.special.map_or(kind.to_string(), |n| format!("Special · type {n}"))}
+                                {if l.special.is_some() { "Special".to_string() } else { kind.to_string() }}
                             </span>
                             {move || {
                                 eta.get().map(|e| {
@@ -472,7 +480,7 @@ pub fn CampaignCard(
                         </div>
                         {move || outlook.get().map(outlook_view)}
                         <footer class="cc-foot">
-                            <span class="cc-share" title="Share of all Helldivers online">
+                            <span title="Share of all Helldivers online">
                                 <span class="cc-foot-label caps">"Share"</span>
                                 <b class="num">{move || format!("{}%", to_fixed(share.get(), 0))}</b>
                             </span>
@@ -480,7 +488,7 @@ pub fn CampaignCard(
                                 <span class="cc-foot-label caps">"Divers"</span>
                                 <b class="num">{move || fmt_int(players.get())}</b>
                             </span>
-                            <span title="Super Earth progress per hour, before enemy regeneration" style="--k: var(--f-humans);">
+                            <span title="Super Earth progress per hour, before enemy regeneration">
                                 <span class="cc-foot-label caps">"Impact"</span>
                                 <b class="num">
                                     {move || {
@@ -500,7 +508,7 @@ pub fn CampaignCard(
                                     .into_any()
                             } else {
                                 view! {
-                                    <span title="Enemy regeneration per hour" style=format!("--k: {enemy};")>
+                                    <span title="Enemy regeneration per hour">
                                         <span class="cc-foot-label caps">"Regen"</span>
                                         <b class="num">
                                             {move || regen.get().map_or("—".to_string(), |r| format!("{}%", to_fixed(r, 2)))}

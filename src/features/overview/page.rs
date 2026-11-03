@@ -302,16 +302,16 @@ fn Distribution() -> impl IntoView {
                     let campaigns = q.campaigns.with(|c| c.as_ref().map(|c| c.len()));
                     let war = q.war.with(|w| w.as_ref().map(|w| w.impact_multiplier));
                     view! {
-                        <Tile label="Planets charted" value=planets.as_ref().map_or("—".to_string(), |p| p.len().to_string()).into_any() rule="var(--cta)" />
+                        <Tile label="Planets charted" value=planets.as_ref().map_or("—".to_string(), |p| p.len().to_string()).into_any() rule="var(--line-strong)" />
                         <Tile
                             label="Sectors"
                             value=planets
                                 .as_ref()
                                 .map_or("—".to_string(), |p| p.iter().map(|p| p.sector.as_str()).collect::<HashSet<_>>().len().to_string())
                                 .into_any()
-                            rule="var(--cta)"
+                            rule="var(--line-strong)"
                         />
-                        <Tile label="Active fronts" value=campaigns.map_or("—".to_string(), |n| n.to_string()).into_any() rule="var(--cta)" />
+                        <Tile label="Active fronts" value=campaigns.map_or("—".to_string(), |n| n.to_string()).into_any() rule="var(--line-strong)" />
                         <Tile
                             label="Impact mod"
                             value=war.map_or("—".to_string(), |m| to_fixed(m, 6)).into_any()

@@ -330,7 +330,6 @@
     height: 8px;
     background: var(--good);
     clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
-    animation: pulse 2.4s var(--ease) infinite;
   }
   .live-dot.off {
     background: var(--bad);

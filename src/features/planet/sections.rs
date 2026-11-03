@@ -591,7 +591,8 @@ pub fn FrontLineSection(
     view! {
         <Panel
             title=Signal::derive(move || {
-                format!("Front line activity · last {} and next 24 h", RANGES.iter().find(|r| r.0 == hours.get()).map_or("24 h", |r| r.1))
+                let shown = if missing.get() { 24 } else { hours.get() };
+                format!("Front line activity · last {} and next 24 h", RANGES.iter().find(|r| r.0 == shown).map_or("24 h", |r| r.1))
             })
             icon=icons::LINE_CHART
         >
@@ -744,12 +745,11 @@ pub fn ServiceRecordSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
                                 .collect_view()}
                         </div>
                         <div class="pd-tiles four">
-                            <Tile icon=icons::SKULL label="Helldivers KIA" value=fmt_int(s.deaths).into_any() color="var(--bad)" />
+                            <Tile icon=icons::SKULL label="Helldivers KIA" value=fmt_int(s.deaths).into_any() />
                             <Tile
                                 icon=icons::TRIANGLE_ALERT
                                 label="Accidentals"
                                 value=fmt_int(s.friendlies).into_any()
-                                color="var(--warn)"
                                 sub=format!(
                                     "{} of KIA",
                                     fmt_pct(if s.deaths != 0.0 { s.friendlies / s.deaths * 100.0 } else { 0.0 }, 1)
