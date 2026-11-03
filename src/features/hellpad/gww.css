@@ -1522,15 +1522,6 @@
   .gww-select:hover {
     border-color: var(--site);
   }
-  .gww-log-day {
-    gap: var(--s-3) !important;
-  }
-  .gww-page .gww-log-day h3 {
-    margin: var(--s-3) 0 0;
-    font-size: var(--fs-label);
-    letter-spacing: 0.14em;
-    color: var(--label);
-  }
 
   /* ---------- Diagrams ---------- */
   .gww-fig {
@@ -1916,41 +1907,182 @@
   }
 
   /* ---------- Galactic logs ---------- */
-  .gww-logbox summary {
+  .gww-page.lg {
+    max-width: 1080px;
+  }
+  .lg-tabs {
+    display: flex;
+    gap: var(--s-1);
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .lg-tab {
+    display: inline-flex;
     align-items: center;
+    gap: var(--s-3);
+    flex: none;
+    padding: var(--s-4) var(--s-5);
+    border: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    background: none;
+    color: var(--label);
+    font-weight: 700;
+    font-size: var(--fs-body-s);
+    cursor: pointer;
+    transition:
+      color var(--t-state),
+      border-color var(--t-state),
+      background-color var(--t-state);
   }
-  .gww-logbox summary b {
-    font-size: var(--fs-body);
+  .lg-tab:hover {
+    color: var(--text-hi);
+    background: var(--surface-1);
   }
-  .gww-logbox-icon {
-    display: inline-grid;
-    place-items: center;
+  .lg-tab.on {
+    color: var(--text-hi);
+    border-bottom-color: var(--site);
+  }
+  .lg-tab svg {
     color: var(--site);
   }
-  .gww-logbox summary .num {
-    margin-left: auto;
-  }
-  .gww-logbox-body {
+  .lg-panel {
     display: flex;
     flex-direction: column;
     gap: var(--s-4);
-    padding: var(--s-5);
+    animation: lg-in 280ms var(--ease);
   }
-  /* Too narrow here for the stay beside the route. */
-  @media (min-width: 721px) {
-    .gww-logbox .st-hops li {
-      grid-template-columns: 130px 20px minmax(0, 1fr);
-      row-gap: var(--s-2);
+  .lg-panel[hidden] {
+    display: none;
+  }
+  @keyframes lg-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
     }
-    .gww-logbox .st-hops li::before {
-      left: calc(130px + var(--s-5) + 9px);
+  }
+  .lg-note,
+  .lg-week {
+    margin: 0;
+    font-size: var(--fs-label);
+    letter-spacing: var(--track-caps);
+    color: var(--label);
+  }
+  .lg-week b {
+    font-weight: 700;
+  }
+  .lg-day {
+    display: flex;
+    flex-direction: column;
+  }
+  .gww-page .lg-day-head {
+    display: flex;
+    justify-content: space-between;
+    margin: var(--s-4) 0 0;
+    padding-bottom: var(--s-2);
+    border-bottom: 1px solid var(--line-strong);
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+  }
+  .gww-page .lg-day-head::before {
+    content: none;
+  }
+  .lg-day-head span {
+    color: var(--label);
+  }
+  .lg-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  /* One line per change: time, side, what happened, and where. */
+  .lg-row {
+    display: grid;
+    grid-template-columns: 44px 24px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s-4);
+    padding: var(--s-2) var(--s-3);
+    border-bottom: 1px solid var(--line);
+    border-left: 2px solid transparent;
+    transition:
+      background-color var(--t-state),
+      border-color var(--t-state);
+  }
+  .lg-row:hover {
+    background: var(--surface-1);
+    border-left-color: var(--k);
+  }
+  .lg-row time {
+    font-size: var(--fs-label);
+    color: var(--label);
+  }
+  .lg-mark {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--k);
+    background: color-mix(in srgb, var(--k) var(--fill), var(--surface-1));
+    color: var(--k);
+  }
+  .lg-what {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--s-3);
+    min-width: 0;
+  }
+  .lg-planet {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-hi);
+  }
+  .lg-event {
+    font-size: var(--fs-body-s);
+    color: var(--k);
+  }
+  .lg-sector {
+    font-size: var(--fs-micro);
+    letter-spacing: var(--track-caps);
+    color: var(--label);
+    white-space: nowrap;
+  }
+  .lg-chart {
+    padding: var(--s-4) var(--s-4) var(--s-3);
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+  }
+  .lg-chart-key {
+    display: flex;
+    gap: var(--s-6);
+    margin: var(--s-2) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-micro);
+    letter-spacing: var(--track-caps);
+    color: var(--text-dim);
+  }
+  .lg-chart-key li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+  }
+  .lg-chart-key li::before {
+    content: "";
+    width: 10px;
+    height: 2px;
+    background: var(--k);
+  }
+  @media (max-width: 560px) {
+    .lg-row {
+      grid-template-columns: 40px 24px minmax(0, 1fr);
     }
-    .gww-logbox .st-hop-node {
-      grid-row: span 2;
-    }
-    .gww-logbox .st-hop-stay {
-      grid-column: 3;
-      justify-self: start;
+    .lg-sector {
+      display: none;
     }
   }
   .gww-more {

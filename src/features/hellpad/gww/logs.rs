@@ -6,8 +6,11 @@ use crate::api::stations::{JUMP_LIMIT, use_station_jumps};
 use crate::api::war_samples::{WarDay, use_war_days};
 use crate::features::hellpad::gww::blocks::{HeadingRef, banner, crumb, related};
 use crate::features::hellpad::stations::jumps::JumpRoute;
-use crate::js::{self, fmt_date, fmt_date_time, num};
+use crate::js::{self, fmt_date, num};
 use crate::state::{OptionsAnchor, ui};
+use crate::ui::chart::{
+    Chart, GRID, Grid, Plot, Series, Tooltip, XAxis, YAxis, default_tooltip, hour_ticks, series_rows,
+};
 use crate::ui::emblems::{DssIcon, FactionEmblem};
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Empty, Loading};
@@ -17,23 +20,9 @@ use std::collections::{BTreeSet, HashMap};
 use std::sync::Arc;
 use warroom_core::api::Faction;
 use warroom_core::factions::{faction_color, faction_label};
-use warroom_core::format::{fmt_int, sest_clock, sest_date};
+use warroom_core::format::{fmt_compact, fmt_int, sest_clock, sest_date};
 use warroom_core::gww_nav::LOG_TITLE;
 use warroom_core::owner_changes::{LogQuery, log_matches};
-
-fn log_box(title: String, note: AnyView, icon: AnyView, body: AnyView) -> AnyView {
-    view! {
-        <details class="gww-fold gww-logbox" open>
-            <summary>
-                <span class="gww-logbox-icon" aria-hidden="true">{icon}</span>
-                <b>{title}</b>
-                <span class="caps num">{note}</span>
-            </summary>
-            <div class="gww-logbox-body">{body}</div>
-        </details>
-    }
-    .into_any()
-}
 
 #[derive(Clone, Copy, PartialEq)]
 enum LogFilter {
@@ -42,13 +31,14 @@ enum LogFilter {
     Lost,
 }
 
-const LOG_DAYS: usize = 7;
+/// War log days shown at first, and added by each press of "more".
+const LOG_DAYS: usize = 14;
 
 fn war_log() -> AnyView {
     let h = history();
     let q = queries();
     let show = RwSignal::new(LogFilter::All);
-    let all_days = RwSignal::new(false);
+    let days_shown = RwSignal::new(LOG_DAYS);
     let changes = h.changes;
     let ready = h.ready;
     let older = h.older;
@@ -116,62 +106,69 @@ fn war_log() -> AnyView {
             };
             return view! { <Empty>{text}</Empty> }.into_any();
         }
-        let shown = if all_days.get() { list.len() } else { LOG_DAYS };
+        let sector_of = sector_of.get();
         list.into_iter()
-            .take(shown)
-            .map(|(day, items)| view! {
-                <section class="gww-log-day">
-                    <h3 class="caps num">{day}</h3>
-                    <ol class="wl">
-                        {items
-                            .into_iter()
-                            .map(|c| {
-                                let ch = c.change;
-                                let won = ch.to == Faction::Humans;
-                                let color = faction_color(Some(if won { Faction::Humans } else { ch.to }));
-                                let planet = ch.planet;
-                                view! {
-                                    <li class="wl-row">
-                                        <span class="wl-mark" style=format!("--k: {color};")>
-                                            <FactionEmblem faction=if won { "Humans" } else { ch.to.as_str() } size=14.0 />
-                                        </span>
-                                        <div>
-                                            <div class="wl-title caps">
+            .take(days_shown.get())
+            .map(|(day, items)| {
+                let n = items.len();
+                view! {
+                    <section class="lg-day">
+                        <h3 class="lg-day-head caps num">
+                            {day}
+                            <span>{if n == 1 { "1 change".to_string() } else { format!("{n} changes") }}</span>
+                        </h3>
+                        <ol class="lg-rows">
+                            {items
+                                .into_iter()
+                                .map(|c| {
+                                    let ch = c.change;
+                                    let won = ch.to == Faction::Humans;
+                                    let color = faction_color(Some(if won { Faction::Humans } else { ch.to }));
+                                    let planet = ch.planet;
+                                    let sector = sector_of.get(&planet).cloned().unwrap_or_default();
+                                    view! {
+                                        <li class=format!("lg-row {}", if won { "won" } else { "lost" }) style=format!("--k: {color};")>
+                                            <time class="num">{sest_clock(ch.at).chars().take(5).collect::<String>()}</time>
+                                            <span class="lg-mark">
+                                                <FactionEmblem faction=if won { "Humans" } else { ch.to.as_str() } size=14.0 />
+                                            </span>
+                                            <span class="lg-what">
                                                 <button
-                                                    class="link"
-                                                    style="color: var(--text-hi);"
+                                                    class="link lg-planet"
                                                     on:click=move |e| ui().open_options(Some(OptionsAnchor::at(planet, &e)))
                                                 >
                                                     {ch.planet_name.clone()}
                                                 </button>
-                                                " "
-                                                <span style=format!("color: {color};")>
+                                                <span class="lg-event">
                                                     {if won { format!("liberated from {}", faction_label(Some(ch.from))) } else { format!("fell to {}", faction_label(Some(ch.to))) }}
                                                 </span>
-                                            </div>
-                                            <div class="wl-sub">{fmt_date_time(ch.at)}</div>
-                                        </div>
-                                    </li>
-                                }
-                            })
-                            .collect_view()}
-                    </ol>
-                </section>
+                                            </span>
+                                            <span class="lg-sector caps">{sector}</span>
+                                        </li>
+                                    }
+                                })
+                                .collect_view()}
+                        </ol>
+                    </section>
+                }
             })
             .collect_view()
             .into_any()
     };
-    let more =
-        move || {
-            let n = days.with(Vec::len);
-            (ready.get() && n > LOG_DAYS).then(|| view! {
-            <button class="gww-chip gww-more" on:click=move |_| all_days.update(|a| *a = !*a)>
-                {move || if all_days.get() { "Show fewer days".to_string() } else { format!("Show all {n} days") }}
-            </button>
+    let more = move || {
+        let n = days.with(Vec::len);
+        let shown = days_shown.get();
+        (ready.get() && n > shown).then(|| {
+            let step = LOG_DAYS.min(n - shown);
+            view! {
+                <button class="gww-chip gww-more" on:click=move |_| days_shown.update(|d| *d += LOG_DAYS)>
+                    {format!("Show {step} more {}", if step == 1 { "day" } else { "days" })}
+                </button>
+            }
         })
-        };
+    };
     let load_older = move || {
-        let every_day = all_days.get() || days.with(Vec::len) <= LOG_DAYS;
+        let every_day = days_shown.get() >= days.with(Vec::len);
         (ready.get() && older.get() && every_day && query.with(LogQuery::is_empty)).then(|| {
             view! {
                 <button
@@ -190,14 +187,32 @@ fn war_log() -> AnyView {
             }
         })
     };
+    let week = Memo::new(move |_| {
+        let since = js::now() - 7.0 * 86_400_000.0;
+        changes.with(|c| {
+            let recent = c.iter().filter(|c| c.change.at >= since);
+            recent.fold((0, 0), |(w, l), c| if c.change.to == Faction::Humans { (w + 1, l) } else { (w, l + 1) })
+        })
+    });
     view! {
+        <Show when=move || ready.get()>
+            <p class="lg-week caps num">
+                "Last 7 days "
+                <b style="color: var(--f-humans);">{move || week.get().0}" liberated"</b>
+                " · "
+                <b style="color: var(--bad);">{move || week.get().1}" lost"</b>
+            </p>
+        </Show>
         <div class="gww-filter" role="group" aria-label="Show">
             {[(LogFilter::All, "Everything"), (LogFilter::Won, "Liberated"), (LogFilter::Lost, "Lost")]
                 .map(|(k, label)| view! {
                     <button
                         class=move || format!("gww-chip {}", if show.get() == k { "on" } else { "" })
                         aria-pressed=move || (show.get() == k).to_string()
-                        on:click=move |_| show.set(k)
+                        on:click=move |_| {
+                            show.set(k);
+                            days_shown.set(LOG_DAYS);
+                        }
                     >
                         {label}
                     </button>
@@ -265,7 +280,10 @@ fn war_log() -> AnyView {
     .into_any()
 }
 
+/// Days of the online table shown at first, and added by each press of "more".
 const ACTIVITY_DAYS: usize = 14;
+/// Days the online chart spans.
+const CHART_DAYS: usize = 90;
 
 #[derive(Clone, Copy, PartialEq)]
 enum DayColumn {
@@ -350,9 +368,57 @@ fn day_stat(peak: bool, value: f64, at: String, top: f64) -> AnyView {
     .into_any()
 }
 
+/// Each day's peak and low over the last few months.
+fn online_chart(days: &[WarDay]) -> AnyView {
+    let mut list: Vec<WarDay> = days.iter().take(CHART_DAYS).cloned().collect();
+    list.sort_by(|a, b| a.day.total_cmp(&b.day));
+    if list.len() < 2 {
+        return ().into_any();
+    }
+    let xs: Vec<f64> = list.iter().map(|d| d.day).collect();
+    let domain = (xs[0], xs[xs.len() - 1]);
+    let span_days = (domain.1 - domain.0) / 86_400_000.0;
+    let step = 24.0 * (span_days / 6.0).ceil().max(1.0);
+    let top = list.iter().fold(1.0, |m: f64, d| m.max(d.peak));
+    let plot = Arc::new(Plot {
+        x: XAxis { fmt: Arc::new(fmt_date), ..XAxis::time(domain, hour_ticks(domain.0, domain.1, step)) },
+        y: vec![YAxis::auto_whole(top, Arc::new(fmt_compact))],
+        grid: Some(Grid { stroke: GRID.into(), opacity: None, edges_only: false }),
+        series: vec![
+            Series {
+                fill_opacity: 0.12,
+                ..Series::area(
+                    "Peak online",
+                    list.iter().map(|d| Some(d.peak)).collect(),
+                    "var(--cta)",
+                    2.0,
+                    "var(--cta)",
+                )
+            },
+            Series::line("Lowest online", list.iter().map(|d| Some(d.low)).collect(), "var(--text-dim)", 1.5),
+        ],
+        ref_lines: Vec::new(),
+        xs,
+    });
+    let tip: Tooltip = Arc::new(|plot, i| {
+        let rows = series_rows(plot, i, |s, v| (fmt_int(v), s.name.clone()));
+        Some(default_tooltip(sest_date(*plot.xs.get(i)?), rows))
+    });
+    view! {
+        <div class="lg-chart">
+            <Chart plot=Signal::stored(plot) height=170.0 margin=(8.0, 8.0, 0.0, 0.0) tooltip=tip />
+            <ul class="lg-chart-key caps">
+                <li style="--k: var(--cta);">"Peak online"</li>
+                <li style="--k: var(--text-dim);">"Lowest online"</li>
+            </ul>
+        </div>
+    }
+    .into_any()
+}
+
 fn activity_days(now: Memo<f64>) -> AnyView {
     let q = use_war_days();
-    let all = RwSignal::new(false);
+    let shown_days = RwSignal::new(ACTIVITY_DAYS);
     let order = RwSignal::new(DayOrder::NEWEST_FIRST);
     let hm = |ms: f64| sest_clock(ms).chars().take(5).collect::<String>();
     (move || {
@@ -365,10 +431,10 @@ fn activity_days(now: Memo<f64>) -> AnyView {
                 .into_any();
         }
         let n = days.len();
+        let chart = online_chart(&days);
         // In its own closure, so pressing a heading keeps the focus on it.
         let rows = move || {
-            let shown: Vec<_> =
-                sort_days(&days, order.get()).into_iter().take(if all.get() { n } else { ACTIVITY_DAYS }).collect();
+            let shown: Vec<_> = sort_days(&days, order.get()).into_iter().take(shown_days.get()).collect();
             let top = shown.iter().fold(1.0, |m: f64, d| m.max(d.peak));
             let today = (now.get() / 86_400_000.0).floor() * 86_400_000.0;
             shown
@@ -388,6 +454,7 @@ fn activity_days(now: Memo<f64>) -> AnyView {
                 .collect_view()
         };
         view! {
+            {chart}
             <div class="gww-days-head caps" role="group" aria-label="Sort days by">
                 {day_sort(order, DayColumn::Day, "SEST day")}
                 {day_sort(order, DayColumn::Peak, "Peak online")}
@@ -395,11 +462,17 @@ fn activity_days(now: Memo<f64>) -> AnyView {
             </div>
             <ol class="gww-days">{rows}</ol>
             <p class="gww-note">"Each bar is the day's count against the busiest day listed."</p>
-            {(n > ACTIVITY_DAYS).then(|| view! {
-                <button class="gww-chip gww-more" on:click=move |_| all.update(|a| *a = !*a)>
-                    {move || if all.get() { "Show fewer days".to_string() } else { format!("Show all {n} days") }}
-                </button>
-            })}
+            {move || {
+                let shown = shown_days.get();
+                (n > shown).then(|| {
+                    let step = (ACTIVITY_DAYS * 2).min(n - shown);
+                    view! {
+                        <button class="gww-chip gww-more" on:click=move |_| shown_days.update(|d| *d += ACTIVITY_DAYS * 2)>
+                            {format!("Show {step} more {}", if step == 1 { "day" } else { "days" })}
+                        </button>
+                    }
+                })
+            }}
         }
         .into_any()
     })
@@ -407,7 +480,7 @@ fn activity_days(now: Memo<f64>) -> AnyView {
 }
 
 #[component]
-fn StationJumps(station: i64, name: String, now: Memo<f64>) -> impl IntoView {
+fn StationJumps(station: i64, now: Memo<f64>) -> impl IntoView {
     let q = use_station_jumps(move || station);
     let jumps = Signal::derive(move || q.data.get().unwrap_or_default());
     let note = move || match jumps.with(|j| j.len()) {
@@ -417,7 +490,7 @@ fn StationJumps(station: i64, name: String, now: Memo<f64>) -> impl IntoView {
     };
     let waiting = Memo::new(move |_| q.loading.get() && q.data.with(Option::is_none));
     let empty = Memo::new(move |_| jumps.with(|j| j.is_empty()));
-    let body = move || {
+    move || {
         if waiting.get() {
             return view! { <Loading what="the jump log" rows=2 /> }.into_any();
         }
@@ -425,9 +498,39 @@ fn StationJumps(station: i64, name: String, now: Memo<f64>) -> impl IntoView {
             return view! { <Empty>"No jumps logged yet. Each jump is logged as telemetry comes in."</Empty> }
                 .into_any();
         }
-        view! { <JumpRoute jumps=jumps now=now /> }.into_any()
-    };
-    log_box(format!("{name} FTL jumps"), note.into_any(), view! { <DssIcon size=18.0 /> }.into_any(), body.into_any())
+        view! {
+            <p class="lg-note caps num">{note}</p>
+            <JumpRoute jumps=jumps now=now />
+        }
+        .into_any()
+    }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum LogTab {
+    War,
+    Online,
+    /// A space station's jumps, by its place in the station list.
+    Jumps(usize),
+}
+
+fn station_name(i: usize) -> String {
+    if i == 0 { "DSS".to_string() } else { format!("Station {}", i + 1) }
+}
+
+fn tab_button(tab: RwSignal<LogTab>, me: LogTab, icon: AnyView, label: String) -> AnyView {
+    view! {
+        <button
+            class=move || format!("lg-tab {}", if tab.get() == me { "on" } else { "" })
+            role="tab"
+            aria-selected=move || (tab.get() == me).to_string()
+            on:click=move |_| tab.set(me)
+        >
+            {icon}
+            <span>{label}</span>
+        </button>
+    }
+    .into_any()
 }
 
 /// Every planet that changed hands, each day's Helldivers online and every station jump.
@@ -443,6 +546,7 @@ pub fn logs_page(heading: HeadingRef) -> AnyView {
             .stations
             .with(|s| s.as_ref().map(|s| s.iter().map(|s| s.id32).collect::<Vec<_>>()).unwrap_or_default())
     });
+    let tab = RwSignal::new(LogTab::War);
     let war_note = move || {
         if !ready.get() {
             return "Planets that changed hands".into_any();
@@ -458,7 +562,7 @@ pub fn logs_page(heading: HeadingRef) -> AnyView {
         .into_any()
     };
     view! {
-        <article class="gww-page" style="--site: var(--f-humans);">
+        <article class="gww-page lg" style="--site: var(--f-humans);">
             {banner(
                 Some(view! { <Icon icon=icons::HISTORY size=40.0 stroke_width=1.5 /> }.into_any()),
                 vec![crumb("Super Earth", Some("dir:gov"))],
@@ -470,24 +574,34 @@ pub fn logs_page(heading: HeadingRef) -> AnyView {
                 heading,
                 false,
             )}
-            {log_box(
-                "War log".into(),
-                war_note.into_any(),
-                view! { <Icon icon=icons::GLOBE_2 size=18.0 /> }.into_any(),
-                war_log(),
-            )}
-            {log_box(
-                "Helldivers online".into(),
-                "Each SEST day, midnight to midnight".into_any(),
-                view! { <Icon icon=icons::USERS size=18.0 /> }.into_any(),
-                activity_days(now),
-            )}
+            <div class="lg-tabs" role="tablist" aria-label="Logs">
+                {tab_button(tab, LogTab::War, view! { <Icon icon=icons::GLOBE_2 size=16.0 /> }.into_any(), "War log".into())}
+                {tab_button(tab, LogTab::Online, view! { <Icon icon=icons::USERS size=16.0 /> }.into_any(), "Helldivers online".into())}
+                <For
+                    each=move || stations.get().into_iter().enumerate()
+                    key=|(i, id)| (*i, *id)
+                    children=move |(i, _)| {
+                        tab_button(tab, LogTab::Jumps(i), view! { <DssIcon size=16.0 /> }.into_any(), format!("{} FTL jumps", station_name(i)))
+                    }
+                />
+            </div>
+            <div class="lg-panel" role="tabpanel" hidden=move || tab.get() != LogTab::War>
+                <p class="lg-note caps num">{war_note}</p>
+                {war_log()}
+            </div>
+            <div class="lg-panel" role="tabpanel" hidden=move || tab.get() != LogTab::Online>
+                <p class="lg-note caps">"Each SEST day, midnight to midnight"</p>
+                {activity_days(now)}
+            </div>
             <For
                 each=move || stations.get().into_iter().enumerate()
                 key=|(i, id)| (*i, *id)
                 children=move |(i, id)| {
-                    let name = if i == 0 { "DSS".to_string() } else { format!("Station {}", i + 1) };
-                    view! { <StationJumps station=id name=name now=now /> }
+                    view! {
+                        <div class="lg-panel" role="tabpanel" hidden=move || tab.get() != LogTab::Jumps(i)>
+                            <StationJumps station=id now=now />
+                        </div>
+                    }
                 }
             />
             {related(vec!["manual:liberation", "manual:dss", "app:stations", "app:past"], "Read next")}
