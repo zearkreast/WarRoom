@@ -16,7 +16,7 @@ use crate::state::{InfoDialog, View, settings, ui};
 use crate::ui::emblems::{AppMark, IconLike, icon_view};
 use crate::ui::feed_status::{FeedState, use_feed_status};
 use crate::ui::icons::{self, Icon, IconData};
-use crate::ui::primitives::{Keycap, StatusChip, use_escape_when};
+use crate::ui::primitives::{Keycap, LiveDot, StatusChip, use_escape_when};
 use crate::update::card::UpdateCard;
 use leptos::prelude::*;
 use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, sest_clock, sest_date, war_day};
@@ -96,7 +96,7 @@ fn TopBar() -> impl IntoView {
                 {move || match f.state.get() {
                     FeedState::Offline => view! { <StatusChip tone="var(--bad)">"Link lost"</StatusChip> }.into_any(),
                     FeedState::Stale => view! { <StatusChip tone="var(--warn)">"Stale"</StatusChip> }.into_any(),
-                    FeedState::Live => view! { <StatusChip>"Front"</StatusChip> }.into_any(),
+                    FeedState::Live => view! { <span class="strip-live" title="Live war data"><LiveDot /></span> }.into_any(),
                 }}
                 {move || {
                     let k = key.get();

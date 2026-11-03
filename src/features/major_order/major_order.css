@@ -47,9 +47,7 @@
     gap: var(--s-3);
   }
   .mo-ends b {
-    padding: 2px var(--s-4);
-    background: var(--cta);
-    color: var(--ink-on-cta);
+    color: var(--text-hi);
     font-family: var(--font-num);
     font-stretch: 87.5%;
     font-variant-numeric: tabular-nums;
@@ -213,9 +211,6 @@
     --tone: var(--cta);
     --frame: color-mix(in srgb, var(--cta) 70%, var(--line-strong));
   }
-  .panel.mo-panel > .panel-head {
-    background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--cta) 12%, transparent) 0 2px, transparent 2px 9px);
-  }
 
   /* ---------- Progress bar ---------- */
   .mo-bar {
@@ -262,7 +257,7 @@
     inset: 0;
     background: linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.5) 50%, transparent 70%);
     transform: translateX(-100%);
-    animation: mo-sheen 2.8s var(--ease) var(--mo-grow) infinite;
+    animation: mo-sheen 1.4s var(--ease) var(--mo-grow);
   }
   .mo-bar-head {
     position: absolute;
@@ -271,7 +266,6 @@
     width: 2px;
     margin-left: -1px;
     background: var(--text-hi);
-    animation: mo-pulse 1.6s ease-in-out var(--mo-grow) infinite;
   }
   /* Drawn only when the projection falls short, so it glows in the warning colour. */
   .mo-bar-mark {
@@ -308,16 +302,9 @@
       animation: none;
     }
   }
-  /* Half the cycle sweeping, half resting. */
   @keyframes mo-sheen {
-    50%,
-    100% {
+    to {
       transform: translateX(100%);
-    }
-  }
-  @keyframes mo-pulse {
-    50% {
-      opacity: 0.45;
     }
   }
   @keyframes mo-mark-in {

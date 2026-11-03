@@ -9,6 +9,7 @@ use crate::state::{FrontSort, OptionsAnchor, settings, ui};
 use crate::ui::emblems::FactionEmblem;
 use crate::ui::feed_status::FeedNote;
 use crate::ui::hint::Hint;
+use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Empty, Loading};
 use leptos::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -182,42 +183,55 @@ pub fn CampaignsPage() -> impl IntoView {
                 <Hint id="campaigns">
                     "Click a card for its options: add it to your watchlist, show it on the map, or open the planet's full record."
                 </Hint>
-                <div class="filter-row" role="toolbar" aria-label="Filter active planets">
-                    <For each=move || options.get() key=|o| o.0 let:o>
-                        {
-                            let (id, label, _) = o;
-                            let n = move || options.with(|l| l.iter().find(|o| o.0 == id).map_or(0, |o| o.2));
-                            view! {
-                                <button
-                                    class=move || format!("filter-chip {}", if filter.get() == id { "on" } else { "" })
-                                    aria-pressed=move || (filter.get() == id).to_string()
-                                    on:click=move |_| filter.set(id)
-                                >
-                                    {match id {
-                                        Filter::Enemy(e) => Some(view! { <FactionEmblem faction=e.as_str() size=14.0 /> }),
-                                        _ => None,
-                                    }}
-                                    {label}
-                                    " "
-                                    <span class="count">{n}</span>
-                                </button>
+                <div class="cc-tools">
+                    <div class="filter-row" role="toolbar" aria-label="Filter active planets">
+                        <For each=move || options.get() key=|o| o.0 let:o>
+                            {
+                                let (id, label, _) = o;
+                                let n = move || options.with(|l| l.iter().find(|o| o.0 == id).map_or(0, |o| o.2));
+                                view! {
+                                    <button
+                                        class=move || format!("filter-chip {}", if filter.get() == id { "on" } else { "" })
+                                        aria-pressed=move || (filter.get() == id).to_string()
+                                        on:click=move |_| filter.set(id)
+                                    >
+                                        {match id {
+                                            Filter::Enemy(e) => Some(view! { <FactionEmblem faction=e.as_str() size=14.0 /> }),
+                                            _ => None,
+                                        }}
+                                        {label}
+                                        " "
+                                        <span class="count">{n}</span>
+                                    </button>
+                                }
                             }
-                        }
-                    </For>
-                </div>
-                <div class="filter-row cc-sort" role="toolbar" aria-label="Sort active planets">
-                    <span class="cc-sort-label caps">"Sort"</span>
-                    {SORTS
-                        .map(|(k, label)| view! {
-                            <button
-                                class=move || format!("filter-chip {}", if sort.get() == k { "on" } else { "" })
-                                aria-pressed=move || (sort.get() == k).to_string()
-                                on:click=move |_| settings().set(|s| s.front_sort = k)
-                            >
-                                {label}
-                            </button>
-                        })
-                        .collect_view()}
+                        </For>
+                    </div>
+                    <label class="cc-order">
+                        <Icon icon=icons::ARROW_DOWN_WIDE_NARROW size=16.0 />
+                        <span class="caps">"Sort"</span>
+                        <select
+                            prop:value=move || SORTS.iter().position(|(k, _)| *k == sort.get()).unwrap_or(0).to_string()
+                            on:change=move |e| {
+                                if let Some(&(k, _)) = event_target_value(&e).parse::<usize>().ok().and_then(|i| SORTS.get(i)) {
+                                    settings().set(|s| s.front_sort = k);
+                                }
+                            }
+                            aria-label="Sort active planets"
+                        >
+                            {SORTS
+                                .iter()
+                                .enumerate()
+                                .map(|(i, &(k, label))| {
+                                    view! {
+                                        <option value=i.to_string() prop:selected=move || sort.get() == k>
+                                            {label}
+                                        </option>
+                                    }
+                                })
+                                .collect_view()}
+                        </select>
+                    </label>
                 </div>
                 <Show when=move || idle.with(|l| !l.is_empty())>
                     <div class="filter-row cc-sort" role="group" aria-label="Watched planets with no campaign">

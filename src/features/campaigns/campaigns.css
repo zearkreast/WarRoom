@@ -93,7 +93,7 @@
     color: var(--good);
   }
   .cc-eta.is-bad b {
-    color: var(--bad);
+    color: var(--warn);
   }
 
   .cc-head {
@@ -173,20 +173,18 @@
     padding: 0 var(--s-3);
     background: rgba(3, 3, 3, 0.82);
     border: 1px solid var(--line-strong);
-    color: var(--text-hi);
+    color: var(--text);
     font-size: var(--fs-micro);
     font-weight: 700;
     letter-spacing: var(--track-caps);
     text-transform: uppercase;
   }
   .cc-badge.is-mo {
-    background: var(--cta);
-    border-color: var(--cta);
-    color: var(--ink-on-cta);
+    color: var(--cta);
+    border-color: color-mix(in srgb, var(--cta) var(--strong), transparent);
   }
-  .cc-badge.is-dss {
+  .cc-badge.is-dss svg {
     color: var(--f-humans);
-    border-color: color-mix(in srgb, var(--f-humans) var(--strong), transparent);
   }
   .cc-badge.is-pin {
     color: var(--cta);
@@ -198,6 +196,55 @@
   .cc-sort {
     align-items: center;
     margin-top: calc(var(--s-3) * -1);
+  }
+  /* The sort sits beside the last row of filters when they wrap. */
+  .cc-tools {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--s-4);
+  }
+  .cc-tools .filter-row {
+    flex: 1;
+    min-width: 0;
+  }
+  .cc-order {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    height: 38px;
+    padding: 0 var(--s-4);
+    background: var(--surface-1);
+    border: 1px solid var(--line-strong);
+    color: var(--label);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    transition: border-color var(--t-state);
+  }
+  .cc-order:focus-within,
+  .cc-order:hover {
+    border-color: var(--text-dim);
+  }
+  .cc-order select {
+    height: 100%;
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: var(--text-hi);
+    font: inherit;
+    font-size: var(--fs-body-s);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .cc-order select option {
+    background: var(--surface-1);
+    text-transform: none;
+  }
+  @media (pointer: coarse) {
+    .cc-order {
+      height: 44px;
+    }
   }
   .cc-sort-label {
     font-size: var(--fs-label);
@@ -215,19 +262,14 @@
   .cc-badge.is-gambit {
     gap: var(--s-1);
     padding-left: var(--s-1);
-    color: var(--cta);
-    border-color: color-mix(in srgb, var(--cta) var(--strong), transparent);
   }
   .cc-badge.is-gambit.is-free {
     color: var(--good);
-    border-color: var(--good);
   }
   .cc-badge.is-siege {
     --siege: var(--f-humans);
     gap: var(--s-1);
     padding-left: var(--s-1);
-    color: var(--f-humans);
-    border-color: color-mix(in srgb, var(--f-humans) var(--strong), transparent);
   }
   .cc-biome {
     font-size: var(--fs-micro);
@@ -319,6 +361,9 @@
   .cc-rate.down {
     color: var(--bad);
   }
+  .cc-rate.flat {
+    color: var(--text-dim);
+  }
   .cc-rate.measuring {
     color: var(--text-dim);
     font-size: var(--fs-label);
@@ -355,10 +400,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .cc-share {
-    --k: var(--cta) !important;
-  }
-
   .cc-hidden {
     margin: 0;
     text-align: center;
@@ -371,9 +412,6 @@
   .mo-strip {
     --tone: var(--cta);
     --frame: color-mix(in srgb, var(--cta) 70%, var(--line-strong));
-  }
-  .mo-strip > .panel-head {
-    background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--cta) 12%, transparent) 0 2px, transparent 2px 9px);
   }
   .mo-strip .panel-title {
     font-size: 1.375rem;
@@ -396,9 +434,7 @@
     font-weight: 600;
   }
   .mo-ends b {
-    padding: 2px var(--s-4);
-    background: var(--cta);
-    color: var(--ink-on-cta);
+    color: var(--text-hi);
     font-family: var(--font-num);
     font-stretch: 87.5%;
     font-variant-numeric: tabular-nums;
@@ -551,7 +587,25 @@
   .ms-count.done .ms-count-pct {
     color: var(--good);
   }
+  /* Phones: one scrolling row of filters, so the first card shows without scrolling. */
   @media (max-width: 640px) {
+    .cc-tools {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .cc-tools .filter-row {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-inline: calc(var(--s-6) * -1);
+      padding-inline: var(--s-6);
+    }
+    .cc-tools .filter-chip {
+      flex: none;
+    }
+    .cc-order {
+      align-self: flex-start;
+    }
     .ms-rows li {
       grid-template-columns: 1fr auto;
       row-gap: var(--s-2);
