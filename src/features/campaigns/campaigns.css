@@ -271,6 +271,20 @@
     gap: var(--s-1);
     padding-left: var(--s-1);
   }
+  /* Keep in sync with .siege.double in siege.css. */
+  .cc-badge.is-siege.is-double {
+    --siege: #74e0ff;
+  }
+  /* A gambit or ring that attacking directly beats. */
+  .cc-badge.is-moot {
+    --siege: var(--text-dim);
+    --gambit: var(--text-dim);
+    color: var(--text-dim);
+    border-color: var(--line);
+  }
+  .cc-badge.is-moot .gambit-foe {
+    fill: currentColor;
+  }
   .cc-biome {
     font-size: var(--fs-micro);
     font-weight: 700;

@@ -230,7 +230,7 @@ pub enum MapPlanets {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FrontSort {
-    /// Watched, Major Order targets, rare campaigns, defenses, gambits, circumvallations, then by Helldivers.
+    /// Watched, Major Order targets, rare campaigns, defenses, gambits and circumvallations worth playing, then by Helldivers.
     #[default]
     Priority,
     Need,
