@@ -69,9 +69,9 @@ static NAMES: LazyLock<HashMap<i64, Named>> = LazyLock::new(|| {
 /// Names for galactic effect ids the community list (planet-effects.json) doesn't carry yet, and fixes
 /// to the ones it gets wrong. Unnamed ids are left off the map and the planet page until added here.
 /// Ids seen without a name on 24 Oct 2026: 1272 (Mastia), 1315–1317 (Esker, Erson Sands, Socorro III),
-/// 1318–1320 (Zagon Prime, Omicron), 1327 (Grafmere), 1363 (Aurora Bay), 1365 (Chort Bay), 1366 (Turing),
-/// 1418 (Calypso); on 27 Oct 2026: 1178 (16 Illuminate planets, war event), 1289 and 1428 (14 Automaton planets,
-/// war event), 1427 (Choepessa IV).
+/// 1318–1320 (Zagon Prime, Omicron), 1327 (Grafmere), 1363 (Aurora Bay), 1365 (Chort Bay), 1366 (Turing);
+/// on 27 Oct 2026: 1178 (16 Illuminate planets, war event), 1289 and 1428 (14 Automaton planets, war event),
+/// 1427 (Choepessa IV); on 3 Nov 2026: 1312 (Acamar IV, Fori Prime, Nivel 43), 1434 (Fori Prime).
 fn override_of(id: i64) -> Option<(Option<&'static str>, &'static str, &'static str)> {
     match id {
         // Named from the game's own planet tooltip, 25 Oct 2026.
@@ -86,6 +86,12 @@ fn override_of(id: i64) -> Option<(Option<&'static str>, &'static str, &'static 
             "SCAVENGER RAMPAGE",
             "Terrestrial scans indicate that <i=1>Scavenger</i> threat density is <i=1>2,900% higher</i> than normal.",
         )),
+        // Named from the game's own planet card, 3 Nov 2026.
+        1432 | 1433 => Some((
+            None,
+            "NOXIOUS STRAIN",
+            "A strain of Terminids with toxin-secreting glands is lurking on this planet. Prepare to face enemies that strike with incapacitating venom.",
+        )),
         _ => None,
     }
 }
@@ -96,14 +102,14 @@ const KINDS: &[(EffectKind, &[i64])] = &[
         EffectKind::Subfaction,
         &[
             1202, 1203, 1243, 1244, 1245, 1248, 1249, 1269, 1303, 1306, 1307, 1308, 1309, 1310, 1360, 1361, 1377, 1378,
-            1379, 1380, 1386, 1402, 1403, 1413, 1414,
+            1379, 1380, 1386, 1402, 1403, 1413, 1414, 1430, 1431, 1432, 1433,
         ],
     ),
     (EffectKind::Threat, &[1283, 1285, 1288, 1293, 1355, 1357, 1359, 1429]),
     (EffectKind::Seaf, &[1400, 1401]),
     (EffectKind::Dss, &[1209, 1210, 1211, 1214, 1215, 1216, 1217, 1238, 1261, 1262]),
     (EffectKind::Condition, &[1373, 1374, 1375]),
-    (EffectKind::Event, &[1204, 1240, 1242, 1329, 1407, 1412]),
+    (EffectKind::Event, &[1204, 1240, 1242, 1329, 1407, 1412, 1418]),
     (EffectKind::Look, &[1177, 1228, 1229, 1230, 1241, 1252, 1311, 1352, 1376]),
     (EffectKind::Gloom, &GLOOM_IDS),
     (EffectKind::Hidden, &[1212, 1213, 1222, 1246, 1406]),
