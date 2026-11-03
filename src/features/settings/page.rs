@@ -207,7 +207,7 @@ pub fn SettingsPage() -> impl IntoView {
                     <Row
                         title="Stalled planets"
                         text=format!(
-                            "Fronts under {} Helldivers that gain less than +{}%/h. Defenses, gambits, circumvallations, special campaigns, Major Order targets and watched planets always show.",
+                            "Fronts under {} Helldivers that gain less than +{}%/h. Defenses, gambits and circumvallations worth playing, special campaigns, Major Order targets and watched planets always show.",
                             fmt_int(MIN_PLAYERS),
                             js_number(MIN_RATE)
                         )
