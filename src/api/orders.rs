@@ -72,6 +72,11 @@ pub async fn archived_orders() -> Result<Option<Vec<ArchivedOrder>>, String> {
     }))
 }
 
+/// Whether the store has the order archive yet.
+pub async fn archive_ready() -> bool {
+    !matches!(source::select("orders", "select=id&limit=1").await, Err(e) if e.status == 404)
+}
+
 /// One order's progress readings, oldest first.
 pub async fn order_progress(id: i64) -> Result<Option<Vec<OrderSample>>, String> {
     let rows: Option<Vec<ProgressRow>> =

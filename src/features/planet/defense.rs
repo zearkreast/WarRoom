@@ -221,6 +221,7 @@ pub fn gambit_note(g: &Gambit, here: i64, now: f64, class: &str) -> AnyView {
         .into_any()
     };
     let left = g.deadline - now;
+    let moot = matches!(g.outlook, GambitOutlook::Slower | GambitOutlook::OutOfReach);
     let verdict = match g.outlook {
         GambitOutlook::Ahead => g.done_at.map(|d| {
             format!(
@@ -253,8 +254,20 @@ pub fn gambit_note(g: &Gambit, here: i64, now: f64, class: &str) -> AnyView {
                     <b class="gambit-title caps">"Gambit"</b>
                     <span class="gambit-tag caps">{tag}</span>
                 </div>
+                {verdict
+                    .clone()
+                    .filter(|_| moot)
+                    .map(|v| {
+                        view! {
+                            <p class="siege-notice">
+                                <b class="caps">"Notice:"</b>
+                                " "
+                                {v}
+                            </p>
+                        }
+                    })}
                 <p>{lead}</p>
-                {verdict.map(|v| view! { <p class="gambit-verdict">{v}</p> })}
+                {verdict.filter(|_| !moot).map(|v| view! { <p class="gambit-verdict">{v}</p> })}
                 <ul class="gambit-fronts">
                     {g
                         .attackers

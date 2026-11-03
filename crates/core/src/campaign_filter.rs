@@ -19,7 +19,7 @@ pub struct FrontActivity {
     pub rate: Option<f64>,
     pub in_major_order: bool,
     pub pinned: bool,
-    /// A defense, a rare campaign, or a front a gambit or circumvallation runs through.
+    /// A defense, a rare campaign, or a front a gambit or circumvallation worth playing runs through.
     pub strategic: bool,
 }
 

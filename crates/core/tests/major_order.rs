@@ -2,8 +2,8 @@ mod common;
 use common::*;
 use warroom_core::api::{AssignmentTask, Faction};
 use warroom_core::major_order::{
-    DeadlineOutlook, TaskOutlook, TaskView, deadline_outlook, describe_assignment, order_name, order_task_rates,
-    order_verdict, task_outlook, task_percent,
+    DeadlineOutlook, TaskOutlook, TaskView, deadline_outlook, describe_assignment, order_name, order_outlook,
+    order_task_rates, order_verdict, task_outlook, task_percent,
 };
 use warroom_core::snapshot::{EpisodeStatus, OrderSample};
 
@@ -182,4 +182,15 @@ fn calls_the_order_lost_if_any_objective_falls_short() {
     assert!(order_verdict(&tasks, &[o(OnTrack), o(Behind)]).unwrap().0.starts_with("Losing: B"));
     assert!(order_verdict(&tasks, &[o(OnTrack), o(Done)]).unwrap().0.starts_with("Winning"));
     assert!(order_verdict(&tasks, &[o(OnTrack), o(Measuring)]).unwrap().0.starts_with("Measuring"));
+}
+
+#[test]
+fn sums_up_an_order_in_one_word() {
+    let o = |outlook| TaskOutlook { outlook, end: None, eta: None, rate: None, needed: None };
+    use DeadlineOutlook::*;
+    assert_eq!(order_outlook(&[]), None);
+    assert_eq!(order_outlook(&[o(Done), o(Done)]), Some(Done));
+    assert_eq!(order_outlook(&[o(Done), o(OnTrack)]), Some(OnTrack));
+    assert_eq!(order_outlook(&[o(OnTrack), o(Measuring)]), Some(Measuring));
+    assert_eq!(order_outlook(&[o(Measuring), o(NoFront)]), Some(Behind));
 }
