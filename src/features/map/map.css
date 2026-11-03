@@ -193,7 +193,7 @@
     animation: spin 18s linear infinite;
   }
 
-  /* The map's bc-* class picks which defense beacon shows. */
+  /* The map's bc-* class picks which beacon look shows. */
   .beacon {
     pointer-events: none;
   }

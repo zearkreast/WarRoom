@@ -61,7 +61,7 @@ const ENTRIES: &[Entry] = &[
             )
         },
         name: "Major Order target",
-        text: "A dashed yellow ring round an objective of the current order.",
+        text: "A dashed yellow ring round an objective of the current order; a yellow beacon calls out the ones being fought for now.",
     },
     Entry {
         mark: || {

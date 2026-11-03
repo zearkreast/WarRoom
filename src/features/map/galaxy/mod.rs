@@ -475,11 +475,15 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                 .collect::<Vec<_>>()
         })
     });
-    // Planets under attack go last, so their beacons draw over their neighbours.
+    // Planets with a beacon go last, so their beacons draw over their neighbours. Keep in sync with planet_body.
     let indices = Memo::new(move |_| {
-        planets.with(|p| {
-            let (attacked, rest): (Vec<&Planet>, Vec<&Planet>) = p.iter().partition(|p| p.event.is_some());
-            rest.into_iter().chain(attacked).map(|p| p.index).collect::<Vec<_>>()
+        let mo = mo.get();
+        active.with(|active| {
+            planets.with(|p| {
+                let (called, rest): (Vec<&Planet>, Vec<&Planet>) =
+                    p.iter().partition(|p| p.event.is_some() || (mo.contains(&p.index) && active.contains(&p.index)));
+                rest.into_iter().chain(called).map(|p| p.index).collect::<Vec<_>>()
+            })
         })
     });
     let gloom =
