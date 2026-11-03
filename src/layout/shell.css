@@ -66,19 +66,20 @@
     height: 100%;
     overflow: hidden;
     color: var(--text);
+    mask: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
   }
   .ticker.still {
     display: flex;
     align-items: center;
     padding: 0 var(--s-5);
+    mask: none;
   }
-  .ticker.still .ticker-item {
-    min-width: 0;
-    animation: strip-in var(--t-reveal) var(--ease);
-  }
-  .ticker-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .ticker-track {
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    white-space: nowrap;
+    will-change: transform;
   }
   .ticker-item {
     display: inline-flex;
@@ -108,6 +109,11 @@
   }
   .ticker-age {
     color: var(--label);
+  }
+  .ticker-track .ticker-item::after {
+    content: "///";
+    margin: 0 var(--s-6);
+    color: var(--line-strong);
   }
   .strip-clock {
     flex: none;
