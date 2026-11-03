@@ -204,6 +204,8 @@ pub fn OrderCard(
     let open = Memo::new(move |_| !foldable || st.get(|s| s.overview_mo_open));
     let s = order_state(id);
     let chart = RwSignal::new(false);
+    let archive = RwSignal::new(false);
+    leptos::task::spawn_local(async move { archive.set(crate::api::orders::archive_ready().await) });
     let slots =
         Memo::new(move |_| s.tasks.with(|t| t.iter().enumerate().map(|(i, t)| (i, t.is_planet)).collect::<Vec<_>>()));
     let title =
@@ -251,15 +253,17 @@ pub fn OrderCard(
                     {if slot.1 { view! { <PlanetTask s=s i=slot.0 /> }.into_any() } else { view! { <CountTaskRow s=s i=slot.0 /> }.into_any() }}
                 </For>
             </ul>
-            <button
-                class="link mo-chart-toggle caps"
-                aria-expanded=move || chart.get().to_string()
-                on:click=move |_| chart.update(|c| *c = !*c)
-            >
-                {move || if chart.get() { "Hide the progress chart" } else { "Show the progress chart" }}
-            </button>
-            <Show when=move || chart.get()>
-                <OrderChart id=id tasks=s.tasks />
+            <Show when=move || archive.get()>
+                <button
+                    class="link mo-chart-toggle caps"
+                    aria-expanded=move || chart.get().to_string()
+                    on:click=move |_| chart.update(|c| *c = !*c)
+                >
+                    {move || if chart.get() { "Hide the progress chart" } else { "Show the progress chart" }}
+                </button>
+                <Show when=move || chart.get()>
+                    <OrderChart id=id tasks=s.tasks />
+                </Show>
             </Show>
             {move || {
                 s.order.with(|a| {
