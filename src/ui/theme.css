@@ -39,6 +39,8 @@
     --f-terminids: #ff9433;
     --f-automaton: #ff6b6b;
     --f-illuminate: #cd8ae9;
+    /* The Termicide haze around TCS+ towers; keep in step with tcs_haze() in features/map/layers.rs. */
+    --tcs: #3446e0;
 
     /* Stratagem permits, in the colours of the game's icons. */
     --p-offensive: #dc6455;

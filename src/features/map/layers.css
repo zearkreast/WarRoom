@@ -58,4 +58,74 @@
   .z-planets .gloom {
     opacity: 0.45;
   }
+
+  .tcs {
+    opacity: 1;
+    pointer-events: none;
+    transition: opacity var(--t-reveal) var(--ease);
+  }
+  .z-planets .tcs {
+    opacity: 0.75;
+  }
+  /* Turns about its planet, the origin of the group around it. */
+  .tcs-spin {
+    animation: tcs-turn 150s linear infinite;
+  }
+  /* Keep the opacity in sync with TCS_UNDER_ALPHA in layers.rs. */
+  .tcs-under {
+    opacity: 0.75;
+    animation-duration: 210s;
+    animation-direction: reverse;
+  }
+  .tcs-both {
+    display: none;
+  }
+  @keyframes tcs-turn {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .tcs-swell {
+    animation: tcs-swell 9s ease-in-out infinite alternate;
+  }
+  @keyframes tcs-swell {
+    from {
+      transform: scale(0.93);
+      opacity: 0.85;
+    }
+    to {
+      transform: scale(1.05);
+      opacity: 1;
+    }
+  }
+  /* Below Maximum, touch screens turn one combined image, ten times a second (1500 steps a turn), unswollen. */
+  @media (pointer: coarse) {
+    .map-wrap:not(.q-max) :is(.tcs-top, .tcs-under) {
+      display: none;
+    }
+    .map-wrap:not(.q-max) .tcs-both {
+      display: inline;
+      animation-timing-function: steps(1500);
+    }
+    .map-wrap:not(.q-max) .tcs-swell {
+      animation: none;
+    }
+  }
+  .q-min .tcs-top,
+  .q-min .tcs-under {
+    display: none;
+  }
+  .q-min .tcs-both {
+    display: inline;
+  }
+  .q-min .tcs-both,
+  .q-min .tcs-swell {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tcs-spin,
+    .tcs-swell {
+      animation: none !important;
+    }
+  }
 }
