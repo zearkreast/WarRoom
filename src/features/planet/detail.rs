@@ -7,6 +7,7 @@ use crate::features::planet::activity::ActivitySection;
 use crate::features::planet::defense::{advance_label, use_attackers, use_enemy_advance};
 use crate::features::planet::globe::SuperEarthGlobe;
 use crate::features::planet::record::{UNREACHABLE, use_planet_record};
+use crate::features::planet::section_bar::{Sec, SectionBar};
 use crate::features::planet::sections::{
     DispatchSection, FrontLineSection, LandmarkSection, LiberationSection, OperationsSection, PoisSection,
     ServiceRecordSection, SupplyLinesSection, WarHistorySection,
@@ -117,8 +118,17 @@ pub fn PlanetSphere(
                             {[-60.0f64, -30.0, 0.0, 30.0, 60.0]
                                 .map(|y| view! { <ellipse cx="0" cy=num(y) rx=num((84.0 * 84.0 - y * y).sqrt()) ry="6" class="sphere-grid" /> })
                                 .collect_view()}
-                            {[-50.0f64, -20.0, 20.0, 50.0]
-                                .map(|x| view! { <ellipse cx="0" cy="0" rx=num(x.abs()) ry="84" class="sphere-grid" /> })
+                            {[0, 1, 2, 3]
+                                .map(|k| {
+                                    view! {
+                                        <ellipse
+                                            rx="84"
+                                            ry="84"
+                                            class="sphere-grid sphere-meridian"
+                                            style=format!("animation-delay: -{}s;", k * 7)
+                                        />
+                                    }
+                                })
                                 .collect_view()}
                         }
                         .into_any()
@@ -191,6 +201,7 @@ fn Hero(p: Signal<Planet>, front: Memo<Option<Front>>) -> impl IntoView {
     let name = move || p.with(|p| p.name.clone());
     view! {
         <section class="pd-hero brackets" style=style>
+            <i class="pd-scan" aria-hidden="true"></i>
             <div class="pd-hero-main">
                 <nav class="pd-crumbs caps" aria-label="Breadcrumb">
                     <button class="link" on:click=move |_| ui().open_module(Some(HellpadModule::Planets))>
@@ -295,55 +306,72 @@ fn Body(index: i64) -> impl IntoView {
                 view! {
                     <div class="pd">
                         <Hero p=p front=front />
+                        <SectionBar />
                         <Show
                             when=move || has_front.get()
                             fallback=move || {
                                 view! {
-                                    <ActivitySection
-                                        title="Helldiver activity · last 24 h".to_string()
-                                        now=Signal::derive(move || p.with(|p| p.statistics.player_count))
-                                        points=Signal::derive(move || {
-                                            record.with(|r| {
-                                                let mut points: Vec<PlayerReading> = r
-                                                    .samples
-                                                    .iter()
-                                                    .map(|s| PlayerReading { at: s.at, players: s.players })
-                                                    .chain(r.idle.iter().copied())
-                                                    .collect();
-                                                points.sort_by(|a, b| a.at.partial_cmp(&b.at).unwrap_or(Ordering::Equal));
-                                                Arc::new(points)
+                                    <Sec label="Activity">
+                                        <ActivitySection
+                                            title="Helldiver activity · last 24 h".to_string()
+                                            now=Signal::derive(move || p.with(|p| p.statistics.player_count))
+                                            points=Signal::derive(move || {
+                                                record.with(|r| {
+                                                    let mut points: Vec<PlayerReading> = r
+                                                        .samples
+                                                        .iter()
+                                                        .map(|s| PlayerReading { at: s.at, players: s.players })
+                                                        .chain(r.idle.iter().copied())
+                                                        .collect();
+                                                    points.sort_by(|a, b| a.at.partial_cmp(&b.at).unwrap_or(Ordering::Equal));
+                                                    Arc::new(points)
+                                                })
                                             })
-                                        })
-                                        loading=Signal::derive(move || record.with(|r| r.loading))
-                                        empty=Signal::derive(move || {
-                                            if record.with(|r| r.error) {
-                                                return UNREACHABLE.to_string();
-                                            }
-                                            format!(
-                                                "No Helldivers recorded on {} in the last 24 hours. A reading is kept whenever any are there.",
-                                                p.with(|p| p.name.clone())
-                                            )
-                                        })
-                                    />
+                                            loading=Signal::derive(move || record.with(|r| r.loading))
+                                            empty=Signal::derive(move || {
+                                                if record.with(|r| r.error) {
+                                                    return UNREACHABLE.to_string();
+                                                }
+                                                format!(
+                                                    "No Helldivers recorded on {} in the last 24 hours. A reading is kept whenever any are there.",
+                                                    p.with(|p| p.name.clone())
+                                                )
+                                            })
+                                        />
+                                    </Sec>
                                 }
                             }
                         >
-                            <LiberationSection p=p front=front />
-                            <FrontLineSection p=p front=front record=record />
+                            <Sec label="Progress">
+                                <LiberationSection p=p front=front />
+                            </Sec>
+                            <Sec label="Activity">
+                                <FrontLineSection p=p front=front record=record />
+                            </Sec>
                         </Show>
-                        <ServiceRecordSection p=p />
-                        <WarHistorySection p=p record=record />
-                        <div class="pd-cols">
-                            <DispatchSection
-                                p=p
-                                front=front
-                                in_major_order=Signal::derive(move || mo.with(|m| m.contains(&index)))
-                                station=Signal::derive(move || stations.with(|s| s.contains(&index)))
-                            />
-                            <OperationsSection p=p />
-                        </div>
-                        <PoisSection p=p />
-                        <SupplyLinesSection p=p />
+                        <Sec label="Intel">
+                            <div class="pd-cols">
+                                <DispatchSection
+                                    p=p
+                                    front=front
+                                    in_major_order=Signal::derive(move || mo.with(|m| m.contains(&index)))
+                                    station=Signal::derive(move || stations.with(|s| s.contains(&index)))
+                                />
+                                <OperationsSection p=p />
+                            </div>
+                        </Sec>
+                        <Sec label="Points of interest">
+                            <PoisSection p=p />
+                        </Sec>
+                        <Sec label="Service record">
+                            <ServiceRecordSection p=p />
+                        </Sec>
+                        <Sec label="War history">
+                            <WarHistorySection p=p record=record />
+                        </Sec>
+                        <Sec label="Supply lines">
+                            <SupplyLinesSection p=p />
+                        </Sec>
                     </div>
                 }
             }}
