@@ -238,7 +238,7 @@ pub enum FrontSort {
     Victory,
 }
 
-/// How a planet under attack draws the eye from afar.
+/// How a planet under attack or a Major Order front draws the eye from afar.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MapBeacon {

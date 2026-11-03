@@ -241,11 +241,11 @@ pub fn SettingsPage() -> impl IntoView {
                         />
                     </Row>
                     <Row
-                        title="Defense beacon"
-                        text="How a planet under attack stands out from afar: a ring pinging out from it, a soft glow round it, or a chevron over it. Minimal quality and reduced motion keep it still."
+                        title="Priority beacon"
+                        text="How a planet under attack or a Major Order front stands out from afar: a ring pinging out from it, a soft glow round it, or a chevron over it. Major Order fronts call in yellow. Minimal quality and reduced motion keep it still."
                     >
                         <Stepper
-                            label="Defense beacon"
+                            label="Priority beacon"
                             options=beacon_options()
                             value=Signal::derive(move || s.get(|s| s.map_beacon))
                             on_change=move |v| s.set(|s| s.map_beacon = v)

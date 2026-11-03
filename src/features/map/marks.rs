@@ -77,6 +77,11 @@ pub fn halo_defs() -> impl IntoView {
                     }
                 })
                 .collect_view()}
+            <radialGradient id="beacon-glow-mo">
+                {stop("0%", "var(--cta)", 0.7)}
+                {stop("45%", "var(--cta)", 0.32)}
+                {stop("100%", "var(--cta)", 0.0)}
+            </radialGradient>
             <radialGradient id="sphere-shade" cx="35%" cy="30%" r="75%">
                 {stop("0%", "#fff", 0.55)}
                 {stop("35%", "#fff", 0.0)}
@@ -495,13 +500,13 @@ fn poi_marks(kinds: &[PoiKind], faction: Faction) -> AnyView {
     .into_any()
 }
 
-/// Calls out a planet under attack from afar. Every look is drawn and the map's `bc-*` class shows the chosen one;
-/// camera.rs sizes and places them.
-fn beacon(faction: Faction, color: &str) -> AnyView {
+/// Calls out a planet under attack or a Major Order front from afar. Every look is drawn and the map's `bc-*` class
+/// shows the chosen one; camera.rs sizes and places them.
+fn beacon(glow: &str, color: &str) -> AnyView {
     view! {
         <g class="beacon" style=format!("color: {color};")>
             <g class="beacon-zone">
-                <circle r="20" class="beacon-glow" fill=format!("url(#beacon-glow-{})", faction.as_str())></circle>
+                <circle r="20" class="beacon-glow" fill=format!("url(#beacon-glow-{glow})")></circle>
                 <circle r="8" class="beacon-ping"></circle>
             </g>
             <g class="beacon-mark">
@@ -582,8 +587,14 @@ pub fn planet_body(b: &Body) -> AnyView {
         _ if b.style == MapPlanets::Spheres => 7.8,
         _ => 9.5,
     };
+    // A Major Order front calls in the order's yellow, even when it is a defense.
+    let called = if b.mo && b.active {
+        Some(("mo", "var(--cta)"))
+    } else {
+        b.defense.then(|| (b.faction.as_str(), b.color.as_str()))
+    };
     view! {
-        {b.defense.then(|| beacon(b.faction, &b.color))}
+        {called.map(|(glow, color)| beacon(glow, color))}
         <g class="pbody">
             <circle r="10" class="hit"></circle>
             {shape}

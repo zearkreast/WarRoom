@@ -1,4 +1,5 @@
-//! The game's faction and sub-faction emblems, as traced on the Helldivers Wiki; every shape fills with `currentColor`.
+//! The game's faction and sub-faction emblems, as traced on the Helldivers Wiki (or from the game where it has
+//! none); every shape fills with `currentColor`.
 
 use crate::assets;
 use crate::js::{num, unique_id};
@@ -48,6 +49,7 @@ static SUBFACTION_ART: LazyLock<Vec<(Regex, &'static str)>> = LazyLock::new(|| {
         ("predator strain", "predator-strain"),
         ("spore burst strain", "spore-burst-strain"),
         ("rupture strain", "rupture-strain"),
+        ("noxious strain", "noxious-strain"),
         ("jet brigade", "jet-brigade"),
         ("incineration corps", "incineration-corps"),
         ("cyborg", "cyborgs"),
