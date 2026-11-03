@@ -1,197 +1,99 @@
-# WarRoom
-[![Deploy to GitHub Pages](https://github.com/zearkreast/WarRoom/actions/workflows/pages.yml/badge.svg)](https://github.com/zearkreast/WarRoom/actions/workflows/pages.yml) [![Release](https://github.com/zearkreast/WarRoom/actions/workflows/release.yml/badge.svg)](https://github.com/zearkreast/WarRoom/actions/workflows/release.yml)
+<div align="center">
 
-A fan-made Helldivers 2 Galactic War companion. Not affiliated with Arrowhead Game Studios.
+<img src="src-tauri/icons/128x128@2x.png" width="112" alt="">
 
-WarRoom is the project; the app it ships is **WarCommand Tracker** (the name on installers and windows, and
-the Android package `com.warcommand.tracker`). It runs on Windows, macOS, Linux, Android and the web.
+# WarCommand Tracker
 
-## How it fits together
+**A fan-made companion for the Galactic War of Helldivers 2.**<br>
+What is being fought, where, how fast the fronts move, what the Major Order needs and what has changed.
 
-```
-collector (VDS) ──► api.helldivers2.dev                 the only API caller
-      │        └──► api.live.prod.thehelldiversgame.com  (campaigns, planet effects)
-      │
-      └──► Supabase ◄── app (desktop / mobile / web)     reads only
-```
+[**Open in your browser**](https://zearkreast.github.io/WarRoom/) &nbsp;·&nbsp;
+[**Download**](https://github.com/zearkreast/WarRoom/releases/latest) &nbsp;·&nbsp;
+[What's new](CHANGELOG.md)
 
-- **App** (`src/`, `src-tauri/`): Leptos, written in Rust and compiled to WebAssembly, inside a Tauri 2 shell
-  on desktop and Android; the web version is the same page without the shell.
-- **Core** (`crates/core/`): the data shapes and war logic the app and the collector share, so what the
-  collector writes is what the app reads.
-- **Collector** (`collector/`): a small Rust service that polls the APIs and writes snapshots and history to
-  Supabase. See [collector/README.md](collector/README.md) for setting it up on a server.
-- **Database** (`supabase/migrations/`): snapshots of the current war, planet progress samples, every
-  ownership change, galaxy-wide war samples, each day's busiest and quietest moment, Helldivers on planets
-  and in cities outside the fronts, and the space stations' FTL jumps. Shared by all users. Apply the
-  migrations in order (`0001` to `0005`).
+[![Latest release](https://img.shields.io/github/v/release/zearkreast/WarRoom?style=flat-square&label=release&color=ffe710&labelColor=21201c)](https://github.com/zearkreast/WarRoom/releases/latest)
+![Windows, macOS, Linux, Android and the web](https://img.shields.io/badge/Windows%20%C2%B7%20macOS%20%C2%B7%20Linux%20%C2%B7%20Android%20%C2%B7%20Web-21201c?style=flat-square)
+[![Licence: GPL v2](https://img.shields.io/badge/licence-GPL%20v2-21201c?style=flat-square)](LICENSE)
 
-## Download
+<img src="docs/screenshots/map.jpg" width="100%" alt="The galaxy map: every planet on the game's sector rings, with the enemies' territory, attack lines and the Gloom">
 
-Installers are on the [Releases](https://github.com/zearkreast/WarRoom/releases) page: `.exe` or `.msi` for
-Windows, `.dmg` for macOS (Apple Silicon and Intel), `.AppImage`, `.deb` or `.rpm` for Linux, and `.apk` for
-Android. Once installed, the app offers each new release itself: on desktop it downloads, installs and restarts
-in one press; on Android it downloads the new APK for the system to install.
+</div>
 
-The app collects no personal data; see [PRIVACY.md](PRIVACY.md).
+## What's inside
 
-## Repository map
+<table>
+<tr>
+<td width="50%" valign="top">
+<img src="docs/screenshots/active.jpg" alt="Active planets: a card for every front">
+<h3>Active planets</h3>
+Every front as a card: progress, pace, time to victory or the deadline, and Helldivers. Sort by priority, most
+needed, most Helldivers or soonest victory, and filter by enemy, Major Order, defense, gambit, circumvallation or
+your watchlist.
+</td>
+<td width="50%" valign="top">
+<img src="docs/screenshots/command.jpg" alt="High Command: the Major Order, the Galactic Campaign and the war's activity">
+<h3>High Command</h3>
+The Major Order with a live outlook for each objective and the pace it needs, the Galactic Campaign, a turning
+Theater of War and the war's activity over the last day.
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<img src="docs/screenshots/planet.jpg" alt="A planet's page: liberation progress, what the Major Order needs and the front line">
+<h3>Planet pages</h3>
+Liberation or defense, what holding or the Major Order needs, the front line over the last day and the next,
+cities, enemy units and effects, supply lines, and the planet's war history back to the war's first days.
+</td>
+<td width="50%" valign="top">
+<img src="docs/screenshots/stratagems.jpg" alt="The stratagem collection">
+<h3>Stratagems</h3>
+All 118 stratagems by permit and type, with code, cooldown, call-in time and where each is unlocked, and a drill
+that has you key the codes against a burning fuse.
+</td>
+</tr>
+</table>
 
-```
-src/                     the app
-  main.rs                start-up: shared state, polling and alerts, then mounts the UI
-  app.rs                 the shell around whichever page is open
-  state.rs               what is on screen (Back steps through it) and the settings saved on the device
-  api/                   everything read from Supabase: snapshots, history, fronts, station jumps
-  alerts/                toasts and OS notifications, and the watcher that raises them
-  features/              one folder per page or shared panel (see "Pages" below)
-  layout/                the frame: header with the status and ticker, navigation rail (a tab bar on phones), About and legend, briefing popup
-  ui/                    shared components: panels, meters, charts, icons, emblems
-  update/                finds and installs new releases
-  assets/                pictures, fonts and map data, served next to the page; the game's pictures are
-                         credited in About
-  js.rs, tauri.rs        bridges to the browser and to the Tauri shell
-  nav_history.rs         makes Back and Forward step through the app
-src-tauri/               the Tauri shell for desktop and Android (built by the Tauri CLI, own Cargo.lock)
-  android/               what the generated Android project gets added (MainActivity, notification icon)
-  app-icon.svg           the source of every app icon: cargo tauri icon src-tauri/app-icon.svg
-crates/core/             shared data shapes and war logic
-  src/data/, data/       game knowledge the APIs don't carry: rewards, effect names, G.W.W. pages, station history
-  tests/                 one test file per module, and fixtures/ (saved API answers)
-crates/android-project/  patches the generated Android project: manifest entries and Firebase values
-collector/               the polling service, with its Dockerfile and systemd unit
-supabase/migrations/     the database schema
-vendor/tachys/           Leptos's renderer with a fix for static SVG; drop it on the move to Leptos 0.9
-index.html               Trunk's entry: the app, every stylesheet, and the assets
-build.rs                 lists src/assets, so the app knows which pictures exist
-.github/workflows/       release.yml (installers, APK, update manifest), android.yml (the APK),
-                         pages.yml (tests, then the web version on GitHub Pages)
-```
+And more:
 
-Where to start reading: `src/main.rs`, then `src/app.rs`, then `src/api/queries.rs` (polling and the data
-every page derives from), then a page under `src/features/`. For the war logic, `crates/core/src/lib.rs`
-lists the modules. Each file opens with a one-line summary of what it holds, or its main item carries one.
+- **Galaxy map**: regions, sectors and the whole galaxy, supply and attack lines, the Gloom, and holograms for
+  sub-factions, SEAF and the Democracy Space Station. Hover a planet for its card, click it to dock a panel.
+- **Hellpad**: a planet index, the space stations and their tactical actions, past Galactic Campaigns and the
+  G.W.W., an in-universe net of training manuals, ministries, corporations, holidays and logs.
+- **Strohmann News**: every dispatch and campaign story, newest first, searchable.
+- **Alerts**: new Major Orders and campaigns, the order's progress, dispatches, planets won or lost, new defenses
+  and the planets on your watchlist, in the app or as system notifications.
+- **While you were away**: what changed since you last looked.
 
-### Pages
+## Get it
 
-| On screen               | `View`      | Code                                                                                |
-| ----------------------- | ----------- | ----------------------------------------------------------------------------------- |
-| Galaxy map              | `Map`       | `features/map/`, the map itself in `galaxy/`                                        |
-| Active planets          | `Campaigns` | `features/campaigns/`                                                               |
-| Hellpad                 | `Hellpad`   | `features/hellpad/`: `planets`, `stations/`, `gww/`, `past_campaigns`, `stratagems` |
-| Overview (High Command) | `Overview`  | `features/overview/`                                                                |
-| Strohmann News          | `News`      | `features/news/`                                                                    |
-| Settings                | `Settings`  | `features/settings/`                                                                |
+| Platform    | What to download                                                                     |
+| ----------- | ------------------------------------------------------------------------------------ |
+| **Web**     | Nothing: open [zearkreast.github.io/WarRoom](https://zearkreast.github.io/WarRoom/)  |
+| **Windows** | the `.exe` installer, or the `.msi`                                                  |
+| **macOS**   | the `.dmg`: `aarch64` for Apple Silicon, `x64` for Intel                             |
+| **Linux**   | the `.AppImage`, `.deb` or `.rpm`                                                    |
+| **Android** | the `.apk`                                                                           |
 
-Panels several pages share: `features/major_order/`, `features/galactic_campaigns/`, and `features/planet/`
-(the planet detail overlay, cities, charts and the planet options menu).
+Every file is on the [latest release](https://github.com/zearkreast/WarRoom/releases/latest). Once installed, the
+app offers each new version itself: on desktop it downloads, installs and restarts in one press; on Android it
+downloads the new APK for the system to install.
 
-Each folder keeps its stylesheet beside its code. Every stylesheet sits in a cascade layer, declared in order in
-`ui/fonts.css` (`tokens`, `base`, `primitives`, `features`, `shell`), and `index.html` loads them; within a layer,
-later files win. `ui/theme.css` holds the tokens: colours, type scale, spacing, the `--cut` chamfer, z-index
-levels and the shell's sizes. Class names carry a
-short prefix for their area: `cc-` campaign cards and `ms-` the Major Order strip (`campaigns.css`), `mo-`
-Major Orders, `hc-` and `map-` the map and its hover card, `pd-` planet detail and `po-` planet options
-(`planet.css`), `city-` and `cd-` cities, `hp-` Hellpad, `pi-` its planet index, `st-` space stations,
-`pc-` past campaigns, `sg-` the stratagem collection and `cmp-` the Galactic Campaign panel, `gww-` the G.W.W.,
-`dr-` its stratagem drill, `ni-` and `news-` Strohmann News, `ov-` Overview, `tw-` the Theater of War, `wa-` War
-Activity, `nr-` the neon ring chart, `chart-` charts, and `top-`, `strip-`, `nav-` and `bp-` (briefing popup)
-the shell.
+**Private by design.** No account, no analytics, no tracking: your settings and watchlist stay on your device.
+See [PRIVACY.md](PRIVACY.md).
 
-### Words used in the code
+## How it works
 
-- **Front**: a planet being fought over right now, a liberation or a defense. The API calls these campaigns,
-  hence `View::Campaigns` for the Active planets page.
-- **Galactic Campaign**: the game's story arc of three Major Orders; the official API calls it an episode
-  (`EpisodeLive`).
-- **Major Order**: High Command's current objectives; the API calls them assignments.
-- **Dispatch**: a message from Super Earth. Strohmann News is where the app collects them.
-- **Hellpad**: the app's field terminal, a hub for the planet index, space stations, the G.W.W., past
-  campaigns and the stratagem collection.
-- **G.W.W.** (Galactic War Web): an in-universe net of training manuals, ministries, corporations, holidays
-  and logs, adapted from the Helldivers Wiki. Pages are drawn in `features/hellpad/gww/`; their text is in
-  `crates/core/src/data/`.
-- **DSS**: the Democracy Space Station. **SEAF**: Super Earth Armed Forces.
-- **Circumvallation**: enemy planets a liberation would leave surrounded by Super Earth (`sieges.rs`).
-- **Snapshot**: the collector's latest copy of an API answer, stored in Supabase (`snapshot.rs`).
+A small collector reads the war's status around the clock and keeps it, with its history, in a shared database;
+the app only reads from that database. Everything is written in Rust: the app is Leptos compiled to WebAssembly,
+inside a Tauri 2 shell on desktop and Android.
 
-## Develop
+To build it, run it yourself or release a version, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); for running
+your own collector, [collector/README.md](collector/README.md).
 
-It needs a Rust toolchain (https://rustup.rs), [Trunk](https://trunkrs.dev) and, for the desktop and Android
-apps, the Tauri CLI:
+## Feedback
 
-```bash
-rustup target add wasm32-unknown-unknown
-cargo install trunk --locked
-cargo install tauri-cli --version "^2" --locked
-trunk serve              # browser only, at http://localhost:1420
-cargo tauri dev          # desktop app
-cargo test --workspace   # tests: core (crates/core/tests), collector (collector/src/tests.rs) and the app's few
-```
-
-The app reads from the Supabase project set in `src/config.rs`. To point a build at another one, set
-`WARROOM_SUPABASE_URL` and `WARROOM_SUPABASE_PUBLISHABLE_KEY` in the environment it is built in (see
-`.env.example`). The publishable key is read-only by design.
-
-Add `?fixtures` to the browser URL (`http://localhost:1420/?fixtures`) to use the saved API answers in
-`crates/core/tests/fixtures/` instead of Supabase. This only works in debug builds, as `trunk serve` makes.
-The core and collector tests read the same fixtures.
-
-Android: `cargo tauri android init`, then `cargo tauri android dev`. This needs Android Studio and the SDK.
-The Android project (`src-tauri/gen/`) isn't kept in the repo; CI generates it for each build. After `init`,
-do what the "Generate the Android project" step of `android.yml` does: copy in the icons, `src-tauri/android/res`
-and `MainActivity.kt.template` (over the generated `MainActivity.kt`), run
-`cargo run -q -p android-project -- manifest` on `app/src/main/AndroidManifest.xml`, and add Firebase Messaging
-to `app/build.gradle.kts`.
-
-To run the collector locally:
-
-```bash
-cp collector/.env.example collector/.env   # then fill in the secret key and contact
-cargo run --profile collector -p warroom-collector             # runs until stopped
-cargo run --profile collector -p warroom-collector -- --once   # every job once, then exits
-```
-
-## Pushed news on Android
-
-The collector pushes new Strohmann News (Major Orders, dispatches, campaign launches and outcomes) through
-Firebase Cloud Messaging, so the Android app shows it even while closed. To set it up:
-
-1. In the [Firebase console](https://console.firebase.google.com), create a project and add an Android app with
-   the package `com.warcommand.tracker`. Download its `google-services.json` and paste the whole file into the
-   repository secret `GOOGLE_SERVICES_JSON`; APKs built after that subscribe to the news.
-2. Under Project settings → Service accounts, generate a private key and give it to the collector as
-   `FCM_SERVICE_ACCOUNT` (see [collector/README.md](collector/README.md)).
-
-Without the secret the APK has no pushes, and notifies only while it is open.
-
-Update the collector before releasing an APK built from this version: its APKs leave the old `news` topic for
-one topic per alert setting, and only the updated collector sends to those.
-
-## Release a new version
-
-1. Raise the version in all three places together: `[workspace.package]` in `Cargo.toml`,
-   `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json` (`version` and `bundle.windows.wix.version`, which
-   must stay numbers only, as MSI installers can't carry a label such as `-beta`).
-2. Add the version's entry to `crates/core/src/changelog.rs` (Tracker Dispatch shows it in the app) and to
-   `CHANGELOG.md`.
-3. Push a tag such as `v0.5.0`, or run Release from the Actions tab.
-
-The Release workflow builds every desktop installer, then the APK (`android.yml`), and publishes them as one
-GitHub Release with `latest.json`, which installed apps read to find the update. Keep the release a full one,
-not a GitHub pre-release: installed apps only look at the latest full release. It needs these repository secrets:
-
-| Secret                      | What it is                                                     |
-| --------------------------- | -------------------------------------------------------------- |
-| `TAURI_SIGNING_PRIVATE_KEY` | Signs desktop updates; its public half is the updater `pubkey` |
-| `ANDROID_KEYSTORE`          | The APK signing keystore, base64-encoded                       |
-| `ANDROID_KEYSTORE_PASSWORD` | The keystore's password                                        |
-| `ANDROID_KEY_ALIAS`         | The key's alias in the keystore                                |
-| `ANDROID_KEY_PASSWORD`      | The key's password                                             |
-| `GOOGLE_SERVICES_JSON`      | Firebase's `google-services.json`, for pushed news (optional)  |
-
-Without the Android secrets each APK is signed with a throwaway key, and a newer APK won't install over an older
-one. Losing either signing key means installed apps can no longer take updates from new releases.
+Found a bug or missing something? [Open an issue](https://github.com/zearkreast/WarRoom/issues). Security problems
+go privately, as [SECURITY.md](SECURITY.md) describes.
 
 ## Licence
 
