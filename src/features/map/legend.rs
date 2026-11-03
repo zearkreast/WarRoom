@@ -183,6 +183,20 @@ const ENTRIES: &[Entry] = &[
         mark: || {
             swatch(
                 view! {
+                    <circle r="9" fill="var(--tcs)" opacity="0.25"></circle>
+                    <circle cx="2" cy="-2" r="5" fill="var(--tcs)" opacity="0.35"></circle>
+                    <circle r="2.5" fill="var(--text-hi)"></circle>
+                }
+                .into_any(),
+            )
+        },
+        name: "TCS+ towers",
+        text: "The Termicide haze around each planet whose TCS+ towers stand: held by Super Earth, not under attack.",
+    },
+    Entry {
+        mark: || {
+            swatch(
+                view! {
                     <rect x="-8" y="-8" width="16" height="16" fill="var(--surface-0)" stroke="var(--f-automaton)"></rect>
                     <EmblemArt art="incineration-corps" size=12.0 color="var(--f-automaton)" />
                 }

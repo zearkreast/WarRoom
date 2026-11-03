@@ -58,7 +58,9 @@
   .galaxy.moving .beacon-ping,
   .galaxy.moving .beacon-glow,
   .galaxy.moving .beacon-mark path,
-  .galaxy.moving .attack-chev {
+  .galaxy.moving .attack-chev,
+  .galaxy.moving .tcs-spin,
+  .galaxy.moving .tcs-swell {
     animation-play-state: paused;
   }
   /* camera.rs sets the transforms and sizes of .upright, .pbody and the labels each frame. */

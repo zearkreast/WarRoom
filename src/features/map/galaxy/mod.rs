@@ -13,7 +13,7 @@ use crate::features::map::galaxy::controls::{
 };
 use crate::features::map::galaxy::rail::{MapSettings, Side, rail_button};
 use crate::features::map::galaxy::stars::{background_stars, star_count};
-use crate::features::map::layers::{GloomLayer, SectorLayer};
+use crate::features::map::layers::{GloomLayer, SectorLayer, TcsLayer};
 use crate::features::map::legend::MapLegend;
 use crate::features::map::marks::{Body, POI_MAX, halo_defs, planet_body, sphere_color};
 use crate::features::map::pawn_art::{DssInfo, dss_info};
@@ -484,6 +484,7 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
     });
     let gloom =
         Signal::derive(move || effects.with(|e| Arc::new(e.as_ref().map(|e| e.gloom.clone()).unwrap_or_default())));
+    let tcs = Signal::derive(move || effects.with(|e| Arc::new(e.as_ref().map(|e| e.tcs.clone()).unwrap_or_default())));
 
     let open = Callback::new(move |index: i64| {
         panel.set(Some(index));
@@ -644,6 +645,7 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                             <path d=move || lanes.get()></path>
                         </g>
                         {move || effects.with(Option::is_some).then(|| view! { <GloomLayer planets=planets gloom=gloom /> })}
+                        {move || effects.with(Option::is_some).then(|| view! { <TcsLayer planets=planets tcs=tcs /> })}
                         <g class="faction-marks" aria-hidden="true">
                             {move || {
                                 marks
