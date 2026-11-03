@@ -1,8 +1,8 @@
 //! The G.W.W.'s pages: manuals, ministries, corporations, the government site, holidays, directories, and the page for an unknown address.
 
 use crate::features::hellpad::gww::blocks::{
-    Crumb, HeadingRef, ads_inline, banner, broadcast, crumb, field_tip, pager, related, section_block, sourced_quote,
-    ties, toc, training_tip,
+    Crumb, HeadingRef, ads_inline, banner, broadcast, crumb, field_tip, pager, read_next, related, section_block,
+    sourced_quote, ties, toc, training_tip,
 };
 use crate::features::hellpad::gww::live::live_panel;
 use crate::features::hellpad::gww::nav::{icon_url, logo_url, use_gww_nav};
@@ -19,7 +19,7 @@ use send_wrapper::SendWrapper;
 use warroom_core::data::manuals::{CHAPTERS, MANUALS};
 use warroom_core::data::sites::{CITIZENS, COMPANIES, GOV, HOLIDAYS, HOLIDAYS_SITE, MINISTRIES};
 use warroom_core::data::{Company, Holiday, Manual, Ministry};
-use warroom_core::gww_nav::DIRS;
+use warroom_core::gww_nav::{DIRS, course_next};
 use warroom_core::gww_text::{next_yearly, plain_text};
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
@@ -69,7 +69,10 @@ pub fn manual_page(m: &'static Manual, heading: HeadingRef) -> AnyView {
             {m.sections.iter().enumerate().map(|(i, sec)| section_block(sec, format!("{prefix}-{i}"))).collect_view()}
             {m.quotes.map(|q| q.iter().map(|q| training_tip(q)).collect_view())}
             {m.tips.iter().map(|t| field_tip(t)).collect_view()}
-            {related(m.related.to_vec(), "Read next")}
+            {move || {
+                let next = settings().get(|s| course_next(m.id, &s.gww_read)).map(|id| format!("manual:{id}"));
+                read_next(m.related.iter().map(|t| t.to_string()).collect(), "Read next", next)
+            }}
             <span node_ref=end class="gww-end" aria-hidden="true"></span>
             {pager(MANUALS.iter().map(manual_target).collect(), at, "manual")}
         </article>

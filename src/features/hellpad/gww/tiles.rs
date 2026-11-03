@@ -1,7 +1,7 @@
 //! The G.W.W. home page's tiles, and the training course's progress.
 
 use crate::features::hellpad::gww::nav::{icon_url, use_gww_nav};
-use crate::features::hellpad::gww::pictures::{company_mark, manual_icon};
+use crate::features::hellpad::gww::pictures::{company_mark, manual_icon, target_icon};
 use crate::state::settings;
 use crate::ui::icons::{self, Icon};
 use leptos::prelude::*;
@@ -10,7 +10,7 @@ use warroom_core::data::sites::{GOV, MINISTRIES};
 use warroom_core::data::{Company, Manual, Ministry};
 use warroom_core::drill::{Mode, best};
 use warroom_core::format::fmt_int;
-use warroom_core::gww_nav::{DRILL_ADDRESS, DRILL_TITLE, LOG_ADDRESS, LOG_TITLE};
+use warroom_core::gww_nav::{DRILL_ADDRESS, DRILL_TITLE, LOG_ADDRESS, LOG_TITLE, NEWS_ADDRESS, NEWS_TITLE};
 
 #[allow(clippy::too_many_arguments)]
 pub fn site_tile(
@@ -135,14 +135,14 @@ pub fn log_tile(log_text: Signal<String>) -> AnyView {
 
 pub fn news_tile() -> AnyView {
     site_tile(
-        "app:news".into(),
-        "se://strohmann.news",
-        "Strohmann News".into(),
+        "site:news".into(),
+        NEWS_ADDRESS,
+        NEWS_TITLE.into(),
         "Dispatches and Galactic Campaign news, as they come in.".into(),
-        view! { <Icon icon=icons::NEWSPAPER size=26.0 stroke_width=1.5 /> }.into_any(),
+        target_icon("site:news", 30.0),
         Some("#f074d8".into()),
         Signal::stored(false),
-        true,
+        false,
     )
 }
 

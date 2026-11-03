@@ -19,6 +19,7 @@ use leptos::prelude::*;
 use warroom_core::data::manuals::MANUALS;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, js_round};
+use warroom_core::gww_nav::GwwPage;
 use warroom_core::planet_index::control_shares;
 use warroom_core::snapshot::EpisodeStatus;
 use warroom_core::stratagems::{PERMITS, STRATAGEMS};
@@ -161,7 +162,13 @@ fn ModuleTile(
             class="hp-mod"
             data-module=module_key(id)
             style=format!("--mod: {};", m.color)
-            on:click=move |_| ui().open_module(Some(id))
+            on:click=move |_| {
+                // Coming in from the Hellpad starts the G.W.W. at its home page, not where it was left.
+                if id == HellpadModule::Gww {
+                    ui().set_gww(vec![GwwPage::Home]);
+                }
+                ui().open_module(Some(id))
+            }
         >
             <span class="hp-mod-icon">{icon_view(icon, 26.0, 1.5, None)}</span>
             <span class="hp-mod-body">

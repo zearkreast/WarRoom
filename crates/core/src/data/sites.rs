@@ -59,7 +59,7 @@ pub const MINISTRIES: &[Ministry] = &[
             Section {
                 heading: "The only source",
                 text: Some(
-                    "The Ministry of Truth is the sole provider of information to the public: every poster about the other ministries is its work. It supervises Strohmann News, anchored by Coretta Kelly, through [[company:strohmann-media|Strohmann Media]]; the latest dispatches are on [[app:news|Strohmann News]].",
+                    "The Ministry of Truth is the sole provider of information to the public: every poster about the other ministries is its work. It supervises Strohmann News, anchored by Coretta Kelly, through [[company:strohmann-media|Strohmann Media]]; the latest dispatches are on [[site:news|Strohmann News]].",
                 ),
                 ..Section::EMPTY
             },
@@ -79,7 +79,7 @@ pub const MINISTRIES: &[Ministry] = &[
             },
         ],
         ties: Some(&[Tie { to: "company:strohmann-media", how: "Believed to own it; they share a logo" }]),
-        related: Some(&["app:news", "ministry:unity", "site:gov"]),
+        related: Some(&["site:news", "ministry:unity", "site:gov"]),
         ads: Some(&["truth-see-treason"]),
         source: Source { title: "Ministry of Truth", url: "https://helldivers.wiki.gg/wiki/Ministry_of_Truth" },
     },
@@ -266,12 +266,12 @@ pub const COMPANIES: &[Company] = &[
         sections: &[Section {
             heading: "Strohmann News",
             text: Some(
-                "Strohmann Media runs Strohmann News, the broadcast on every Super Destroyer, anchored by Coretta Kelly and approved by the [[ministry:truth|Ministry of Truth]], which is believed to own the company and shares its logo. The latest dispatches are on [[app:news|Strohmann News]].",
+                "Strohmann Media runs Strohmann News, the broadcast on every Super Destroyer, anchored by Coretta Kelly and approved by the [[ministry:truth|Ministry of Truth]], which is believed to own the company and shares its logo. The latest dispatches are on [[site:news|Strohmann News]].",
             ),
             ..Section::EMPTY
         }],
         ties: Some(&[Tie { to: "ministry:truth", how: "Believed to own it; they share a logo" }]),
-        related: Some(&["app:news", "ministry:truth"]),
+        related: Some(&["site:news", "ministry:truth"]),
         ads: None,
         source: Source { title: "Strohmann Media", url: "https://helldivers.wiki.gg/wiki/Strohmann_Media" },
     },

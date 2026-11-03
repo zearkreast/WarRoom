@@ -4,6 +4,7 @@ use crate::features::hellpad::gww::figures::figure;
 use crate::features::hellpad::gww::nav::{Rich, icon_url, use_gww_nav};
 use crate::features::hellpad::gww::pictures::{ad_box, kind_label, split, target_icon};
 use crate::js;
+use crate::state::settings;
 use crate::ui::icons::{self, Icon};
 use leptos::html;
 use leptos::prelude::*;
@@ -265,25 +266,49 @@ pub(super) fn toc(sections: &'static [Section], prefix: &str) -> AnyView {
 }
 
 pub fn related(targets: Vec<&'static str>, title: &'static str) -> AnyView {
+    read_next(targets.into_iter().map(String::from).collect(), title, None)
+}
+
+/// Links to read next; `course`, a manual, leads them as the next in the Recruit's course. Manuals already
+/// read carry a tick.
+pub fn read_next(targets: Vec<String>, title: &'static str, course: Option<String>) -> AnyView {
     let nav = use_gww_nav();
-    if targets.is_empty() {
+    let mut list: Vec<(String, bool)> = course.iter().map(|c| (c.clone(), true)).collect();
+    list.extend(targets.into_iter().filter(|t| course.as_ref() != Some(t)).map(|t| (t, false)));
+    if list.is_empty() {
         return ().into_any();
     }
+    let read = Memo::new(move |_| settings().get(|s| s.gww_read.clone()));
     view! {
         <nav class="gww-related" aria-label=title>
             <h3 class="caps">{title}</h3>
             <div class="gww-related-list">
-                {targets
+                {list
                     .into_iter()
-                    .map(|t| view! {
-                        <button class="gww-related-link" on:click=move |e| nav.follow(t, Some(&e))>
-                            <span class="gww-related-icon">{target_icon(t, 20.0)}</span>
-                            <span>
-                                <span class="caps">{kind_label(split(t).0)}</span>
-                                <b>{title_of(t)}</b>
-                            </span>
-                            <Icon icon=if t.starts_with("app:") { icons::ARROW_UP_RIGHT } else { icons::ARROW_RIGHT } size=14.0 />
-                        </button>
+                    .map(|(t, next)| {
+                        let manual = t.strip_prefix("manual:").map(str::to_string);
+                        let done = Memo::new(move |_| manual.as_ref().is_some_and(|id| read.with(|r| r.contains(id))));
+                        let kind = if next { "Next in the course" } else { kind_label(split(&t).0) };
+                        let out = t.starts_with("app:");
+                        let (icon, name, target) = (target_icon(&t, 20.0), title_of(&t), t.clone());
+                        view! {
+                            <button
+                                class=move || format!("gww-related-link {} {}", if next { "next" } else { "" }, if done.get() { "read" } else { "" })
+                                on:click=move |e| nav.follow(&target, Some(&e))
+                            >
+                                <span class="gww-related-icon">{icon}</span>
+                                <span>
+                                    <span class="caps">{kind}</span>
+                                    <b>{name}</b>
+                                </span>
+                                <Show when=move || done.get()>
+                                    <span class="gww-related-read" title="Read">
+                                        <Icon icon=icons::CHECK size=12.0 label="Read" />
+                                    </span>
+                                </Show>
+                                <Icon icon=if out { icons::ARROW_UP_RIGHT } else { icons::ARROW_RIGHT } size=14.0 />
+                            </button>
+                        }
                     })
                     .collect_view()}
             </div>

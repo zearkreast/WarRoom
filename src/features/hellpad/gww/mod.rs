@@ -6,6 +6,7 @@ pub mod figures;
 pub mod live;
 pub mod logs;
 pub mod nav;
+pub mod news;
 pub mod pages;
 pub mod pictures;
 pub mod tiles;
@@ -383,6 +384,7 @@ fn page_view(page: &GwwPage, heading: HeadingRef, log_text: Signal<String>) -> O
         GwwPage::Site { id } if id == "log" => logs_page(heading),
         GwwPage::Site { id } if id == "holidays" => holidays_page(heading),
         GwwPage::Site { id } if id == "drill" => drill_page(heading),
+        GwwPage::Site { id } if id == "news" => news::news_page(heading),
         GwwPage::Site { id } => gov_page(id, heading),
         GwwPage::Dir { id } => dir_page(id, heading, log_text),
         GwwPage::Missing { address } => missing_page(address.clone(), heading),
@@ -436,9 +438,19 @@ pub fn GwwModule() -> impl IntoView {
             ui().set_gww(now[..now.len() - 1].to_vec());
         }
     };
+    // On the home page already, Home goes back to its top.
     let home = move || {
         if page.get_untracked() != GwwPage::Home {
             go.run(GwwPage::Home);
+        } else if let Some(r) = root.get_untracked() {
+            let opts = web_sys::ScrollIntoViewOptions::new();
+            opts.set_block(web_sys::ScrollLogicalPosition::Start);
+            opts.set_behavior(if js::prefers_reduced_motion() {
+                web_sys::ScrollBehavior::Auto
+            } else {
+                web_sys::ScrollBehavior::Smooth
+            });
+            r.scroll_into_view_with_scroll_into_view_options(&opts);
         }
     };
     // Browser Back and Forward change the stack from outside, so positions are kept as they change.
@@ -494,7 +506,6 @@ pub fn GwwModule() -> impl IntoView {
                     class="gww-nav"
                     aria-label="G.W.W. home"
                     title="Home"
-                    disabled=move || page.with(|p| *p == GwwPage::Home)
                     on:click=move |_| home()
                 >
                     <Icon icon=icons::HOUSE size=16.0 />

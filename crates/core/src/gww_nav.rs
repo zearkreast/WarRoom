@@ -37,12 +37,15 @@ pub const LOG_ADDRESS: &str = "se://hc/logs";
 pub const LOG_TITLE: &str = "Galactic logs";
 pub const DRILL_ADDRESS: &str = "se://hc/drill";
 pub const DRILL_TITLE: &str = "Stratagem drill";
-const SITES: [(&str, &str); 5] = [
+pub const NEWS_ADDRESS: &str = "se://strohmann.news";
+pub const NEWS_TITLE: &str = "Strohmann News";
+const SITES: [(&str, &str); 6] = [
     ("gov", GOV.address),
     ("citizens", CITIZENS.address),
     ("holidays", HOLIDAYS_SITE.address),
     ("log", LOG_ADDRESS),
     ("drill", DRILL_ADDRESS),
+    ("news", NEWS_ADDRESS),
 ];
 const DIR_ADDRESSES: [(&str, &str); 3] =
     [("manuals", "se://hc/manuals"), ("gov", "se://gov/directory"), ("corps", "se://corp")];
@@ -85,7 +88,7 @@ pub fn address_of(p: &GwwPage) -> String {
 }
 
 /// Every address on the G.W.W., with the link target it opens. An address listed twice keeps its first place
-/// and its last target: Strohmann News is a corporation, but its address opens the tracker's news page.
+/// and its last target: Strohmann Media is a corporation, but its address opens its news site.
 pub fn addresses() -> Vec<(String, String)> {
     let mut all = vec![(HOME.to_string(), "home".to_string())];
     all.extend(SITES.iter().map(|(id, a)| (a.to_string(), format!("site:{id}"))));
@@ -94,7 +97,7 @@ pub fn addresses() -> Vec<(String, String)> {
     all.extend(MINISTRIES.iter().map(|m| (m.address.to_string(), format!("ministry:{}", m.id))));
     all.extend(COMPANIES.iter().map(|c| (c.address.to_string(), format!("company:{}", c.id))));
     all.extend(HOLIDAYS.iter().map(|h| (h.address.to_string(), format!("holiday:{}", h.id))));
-    all.push(("se://strohmann.news".into(), "app:news".into()));
+    all.push((NEWS_ADDRESS.into(), "site:news".into()));
     let mut out: Vec<(String, String)> = Vec::with_capacity(all.len());
     for (address, target) in all {
         match out.iter_mut().find(|(a, _)| *a == address) {
@@ -147,7 +150,9 @@ pub fn page_of(target: &str) -> Option<GwwPage> {
         "ministry" if MINISTRIES.iter().any(|m| m.id == id) => Some(GwwPage::Ministry { id: id_s }),
         "company" if COMPANIES.iter().any(|c| c.id == id) => Some(GwwPage::Company { id: id_s }),
         "holiday" if HOLIDAYS.iter().any(|h| h.id == id) => Some(GwwPage::Holiday { id: id_s }),
-        "site" if matches!(id, "log" | "gov" | "citizens" | "holidays" | "drill") => Some(GwwPage::Site { id: id_s }),
+        "site" if matches!(id, "log" | "gov" | "citizens" | "holidays" | "drill" | "news") => {
+            Some(GwwPage::Site { id: id_s })
+        }
         "dir" if lookup(&DIRS, id).is_some() => Some(GwwPage::Dir { id: id_s }),
         _ => None,
     }
@@ -168,10 +173,19 @@ pub fn title_of(target: &str) -> String {
             "citizens" => CITIZENS.title.into(),
             "holidays" => HOLIDAYS_SITE.title.into(),
             "drill" => DRILL_TITLE.into(),
+            "news" => NEWS_TITLE.into(),
             _ => LOG_TITLE.into(),
         },
         Some(GwwPage::Dir { id }) => lookup(&DIRS, &id).unwrap_or_default().into(),
         _ if target.starts_with("app:") => app_page_title(id).unwrap_or(id).into(),
         _ => id.into(),
     }
+}
+
+/// The manual to read after `id` in the course: the next unread one in reading order, coming round to the
+/// start; once every other is read, simply the next one. None after the last manual with nothing left unread.
+pub fn course_next(id: &str, read: &[String]) -> Option<&'static str> {
+    let at = MANUALS.iter().position(|m| m.id == id)?;
+    let unread = |m: &&crate::data::Manual| m.id != id && !read.iter().any(|r| r == m.id);
+    MANUALS[at + 1..].iter().chain(&MANUALS[..at]).find(unread).or_else(|| MANUALS.get(at + 1)).map(|m| m.id)
 }
