@@ -270,9 +270,7 @@ fn OrderArchive() -> impl IntoView {
         match archive.with(|a| a.as_ref().map(|r| r.as_ref().map(Option::is_some).map_err(Clone::clone))) {
             None => return view! { <Loading what="the order archive" rows=2 /> }.into_any(),
             Some(Err(_)) => return view! { <Empty>"Could not reach the war archive."</Empty> }.into_any(),
-            Some(Ok(false)) => {
-                return view! { <Empty>"The order archive arrives with its database update."</Empty> }.into_any();
-            }
+            Some(Ok(false)) => return ().into_any(),
             Some(Ok(true)) => {}
         }
         let list = past.get().unwrap_or_default();
@@ -303,9 +301,12 @@ fn OrderArchive() -> impl IntoView {
         }
         .into_any()
     };
+    let missing = Memo::new(move |_| archive.with(|a| matches!(a, Some(Ok(None)))));
     view! {
-        <Panel title="Major Orders on record" icon=icons::TARGET>
-            {body}
-        </Panel>
+        <Show when=move || !missing.get()>
+            <Panel title="Major Orders on record" icon=icons::TARGET>
+                {body}
+            </Panel>
+        </Show>
     }
 }

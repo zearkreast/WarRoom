@@ -414,6 +414,9 @@
     --frame: color-mix(in srgb, var(--cta) 70%, var(--line-strong));
   }
   .mo-strip .panel-title {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
     font-size: 1.375rem;
   }
   .mo-strip .panel-body {
@@ -465,28 +468,35 @@
   .ms-toggle[aria-expanded="true"] .ms-chevron {
     transform: rotate(90deg);
   }
-  .ms-verdict {
-    margin: 0;
-    font-family: var(--font-head);
-    font-stretch: 75%;
-    font-size: 1.25rem;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+  .ms-state {
+    padding: 0 var(--s-3);
+    border: 1px solid color-mix(in srgb, var(--tone) var(--edge), transparent);
+    background: color-mix(in srgb, var(--tone) var(--wash), transparent);
+    color: var(--tone);
+    font-family: var(--font);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    line-height: 1.5;
   }
+  /* Rows share their columns, so the bars of planet and count objectives start and end together. */
   .ms-rows {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-4);
-  }
-  .ms-rows li {
     display: grid;
-    grid-template-columns: minmax(140px, 220px) minmax(80px, 1fr) auto 104px;
+    grid-template-columns: minmax(150px, 240px) minmax(80px, 1fr) auto auto;
+    column-gap: var(--s-5);
+  }
+  .ms-obj {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
     align-items: center;
-    gap: var(--s-5);
+    padding: var(--s-4) 0;
+  }
+  .ms-obj + .ms-obj {
+    border-top: 1px solid var(--line);
   }
   .ms-name {
     display: inline-flex;
@@ -497,95 +507,71 @@
     border: 0;
     background: none;
     color: var(--text-hi);
+    text-align: left;
+  }
+  button.ms-name {
+    cursor: pointer;
+  }
+  .ms-name .emblem {
+    flex: none;
+  }
+  .ms-what {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .ms-verb {
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    letter-spacing: var(--track-caps);
+    color: var(--label);
+  }
+  .ms-what b {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--k);
     font-family: var(--font-head);
     font-stretch: 75%;
     font-size: 1.125rem;
     font-weight: 800;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    text-align: left;
-    cursor: pointer;
   }
-  .ms-name:hover {
+  button.ms-name .ms-what b {
+    color: var(--text-hi);
+  }
+  button.ms-name:hover .ms-what b {
     color: var(--k);
   }
-  .ms-path {
-    font-size: var(--fs-body-s);
-    font-weight: 600;
-    color: var(--text-dim);
+  .ms-value {
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: var(--s-3);
     white-space: nowrap;
   }
-  .ms-chip {
-    justify-self: end;
-    padding: 3px var(--s-3);
-    border: 1px solid var(--tone);
-    background: color-mix(in srgb, var(--tone) var(--fill), transparent);
-    color: var(--tone);
-    font-size: var(--fs-label);
-    font-weight: 700;
-    letter-spacing: var(--track-caps);
-  }
-  .ms-counts {
-    list-style: none;
-    margin: 0;
-    padding: var(--s-5) 0 0;
-    border-top: 2px solid var(--line);
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: var(--s-6) var(--s-7);
-  }
-  .ms-count {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-3);
-    min-width: 0;
-  }
-  /* The heading takes any spare height, so bars line up across a row when one name wraps. */
-  .ms-count-head {
-    flex: 1;
-    display: flex;
-    align-items: flex-start;
-    gap: var(--s-3);
-    line-height: 16px;
-    font-size: var(--fs-label);
-    font-weight: 600;
-    letter-spacing: var(--track-caps);
-    color: var(--text-dim);
-  }
-  .ms-count-head .emblem {
-    flex: none;
-  }
-  .ms-count-name {
-    min-width: 0;
-  }
-  .ms-count-name b {
-    color: var(--k);
-    font-weight: 700;
-  }
-  .ms-count-pct {
-    margin-left: auto;
-    white-space: nowrap;
-    font-size: 1.25rem;
+  .ms-value b {
+    min-width: 3.6em;
+    text-align: right;
+    color: var(--text-hi);
+    font-size: 1.125rem;
     font-weight: 800;
     font-stretch: 75%;
-    line-height: 1;
-    color: var(--text-hi);
   }
-  .ms-count-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--s-4);
+  .ms-obj.done .ms-value b {
+    color: var(--good);
+  }
+  .ms-tally {
     font-size: var(--fs-label);
-    letter-spacing: var(--track-caps);
     color: var(--text-dim);
   }
-  .ms-count-foot b {
-    color: var(--text-hi);
-    font-weight: 700;
-  }
-  .ms-count.done .ms-count-pct {
-    color: var(--good);
+  .ms-obj .mo-outlook {
+    justify-content: flex-end;
+    font-size: var(--fs-label);
+    letter-spacing: var(--track-caps);
+    text-transform: uppercase;
+    color: var(--text-dim);
   }
   /* Phones: one scrolling row of filters, so the first card shows without scrolling. */
   @media (max-width: 640px) {
@@ -606,13 +592,26 @@
     .cc-order {
       align-self: flex-start;
     }
-    .ms-rows li {
+    .mo-strip .panel-title {
+      font-size: 1.125rem;
+      white-space: nowrap;
+    }
+    .mo-strip .mo-ends {
+      white-space: nowrap;
+    }
+    .ms-rows {
       grid-template-columns: 1fr auto;
+    }
+    .ms-obj {
       row-gap: var(--s-2);
     }
-    .ms-rows .mo-bar {
+    .ms-obj .mo-bar {
       grid-column: 1 / -1;
       grid-row: 2;
+    }
+    .ms-obj .mo-outlook {
+      grid-column: 1 / -1;
+      justify-content: flex-start;
     }
     .cc-name,
     .cc-pct b {
