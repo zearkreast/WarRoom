@@ -110,3 +110,18 @@ fn keeps_the_games_highlights_in_descriptions() {
     assert_eq!(e.description, "The DSS deploys <i=1>Eagle Strafing Runs</i> during missions.");
     assert_eq!(plain_text(&e.description), "The DSS deploys Eagle Strafing Runs during missions.");
 }
+
+#[test]
+fn names_the_noxious_and_caustic_strains_once_each() {
+    let fori: Vec<(EffectKind, String)> =
+        planet_effects(&[1188, 1312, 1432, 1433, 1434]).into_iter().map(|e| (e.kind, e.name)).collect();
+    assert_eq!(
+        fori,
+        [(EffectKind::Subfaction, "NOXIOUS STRAIN".to_string()), (EffectKind::Gloom, "Dense Gloom".to_string())]
+    );
+    let nivel: Vec<(EffectKind, String)> =
+        planet_effects(&[1186, 1312, 1395, 1430, 1431]).into_iter().map(|e| (e.kind, e.name)).collect();
+    assert_eq!(nivel[0], (EffectKind::Subfaction, "CAUSTIC STRAIN".to_string()));
+    let [e]: [_; 1] = planet_effects(&[1418]).try_into().unwrap();
+    assert_eq!((e.kind, e.name.as_str()), (EffectKind::Event, "Force Evacuation"));
+}
