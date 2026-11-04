@@ -43,13 +43,16 @@ fn faction_art(name: &str) -> Option<&'static str> {
     }
 }
 
-// Effect names as the game writes them. Hive Lords and Dragonroaches are units with no emblem of their own.
+// Effect names as the game writes them.
 static SUBFACTION_ART: LazyLock<Vec<(Regex, &'static str)>> = LazyLock::new(|| {
     [
         ("predator strain", "predator-strain"),
         ("spore burst strain", "spore-burst-strain"),
         ("rupture strain", "rupture-strain"),
         ("noxious strain", "noxious-strain"),
+        ("caustic strain", "caustic-strain"),
+        ("hive lord", "hive-lords"),
+        ("dragonroach", "dragonroaches"),
         ("jet brigade", "jet-brigade"),
         ("incineration corps", "incineration-corps"),
         ("cyborg", "cyborgs"),
