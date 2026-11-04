@@ -193,22 +193,37 @@ pub struct TaskOutlook {
 
 /// The whole order at the current pace: it is won only if every objective makes the deadline.
 pub fn order_verdict(tasks: &[TaskView], outlooks: &[TaskOutlook]) -> Option<(String, &'static str)> {
-    let short: Vec<String> = tasks
-        .iter()
-        .zip(outlooks)
-        .filter(|(_, o)| matches!(o.outlook, DeadlineOutlook::Behind | DeadlineOutlook::NoFront))
-        .map(|(t, _)| task_name(t))
-        .collect();
-    if !short.is_empty() {
-        return Some((format!("Losing: {} won't make the deadline at this pace", short.join(", ")), "var(--bad)"));
+    match order_outlook(outlooks)? {
+        DeadlineOutlook::Behind => {
+            let short: Vec<String> = tasks
+                .iter()
+                .zip(outlooks)
+                .filter(|(_, o)| matches!(o.outlook, DeadlineOutlook::Behind | DeadlineOutlook::NoFront))
+                .map(|(t, _)| task_name(t))
+                .collect();
+            Some((format!("Losing: {} won't make the deadline at this pace", short.join(", ")), "var(--bad)"))
+        }
+        DeadlineOutlook::Measuring => Some(("Measuring progress rates…".into(), "var(--label)")),
+        _ => Some(("Winning: every objective makes the deadline at this pace".into(), "var(--good)")),
     }
-    if outlooks.iter().all(|o| matches!(o.outlook, DeadlineOutlook::Done | DeadlineOutlook::OnTrack)) {
-        return Some(("Winning: every objective makes the deadline at this pace".into(), "var(--good)"));
+}
+
+/// The whole order in one word: Behind if any objective falls short, Done once all are, OnTrack if all make
+/// the deadline, else Measuring. None for an order without objectives.
+pub fn order_outlook(outlooks: &[TaskOutlook]) -> Option<DeadlineOutlook> {
+    if outlooks.is_empty() {
+        return None;
     }
-    outlooks
-        .iter()
-        .any(|o| o.outlook == DeadlineOutlook::Measuring)
-        .then(|| ("Measuring progress rates…".into(), "var(--label)"))
+    let all = |f: fn(DeadlineOutlook) -> bool| outlooks.iter().all(|o| f(o.outlook));
+    Some(if outlooks.iter().any(|o| matches!(o.outlook, DeadlineOutlook::Behind | DeadlineOutlook::NoFront)) {
+        DeadlineOutlook::Behind
+    } else if all(|o| o == DeadlineOutlook::Done) {
+        DeadlineOutlook::Done
+    } else if all(|o| matches!(o, DeadlineOutlook::Done | DeadlineOutlook::OnTrack)) {
+        DeadlineOutlook::OnTrack
+    } else {
+        DeadlineOutlook::Measuring
+    })
 }
 
 /// A task's outlook from its percent and its trend in %/h.

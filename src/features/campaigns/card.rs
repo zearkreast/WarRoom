@@ -1,7 +1,7 @@
 //! A front's card: progress, pace, ETA or deadline, Helldivers and badges.
 
 use crate::api::fronts::{Front, FrontKind, fronts};
-use crate::features::planet::circumvallation::{SiegeMark, use_circumvallation};
+use crate::features::planet::circumvallation::{SiegeMark, siege_title, use_circumvallation};
 use crate::features::planet::defense::{
     GambitMark, advance_label, time_left, use_attackers, use_enemy_advance, use_gambits,
 };
@@ -312,20 +312,43 @@ pub fn CampaignCard(
                     Some((last, rest)) if !rest.is_empty() => format!("{} and {last}", rest.join(", ")),
                     _ => from.concat(),
                 };
-                let title = if g.outlook == GambitOutlook::Ahead {
-                    format!("Gambit: liberating {from} ends the defense of {} before its deadline", g.defended.name)
-                } else {
-                    format!("Gambit: liberating {from} would end the defense of {}", g.defended.name)
+                let defended = &g.defended.name;
+                let title = match g.outlook {
+                    GambitOutlook::Ahead => {
+                        format!("Gambit: liberating {from} ends the defense of {defended} before its deadline")
+                    }
+                    GambitOutlook::Slower => {
+                        format!(
+                            "Gambit: liberating {from} would end the defense of {defended}, but holding it is quicker"
+                        )
+                    }
+                    GambitOutlook::OutOfReach => {
+                        format!(
+                            "Gambit: liberating {from} would end the defense of {defended}, but not before its deadline"
+                        )
+                    }
+                    GambitOutlook::Measuring => {
+                        format!(
+                            "Gambit: liberating {from} would end the defense of {defended}; its pace is being measured"
+                        )
+                    }
                 };
-                (title, g.attackers.iter().all(|a| a.planet.regen_per_second <= 0.0))
+                let free = g.attackers.iter().all(|a| a.planet.regen_per_second <= 0.0);
+                (title, free, g.outlook == GambitOutlook::Ahead)
             })
         })
     });
-    let siege_title = Memo::new(move |_| {
+    let siege_badge = Memo::new(move |_| {
         siege.with(|s| {
             s.as_ref().map(|s| {
                 let names: Vec<&str> = s.targets.iter().map(|t| t.name.as_str()).collect();
-                format!("Circumvallation: liberating this planet leaves {} surrounded", names.join(", "))
+                let direct: Vec<&str> = s.direct.iter().map(|t| t.name.as_str()).collect();
+                let mut title =
+                    format!("{}: liberating this planet leaves {} surrounded", siege_title(s), names.join(", "));
+                if !s.worth {
+                    title.push_str(&format!("; liberating {} directly is quicker", direct.join(", ")));
+                }
+                (title, siege_title(s), s.targets.len() > 1, s.worth)
             })
         })
     });
@@ -373,7 +396,10 @@ pub fn CampaignCard(
                                 <h3 class="cc-name">{l.name.clone()}</h3>
                                 <div class="cc-sector caps">
                                     {format!("{} sector", l.sector)}
-                                    {move || attackers.with(|list| attacked_from(list, gambits.with(|g| !g.is_empty())))}
+                                    {move || {
+                                        let open = gambits.with(|g| g.iter().any(|g| g.outlook == GambitOutlook::Ahead));
+                                        attackers.with(|list| attacked_from(list, open))
+                                    }}
                                 </div>
                             </div>
                             <div class="cc-pct">
@@ -403,11 +429,16 @@ pub fn CampaignCard(
                                 {move || {
                                     gambit
                                         .get()
-                                        .map(|(t, free)| {
+                                        .map(|(t, free, worth)| {
+                                            let class = format!(
+                                                "cc-badge is-gambit {} {}",
+                                                if free && worth { "is-free" } else { "" },
+                                                if worth { "" } else { "is-moot" },
+                                            );
                                             view! {
-                                                <span class=format!("cc-badge is-gambit {}", if free { "is-free" } else { "" }) title=t>
+                                                <span class=class title=t>
                                                     <GambitMark size=16.0 />
-                                                    {if free { "Gambit · 0% resistance" } else { "Gambit" }}
+                                                    {if free && worth { "Gambit · 0% resistance" } else { "Gambit" }}
                                                 </span>
                                             }
                                         })
@@ -422,13 +453,18 @@ pub fn CampaignCard(
                                     </span>
                                 </Show>
                                 {move || {
-                                    siege_title
+                                    siege_badge
                                         .get()
-                                        .map(|t| {
+                                        .map(|(t, name, double, worth)| {
+                                            let class = format!(
+                                                "cc-badge is-siege {} {}",
+                                                if double { "is-double" } else { "" },
+                                                if worth { "" } else { "is-moot" },
+                                            );
                                             view! {
-                                                <span class="cc-badge is-siege" title=t>
-                                                    <SiegeMark size=16.0 />
-                                                    "Circumvallation"
+                                                <span class=class title=t>
+                                                    <SiegeMark size=16.0 double=double />
+                                                    {name}
                                                 </span>
                                             }
                                         })

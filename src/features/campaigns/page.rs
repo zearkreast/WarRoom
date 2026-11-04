@@ -1,6 +1,6 @@
 //! The Active planets page: every front, filterable by enemy; stalled fronts stay hidden unless Settings shows them.
 
-use crate::api::fronts::{Front, FrontKind, fronts, major_order_deadlines};
+use crate::api::fronts::{Front, FrontKind, fronts, major_order_deadlines, worth};
 use crate::api::queries::queries;
 use crate::features::campaigns::card::CampaignCard;
 use crate::features::campaigns::mo_strip::MoStrip;
@@ -39,8 +39,8 @@ impl Filter {
             Filter::All => true,
             Filter::Mo => f.in_major_order,
             Filter::Defense => f.kind == FrontKind::Defense,
-            Filter::Gambit => f.gambit,
-            Filter::Siege => f.siege,
+            Filter::Gambit => f.gambit.is_some(),
+            Filter::Siege => f.siege.is_some(),
             Filter::Special => is_rare_campaign(f.campaign.kind),
             Filter::Pinned => f.pinned,
             Filter::Enemy(e) => f.enemy == e,
@@ -73,7 +73,10 @@ fn stalled(f: &Front) -> bool {
         rate: f.rate,
         in_major_order: f.in_major_order,
         pinned: f.pinned,
-        strategic: f.kind == FrontKind::Defense || f.gambit || f.siege || is_rare_campaign(f.campaign.kind),
+        strategic: f.kind == FrontKind::Defense
+            || worth(f.gambit)
+            || worth(f.siege)
+            || is_rare_campaign(f.campaign.kind),
     })
 }
 

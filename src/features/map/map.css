@@ -58,7 +58,9 @@
   .galaxy.moving .beacon-ping,
   .galaxy.moving .beacon-glow,
   .galaxy.moving .beacon-mark path,
-  .galaxy.moving .attack-chev {
+  .galaxy.moving .attack-chev,
+  .galaxy.moving .tcs-spin,
+  .galaxy.moving .tcs-swell {
     animation-play-state: paused;
   }
   /* camera.rs sets the transforms and sizes of .upright, .pbody and the labels each frame. */
@@ -191,7 +193,7 @@
     animation: spin 18s linear infinite;
   }
 
-  /* The map's bc-* class picks which defense beacon shows. */
+  /* The map's bc-* class picks which beacon look shows. */
   .beacon {
     pointer-events: none;
   }
@@ -457,10 +459,8 @@
   .holos {
     pointer-events: none;
   }
-  /* The projector's foreshortening, the beam's height and the unit's lift follow the tilt: see camera.rs. */
-  .holo.back {
-    transform: translateY(-7px);
-  }
+  /* The projector's foreshortening, the beam's height, the unit's lift and each hologram's place round its planet
+     follow the camera: see camera.rs. */
   .holo-pool {
     fill: currentColor;
     opacity: 0.5;
@@ -483,9 +483,9 @@
     animation: spin 16s linear infinite;
     animation-delay: var(--delay);
   }
-  .holo-emitter {
-    fill: #fff;
-    fill-opacity: 0.9;
+  /* Paler than the glow round it, which is the same colour. */
+  .holo-emblem {
+    color: color-mix(in srgb, currentColor 45%, #fff);
   }
   .holo-beam {
     fill: currentColor;

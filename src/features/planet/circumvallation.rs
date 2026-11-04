@@ -71,15 +71,20 @@ fn names(list: &[Planet]) -> AnyView {
         .into_any()
 }
 
+/// The siege's name by how many enemy planets it surrounds.
+pub fn siege_title(c: &Circumvallation) -> &'static str {
+    match c.targets.len() {
+        0 | 1 => "Circumvallation",
+        2 => "Double circumvallation",
+        _ => "Multiple circumvallation",
+    }
+}
+
 /// Blue when the ring is worth closing, bright for 2+ sieges, grey when liberating the targets directly is quicker.
 pub fn circumvallation_note(front: &Planet, c: &Circumvallation, class: &str) -> AnyView {
     let n = c.targets.len();
     let double = n > 1;
-    let title = match n {
-        0 | 1 => "Circumvallation",
-        2 => "Double circumvallation",
-        _ => "Multiple circumvallation",
-    };
+    let title = siege_title(c);
     view! {
         <section
             class=format!(
