@@ -570,6 +570,10 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                 transform=move || at.get()
                 on:click=move |_| open.run(index)
                 on:pointerenter=move |e: web_sys::PointerEvent| {
+                    // A drag sweeping over planets doesn't open their cards on the way.
+                    if e.buttons() != 0 {
+                        return;
+                    }
                     let p = planets.with_untracked(|l| l.iter().find(|p| p.index == index).cloned());
                     if let Some(p) = p {
                         hover.set(Some(Hover { x: e.client_x() as f64, y: e.client_y() as f64, what: Hovered::Planet(Box::new(p)) }));
@@ -755,7 +759,9 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                                             transform=format!("translate({},{})", num(x), num(y))
                                             on:click=move |_| open.run(l.index)
                                             on:pointerenter=move |e: web_sys::PointerEvent| {
-                                                hover.set(Some(Hover { x: e.client_x() as f64, y: e.client_y() as f64, what: Hovered::Landmark(l) }));
+                                                if e.buttons() == 0 {
+                                                    hover.set(Some(Hover { x: e.client_x() as f64, y: e.client_y() as f64, what: Hovered::Landmark(l) }));
+                                                }
                                             }
                                             on:pointerleave=move |_| hover.set(None)
                                         >
