@@ -5,10 +5,11 @@ use crate::features::planet::circumvallation::{SiegeMark, use_circumvallation};
 use crate::features::planet::defense::{
     GambitMark, advance_label, time_left, use_attackers, use_enemy_advance, use_gambits,
 };
+use crate::features::planet::seaf_art::{ResistanceMark, SiegeLiberationMark};
 use crate::features::planet::tint::planet_tint;
 use crate::js;
 use crate::state::{OptionsAnchor, ui};
-use crate::ui::emblems::{DssIcon, FactionEmblem};
+use crate::ui::emblems::{DssIcon, FactionEmblem, SeafEmblem};
 use crate::ui::hazard_icons::hazard_icon;
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Countdown, Meter, MeterSize};
@@ -246,6 +247,7 @@ pub fn CampaignCard(
     let rate = Memo::new(move |_| front.with(|f| f.as_ref().and_then(|f| f.rate)));
     let flag = move |pick: fn(&Front) -> bool| Memo::new(move |_| front.with(|f| f.as_ref().is_some_and(pick)));
     let (in_mo, pinned, station) = (flag(|f| f.in_major_order), flag(|f| f.pinned), flag(|f| f.station));
+    let besieged = flag(|f| f.besieged);
     let eta = Memo::new(move |_| front.with(|f| f.as_ref().and_then(|f| eta(f, deadline.get(), js::now()))));
     let planet = Memo::new(move |_| front.with(|f| f.as_ref().map(|f| f.planet.clone()).unwrap_or_default()));
     let advance = use_enemy_advance(planet.into());
@@ -410,6 +412,15 @@ pub fn CampaignCard(
                                             }
                                         })
                                 }}
+                                <Show when=move || besieged.get()>
+                                    <span
+                                        class="cc-badge is-besieged"
+                                        title="Siege liberation: Super Earth holds every planet on its supply lines, so the SEAF has it under siege and it liberates itself"
+                                    >
+                                        <SiegeLiberationMark size=16.0 />
+                                        "Siege liberation"
+                                    </span>
+                                </Show>
                                 {move || {
                                     siege_title
                                         .get()
@@ -508,12 +519,39 @@ pub fn CampaignCard(
                                     .into_any()
                             } else {
                                 view! {
-                                    <span title="Enemy regeneration per hour">
-                                        <span class="cc-foot-label caps">"Regen"</span>
-                                        <b class="num">
-                                            {move || regen.get().map_or("—".to_string(), |r| format!("{}%", to_fixed(r, 2)))}
-                                        </b>
-                                    </span>
+                                    <Show
+                                        when=move || besieged.get()
+                                        fallback=move || {
+                                            view! {
+                                                <span title="Enemy regeneration per hour">
+                                                    <span class="cc-foot-label caps">
+                                                        <ResistanceMark size=12.0 />
+                                                        "Regen"
+                                                    </span>
+                                                    <b class="num">
+                                                        {move || regen.get().map_or("—".to_string(), |r| format!("{}%", to_fixed(r, 2)))}
+                                                    </b>
+                                                </span>
+                                            }
+                                        }
+                                    >
+                                        <span
+                                            class="is-siege-pace"
+                                            title="SEAF siege: the planet liberates itself by this much an hour once its resistance turns negative; until then, its resistance"
+                                        >
+                                            <span class="cc-foot-label caps">
+                                                <SeafEmblem size=12.0 />
+                                                "SEAF"
+                                            </span>
+                                            <b class="num">
+                                                {move || {
+                                                    regen.get().map_or("—".to_string(), |r| {
+                                                        if r < 0.0 { format!("+{}%", to_fixed(-r, 2)) } else { format!("{}%", to_fixed(r, 2)) }
+                                                    })
+                                                }}
+                                            </b>
+                                        </span>
+                                    </Show>
                                 }
                                     .into_any()
                             }}

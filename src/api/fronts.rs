@@ -9,7 +9,7 @@ use warroom_core::api::{Campaign, Faction, Planet};
 use warroom_core::campaign_filter::is_rare_campaign;
 use warroom_core::defense::{gambit, gambits_from};
 use warroom_core::progress::{defense_percent, liberation_percent, projected_at, projected_completion, projected_loss};
-use warroom_core::sieges::{circumvallation, neighbours};
+use warroom_core::sieges::{besieged, circumvallation, neighbours};
 use warroom_core::time::parse_ms;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -49,6 +49,8 @@ pub struct Front {
     pub gambit: bool,
     /// Liberating it would leave enemy planets surrounded.
     pub siege: bool,
+    /// It is surrounded itself: the SEAF has it under siege.
+    pub besieged: bool,
 }
 
 pub fn build_front(
@@ -79,6 +81,7 @@ pub fn build_front(
             station: marks.2,
             gambit: false,
             siege: false,
+            besieged: false,
         };
     }
     let lib = liberation_percent(p.health, p.max_health);
@@ -98,6 +101,7 @@ pub fn build_front(
         station: marks.2,
         gambit: false,
         siege: false,
+        besieged: false,
     }
 }
 
@@ -106,6 +110,7 @@ fn mark_roles(list: &mut [Front], planets: &[Planet], now: f64) {
     let rates: HashMap<i64, Option<f64>> = list.iter().map(|f| (f.planet.index, f.rate)).collect();
     let active: HashSet<i64> = rates.keys().copied().collect();
     let links = neighbours(planets);
+    let sieged = besieged(planets, &links);
     for f in list {
         let Some(me) = planets.iter().find(|p| p.index == f.planet.index) else { continue };
         f.gambit = if me.event.is_some() {
@@ -114,6 +119,7 @@ fn mark_roles(list: &mut [Front], planets: &[Planet], now: f64) {
             !gambits_from(me, planets, &rates, now).is_empty()
         };
         f.siege = circumvallation(me, planets, &links, &active).is_some();
+        f.besieged = sieged.contains(&me.index);
     }
 }
 

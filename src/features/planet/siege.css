@@ -104,4 +104,56 @@
   .pd-siege {
     margin-bottom: var(--s-4);
   }
+
+  /* Resistance and siege marks (seaf_art.rs), solid in the current colour. */
+  .seaf-art {
+    flex: none;
+    fill: currentColor;
+  }
+  /* Keep the origin on the emblem's ring centre, as in seaf_art.rs. */
+  .seaf-close {
+    transform-origin: 0 -0.562px;
+    animation: seaf-close-left 2.4s ease-in-out infinite alternate;
+  }
+  .seaf-close.right {
+    animation-name: seaf-close-right;
+  }
+  @keyframes seaf-close-left {
+    from {
+      transform: rotate(-14deg);
+      opacity: 0.55;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @keyframes seaf-close-right {
+    from {
+      transform: rotate(14deg);
+      opacity: 0.55;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .seaf-close {
+      animation: none;
+    }
+  }
+  .cc-badge.is-besieged {
+    gap: var(--s-1);
+    padding-left: var(--s-1);
+    color: var(--f-humans);
+    border-color: color-mix(in srgb, var(--f-humans) var(--strong), transparent);
+  }
+  .cc-foot-label .seaf-art {
+    vertical-align: -2px;
+    margin-right: 3px;
+  }
+  .cc-foot .is-siege-pace b {
+    color: var(--f-humans);
+  }
 }

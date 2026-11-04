@@ -216,7 +216,7 @@ pub fn TheaterOfWar() -> impl IntoView {
                                             class=format!("tw-owner {} ", if owner == Faction::Humans { "se" } else { "enemy" })
                                             style=format!("--c: {};", chart_color(owner))
                                         >
-                                            <path d=path />
+                                            <path d=path fill-rule="evenodd" />
                                         </g>
                                     })
                                     .collect_view()
