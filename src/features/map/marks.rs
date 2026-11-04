@@ -26,12 +26,13 @@ const HOLO_TINT: [(&str, [f64; 3]); 7] = [
     ("off", [0.55, 0.57, 0.6]),
 ];
 
-/// Hologram size and spacing in marker units: drawn at HOLO_SIZE, shrunk by HOLO_SCALE, kept close to
-/// the planet so it's clear whose they are.
+/// Hologram size in marker units: drawn at HOLO_SIZE, shrunk by HOLO_SCALE.
 const HOLO_SIZE: f64 = 22.0;
-const HOLO_SCALE: f64 = 0.78;
-const HOLO_X: f64 = 16.0;
-const HOLO_STEP: f64 = 11.0;
+pub const HOLO_SCALE: f64 = 0.78;
+/// Holograms per planet; more units than this show as tags.
+pub const HOLO_MAX: usize = 4;
+/// The emblem on a projector's floor, in hologram units: filling its ring.
+const HOLO_EMBLEM: f64 = 9.0;
 
 /// Size and spacing of the DSS's active-action badges, in hologram units.
 const BADGE: f64 = 9.0;
@@ -252,21 +253,49 @@ fn unit_scale(key: &str) -> f64 {
 #[derive(Clone, Debug, PartialEq)]
 struct Light {
     art: Art,
+    /// The emblem art key laid on the projector's floor.
+    emblem: String,
     tone: &'static str,
     tint: &'static str,
     badges: Vec<Art>,
 }
 
-/// A unit as a hologram on the war table: a projector lying on the map, a column of light, and the
-/// unit floating on it. The projector is always seen at an angle, like the renders; tilting the map
-/// flattens it further and lifts the unit higher.
-fn holo_pawn(light: &Light, x: f64, back: bool, delay: f64) -> AnyView {
+/// Where the `i`th of `n` holograms stands on the table: its bearing in degrees clockwise from the map's east,
+/// and its distance from the planet in marker units, far enough apart that units never overlap side by side.
+pub fn holo_slot(n: usize, i: usize) -> (f64, f64) {
+    let bearings: &[f64] = match n {
+        1 => &[0.0],
+        2 => &[0.0, 180.0],
+        3 => &[0.0, 180.0, 270.0],
+        _ => &[0.0, 180.0, 240.0, 300.0],
+    };
+    (bearings.get(i).copied().unwrap_or(0.0), if n <= 2 { 16.0 } else { 18.0 })
+}
+
+/// A hologram's place beside its planet on screen, in marker units, once the map is turned `rot` radians, and
+/// its opacity. One turned in front stands further forward and fades, as its unit rises over the planet and
+/// its tag. The ring doesn't flatten with the tilt, which would push units onto the planet and its name.
+pub fn holo_place(n: usize, i: usize, rot: f64) -> (f64, f64, f64) {
+    let (bearing, r) = holo_slot(n, i);
+    let a = bearing.to_radians() + rot;
+    let x = r * a.cos();
+    let y = r * a.sin() * if a.sin() > 0.0 { 1.5 } else { 1.0 };
+    let ahead = ((17.0 - x.abs()) / 6.0).clamp(0.0, 1.0) * (y / 6.0).clamp(0.0, 1.0);
+    (x, y + 2.0, 1.0 - 0.5 * ahead)
+}
+
+/// A unit as a hologram on the war table: a projector lying on the map with the unit's emblem on it, a
+/// column of light, and the unit floating on it. The projector is always seen at an angle, like the renders;
+/// tilting the map flattens it further and lifts the unit higher. camera.rs moves it round its planet as the
+/// map turns; the transform here is its place before any turn.
+fn holo_pawn(light: &Light, n: usize, i: usize, delay: f64) -> AnyView {
     let s = HOLO_SIZE;
     let art = light.art.clone();
     let style = format!("color: {}; --tint: url(#holo-tint-{}); --delay: {}s;", light.tone, light.tint, num(-delay));
-    let n = light.badges.len() as f64;
+    let count = light.badges.len() as f64;
     let badges = (!light.badges.is_empty()).then(|| {
-        let at = format!("translate({},{})", num((-(n - 1.0) * BADGE_STEP) / 2.0), num(-s * 0.85 - BADGE / 2.0 - 1.0));
+        let at =
+            format!("translate({},{})", num((-(count - 1.0) * BADGE_STEP) / 2.0), num(-s * 0.85 - BADGE / 2.0 - 1.0));
         // Just over the station (its render leaves the top of the frame empty), outside .holo-unit so they
         // keep their colours and don't bob.
         view! {
@@ -290,17 +319,26 @@ fn holo_pawn(light: &Light, x: f64, back: bool, delay: f64) -> AnyView {
             </g>
         }
     });
+    let (x, y, _) = holo_place(n, i, 0.0);
     view! {
-        <g transform=format!("translate({},2) scale({})", num(x), num(HOLO_SCALE))>
-            <g class=format!("holo {}", if back { "back" } else { "" }) style=style>
+        <g
+            class=format!("holo-slot s{n}-{i}")
+            transform=format!("translate({},{}) scale({})", num(x), num(y), num(HOLO_SCALE))
+        >
+            <g class="holo" style=style>
                 <g class="holo-floor">
                     <circle r="8" class="holo-pool" mask="url(#holo-pool)"></circle>
                     <circle r="5.4" class="holo-ring"></circle>
-                    <circle r="4.2" class="holo-ticks"></circle>
-                    <circle r="1.3" class="holo-emitter"></circle>
+                    <circle r="6.6" class="holo-ticks"></circle>
                 </g>
                 <path class="holo-beam" d="M-1.6,0L-6,-1H6L1.6,0Z" mask="url(#holo-fade)"></path>
                 <path class="holo-edge" d="M-1.5,0L-6,-1M1.5,0L6,-1" mask="url(#holo-fade)"></path>
+                // Over the beam's foot, so the light doesn't wash it out; flattened with the floor.
+                <g class="holo-floor">
+                    <g class="holo-emblem">
+                        <EmblemArt art=light.emblem.clone() size=HOLO_EMBLEM color="currentColor" />
+                    </g>
+                </g>
                 <g class="holo-lift">
                     {badges}
                     <g class="holo-unit">
@@ -401,8 +439,9 @@ fn pawn_tags(effects: &[PlanetEffect], faction: Faction, x: f64, class: &str) ->
 }
 
 /// The planet's sub-factions, SEAF presence and the Democracy Space Station as holograms beside it,
-/// as the game's war table shows them; threats and points of interest, which have none, follow as tags.
-fn pawns(all: &[PlanetEffect], faction: Faction, dss: Option<&DssInfo>, seed: i64, enemy: bool) -> AnyView {
+/// as the game's war table shows them, drawn under the planet so it stays readable when one is turned in
+/// front of it; threats and points of interest, which have none, follow as tags over it.
+fn pawns(all: &[PlanetEffect], faction: Faction, dss: Option<&DssInfo>, seed: i64, enemy: bool) -> (AnyView, AnyView) {
     // The game keeps an enemy unit's effect on a planet after it is liberated; Super Earth's planets show none.
     // Points of interest wear their own logo over the planet instead of a tag.
     let effects: Vec<PlanetEffect> = all
@@ -415,36 +454,47 @@ fn pawns(all: &[PlanetEffect], faction: Faction, dss: Option<&DssInfo>, seed: i6
         && let Some(art) = crate::features::map::pawn_art::dss_art(d.state)
     {
         let (tone, tint) = dss_light(d.state);
-        holos.push(Light { art, tone, tint, badges: d.active.clone() });
+        holos.push(Light { art, emblem: "dss".into(), tone, tint, badges: d.active.clone() });
     }
     let mut tags: Vec<PlanetEffect> = Vec::new();
     for e in &effects {
-        let art = pawn_art(e);
-        match art.as_ref().and_then(|a| unit_light(a.key.split('_').next().unwrap_or(""))) {
-            Some((tone, tint)) => holos.push(Light { art: art.unwrap(), tone, tint, badges: Vec::new() }),
-            None => tags.push(e.clone()),
+        let art = pawn_art(e).filter(|_| holos.len() < HOLO_MAX);
+        let unit = art.as_ref().map(|a| a.key.split('_').next().unwrap_or("").to_string()).unwrap_or_default();
+        match (art, unit_light(&unit)) {
+            (Some(art), Some((tone, tint))) => {
+                let emblem = match unit.as_str() {
+                    "seaf" => "seaf",
+                    "bot" => subfaction_art(&e.name).unwrap_or("Automaton"),
+                    "ill" => subfaction_art(&e.name).unwrap_or("Illuminate"),
+                    _ => subfaction_art(&e.name).unwrap_or("Terminids"),
+                };
+                holos.push(Light { art, emblem: emblem.into(), tone, tint, badges: Vec::new() })
+            }
+            _ => tags.push(e.clone()),
         }
     }
-    let placed: Vec<(Light, f64, bool, f64)> = holos
-        .iter()
-        .enumerate()
-        .map(|(i, light)| {
-            let i = i as f64;
-            (light.clone(), HOLO_X + i * HOLO_STEP, i as usize % 2 == 1, (seed as f64 * 0.73 + i * 1.3) % 6.0)
-        })
-        .collect();
-    let rest_x = if holos.is_empty() { 7.0 } else { HOLO_X + holos.len() as f64 * HOLO_STEP + 2.0 };
+    let n = holos.len();
+    // Clear of a hologram standing east of the planet.
+    let rest_x = if holos.is_empty() { 7.0 } else { holo_slot(n, 0).1 + 10.0 };
+    let units = (!holos.is_empty()).then(|| {
+        // The ones furthest back first, so nearer ones stand before them at the map's resting turn.
+        let mut order: Vec<usize> = (0..n).collect();
+        order.sort_by(|a, b| holo_place(n, *a, 0.0).1.total_cmp(&holo_place(n, *b, 0.0).1));
+        view! {
+            <g class="holos">
+                {order
+                    .into_iter()
+                    .map(|i| holo_pawn(&holos[i], n, i, (seed as f64 * 0.73 + i as f64 * 1.3) % 6.0))
+                    .collect_view()}
+            </g>
+        }
+    });
     // Holograms only read once zoomed in; until then every effect shows as a tag.
-    view! {
+    let labels = view! {
         {(!effects.is_empty()).then(|| pawn_tags(&effects, faction, 7.0, "pawns-all"))}
-        {(!holos.is_empty()).then(|| {
-            // The back rank first, so the front one stands before it.
-            let ordered = placed.iter().filter(|h| h.2).chain(placed.iter().filter(|h| !h.2));
-            view! { <g class="holos">{ordered.map(|(l, x, back, delay)| holo_pawn(l, *x, *back, *delay)).collect_view()}</g> }
-        })}
         {(!tags.is_empty()).then(|| pawn_tags(&tags, faction, rest_x, "pawns-rest"))}
-    }
-    .into_any()
+    };
+    (units.into_any(), labels.into_any())
 }
 
 /// Biome colour pulled towards grey, so the spheres read as worlds rather than markers.
@@ -548,6 +598,11 @@ pub struct Body {
 }
 
 pub fn planet_body(b: &Body) -> AnyView {
+    let (holos, tags) = if b.dss.is_some() || !b.pawns.is_empty() {
+        pawns(&b.pawns, b.faction, b.dss.as_ref(), b.seed, b.enemy)
+    } else {
+        (().into_any(), ().into_any())
+    };
     // Razed worlds keep a planet's size and shape; only their colour and glow turn to embers.
     let scorched = b.anomaly == Some(Anomaly::Scorched);
     let shape = match b.anomaly {
@@ -597,6 +652,7 @@ pub fn planet_body(b: &Body) -> AnyView {
         {called.map(|(glow, color)| beacon(glow, color))}
         <g class="pbody">
             <circle r="10" class="hit"></circle>
+            {holos}
             {shape}
             {b.defense
                 .then(|| {
@@ -605,7 +661,7 @@ pub fn planet_body(b: &Body) -> AnyView {
             {(b.style == MapPlanets::Spheres && b.active).then(|| active_tag(b.defense, b.mo, &b.color))}
             {b.pinned.then(pin_mark)}
             {(!b.pois.is_empty()).then(|| poi_marks(&b.pois, b.faction))}
-            {(b.dss.is_some() || !b.pawns.is_empty()).then(|| pawns(&b.pawns, b.faction, b.dss.as_ref(), b.seed, b.enemy))}
+            {tags}
         </g>
     }
     .into_any()

@@ -217,7 +217,7 @@ const ENTRIES: &[Entry] = &[
             )
         },
         name: "Holograms",
-        text: "SEAF forces, enemy units and the Space Station stand beside a planet once zoomed in.",
+        text: "SEAF forces, enemy units and the Space Station stand round a planet once zoomed in, each on a projector bearing its emblem, and go round it as the map turns.",
     },
 ];
 
