@@ -23,6 +23,10 @@ pub enum PoiKind {
     City,
     Enemy,
     Anomaly,
+    /// The Martian Armory, in its own logo.
+    Armory,
+    /// A faction's homeworld, in its emblem.
+    Homeworld,
     Generic,
 }
 
@@ -37,6 +41,8 @@ impl PoiKind {
             PoiKind::City => "city",
             PoiKind::Enemy => "enemy",
             PoiKind::Anomaly => "anomaly",
+            PoiKind::Armory => "armory",
+            PoiKind::Homeworld => "homeworld",
             PoiKind::Generic => "generic",
         }
     }
@@ -49,6 +55,8 @@ fn re(pattern: &str) -> Regex {
 static KINDS: LazyLock<Vec<(Regex, PoiKind)>> = LazyLock::new(|| {
     vec![
         (re("black hole|fractured"), PoiKind::Anomaly),
+        (re("homeworld|humanity's home"), PoiKind::Homeworld),
+        (re("martian armou?ry"), PoiKind::Armory),
         (re("terminid control system"), PoiKind::Tcs),
         (re("factory hub"), PoiKind::Factory),
         (re("jet brigade factor|communications array"), PoiKind::Enemy),
@@ -63,10 +71,11 @@ pub fn poi_kind(name: &str) -> PoiKind {
     KINDS.iter().find(|(re, _)| re.is_match(name)).map_or(PoiKind::Generic, |(_, k)| *k)
 }
 
-/// Who built a point of interest: an enemy's works wear its colour, everything else is Super Earth's.
+/// Who built a point of interest: an enemy's works wear its colour, everything else is Super Earth's. A
+/// homeworld is its holder's.
 pub fn poi_origin(kind: PoiKind, enemy: Option<Faction>) -> Faction {
     match (kind, enemy) {
-        (PoiKind::Enemy, Some(e)) if e != Faction::Humans => e,
+        (PoiKind::Enemy | PoiKind::Homeworld, Some(e)) if e != Faction::Humans => e,
         (PoiKind::Enemy, _) => Faction::Automaton,
         _ => Faction::Humans,
     }
@@ -171,28 +180,77 @@ fn glyph(kind: PoiKind) -> String {
         PoiKind::City => "M2.6 21.5 3.6 11l2.6-1.2v11.7ZM7.4 21.5V8l3-1.6v15.1ZM11.4 21.5V5.6l1.2-.4 1.2.4v15.9ZM14.8 21.5V6.4l3 1.6v13.5ZM19 21.5V9.8l2.6 1.2 1 10.5Z".into(),
         // A ring struck through, for black holes and broken worlds.
         PoiKind::Anomaly => band(6.0, 7.8, 0.0, 359.9) + "M2.5 11h19v2h-19Z",
-        // A plain marker for points the map has no logo for.
-        PoiKind::Generic | PoiKind::Enemy => band(5.2, 7.4, 0.0, 359.9) + &dot(12.0, 12.0, 2.4),
+        // A plain marker for points the map has no logo for; the armory and homeworlds draw their own art.
+        PoiKind::Generic | PoiKind::Enemy | PoiKind::Armory | PoiKind::Homeworld => {
+            band(5.2, 7.4, 0.0, 359.9) + &dot(12.0, 12.0, 2.4)
+        }
     }
 }
 
+// The Martian Armory's logo (gww/logos/martian-armory.svg) on its 120 x 146 grid: three pairs of wings, and
+// the hexes and spine they're cut around. Keep in sync with that file.
+const ARMORY_WINGS: &str = "M6 4L44 40.1V70.1L13 40.6L6 27.0Z M114 4L76 40.1V70.1L107 40.6L114 27.0Z M6 39L44 75.1V105.1L13 75.7L6 62.0Z M114 39L76 75.1V105.1L107 75.7L114 62.0Z M6 74L44 110.1V140.1L13 110.7L6 97.0Z M114 74L76 110.1V140.1L107 110.7L114 97.0Z";
+const ARMORY_SPINE: &str = "M37.0 55.1L43.0 46.1H77.0L83.0 55.1L77.0 64.1H43.0Z M37.0 90.1L43.0 81.1H77.0L83.0 90.1L77.0 99.1H43.0Z M37.0 125.1L43.0 116.1H77.0L83.0 125.1L77.0 134.1H43.0Z M56.5 55.1H63.5V90.1H56.5Z M56.5 90.1H63.5V125.1H56.5Z M56.5 38.1H63.5V55.1H56.5Z M56.5 125.1H63.5V138.1L60 144.1L56.5 138.1Z";
+
+fn armory_logo(size: f64) -> AnyView {
+    let k = size / 146.0;
+    let transform = format!("translate({},{}) scale({})", num(-60.0 * k), num(-75.0 * k), num(k));
+    // --u: the logo's grid is 146 units to the glyphs' 24, so its strokes are widened to match.
+    view! {
+        <g transform=transform style="--u: 6.08;">
+            <defs>
+                <mask id="poi-armory-cut" maskUnits="userSpaceOnUse" x="0" y="-20" width="120" height="200">
+                    <rect y="-20" width="120" height="200" fill="#fff"></rect>
+                    <path d=ARMORY_SPINE fill="#000" stroke="#000" stroke-width="6" stroke-linejoin="round"></path>
+                </mask>
+            </defs>
+            <path class="poi-halo" d=ARMORY_WINGS></path>
+            <path class="poi-shape" d=ARMORY_WINGS mask="url(#poi-armory-cut)"></path>
+            <path class="poi-shape" d=ARMORY_SPINE></path>
+        </g>
+    }
+    .into_any()
+}
+
+/// A homeworld: its holder's emblem in a ring with four marks.
+fn homeworld_mark(faction: Faction, size: f64) -> AnyView {
+    let k = size / 24.0;
+    let art = if has_emblem(faction.as_str()) { faction.as_str() } else { "Humans" };
+    let ticks: String = [0.0, 90.0, 180.0, 270.0].iter().map(|a| band(9.4, 11.8, a - 9.0, a + 9.0)).collect();
+    view! {
+        <g transform=format!("scale({})", num(k))>
+            <path class="poi-halo" d=band(8.4, 9.6, 0.0, 359.9) transform="translate(-12,-12)"></path>
+            <path class="poi-shape" d=format!("{}{ticks}", band(8.4, 9.6, 0.0, 359.9)) transform="translate(-12,-12)"></path>
+        </g>
+        <EmblemArt art=art size=size * 0.56 color="currentColor" class="poi-shape" />
+    }
+    .into_any()
+}
+
 /// A point of interest's logo, centred on (0, 0) and `size` map units across, in its builder's colour
-/// (`faction`). Drawn logos get a soft halo from a wide translucent stroke rather than a blur filter.
+/// (`faction`). Drawn logos get a soft halo from a wide translucent stroke rather than a blur filter. A
+/// `ruined` one, on a razed world, flickers red like a broken sign.
 #[component]
-pub fn PoiGlyph(kind: PoiKind, faction: Faction, size: f64) -> impl IntoView {
+pub fn PoiGlyph(kind: PoiKind, faction: Faction, size: f64, #[prop(optional)] ruined: bool) -> impl IntoView {
+    let ruin = if ruined { " ruined" } else { "" };
     if let Some(mark) = mark_of(kind) {
         // The marks carry their own outline and glow, so they're drawn a little larger.
         let s = size * 1.25;
         return view! {
-            <image class=format!("poi-mark {}", kind.as_str()) href=mark x=num(-s / 2.0) y=num(-s / 2.0) width=num(s) height=num(s) />
+            <image class=format!("poi-mark {}{ruin}", kind.as_str()) href=mark x=num(-s / 2.0) y=num(-s / 2.0) width=num(s) height=num(s) />
         }
         .into_any();
     }
-    let style = format!("color: {};", faction_color(Some(faction)));
+    let style =
+        if ruined { "color: var(--bad);".to_string() } else { format!("color: {};", faction_color(Some(faction))) };
+    if kind == PoiKind::Armory || kind == PoiKind::Homeworld {
+        let art = if kind == PoiKind::Armory { armory_logo(size) } else { homeworld_mark(faction, size) };
+        return view! { <g class=format!("poi-glyph {}{ruin}", kind.as_str()) style=style>{art}</g> }.into_any();
+    }
     if kind == PoiKind::Enemy {
         let art = if has_emblem(faction.as_str()) { faction.as_str() } else { "Automaton" };
         return view! {
-            <g class=format!("poi-glyph {}", kind.as_str()) style=style>
+            <g class=format!("poi-glyph {}{ruin}", kind.as_str()) style=style>
                 <EmblemArt art=art size=size color="currentColor" class="poi-halo" />
                 <EmblemArt art=art size=size color="currentColor" class="poi-shape" />
             </g>
@@ -202,7 +260,7 @@ pub fn PoiGlyph(kind: PoiKind, faction: Faction, size: f64) -> impl IntoView {
     let d = glyph(kind);
     let transform = format!("translate({},{}) scale({})", num(-size / 2.0), num(-size / 2.0), num(size / 24.0));
     view! {
-        <g class=format!("poi-glyph {}", kind.as_str()) style=style>
+        <g class=format!("poi-glyph {}{ruin}", kind.as_str()) style=style>
             <path class="poi-halo" d=d.clone() transform=transform.clone() />
             <path class="poi-shape" d=d transform=transform />
         </g>

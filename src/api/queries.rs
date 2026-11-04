@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, OnceLock};
 use warroom_core::api::{Assignment, Campaign, Dispatch, Planet, War, from_value};
-use warroom_core::effects::{GLOOM_IDS, PlanetEffect, TCS_ID, planet_effects};
+use warroom_core::effects::{GLOOM_IDS, PlanetEffect, TCS_ID, homeworld_poi, planet_effects};
 use warroom_core::galaxy::{PolarSectors, SectorPlanet, build_polar_sectors, landmark, landmark_planet};
 use warroom_core::planets::{fix_static, is_off_map};
 use warroom_core::snapshot::{
@@ -195,17 +195,25 @@ pub fn init() {
                 }
             }
         }
+        let mut planets: HashMap<i64, Vec<PlanetEffect>> = ids
+            .into_iter()
+            .map(|(index, list)| {
+                let mut effects = planet_effects(&list);
+                for e in &mut effects {
+                    e.until = until.get(&index).and_then(|ends| ends.get(&e.id).copied());
+                }
+                (index, effects)
+            })
+            .collect();
+        if let Some(statics) = statics_by_index.get() {
+            for (index, p) in statics.iter() {
+                if let Some(home) = homeworld_poi(&p.name) {
+                    planets.entry(*index).or_default().insert(0, home);
+                }
+            }
+        }
         Some(WarEffects {
-            planets: ids
-                .into_iter()
-                .map(|(index, list)| {
-                    let mut effects = planet_effects(&list);
-                    for e in &mut effects {
-                        e.until = until.get(&index).and_then(|ends| ends.get(&e.id).copied());
-                    }
-                    (index, effects)
-                })
-                .collect(),
+            planets,
             gloom: live
                 .planets
                 .iter()

@@ -80,12 +80,12 @@ fn card_look(p: &Planet, effects: &[PlanetEffect]) -> String {
     s
 }
 
-fn poi_row(name: String, description: String, kind: PoiKind, faction: Faction) -> impl IntoView {
+fn poi_row(name: String, description: String, kind: PoiKind, faction: Faction, ruined: bool) -> impl IntoView {
     view! {
         <div class="hc-poi">
             <div class="hc-poi-head caps">
                 <svg viewBox="-12 -12 24 24" width="16" height="16" aria-hidden="true">
-                    <PoiGlyph kind=kind faction=faction size=24.0 />
+                    <PoiGlyph kind=kind faction=faction size=24.0 ruined=ruined />
                 </svg>
                 {name}
             </div>
@@ -209,10 +209,11 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
                 (!d.is_empty()).then(|| view! { <p class="hc-desc">{d}</p> }).into_any()
             } else {
                 let enemy = enemy.get();
+                let ruined = anomaly.get() == Some(Anomaly::Scorched) || p.with(|p| landmark(p.index).is_some());
                 list.into_iter()
                     .map(|(name, description)| {
                         let kind = poi_kind(&name);
-                        poi_row(name, description, kind, poi_origin(kind, enemy))
+                        poi_row(name, description, kind, poi_origin(kind, enemy), ruined)
                     })
                     .collect_view()
                     .into_any()
@@ -348,7 +349,7 @@ pub fn hover_card(h: &Hover, active: Signal<bool>, effects: Signal<Vec<PlanetEff
                             {l.pois
                                 .iter()
                                 .map(|poi| {
-                                    poi_row(poi.name.into(), poi.description.into(), poi_kind(poi.name), Faction::Humans)
+                                    poi_row(poi.name.into(), poi.description.into(), poi_kind(poi.name), Faction::Humans, true)
                                 })
                                 .collect_view()}
                         }

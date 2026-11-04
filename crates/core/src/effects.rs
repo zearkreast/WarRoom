@@ -192,3 +192,20 @@ pub fn planet_effects(ids: &[i64]) -> Vec<PlanetEffect> {
 pub fn has_pawn(e: &PlanetEffect) -> bool {
     matches!(e.kind, EffectKind::Subfaction | EffectKind::Threat | EffectKind::Seaf | EffectKind::Poi)
 }
+
+/// The homeworlds marked as points of interest, by planet name. Their ids are below zero, clear of the game's.
+pub fn homeworld_poi(name: &str) -> Option<PlanetEffect> {
+    let (id, title, description) = match name.to_uppercase().as_str() {
+        "SUPER EARTH" => (-10, "HUMANITY'S HOME", "Humanity's homeworld and the capital of Super Earth."),
+        "CYBERSTAN" => (-11, "AUTOMATON HOMEWORLD", "The Automatons' homeworld."),
+        _ => return None,
+    };
+    Some(PlanetEffect {
+        id,
+        kind: EffectKind::Poi,
+        group: None,
+        name: title.into(),
+        description: description.into(),
+        until: None,
+    })
+}

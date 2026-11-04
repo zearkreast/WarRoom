@@ -152,3 +152,11 @@ fn draws_tcs_clouds_only_where_super_earth_holds_the_towers_and_no_attack_is_und
     assert!(!standing.contains(&attacked));
     assert_eq!(standing.len(), tcs.len() - 2);
 }
+
+#[test]
+fn marks_the_two_homeworlds() {
+    use warroom_core::effects::homeworld_poi;
+    assert_eq!(homeworld_poi("Super Earth").map(|e| e.name), Some("HUMANITY'S HOME".into()));
+    assert_eq!(homeworld_poi("CYBERSTAN").map(|e| e.name), Some("AUTOMATON HOMEWORLD".into()));
+    assert!(homeworld_poi("MARS").is_none());
+}

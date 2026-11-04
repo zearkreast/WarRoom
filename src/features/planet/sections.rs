@@ -32,7 +32,7 @@ use warroom_core::defense::{divers_short, event_span, needed_rate};
 use warroom_core::effects::EffectKind;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, fmt_time_left, js_round, js_sum, to_fixed};
-use warroom_core::galaxy::Landmark;
+use warroom_core::galaxy::{Anomaly, Landmark, anomaly_of};
 use warroom_core::progress::{liberation_divers_short, projected_at, tracked_percent};
 use warroom_core::time::parse_ms;
 use warroom_core::war_history::{HistoryInput, LogEntry, build_war_history, defense_events, fmt_long_duration};
@@ -1205,7 +1205,7 @@ pub fn LandmarkSection(l: &'static Landmark) -> impl IntoView {
                             <div class="pd-env-row">
                                 <span class="pd-env-icon poi">
                                     <svg viewBox="-12 -12 24 24" width="18" height="18" aria-hidden="true">
-                                        <PoiGlyph kind=kind faction=poi_origin(kind, None) size=24.0 />
+                                        <PoiGlyph kind=kind faction=poi_origin(kind, None) size=24.0 ruined=true />
                                     </svg>
                                 </span>
                                 <div>
@@ -1246,6 +1246,7 @@ pub fn PoisSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
         }
         let enemy = enemy.get();
         let has_pois = !list.is_empty();
+        let ruined = p.with(|p| anomaly_of(&p.name, &[])) == Some(Anomaly::Scorched);
         Some(view! {
             <Panel title="Points of interest" icon=icons::LANDMARK right=view! { <span class="num">{list.len() + n_regions}</span> }.into_any()>
                 {has_pois.then(|| view! {
@@ -1258,7 +1259,7 @@ pub fn PoisSection(#[prop(into)] p: Signal<Planet>) -> impl IntoView {
                                     <div class="pd-env-row">
                                         <span class="pd-env-icon poi">
                                             <svg viewBox="-12 -12 24 24" width="18" height="18" aria-hidden="true">
-                                                <PoiGlyph kind=kind faction=poi_origin(kind, enemy) size=24.0 />
+                                                <PoiGlyph kind=kind faction=poi_origin(kind, enemy) size=24.0 ruined=ruined />
                                             </svg>
                                         </span>
                                         <div>
