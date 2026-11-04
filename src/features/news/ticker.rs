@@ -7,10 +7,8 @@ use crate::ui::icons::{self, Icon};
 use leptos::html;
 use leptos::prelude::*;
 use send_wrapper::SendWrapper;
-use std::cell::{Cell, RefCell};
-use std::rc::Rc;
 use warroom_core::campaign_news::campaign_events;
-use warroom_core::format::{fmt_age_short, to_fixed};
+use warroom_core::format::fmt_age_short;
 use warroom_core::ticker::{TickerItem, TickerKind, ticker_items};
 use wasm_bindgen::prelude::*;
 
@@ -76,7 +74,6 @@ pub fn NewsTicker() -> impl IntoView {
     });
     let reduced = js::prefers_reduced_motion();
     let track = NodeRef::<html::Div>::new();
-    let held = Rc::new(Cell::new(false));
 
     if reduced {
         let (step, set_step) = signal(0usize);
@@ -99,49 +96,66 @@ pub fn NewsTicker() -> impl IntoView {
         .into_any();
     }
 
-    // Scrolled by offset rather than a CSS animation: the strip's width changes every minute as ages
-    // tick over, and re-timing an animation mid-run made it jump.
-    let alive = Rc::new(Cell::new(true));
-    {
-        let held = held.clone();
-        let alive = alive.clone();
-        let offset = Cell::new(0.0);
-        let last = Cell::new(js::window().performance().map_or(0.0, |p| p.now()));
-        let tick: Rc<RefCell<Option<Closure<dyn Fn(f64)>>>> = Rc::new(RefCell::new(None));
-        let again = tick.clone();
-        *tick.borrow_mut() = Some(Closure::new(move |t: f64| {
-            if !alive.get() {
-                again.borrow_mut().take();
-                return;
-            }
-            let dt = ((t - last.get()) / 1000.0).min(0.1);
-            last.set(t);
-            if let Some(el) = track.get_untracked()
-                && !held.get()
-                && !js::document().hidden()
-            {
-                let lp = el.scroll_width() as f64 / 2.0;
-                offset.set(if lp > 0.0 { (offset.get() + PX_PER_S * dt) % lp } else { 0.0 });
-                let _ = web_sys::HtmlElement::style(&el)
-                    .set_property("transform", &format!("translateX({}px)", to_fixed(-offset.get(), 1)));
-            }
-            if let Some(f) = again.borrow().as_ref() {
-                let _ = js::window().request_animation_frame(f.as_ref().unchecked_ref());
-            }
-        }));
-        if let Some(f) = tick.borrow().as_ref() {
-            let _ = js::window().request_animation_frame(f.as_ref().unchecked_ref());
+    // Scrolled by a transform animation the compositor runs, so the strip costs the page nothing a frame. Its
+    // width changes every minute as ages tick over; the animation is then re-timed to hold its place, since
+    // restarting it, or leaving its old timing, made it jump.
+    let anim: StoredValue<Option<SendWrapper<JsValue>>, LocalStorage> = StoredValue::new_local(None);
+    let fit = move || {
+        let Some(el) = track.get_untracked() else { return };
+        let half = el.scroll_width() as f64 / 2.0;
+        if half <= 0.0 {
+            return;
         }
-    }
-    let alive = SendWrapper::new(alive);
-    on_cleanup(move || alive.set(false));
+        let duration = half / PX_PER_S * 1000.0;
+        let current = anim.with_value(|a| a.as_ref().map(|a| (**a).clone()));
+        match current {
+            Some(a) => {
+                let effect = js::get(&a, "effect");
+                let was = js::get(&js::call(&effect, "getTiming", &[]).unwrap_or_default(), "duration").as_f64();
+                let at = js::get(&a, "currentTime").as_f64().unwrap_or(0.0);
+                let _ = js::call(&effect, "updateTiming", &[js::obj(&[("duration", duration.into())])]);
+                // The same distance into the new, longer or shorter loop.
+                if let Some(was) = was.filter(|w| *w > 0.0) {
+                    let offset = (at % was) / was * (was / 1000.0 * PX_PER_S);
+                    let _ = js_sys::Reflect::set(&a, &"currentTime".into(), &(offset / PX_PER_S * 1000.0).into());
+                }
+            }
+            None => {
+                let frames = js_sys::Array::of2(
+                    &js::obj(&[("transform", "translateX(0)".into())]),
+                    &js::obj(&[("transform", "translateX(-50%)".into())]),
+                );
+                let options = js::obj(&[
+                    ("duration", duration.into()),
+                    ("iterations", f64::INFINITY.into()),
+                    ("easing", "linear".into()),
+                ]);
+                if let Ok(a) = js::call(&el.into(), "animate", &[frames.into(), options]) {
+                    anim.set_value(Some(SendWrapper::new(a)));
+                }
+            }
+        }
+    };
+    let hold = move |on: bool| {
+        anim.with_value(|a| {
+            if let Some(a) = a {
+                let _ = js::call(a, if on { "pause" } else { "play" }, &[]);
+            }
+        })
+    };
+    // Measured a frame after the strip redraws, once its new width is laid out.
+    Effect::new(move |_| {
+        items.track();
+        now.track();
+        let f = Closure::once_into_js(fit);
+        let _ = js::window().request_animation_frame(f.unchecked_ref());
+    });
+    on_cleanup(move || {
+        if let Some(a) = anim.try_update_value(Option::take).flatten() {
+            let _ = js::call(&a, "cancel", &[]);
+        }
+    });
 
-    let (h1, h2, h3, h4) = (
-        SendWrapper::new(held.clone()),
-        SendWrapper::new(held.clone()),
-        SendWrapper::new(held.clone()),
-        SendWrapper::new(held),
-    );
     let contents = move || {
         let list = items.get();
         let t = now.get();
@@ -154,10 +168,10 @@ pub fn NewsTicker() -> impl IntoView {
         <div
             class="ticker"
             aria-label=move || (!items.with(Vec::is_empty)).then_some("Latest war news")
-            on:pointerenter=move |_| h1.set(true)
-            on:pointerleave=move |_| h2.set(false)
-            on:focusin=move |_| h3.set(true)
-            on:focusout=move |_| h4.set(false)
+            on:pointerenter=move |_| hold(true)
+            on:pointerleave=move |_| hold(false)
+            on:focusin=move |_| hold(true)
+            on:focusout=move |_| hold(false)
         >
             <div node_ref=track class="ticker-track caps">
                 {contents}
