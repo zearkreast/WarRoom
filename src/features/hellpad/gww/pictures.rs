@@ -95,6 +95,7 @@ pub fn target_icon(target: &str, size: f64) -> AnyView {
             view! { <Icon icon=icons::CALENDAR_DAYS size=size stroke_width=1.5 /> }.into_any()
         }
         "site" if id == "log" => view! { <Icon icon=icons::HISTORY size=size stroke_width=1.5 /> }.into_any(),
+        "site" if id == "news" => img(logo_url("strohmann-news")),
         "site" => img(icon_url(if id == "citizens" { CITIZENS.icon } else { GOV.icon })),
         "dir" => dir_icon(id)
             .map_or_else(|| ().into_any(), |i| view! { <Icon icon=i size=size stroke_width=1.5 /> }.into_any()),

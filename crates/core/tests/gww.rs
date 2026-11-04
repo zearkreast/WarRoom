@@ -6,7 +6,7 @@ use warroom_core::data::manuals::{CHAPTERS, MANUALS, TIPS};
 use warroom_core::data::sites::{ADS, CITIZENS, COMPANIES, GOV, HOLIDAYS, HOLIDAYS_SITE, MINISTRIES};
 use warroom_core::data::stations::{PAST_STATIONS, STAR_OF_PEACE};
 use warroom_core::data::{AdBy, Section};
-use warroom_core::gww_nav::{addresses, app_page_title, page_of, suggested_addresses, target_at};
+use warroom_core::gww_nav::{addresses, app_page_title, course_next, page_of, suggested_addresses, target_at};
 use warroom_core::gww_text::{Segment, links_in, next_yearly, parse_rich, plain_text};
 
 fn all_sections() -> Vec<&'static Section> {
@@ -182,7 +182,7 @@ fn opens_a_typed_address_with_or_without_its_scheme_and_every_address_opens_a_pa
     assert_eq!(target_at("  GOV/Truth/ ").as_deref(), Some("ministry:truth"));
     assert_eq!(target_at("se://gww").as_deref(), Some("home"));
     assert_eq!(target_at("se://nowhere"), None);
-    assert_eq!(target_at("strohmann.news").as_deref(), Some("app:news"));
+    assert_eq!(target_at("strohmann.news").as_deref(), Some("site:news"));
     assert_eq!(target_at("se://gov/holidays/liberty-day").as_deref(), Some("holiday:liberty-day"));
     assert!(
         !suggested_addresses().iter().any(|a| a.starts_with("se://gov/citizens") || a.starts_with("se://gov/holidays"))
@@ -229,4 +229,18 @@ fn counts_down_to_the_next_yearly_day() {
     assert_eq!(next_yearly(&days, 2026, 10, 25), Some((0, 1)));
     assert_eq!(next_yearly(&days, 2026, 10, 26), Some((0, 0)));
     assert_eq!(next_yearly(&days, 2026, 10, 27), Some((1, 158)));
+}
+
+#[test]
+fn reads_on_through_the_course_skipping_what_is_read() {
+    let ids: Vec<&str> = MANUALS.iter().map(|m| m.id).collect();
+    let read = |list: &[&str]| list.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+    assert_eq!(course_next(ids[0], &[]), Some(ids[1]));
+    assert_eq!(course_next(ids[0], &read(&[ids[1]])), Some(ids[2]));
+    let last = *ids.last().unwrap();
+    assert_eq!(course_next(last, &read(&[ids[0]])), Some(ids[1]));
+    let all = read(&ids);
+    assert_eq!(course_next(ids[0], &all), Some(ids[1]));
+    assert_eq!(course_next(last, &all), None);
+    assert_eq!(course_next("nowhere", &[]), None);
 }

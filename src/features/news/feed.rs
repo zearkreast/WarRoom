@@ -83,7 +83,7 @@ pub fn dispatch_item(d: &Dispatch, now: Signal<f64>, unread: bool, featured: boo
     )
 }
 
-fn entry_label(x: &ThreadEntry) -> String {
+pub(crate) fn entry_label(x: &ThreadEntry) -> String {
     let Some(ev) = &x.event else {
         return x.dispatch.as_ref().map(|d| dispatch_title(&d.message)).unwrap_or_default();
     };
@@ -98,7 +98,7 @@ fn entry_label(x: &ThreadEntry) -> String {
     }
 }
 
-fn entry_body(x: &ThreadEntry) -> AnyView {
+pub(crate) fn entry_body(x: &ThreadEntry) -> AnyView {
     if let Some(d) = &x.dispatch {
         return if body_echoes_title(&d.message) {
             ().into_any()

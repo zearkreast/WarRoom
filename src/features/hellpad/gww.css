@@ -1209,6 +1209,25 @@
     flex: none;
     color: var(--site);
   }
+  .gww-related-link.next {
+    border-color: color-mix(in srgb, var(--cta) var(--strong), var(--line-strong));
+    background: color-mix(in srgb, var(--cta) var(--wash), var(--surface-1));
+  }
+  .gww-related-link.next .caps {
+    color: var(--cta);
+  }
+  .gww-related-link.read b {
+    color: var(--text-dim);
+  }
+  .gww-related-read {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    color: var(--ink-on-cta);
+    background: var(--good);
+  }
   .gww-related-icon {
     flex: none;
     display: grid;
@@ -2073,6 +2092,312 @@
     .gww-days-sort {
       white-space: normal;
       text-align: left;
+    }
+  }
+
+  /* ---------- Strohmann News ---------- */
+  .gww-page.sn {
+    max-width: 1080px;
+  }
+  .sn-dateline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2) var(--s-5);
+    padding: var(--s-3) 0;
+    border-top: 3px double color-mix(in srgb, var(--site) 55%, var(--line));
+    border-bottom: 1px solid var(--line);
+    font-size: var(--fs-label);
+    letter-spacing: var(--track-caps);
+    color: var(--label);
+  }
+  .sn-live {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    color: var(--site);
+    font-weight: 700;
+  }
+  .sn-live::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .sn-desks {
+    display: flex;
+    gap: var(--s-1);
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-top: calc(var(--s-5) * -1);
+    border-bottom: 1px solid var(--line);
+  }
+  .sn-desk {
+    flex: none;
+    padding: var(--s-3) var(--s-4);
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--label);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: var(--track-caps);
+    cursor: pointer;
+    transition:
+      color var(--t-state),
+      border-color var(--t-state);
+  }
+  .sn-desk:hover,
+  .sn-desk.on {
+    color: var(--text-hi);
+  }
+  .sn-desk.on {
+    border-bottom-color: var(--site);
+  }
+  /* A picture reads as a broadcast still: the planet's landscape under faint scanlines, its name in the corner. */
+  .sn-pic {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    background:
+      var(--art, none) center / cover no-repeat,
+      var(--surface-2);
+    border: 1px solid var(--line);
+  }
+  .sn-pic::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, transparent 45%, rgba(0, 0, 0, 0.72)),
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.14) 0 1px, transparent 1px 3px);
+  }
+  .sn-pic figcaption {
+    position: absolute;
+    left: var(--s-4);
+    bottom: var(--s-3);
+    z-index: 1;
+    padding-left: var(--s-2);
+    border-left: 3px solid var(--k);
+    font-size: var(--fs-micro);
+    font-weight: 700;
+    letter-spacing: var(--track-caps);
+    color: var(--text-hi);
+  }
+  .sn-pic.plain {
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--k) 20%, var(--surface-2)), var(--surface-1) 75%);
+  }
+  .sn-pic.plain img {
+    width: 34%;
+    max-width: 150px;
+    opacity: 0.5;
+  }
+  .sn-pic.big {
+    aspect-ratio: 16 / 9;
+  }
+  .sn-pic.mid {
+    aspect-ratio: 2 / 1;
+  }
+  .sn-pic.thumb {
+    flex: none;
+    width: 104px;
+    aspect-ratio: 4 / 3;
+  }
+  .sn-pic.thumb figcaption {
+    display: none;
+  }
+  .sn-pic.thumb.plain img {
+    width: 56%;
+  }
+  .sn-byline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-1) var(--s-4);
+    margin: 0;
+    font-size: var(--fs-micro);
+    letter-spacing: var(--track-caps);
+    color: var(--label);
+  }
+  .sn-kicker {
+    color: var(--site);
+    font-weight: 700;
+  }
+  .sn-pic.plain .emblem {
+    width: 32%;
+    max-width: 120px;
+    height: auto;
+    opacity: 0.55;
+  }
+  .sn-pic.thumb.plain .emblem {
+    width: 46%;
+  }
+  .gww-page .sn-headline::before {
+    content: none;
+  }
+  .gww-page .sn-headline {
+    display: block;
+    margin: var(--s-2) 0 var(--s-3);
+    font-family: var(--font-head);
+    font-stretch: 75%;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    color: var(--text-hi);
+  }
+  .sn-text,
+  .sn .ni-body {
+    margin: 0 0 var(--s-3);
+    line-height: 1.55;
+    color: var(--text);
+  }
+  .sn-entry {
+    margin: 0 0 var(--s-2);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: var(--track-caps);
+    color: var(--site);
+  }
+  .sn-lead {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: var(--s-6);
+    padding-bottom: var(--s-6);
+    border-bottom: 1px solid var(--line);
+  }
+  .gww-page .sn-lead .sn-headline {
+    font-size: clamp(1.75rem, 3.4vw, 2.6rem);
+  }
+  .sn-seconds {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s-6);
+    padding-bottom: var(--s-6);
+    border-bottom: 1px solid var(--line);
+  }
+  .sn-second {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .gww-page .sn-second .sn-headline {
+    margin: 0;
+    font-size: 1.3rem;
+  }
+  .sn-second .sn-text {
+    color: var(--text-dim);
+  }
+  .sn-desk-title {
+    margin: 0 0 var(--s-2);
+    font-size: var(--fs-label);
+    letter-spacing: var(--track-caps);
+    color: var(--label);
+  }
+  .sn-briefs ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .sn-brief summary {
+    display: flex;
+    gap: var(--s-5);
+    padding: var(--s-4) 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    list-style: none;
+  }
+  .sn-brief summary::-webkit-details-marker {
+    display: none;
+  }
+  .sn-brief summary:hover .sn-brief-head {
+    color: var(--site);
+  }
+  .sn-brief-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+    min-width: 0;
+  }
+  .sn-brief-head {
+    font-size: var(--fs-body);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-hi);
+    transition: color var(--t-state);
+  }
+  .sn-brief-cut {
+    color: var(--text-dim);
+    font-size: var(--fs-body-s);
+  }
+  .sn-brief[open] .sn-brief-cut {
+    display: none;
+  }
+  .sn-brief-body {
+    padding: var(--s-4) 0 var(--s-5) calc(104px + var(--s-5));
+    border-bottom: 1px solid var(--line);
+    animation: sn-in 320ms var(--ease);
+  }
+  /* A story eases in as its desk opens. */
+  .sn-lead,
+  .sn-second,
+  .sn-briefs li {
+    animation: sn-in 480ms var(--ease) backwards;
+  }
+  .sn-second {
+    animation-delay: 80ms;
+  }
+  .sn-second + .sn-second {
+    animation-delay: 140ms;
+  }
+  .sn-briefs li {
+    animation-delay: 200ms;
+  }
+  @keyframes sn-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  .sn-more {
+    display: flex;
+  }
+  .sn-archive {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    padding: var(--s-4) var(--s-5);
+    background: var(--surface-1);
+    border: 1px solid color-mix(in srgb, var(--site) 35%, var(--line));
+    color: var(--text-hi);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color var(--t-state);
+  }
+  .sn-archive:hover {
+    border-color: var(--site);
+  }
+  .sn-archive > span {
+    display: flex;
+    flex-direction: column;
+  }
+  .sn-archive .caps {
+    font-size: var(--fs-micro);
+    letter-spacing: var(--track-caps);
+    color: var(--label);
+  }
+  @media (max-width: 760px) {
+    .sn-lead,
+    .sn-seconds {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .sn-pic.thumb {
+      width: 76px;
+    }
+    .sn-brief-body {
+      padding-left: 0;
     }
   }
 }
