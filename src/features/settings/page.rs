@@ -253,7 +253,7 @@ pub fn SettingsPage() -> impl IntoView {
                     </Row>
                     <Row
                         title="Render quality"
-                        text="Minimal keeps the look but stops the pulsing markers and draws fewer, softer stars. Maximum draws the most stars at full sharpness."
+                        text="Minimal keeps the look but stops the pulsing markers, draws fewer, softer stars and keeps the holograms' projectors at one angle however the map tilts. Maximum draws the most stars at full sharpness."
                     >
                         <Stepper
                             label="Render quality"

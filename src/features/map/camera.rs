@@ -10,7 +10,7 @@ use std::sync::LazyLock;
 use warroom_core::format::to_fixed;
 use wasm_bindgen::JsCast;
 
-const FIXED: [(&str, &str); 19] = [
+const FIXED: [(&str, &str); 22] = [
     ("upright", ".galaxy .upright"),
     ("body", ".galaxy .pbody"),
     ("label", ".galaxy .planet-label"),
@@ -22,6 +22,9 @@ const FIXED: [(&str, &str); 19] = [
     ("holoFloor", ".galaxy .holo-floor"),
     ("holoBeam", ".galaxy .holo-beam, .galaxy .holo-edge"),
     ("holoLift", ".galaxy .holo-lift"),
+    ("holoFloorStill", ".q-min .galaxy .holo-floor"),
+    ("holoBeamStill", ".q-min .galaxy .holo-beam, .q-min .galaxy .holo-edge"),
+    ("holoLiftStill", ".q-min .galaxy .holo-lift"),
     ("beaconZone", ".galaxy .beacon-zone"),
     ("beaconMark", ".galaxy .beacon-mark"),
     ("poiBeaconMark", ".galaxy .planet.poi .beacon-mark"),
@@ -92,6 +95,14 @@ fn px(v: f64) -> String {
     format!("{}px", to_fixed(v, 4))
 }
 
+/// A hologram projector's foreshortening and its unit's lift, in hologram units, with the map tilted `tilt`
+/// radians. Seen straight down it still leans a little, as the game's war table shows it; tilted further, it
+/// flattens with the map and its unit rises off it. The unit always clears the emblem's middle.
+fn holo_view(tilt: f64) -> (f64, f64) {
+    let view = tilt.max(25f64.to_radians());
+    (view.cos(), 2.0 + 9.5 * view.sin())
+}
+
 /// Writes the counter-transforms for zoom `k`, a turn of `rot` radians and a tilt of `tilt` radians.
 pub fn write_camera(k: f64, rot: f64, tilt: f64) {
     set(
@@ -119,11 +130,13 @@ pub fn write_camera(k: f64, rot: f64, tilt: f64) {
     // Over a point of interest's logo, which sits where the name would.
     set("poiLabel", "transform", format!("translateY({})", px(-16.5 * marker - 3.0 / k)));
     set("poiSphereLabel", "transform", format!("translateY({below})"));
-    // Hologram projectors lie flat on the table, flatter as the map tilts; units float higher as it tilts away.
-    let lift = 4.0 + 6.0 * tilt.sin();
-    set("holoFloor", "transform", format!("scale(1, {})", to_fixed(0.5 * tilt.cos(), 4)));
-    set("holoBeam", "transform", format!("scale(1, {})", to_fixed(lift + 6.0, 4)));
-    set("holoLift", "transform", format!("translateY({})", px(-lift)));
+    // Hologram projectors lie on the table and turn with its tilt; at Minimal quality they keep the untilted look.
+    for (suffix, tilt) in [("", tilt), ("Still", 0.0)] {
+        let (floor, lift) = holo_view(tilt);
+        set(&format!("holoFloor{suffix}"), "transform", format!("scale(1, {})", to_fixed(floor, 4)));
+        set(&format!("holoBeam{suffix}"), "transform", format!("scale(1, {})", to_fixed(lift + 6.0, 4)));
+        set(&format!("holoLift{suffix}"), "transform", format!("translateY({})", px(-lift)));
+    }
     for n in 1..=HOLO_MAX {
         for i in 0..n {
             let (x, y, opacity) = holo_place(n, i, rot);

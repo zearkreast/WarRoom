@@ -285,9 +285,8 @@ pub fn holo_place(n: usize, i: usize, rot: f64) -> (f64, f64, f64) {
 }
 
 /// A unit as a hologram on the war table: a projector lying on the map with the unit's emblem on it, a
-/// column of light, and the unit floating on it. The projector is always seen at an angle, like the renders;
-/// tilting the map flattens it further and lifts the unit higher. camera.rs moves it round its planet as the
-/// map turns; the transform here is its place before any turn.
+/// column of light, and the unit floating on it. camera.rs tilts the projector with the map and moves it round
+/// its planet as the map turns; the transform here is its place before any turn.
 fn holo_pawn(light: &Light, n: usize, i: usize, delay: f64) -> AnyView {
     let s = HOLO_SIZE;
     let art = light.art.clone();
@@ -454,7 +453,7 @@ fn pawns(all: &[PlanetEffect], faction: Faction, dss: Option<&DssInfo>, seed: i6
         && let Some(art) = crate::features::map::pawn_art::dss_art(d.state)
     {
         let (tone, tint) = dss_light(d.state);
-        holos.push(Light { art, emblem: "dss".into(), tone, tint, badges: d.active.clone() });
+        holos.push(Light { art, emblem: "super-earth".into(), tone, tint, badges: d.active.clone() });
     }
     let mut tags: Vec<PlanetEffect> = Vec::new();
     for e in &effects {
