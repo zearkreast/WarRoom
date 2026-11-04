@@ -80,6 +80,10 @@
   .tcs-both {
     display: none;
   }
+  /* Maximum quality: where two planets' gases meet they add up like light. */
+  .tcs-gas {
+    mix-blend-mode: screen;
+  }
   @keyframes tcs-turn {
     to {
       transform: rotate(360deg);
