@@ -163,7 +163,9 @@ type GloomCache = Option<(Vec<Pt>, f64, Option<(Bx, String)>)>;
 
 thread_local! {
     static FIELD: RefCell<Option<Rc<Vec<f32>>>> = const { RefCell::new(None) };
-    static NOISE: RefCell<Option<web_sys::HtmlCanvasElement>> = const { RefCell::new(None) };
+    static NOISE: RefCell<[Option<web_sys::HtmlCanvasElement>; 2]> = const { RefCell::new([None, None]) };
+    /// Each TCS+ planet's gas at Maximum quality.
+    static TCS_GAS: RefCell<HashMap<i64, Option<[String; 2]>>> = RefCell::new(HashMap::new());
     /// So returning to the map doesn't encode the Gloom again.
     static GLOOM_IMAGE: RefCell<GloomCache> = const { RefCell::new(None) };
     static TCS_IMAGES: RefCell<Option<(f64, Option<[String; 3]>)>> = const { RefCell::new(None) };
@@ -182,7 +184,7 @@ fn clamp_u8(v: f64) -> u8 {
     if v.is_nan() { 0 } else { v.clamp(0.0, 255.0).round_ties_even() as u8 }
 }
 
-/// Tileable fractal value noise, one value per map unit, each 0 to 1; made once per session.
+/// Tileable fractal value noise, one value per map unit; made once per session. `shade` maps a value to 0 to 1.
 fn field() -> Rc<Vec<f32>> {
     if let Some(f) = FIELD.with(|f| f.borrow().clone()) {
         return f;
@@ -215,22 +217,23 @@ fn field() -> Rc<Vec<f32>> {
         amp /= 2.0;
         cell /= 2;
     }
-    for f in &mut field {
-        *f = ((*f as f64 / 1.9 - 0.2) * 1.8).clamp(0.0, 1.0) as f32;
-    }
     let field = Rc::new(field);
     FIELD.with(|f| *f.borrow_mut() = Some(field.clone()));
     field
 }
 
-/// The noise at a point in map units, interpolated and wrapping like the tile.
+fn shade(f: f32) -> f64 {
+    ((f as f64 / 1.9 - 0.2) * 1.8).clamp(0.0, 1.0)
+}
+
+/// The shaded noise at a point in map units, interpolated and wrapping like the tile.
 fn sample(field: &[f32], x: f64, y: f64) -> f64 {
     let size = NOISE_SIZE as f64;
     let (x, y) = (x.rem_euclid(size), y.rem_euclid(size));
     let (x0, y0) = (x.floor() as usize, y.floor() as usize);
     let (x1, y1) = ((x0 + 1) % NOISE_SIZE, (y0 + 1) % NOISE_SIZE);
     let (fx, fy) = (x - x.floor(), y - y.floor());
-    let v = |x: usize, y: usize| field[y * NOISE_SIZE + x] as f64;
+    let v = |x: usize, y: usize| shade(field[y * NOISE_SIZE + x]);
     let top = v(x0, y0) + (v(x1, y0) - v(x0, y0)) * fx;
     let bottom = v(x0, y1) + (v(x1, y1) - v(x0, y1)) * fx;
     top + (bottom - top) * fy
@@ -241,24 +244,61 @@ fn smoothstep(edge0: f64, edge1: f64, x: f64) -> f64 {
     t * t * (3.0 - 2.0 * t)
 }
 
-/// The noise coloured like the Gloom, as a canvas to tile; made once per session.
-fn gloom_noise() -> Option<web_sys::HtmlCanvasElement> {
-    if let Some(n) = NOISE.with(|n| n.borrow().clone()) {
+/// The clouds coloured from the same noise: the Gloom, and the TCS+ haze at Maximum quality.
+#[derive(Clone, Copy)]
+enum Tint {
+    Gloom,
+    Tcs,
+}
+
+/// The noise coloured as a cloud, as a canvas to tile; made once per session.
+fn noise(tint: Tint) -> Option<web_sys::HtmlCanvasElement> {
+    let slot = tint as usize;
+    if let Some(n) = NOISE.with(|n| n.borrow()[slot].clone()) {
         return Some(n);
     }
     let (canvas, ctx) = canvas(NOISE_SIZE as u32, NOISE_SIZE as u32)?;
     let field = field();
     let mut data = vec![0u8; field.len() * 4];
     for (i, f) in field.iter().enumerate() {
-        let v = *f as f64;
-        data[i * 4] = 232;
-        data[i * 4 + 1] = clamp_u8(170.0 + v * 50.0);
-        data[i * 4 + 2] = clamp_u8(60.0 + v * 50.0);
+        let v = shade(*f);
+        // Keep the TCS+ colours in step with --tcs in theme.css.
+        let (r, g, b) = match tint {
+            Tint::Gloom => (232.0, 170.0 + v * 50.0, 60.0 + v * 50.0),
+            Tint::Tcs => (38.0 + v * 66.0, 52.0 + v * 84.0, 214.0 + v * 41.0),
+        };
+        data[i * 4] = clamp_u8(r);
+        data[i * 4 + 1] = clamp_u8(g);
+        data[i * 4 + 2] = clamp_u8(b);
         data[i * 4 + 3] = clamp_u8(warroom_core::format::js_round(v.powf(1.3) * 240.0));
     }
     put(&ctx, &data, NOISE_SIZE as u32, NOISE_SIZE as u32)?;
-    NOISE.with(|n| *n.borrow_mut() = Some(canvas.clone()));
+    NOISE.with(|n| n.borrow_mut()[slot] = Some(canvas.clone()));
     Some(canvas)
+}
+
+/// The tiled noise cut to soft discs of `reach` around each spot, the box drawn at `density` pixels per map unit:
+/// the Gloom's way of drawing a cloud. The noise is tiled from the map origin, moved by `shift`.
+fn cut_cloud(tint: Tint, spots: &[Pt], reach: f64, bx: Bx, density: f64, shift: Pt) -> Option<String> {
+    let tex = noise(tint)?;
+    let (x0, y0, w, h) = bx;
+    let (canvas, ctx) = canvas((w * density).ceil() as u32, (h * density).ceil() as u32)?;
+    ctx.scale(density, density).ok()?;
+    ctx.translate(-x0, -y0).ok()?;
+    for [x, y] in spots {
+        let g = ctx.create_radial_gradient(*x, *y, 0.0, *x, *y, reach).ok()?;
+        g.add_color_stop(0.0, "#fff").ok()?;
+        g.add_color_stop(0.55, "rgba(255,255,255,0.75)").ok()?;
+        g.add_color_stop(1.0, "rgba(255,255,255,0)").ok()?;
+        ctx.set_fill_style_canvas_gradient(&g);
+        ctx.fill_rect(x - reach, y - reach, reach * 2.0, reach * 2.0);
+    }
+    ctx.set_global_composite_operation("source-in").ok()?;
+    let pattern = ctx.create_pattern_with_html_canvas_element(&tex, "repeat").ok()??;
+    ctx.set_fill_style_canvas_pattern(&pattern);
+    ctx.translate(shift[0], shift[1]).ok()?;
+    ctx.fill_rect(x0 - shift[0], y0 - shift[1], w, h);
+    canvas.to_data_url().ok()
 }
 
 fn put(ctx: &web_sys::CanvasRenderingContext2d, data: &[u8], w: u32, h: u32) -> Option<()> {
@@ -280,8 +320,7 @@ fn cloud_density(full: f64) -> f64 {
 /// Map units around a Gloom planet that its cloud covers.
 const GLOOM_REACH: f64 = 78.0;
 
-/// The tiled noise cut to soft discs around each spot, as one PNG of the box at `density` pixels per map unit;
-/// the noise keeps one texel per map unit at any density.
+/// The Gloom's one image over all its planets; the noise keeps one texel per map unit at any density.
 fn gloom_image(spots: &[Pt], density: f64) -> Option<(Bx, String)> {
     if let Some(hit) = GLOOM_IMAGE.with(|c| {
         c.borrow().as_ref().filter(|(s, d, _)| s == spots && *d == density).map(|(_, _, image)| image.clone())
@@ -294,27 +333,7 @@ fn gloom_image(spots: &[Pt], density: f64) -> Option<(Bx, String)> {
     let (min_y, max_y) = ys.fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), y| (a.min(y), b.max(y)));
     let pad = GLOOM_REACH * 1.2;
     let bx = (min_x - pad, min_y - pad, max_x - min_x + 2.0 * pad, max_y - min_y + 2.0 * pad);
-    let image = (|| {
-        let tex = gloom_noise()?;
-        let (x0, y0, w, h) = bx;
-        let (canvas, ctx) = canvas((w * density).ceil() as u32, (h * density).ceil() as u32)?;
-        ctx.scale(density, density).ok()?;
-        ctx.translate(-x0, -y0).ok()?;
-        for [x, y] in spots {
-            let g = ctx.create_radial_gradient(*x, *y, 0.0, *x, *y, GLOOM_REACH).ok()?;
-            g.add_color_stop(0.0, "#fff").ok()?;
-            g.add_color_stop(0.55, "rgba(255,255,255,0.75)").ok()?;
-            g.add_color_stop(1.0, "rgba(255,255,255,0)").ok()?;
-            ctx.set_fill_style_canvas_gradient(&g);
-            ctx.fill_rect(x - GLOOM_REACH, y - GLOOM_REACH, GLOOM_REACH * 2.0, GLOOM_REACH * 2.0);
-        }
-        ctx.set_global_composite_operation("source-in").ok()?;
-        // Tiled from the map origin, so the texture doesn't shift when the box changes.
-        let pattern = ctx.create_pattern_with_html_canvas_element(&tex, "repeat").ok()??;
-        ctx.set_fill_style_canvas_pattern(&pattern);
-        ctx.fill_rect(x0, y0, w, h);
-        Some((bx, canvas.to_data_url().ok()?))
-    })();
+    let image = cut_cloud(Tint::Gloom, spots, GLOOM_REACH, bx, density, [0.0, 0.0]).map(|href| (bx, href));
     GLOOM_IMAGE.with(|c| *c.borrow_mut() = Some((spots.to_vec(), density, image.clone())));
     image
 }
@@ -420,8 +439,25 @@ fn tcs_images(density: f64) -> Option<[String; 3]> {
     images
 }
 
+/// Pixels per map unit of a TCS+ planet's gas at Maximum quality.
+const TCS_GAS_DENSITY: f64 = 2.0;
+
+/// One TCS+ planet's gas at Maximum quality, drawn the Gloom's way from the noise where the planet sits: two
+/// layers, the second cut from further along the noise.
+fn tcs_gas(index: i64, at: Pt) -> Option<[String; 2]> {
+    if let Some(hit) = TCS_GAS.with(|c| c.borrow().get(&index).cloned()) {
+        return hit;
+    }
+    let bx = (at[0] - TCS_REACH, at[1] - TCS_REACH, TCS_REACH * 2.0, TCS_REACH * 2.0);
+    let layer = |shift: Pt| cut_cloud(Tint::Tcs, &[at], TCS_REACH, bx, TCS_GAS_DENSITY, shift);
+    let gas = layer([0.0, 0.0]).zip(layer([97.0, 41.0])).map(|(a, b)| [a, b]);
+    TCS_GAS.with(|c| c.borrow_mut().insert(index, gas.clone()));
+    gas
+}
+
 /// The Termicide haze around each TCS+ planet whose towers stand. Its two layers turn opposite ways so it churns;
-/// Minimal quality, and touch screens below Maximum, turn both as one image.
+/// Minimal quality, and touch screens below Maximum, turn both as one image. At Maximum each planet's gas is cut
+/// from the noise the Gloom's way, and gases that meet mix like light.
 #[component]
 pub fn TcsLayer(
     #[prop(into)] planets: Signal<Arc<Vec<Planet>>>,
@@ -440,9 +476,46 @@ pub fn TcsLayer(
     });
     // Pixels per map unit; the disc is small enough to stay sharp up close.
     let images = Memo::new(move |_| tcs_images(cloud_density(3.0)));
+    let maximum = Memo::new(move |_| settings().get(|s| s.map_quality) == MapQuality::Max);
+    let gas = Memo::new(move |_| {
+        maximum
+            .get()
+            .then(|| spots.with(|s| s.iter().filter_map(|(i, p)| Some((*i, tcs_gas(*i, *p)?))).collect::<Vec<_>>()))
+    });
     let d = num(TCS_REACH * 2.0);
     let r = num(-TCS_REACH);
     move || {
+        if let Some(gas) = gas.get() {
+            let spots = spots.get();
+            return (!gas.is_empty()).then(|| {
+                view! {
+                    <g class="tcs tcs-max" aria-hidden="true">
+                        {gas
+                            .into_iter()
+                            .filter_map(|(index, [top, under])| {
+                                let [x, y] = spots.iter().find(|(i, _)| *i == index)?.1;
+                                let delay = format!("animation-delay: -{}s;", index * 37 % 180);
+                                let [swell, low] = [delay.clone(), delay.clone()];
+                                let (r, d) = (r.clone(), d.clone());
+                                Some(view! {
+                                    <g class="tcs-gas" transform=format!("translate({},{})", num(x), num(y))>
+                                        <g class="tcs-swell" style=swell>
+                                            <g class="tcs-spin tcs-under" style=low>
+                                                <image href=under x=r.clone() y=r.clone() width=d.clone() height=d.clone() />
+                                            </g>
+                                            <g class="tcs-spin" style=delay>
+                                                <image href=top x=r.clone() y=r width=d.clone() height=d />
+                                            </g>
+                                        </g>
+                                    </g>
+                                })
+                            })
+                            .collect_view()}
+                    </g>
+                }
+                .into_any()
+            });
+        }
         let [top, under, both] = images.get()?;
         let spots = spots.get();
         (!spots.is_empty()).then(|| {
@@ -478,6 +551,7 @@ pub fn TcsLayer(
                         .collect_view()}
                 </g>
             }
+            .into_any()
         })
     }
 }
