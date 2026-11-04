@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, OnceLock};
 use warroom_core::api::{Assignment, Campaign, Dispatch, Planet, War, from_value};
-use warroom_core::effects::{GLOOM_IDS, PlanetEffect, homeworld_poi, planet_effects};
+use warroom_core::effects::{GLOOM_IDS, PlanetEffect, TCS_ID, homeworld_poi, planet_effects};
 use warroom_core::galaxy::{PolarSectors, SectorPlanet, build_polar_sectors, landmark, landmark_planet};
 use warroom_core::planets::{fix_static, is_off_map};
 use warroom_core::snapshot::{
@@ -37,6 +37,8 @@ pub struct WarEffects {
     pub planets: HashMap<i64, Vec<PlanetEffect>>,
     /// Planets in or on the edge of the Gloom.
     pub gloom: HashSet<i64>,
+    /// Planets with TCS+ towers, whoever holds them now.
+    pub tcs: HashSet<i64>,
     pub stations: HashMap<i64, Vec<PlanetEffect>>,
 }
 
@@ -218,6 +220,7 @@ pub fn init() {
                 .filter(|p| p.ids.iter().any(|id| GLOOM_IDS.contains(id)))
                 .map(|p| p.index)
                 .collect(),
+            tcs: live.planets.iter().filter(|p| p.ids.contains(&TCS_ID)).map(|p| p.index).collect(),
             stations: live.stations.iter().map(|s| (s.id, planet_effects(&s.ids))).collect(),
         })
     });

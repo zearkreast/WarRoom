@@ -1,5 +1,6 @@
 //! Planet effects (named by the community list and local overrides) and which of them get a map pawn.
 
+use crate::api::{Faction, Planet};
 use regex_lite::Regex;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
@@ -130,6 +131,18 @@ const ORDER: [EffectKind; 10] = [
 
 /// Planets inside or on the edge of the Gloom; the map draws its cloud over them.
 pub const GLOOM_IDS: [i64; 5] = [1186, 1187, 1188, 1190, 1193];
+
+/// TERMINID CONTROL SYSTEM+, the Termicide towers.
+pub const TCS_ID: i64 = 1395;
+
+/// The TCS+ planets whose towers stand: held by Super Earth and not under attack.
+pub fn tcs_standing(planets: &[Planet], tcs: &HashSet<i64>) -> Vec<i64> {
+    planets
+        .iter()
+        .filter(|p| tcs.contains(&p.index) && p.current_owner == Faction::Humans && p.event.is_none())
+        .map(|p| p.index)
+        .collect()
+}
 
 static SIDE_SUFFIX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\s*\((enemies|marker|old map marker)\)\s*$").unwrap());

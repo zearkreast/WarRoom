@@ -874,6 +874,7 @@ pub fn WarHistorySection(#[prop(into)] p: Signal<Planet>, record: ReadSignal<Pla
             ))
         })
     });
+    let log_open = RwSignal::new(false);
     move || {
         let Some((h, now)) = history.get() else {
             let (loading, error) = record.with(|r| (r.loading, r.error));
@@ -969,10 +970,24 @@ pub fn WarHistorySection(#[prop(into)] p: Signal<Planet>, record: ReadSignal<Pla
                             {(!h.defenses.is_empty()).then(|| view! { <span style="--k: var(--text-dim);">"Defense"</span> })}
                         </div>
                     </div>
-                    <div>
-                        <div class="tile-label">"War log"</div>
-                        <ol class="wl">{h.log.iter().map(log_row).collect_view()}</ol>
-                        <p class="wl-since caps">{format!("On record since {}.", fmt_date_time(h.record_start))}</p>
+                    <div class="wl-fold" class:open=move || log_open.get()>
+                        <button
+                            class="wl-toggle"
+                            aria-expanded=move || log_open.get().to_string()
+                            aria-controls="pd-war-log"
+                            on:click=move |_| log_open.update(|o| *o = !*o)
+                        >
+                            <Icon icon=icons::CHEVRON_RIGHT size=14.0 class="wl-chevron" />
+                            <span class="tile-label">"War log"</span>
+                            <span class="wl-count caps num">{format!("{} entries", h.log.len())}</span>
+                            {h.log.first().map(|e| view! { <span class="wl-latest caps num">{format!("Latest {}", fmt_date(e.at()))}</span> })}
+                        </button>
+                        <div class="wl-body" id="pd-war-log" inert=move || !log_open.get()>
+                            <div>
+                                <ol class="wl">{h.log.iter().map(log_row).collect_view()}</ol>
+                                <p class="wl-since caps">{format!("On record since {}.", fmt_date_time(h.record_start))}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </Panel>

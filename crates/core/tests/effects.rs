@@ -1,6 +1,8 @@
 mod common;
 use common::*;
-use warroom_core::effects::{EffectKind, planet_effects};
+use std::collections::HashSet;
+use warroom_core::api::{Faction, PlanetEvent};
+use warroom_core::effects::{EffectKind, TCS_ID, planet_effects, tcs_standing};
 use warroom_core::format::parse_markup;
 use warroom_core::news_feed::plain_text;
 use warroom_core::snapshot::to_effects_live;
@@ -124,6 +126,31 @@ fn names_the_noxious_and_caustic_strains_once_each() {
     assert_eq!(nivel[0], (EffectKind::Subfaction, "CAUSTIC STRAIN".to_string()));
     let [e]: [_; 1] = planet_effects(&[1418]).try_into().unwrap();
     assert_eq!((e.kind, e.name.as_str()), (EffectKind::Event, "Force Evacuation"));
+}
+
+#[test]
+fn draws_tcs_clouds_only_where_super_earth_holds_the_towers_and_no_attack_is_under_way() {
+    let live = to_effects_live(&status_effects(), 0.0);
+    let tcs: HashSet<i64> = live.planets.iter().filter(|p| p.ids.contains(&TCS_ID)).map(|p| p.index).collect();
+    let mut planets = planets();
+    let [held, lost, attacked] = [0, 1, 2].map(|i| *tcs.iter().nth(i).unwrap());
+    for p in &mut planets {
+        if tcs.contains(&p.index) {
+            p.current_owner = Faction::Humans;
+            p.event = None;
+        }
+        if p.index == lost {
+            p.current_owner = Faction::Terminids;
+        }
+        if p.index == attacked {
+            p.event = Some(PlanetEvent::default());
+        }
+    }
+    let standing: HashSet<i64> = tcs_standing(&planets, &tcs).into_iter().collect();
+    assert!(standing.contains(&held));
+    assert!(!standing.contains(&lost));
+    assert!(!standing.contains(&attacked));
+    assert_eq!(standing.len(), tcs.len() - 2);
 }
 
 #[test]

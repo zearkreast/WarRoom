@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, OnceLock};
 use warroom_core::api::{Campaign, Faction, Planet};
 use warroom_core::campaign_filter::is_rare_campaign;
-use warroom_core::defense::{gambit, gambits_from};
+use warroom_core::defense::{GambitOutlook, gambit, gambits_from};
 use warroom_core::progress::{defense_percent, liberation_percent, projected_at, projected_completion, projected_loss};
 use warroom_core::sieges::{circumvallation, neighbours};
 use warroom_core::time::parse_ms;
@@ -25,6 +25,25 @@ impl FrontKind {
             FrontKind::Defense => "defense",
         }
     }
+}
+
+/// A gambit or circumvallation through a front, and whether it beats attacking the planets at its other end.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Tactic {
+    Worth,
+    /// Attacking directly is quicker, or it won't land in time.
+    Moot,
+}
+
+impl Tactic {
+    fn from_worth(worth: bool) -> Self {
+        if worth { Tactic::Worth } else { Tactic::Moot }
+    }
+}
+
+/// Whether a tactic is there and worth playing.
+pub fn worth(t: Option<Tactic>) -> bool {
+    t == Some(Tactic::Worth)
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -46,9 +65,9 @@ pub struct Front {
     pub pinned: bool,
     pub station: bool,
     /// A gambit runs through it: a defense with one open, or a front whose liberation would win one.
-    pub gambit: bool,
+    pub gambit: Option<Tactic>,
     /// Liberating it would leave enemy planets surrounded.
-    pub siege: bool,
+    pub siege: Option<Tactic>,
 }
 
 pub fn build_front(
@@ -77,8 +96,8 @@ pub fn build_front(
             in_major_order: marks.0,
             pinned: marks.1,
             station: marks.2,
-            gambit: false,
-            siege: false,
+            gambit: None,
+            siege: None,
         };
     }
     let lib = liberation_percent(p.health, p.max_health);
@@ -96,8 +115,8 @@ pub fn build_front(
         in_major_order: marks.0,
         pinned: marks.1,
         station: marks.2,
-        gambit: false,
-        siege: false,
+        gambit: None,
+        siege: None,
     }
 }
 
@@ -108,12 +127,14 @@ fn mark_roles(list: &mut [Front], planets: &[Planet], now: f64) {
     let links = neighbours(planets);
     for f in list {
         let Some(me) = planets.iter().find(|p| p.index == f.planet.index) else { continue };
-        f.gambit = if me.event.is_some() {
-            gambit(me, planets, &rates, now).is_some()
+        let gambits = if me.event.is_some() {
+            gambit(me, planets, &rates, now).into_iter().collect()
         } else {
-            !gambits_from(me, planets, &rates, now).is_empty()
+            gambits_from(me, planets, &rates, now)
         };
-        f.siege = circumvallation(me, planets, &links, &active).is_some();
+        f.gambit = (!gambits.is_empty())
+            .then(|| Tactic::from_worth(gambits.iter().any(|g| g.outlook == GambitOutlook::Ahead)));
+        f.siege = circumvallation(me, planets, &links, &active).map(|c| Tactic::from_worth(c.worth));
     }
 }
 
@@ -185,8 +206,8 @@ fn shared() -> &'static Shared {
                         .then(b.in_major_order.cmp(&a.in_major_order))
                         .then(is_rare_campaign(b.campaign.kind).cmp(&is_rare_campaign(a.campaign.kind)))
                         .then((b.kind == FrontKind::Defense).cmp(&(a.kind == FrontKind::Defense)))
-                        .then(b.gambit.cmp(&a.gambit))
-                        .then(b.siege.cmp(&a.siege))
+                        .then(worth(b.gambit).cmp(&worth(a.gambit)))
+                        .then(worth(b.siege).cmp(&worth(a.siege)))
                         .then(b.players.total_cmp(&a.players))
                 });
                 Arc::new(list)

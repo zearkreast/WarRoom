@@ -44,9 +44,9 @@ pub(super) fn MapSettings(on_close: Callback<()>) -> impl IntoView {
                 />
             </div>
             <div class="ms-row">
-                <span class="caps">"Defense beacon"</span>
+                <span class="caps">"Priority beacon"</span>
                 <Stepper
-                    label="Defense beacon"
+                    label="Priority beacon"
                     options=beacon_options()
                     value=Signal::derive(move || s.get(|s| s.map_beacon))
                     on_change=move |v| s.set(|s| s.map_beacon = v)
