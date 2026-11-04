@@ -3,6 +3,129 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.7.0] - 2026-11-04
+
+Everything since v0.6.3.
+
+### Upgrading
+
+- On a database of your own, apply `supabase/migrations/0008_planet_history.sql` to `0012_dispatches.sql` and
+  redeploy the collector (`git pull && docker compose up -d --build`). 0008 adds the read behind the planet page's 7
+  and 30 day ranges; 0009 to 0012 add the tables the collector now fills: each Major Order and its progress, each
+  change in the space stations' tactical actions, the hourly mission, kill and death counters, and every dispatch.
+  These records start from the update. Until the migrations are in, the features that read them stay hidden or fall
+  back to 24 h, and the collector skips those writes; its assignments, dispatches and stations jobs log which table
+  is missing.
+
+### Active planets
+
+- Sort the fronts by Priority, Most needed, Most Helldivers or Soonest victory from a select beside the filters; the
+  choice is remembered. Most needed puts Major Order targets and fronts losing ground or missing their deadline
+  first, then those where a Helldiver adds the most, and badges on the cards say why: Losing ground, Misses its
+  deadline or Each Helldiver counts.
+- Pinning is now Watch everywhere, and watched planets make up your watchlist, which is also the filter's name. They
+  lead every sort, those with no campaign get a row of their own, and a toast says what watching does.
+- Defenses, rare campaigns, and gambits or circumvallations worth playing always show, whatever their Helldiver
+  count. Cards gain a Circumvallation badge, and Gambit, Circumvallation and Special join the filters. A tactic not
+  worth playing (holding the defense or liberating the targets directly is quicker, or it can't land in time)
+  follows the usual Helldiver and progress thresholds, and its badge is greyed like its advisory. Double and
+  multiple circumvallations are named and marked as such, and a defense card with a gambit open gives each
+  attacker's resistance.
+- Siege liberation: an enemy planet whose every supply-line neighbour Super Earth holds gets a Siege liberation
+  badge, and in place of Regen its card shows a SEAF figure: its resistance, then, once that turns negative, the pace
+  it liberates itself at. Other cards' Regen gains a helmet mark.
+- A Major Order liberation target shows on its card the pace the order needs.
+- A calmer card: a liberation at 0% that isn't gaining says "Holding for reinforcement" instead of a red 0.00% per
+  hour, a flat rate is grey and only a falling one is red, and the other figures are plain apart from Needed and MO
+  needs, which still judge the pace. Badges are quiet chips, a projected withdrawal or fall is amber, rare campaigns
+  read "Special", and on phones the filters are one scrolling row.
+- The Major Order strip gives its verdict as a small tag beside the title, so it reads even while folded, and every
+  objective shares one row: what to do, the bar, the figures, when it completes and whether it makes the deadline.
+
+### Major Orders and alerts
+
+- On the Major Order card, each unfinished objective shows the pace it needs to finish by the deadline beside its
+  measured pace.
+- The Major Order card can chart each objective's progress over the run on record, and Hellpad › Past campaigns
+  lists the ended Major Orders on record with where each objective stood at the end. Both start from the collector
+  update.
+- New alerts, both on by default: Watched planets (a watched front is an hour from victory, stops gaining ground, or
+  a city opens on it) and Major Order progress (the order turns to losing, has 6 hours or 1 hour left, or completes
+  an objective). Nothing fires for what was already so when the app starts. The app works these out itself, so
+  they come while it runs (on desktop, from the tray too); Android's pushed news doesn't carry them.
+- Coming back after three hours or more, High Command shows "While you were away" above the Major Order: planets
+  liberated and lost, how far each Major Order objective moved, Galactic Campaigns begun or ended, new dispatches and
+  the peak of Helldivers online. It can be dismissed. The privacy policy notes the timestamp this keeps on the
+  device.
+
+### Planet page
+
+- The page is laid out in reading order: progress, activity, intel, points of interest, service record, war history
+  and supply lines, with a bar under the header that links to each section and lights the one in view. The war log
+  starts folded, with its entry count and latest date on the fold.
+- The page assembles as it opens: the header scans in, the name types out, the sphere's rings draw and its meridians
+  turn, and each section rises in as it is first reached. Reduced motion skips all of it.
+- Front line activity charts the last 24 h, 7 days or 30 days.
+- A gambit that holding beats, or that can't land before the deadline, opens its advisory with a Notice, as a
+  circumvallation not worth closing does, here and on the map's planet card.
+- The Service record of a planet with a campaign, and the statistics in High Command's Distribution of Democracy
+  panel, add the last 24 hours: missions won and lost, the success rate, kills of each enemy and Helldivers killed
+  in action.
+- A Major Order liberation target gets the needs box defenses have: the pace needed, where it stands at the order's
+  deadline and roughly how many Helldivers short.
+- The Martian Armory wears its own logo instead of the generic industry mark, and the points of interest of a razed
+  world, Mars among them, flicker red on its card and page. Super Earth and Cyberstan list themselves as Humanity's
+  Home and the Automaton Homeworld among their points of interest.
+
+### Galaxy map
+
+- The defense beacon is now the Priority beacon: it also calls out a Major Order target being fought over, in the
+  order's yellow, and planets with a beacon draw over their neighbours. Your saved choice carries over.
+- Holograms stand round their planet on the table and turn with the map, each projector carrying its unit's emblem.
+  A projector flattens only as far as the map tilts, so its emblem stays readable; at Minimal quality projectors
+  keep one angle. The DSS stands on Super Earth's emblem.
+- Regions outlines, here and in High Command's Theater of War, are smoothed and cut to the galaxy's rim, and the
+  hatch on a planet under attack follows them and shows over the Gloom. A planet under siege is ground of its own, in
+  Super Earth blue, and its tag reads Siege.
+- Standing TCS+ towers spread a blue Termicide haze; at Maximum quality it is drawn the Gloom's way.
+- The Noxious and Caustic strains show on their planets, and they, the Hive Lords and the Dragonroaches wear their
+  own emblems. Force Evacuation shows among the war events of the planets that carry it.
+- The legend explains the yellow beacon, siege liberation, TCS+ towers and the projectors' emblems.
+- Lighter: the news ticker scrolls on the compositor instead of from script every frame, a drag no longer opens the
+  planet cards it passes, and the Gloom image is kept for the session. At Minimal quality, and on touch screens below
+  Maximum, the Gloom and the haze are drawn at half resolution.
+
+### Strohmann News and the Hellpad
+
+- Load older news carries on past the newest 50 dispatches, and a search of three letters or more also searches
+  every dispatch on record, bringing back its newest 100 matches.
+- The G.W.W.'s Strohmann News is a news site of its own: a lead story with its planet's picture, two more beside it,
+  the rest in brief, and desks for Major Orders, front lines, alerts and campaigns. Coming back to the G.W.W. from the
+  Hellpad opens its home page, and Home on the home page scrolls back to the top. Read next on a training manual
+  leads with the next unread manual of the course and ticks the ones already read.
+- Galactic logs gives each log a tab on a wider page. The war log opens with the last seven days' tally and puts each
+  change on one line, under a heading per day with its count, and Helldivers online opens with a chart of each day's
+  peak and low over the last 90 days. Both logs add days a few at a time, and each tab keeps its filters.
+- Space stations: each tactical action says when it was last active and how often in the last 30 days, and a new
+  switch on the page, on by default, alerts when an action is charged or goes active.
+
+### Calmer look
+
+- Colour is kept for what judges the war, and fewer things loop: live dots no longer pulse, Galactic war activity's
+  live point pings three times, Major Order bars sweep once after counting up, the Major Order strip and panel lose
+  their hazard stripes, and High Command's tiles their yellow rules.
+
+### Fixed
+
+- An Active planets card no longer shows a victory more than seven days off, such as "Victory in 23395d".
+- Galactic war activity's Galactic impact mod no longer runs into Peak Helldivers.
+
+### Project
+
+- The README leads with the app, its screenshots and its downloads; the developer guide moves to
+  `docs/DEVELOPMENT.md`.
+- About credits the Noxious and Caustic Strain emblems as traced for the app from the game's planet card.
+
 ## [0.6.3] - 2026-11-02
 
 Everything since v0.6.2.

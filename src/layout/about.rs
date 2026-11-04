@@ -29,7 +29,7 @@ pub fn About() -> impl IntoView {
                 </p>
                 <h3>"Privacy"</h3>
                 <p>
-                    "The app collects no personal data: no account, analytics, ads or tracking. Settings, pins and drill scores stay on this device and alerts are worked out here. The app downloads war data from the project's read-only database, and the installed app asks GitHub for new releases. The full policy is in PRIVACY.md at github.com/zearkreast/WarRoom."
+                    "The app collects no personal data: no account, analytics, ads or tracking. Settings, your watchlist and drill scores stay on this device and alerts are worked out here. The app downloads war data from the project's read-only database, and the installed app asks GitHub for new releases. The full policy is in PRIVACY.md at github.com/zearkreast/WarRoom."
                 </p>
                 <h3>"Not affiliated"</h3>
                 <p>
