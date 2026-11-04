@@ -8,6 +8,22 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.7.0",
+        date: "2026-11-04",
+        items: &[
+            "Active planets: sort by Most needed, Most Helldivers or Soonest victory, pins become a watchlist, and defenses, rare campaigns and tactics worth playing always show.",
+            "Major Orders: the order's card shows the pace each objective needs and charts the run on record, and ended orders are kept in Past campaigns.",
+            "New alerts for watched planets, the Major Order's progress and space station actions that are charged or go active.",
+            "While you were away: after three hours or more away, High Command shows what changed.",
+            "The planet page is rebuilt with a section bar and a folded war log, front lines over 7 and 30 days, and the last 24 hours of fighting.",
+            "Map: the defense beacon is now the Priority beacon and calls out Major Order fronts in yellow; holograms stand round their planet, regions are smoother, and SEAF sieges and the TCS+ haze show.",
+            "New emblems for the Noxious and Caustic strains, Hive Lords and Dragonroaches; the Martian Armory has its own logo, razed worlds' points of interest flicker red, and the two homeworlds join the points of interest.",
+            "Strohmann News reaches every dispatch on record, and the G.W.W. gains a Strohmann News site of its own.",
+            "Galactic logs has a tab for each log, a one-line war log and a 90-day chart of Helldivers online.",
+            "A calmer look, and a lighter map: the news ticker no longer redraws every page each frame.",
+        ],
+    },
+    ChangelogEntry {
         version: "0.6.3",
         date: "2026-11-02",
         items: &[
