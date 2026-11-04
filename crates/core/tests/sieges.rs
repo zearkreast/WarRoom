@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use warroom_core::api::{Faction, Planet};
-use warroom_core::sieges::{circumvallation, neighbours};
+use warroom_core::sieges::{besieged, circumvallation, neighbours};
 
 fn planet(index: i64, owner: Faction, waypoints: &[i64], max_health: f64, regen_pct: f64) -> Planet {
     Planet {
@@ -89,4 +89,19 @@ fn is_worth_it_when_the_surrounded_planet_has_no_campaign_of_its_own() {
 fn only_applies_to_enemy_planets() {
     let planets = [p(1, Faction::Humans, &[2]), p(2, Faction::Automaton, &[])];
     assert!(ring(&planets, 1, &[1]).is_none());
+}
+
+#[test]
+fn a_planet_is_under_siege_only_when_super_earth_holds_every_planet_on_its_supply_lines() {
+    let planets = [
+        p(1, Faction::Terminids, &[2, 3]),
+        p(2, Faction::Humans, &[]),
+        p(3, Faction::Humans, &[]),
+        p(4, Faction::Automaton, &[5]),
+        p(5, Faction::Automaton, &[6]),
+        p(6, Faction::Humans, &[]),
+        p(7, Faction::Illuminate, &[]),
+    ];
+    // 4 and 5 hold out together: a group of two is cut off, not besieged. 7 has no supply lines at all.
+    assert_eq!(besieged(&planets, &neighbours(&planets)), HashSet::from([1]));
 }

@@ -22,6 +22,21 @@ pub fn neighbours(planets: &[Planet]) -> HashMap<i64, Vec<i64>> {
     links
 }
 
+/// Enemy planets under a SEAF siege: held by an enemy, with every supply-line neighbour held by Super Earth. A
+/// planet with no supply lines is cut off from nothing, so it isn't under siege.
+pub fn besieged(planets: &[Planet], links: &HashMap<i64, Vec<i64>>) -> HashSet<i64> {
+    let owner: HashMap<i64, Faction> = planets.iter().map(|p| (p.index, p.current_owner)).collect();
+    planets
+        .iter()
+        .filter(|p| enemy_held(p) && !p.disabled && p.event.is_none())
+        .filter(|p| {
+            let around = links.get(&p.index).map_or(&[][..], Vec::as_slice);
+            !around.is_empty() && around.iter().all(|n| owner.get(n) == Some(&Faction::Humans))
+        })
+        .map(|p| p.index)
+        .collect()
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Circumvallation {
     /// Enemy planets that liberating the front would leave with only Super Earth planets around them.

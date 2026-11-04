@@ -170,6 +170,29 @@ const ENTRIES: &[Entry] = &[
         mark: || {
             swatch(
                 view! {
+                    <clipPath id="ml-besieged">
+                        <path d="M-8 -8 8 -7 7 8 -8 7Z"></path>
+                    </clipPath>
+                    <path d="M-8 -8 8 -7 7 8 -8 7Z" fill="none" stroke="var(--f-terminids)" stroke-width="1.2"></path>
+                    <path
+                        d="M-9 -9 9 9M-3 -9 9 3M3 -9 9 -3M-9 -3 3 9M-9 3 -3 9"
+                        stroke="var(--f-humans)"
+                        stroke-width="1.8"
+                        stroke-opacity="0.6"
+                        clip-path="url(#ml-besieged)"
+                    ></path>
+                    <circle r="2.4" fill="var(--f-terminids)"></circle>
+                }
+                .into_any(),
+            )
+        },
+        name: "Siege liberation",
+        text: "In Regions, an enemy planet Super Earth has cut off on every supply line, hatched blue: the SEAF has it under siege and it liberates itself.",
+    },
+    Entry {
+        mark: || {
+            swatch(
+                view! {
                     <circle r="9" fill="var(--f-terminids)" opacity="0.25"></circle>
                     <circle cx="-3" cy="2" r="5" fill="var(--f-terminids)" opacity="0.3"></circle>
                 }

@@ -10,6 +10,7 @@ pub mod fighting;
 pub mod globe;
 pub mod options;
 pub mod record;
+pub mod seaf_art;
 pub mod section_bar;
 pub mod sections;
 pub mod tint;

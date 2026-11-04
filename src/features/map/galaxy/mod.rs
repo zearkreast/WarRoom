@@ -41,7 +41,8 @@ use warroom_core::galaxy::{
     GALAXY_SCALE, LANDMARKS, Pt, anomaly_of, landmark, landmark_planet, project, sector_at, supply_lines,
 };
 use warroom_core::planets::{by_index, ownership_key};
-use warroom_core::regions::build_attack_regions;
+use warroom_core::regions::{Patch, build_attack_regions};
+use warroom_core::sieges::{besieged, neighbours};
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 
@@ -75,6 +76,7 @@ fn planet_look(
     dss: Option<DssInfo>,
     style: MapPlanets,
     now: f64,
+    besieged: bool,
 ) -> PlanetLook {
     let [x, y] = project(p.position);
     let faction = p.event.as_ref().map(|e| e.faction).unwrap_or(p.current_owner);
@@ -112,7 +114,12 @@ fn planet_look(
         y,
         class,
         name: p.name.clone(),
-        tag: active.then(|| (color, if p.event.is_some() { "Defend" } else { "Liberate" })),
+        // In the siege's blue: the enemy's colour clashes with the blue hatch around it.
+        tag: active.then(|| match (p.event.is_some(), besieged) {
+            (true, _) => (color, "Defend"),
+            (false, true) => (faction_color(Some(Faction::Humans)), "Siege"),
+            (false, false) => (color, "Liberate"),
+        }),
         body: Body {
             style,
             faction,
@@ -133,10 +140,12 @@ fn planet_look(
     }
 }
 
-/// Hatches for a planet under attack inside its attacker's region, in the attacker's colour.
+/// Hatches for a planet under attack inside its attacker's region, in the attacker's colour, and for one under a
+/// SEAF siege, in Super Earth's.
 fn contested_hatches() -> impl IntoView {
-    Faction::ENEMIES
+    [Faction::Humans]
         .iter()
+        .chain(Faction::ENEMIES.iter())
         .map(|f| {
             let c = faction_color(Some(*f));
             view! {
@@ -148,7 +157,7 @@ fn contested_hatches() -> impl IntoView {
                     patternUnits="userSpaceOnUse"
                     patternTransform="rotate(45)"
                 >
-                    <rect width=num(HATCH) height=num(HATCH) fill=c fill-opacity="0.08"></rect>
+                    <rect width=num(HATCH) height=num(HATCH) fill=c fill-opacity="0.1"></rect>
                     <line
                         x1=num(HATCH * 0.15)
                         y1="0"
@@ -156,12 +165,44 @@ fn contested_hatches() -> impl IntoView {
                         y2=num(HATCH)
                         stroke=c
                         stroke-opacity="0.6"
-                        stroke-width=num(HATCH * 0.3)
+                        stroke-width=num(HATCH * 0.26)
+                        stroke-linecap="round"
                     ></line>
                 </pattern>
             }
         })
         .collect_view()
+}
+
+/// A hatched patch inside a region: clear round its planet, so its mark and words sit on calm ground, and fading
+/// towards the cell's edge into the plain territory around it.
+fn hatch_patch(id: String, p: &Patch, hatch: Faction, clip: String) -> impl IntoView + use<> {
+    let fade = format!("{id}-fade");
+    let mask = format!("{id}-mask");
+    view! {
+        <radialGradient
+            id=fade.clone()
+            gradientUnits="userSpaceOnUse"
+            cx=num(p.center[0])
+            cy=num(p.center[1])
+            r=num(p.reach)
+        >
+            <stop offset="0.2" stop-color="#fff" stop-opacity="0"></stop>
+            <stop offset="0.45" stop-color="#fff" stop-opacity="0.85"></stop>
+            <stop offset="0.7" stop-color="#fff" stop-opacity="0.85"></stop>
+            <stop offset="1" stop-color="#fff" stop-opacity="0.3"></stop>
+        </radialGradient>
+        <mask id=mask.clone()>
+            <path d=p.path.clone() fill=format!("url(#{fade})")></path>
+        </mask>
+        <path
+            d=p.path.clone()
+            class="region-contested"
+            fill=format!("url(#region-hatch-{})", hatch.as_str())
+            clip-path=format!("url(#{clip})")
+            mask=format!("url(#{mask})")
+        ></path>
+    }
 }
 
 /// Chevrons along an attack line: one per this many map units, moving this many map units a second.
@@ -441,6 +482,10 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
     let end_drag2 = end_drag.clone();
 
     let owners = Memo::new(move |_| planets.with(|p| ownership_key(p)));
+    let sieged = Memo::new(move |_| {
+        owners.with(|_| ());
+        planets.with_untracked(|p| besieged(p, &neighbours(p)))
+    });
     let regions = Memo::new(move |_| {
         owners.with(|_| ());
         planets.with_untracked(|p| build_attack_regions(p))
@@ -509,6 +554,7 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                         dss.with(|d| d.get(&index).cloned()),
                         style.get(),
                         clock.get(),
+                        sieged.with(|s| s.contains(&index)),
                     )
                 }))
             })
@@ -596,28 +642,13 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                                                 regions
                                                     .get()
                                                     .into_iter()
-                                                    .enumerate()
-                                                    .map(|(i, r)| {
-                                                        let c = faction_color(Some(r.owner));
-                                                        let contested = (!r.contested.is_empty())
-                                                            .then(|| {
-                                                                let clip = format!("region-clip-{i}");
-                                                                view! {
-                                                                    <clipPath id=clip.clone()>
-                                                                        <path d=r.path.clone()></path>
-                                                                    </clipPath>
-                                                                    <path
-                                                                        d=r.contested.clone()
-                                                                        class="region-contested"
-                                                                        fill=format!("url(#region-hatch-{})", r.owner.as_str())
-                                                                        clip-path=format!("url(#{clip})")
-                                                                    ></path>
-                                                                }
-                                                            });
+                                                    .map(|r| {
+                                                        // A besieged planet is a region of its own, outlined like the SEAF's hatch.
+                                                        let line = if r.besieged.is_empty() { r.owner } else { Faction::Humans };
+                                                        let c = faction_color(Some(line));
                                                         view! {
                                                             <g>
-                                                                <path d=r.path.clone() fill=c fill-opacity="0.05" stroke="none"></path>
-                                                                {contested}
+                                                                <path d=r.path.clone() fill=c fill-opacity="0.05" fill-rule="evenodd" stroke="none"></path>
                                                                 <path d=r.path.clone() class="region-glow" stroke=c></path>
                                                                 <path d=r.path class="region-line" stroke=c></path>
                                                             </g>
@@ -650,6 +681,42 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                         </g>
                         {move || effects.with(Option::is_some).then(|| view! { <GloomLayer planets=planets gloom=gloom /> })}
                         {move || effects.with(Option::is_some).then(|| view! { <TcsLayer planets=planets tcs=tcs /> })}
+                        // Over the Gloom and the Termicide haze, which would otherwise bury a hatch on a planet inside them.
+                        {move || {
+                            (overlay.get() == MapOverlay::Regions)
+                                .then(|| {
+                                    view! {
+                                        <g class="region-hatches">
+                                            {move || {
+                                                regions
+                                                    .get()
+                                                    .into_iter()
+                                                    .enumerate()
+                                                    .filter(|(_, r)| !r.contested.is_empty() || !r.besieged.is_empty())
+                                                    .map(|(i, r)| {
+                                                        let clip = format!("region-clip-{i}");
+                                                        let patches: Vec<_> = r
+                                                            .contested
+                                                            .iter()
+                                                            .map(|p| (p, r.owner))
+                                                            .chain(r.besieged.iter().map(|p| (p, Faction::Humans)))
+                                                            .map(|(p, hatch)| {
+                                                                hatch_patch(format!("region-{i}-{}", p.planet), p, hatch, clip.clone())
+                                                            })
+                                                            .collect();
+                                                        view! {
+                                                            <clipPath id=clip.clone()>
+                                                                <path d=r.path.clone() clip-rule="evenodd"></path>
+                                                            </clipPath>
+                                                            {patches}
+                                                        }
+                                                    })
+                                                    .collect_view()
+                                            }}
+                                        </g>
+                                    }
+                                })
+                        }}
                         <g class="faction-marks" aria-hidden="true">
                             {move || {
                                 marks
