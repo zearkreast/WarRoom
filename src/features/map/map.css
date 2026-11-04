@@ -318,6 +318,48 @@
     stroke-linejoin: round;
     paint-order: stroke;
   }
+  /* A point of interest on a razed world flickers like a sign with a failing tube. */
+  .poi-glyph.ruined,
+  .poi-mark.ruined {
+    animation: poi-neon 5s steps(1, end) infinite;
+  }
+  .poi-glyph.ruined .poi-halo,
+  .poi-glyph.ruined .poi-halo :is(path, rect) {
+    stroke-opacity: 0.55;
+  }
+  .poi-glyph.ruined .poi-shape,
+  .poi-glyph.ruined .poi-shape :is(path, rect) {
+    fill: color-mix(in srgb, currentColor 80%, white) !important;
+  }
+  @keyframes poi-neon {
+    0% {
+      opacity: 1;
+    }
+    6% {
+      opacity: 0.2;
+    }
+    8% {
+      opacity: 1;
+    }
+    10% {
+      opacity: 0.35;
+    }
+    12% {
+      opacity: 1;
+    }
+    52% {
+      opacity: 0.45;
+    }
+    55% {
+      opacity: 1;
+    }
+    78% {
+      opacity: 0.15;
+    }
+    83% {
+      opacity: 1;
+    }
+  }
   /* Spheres carry the active-planet tag on top; the logo goes over it (replacing the -10 offset). */
   .pl-spheres .planet.active .poi-marks {
     transform: translateY(-20px);

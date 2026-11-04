@@ -125,3 +125,11 @@ fn names_the_noxious_and_caustic_strains_once_each() {
     let [e]: [_; 1] = planet_effects(&[1418]).try_into().unwrap();
     assert_eq!((e.kind, e.name.as_str()), (EffectKind::Event, "Force Evacuation"));
 }
+
+#[test]
+fn marks_the_two_homeworlds() {
+    use warroom_core::effects::homeworld_poi;
+    assert_eq!(homeworld_poi("Super Earth").map(|e| e.name), Some("HUMANITY'S HOME".into()));
+    assert_eq!(homeworld_poi("CYBERSTAN").map(|e| e.name), Some("AUTOMATON HOMEWORLD".into()));
+    assert!(homeworld_poi("MARS").is_none());
+}

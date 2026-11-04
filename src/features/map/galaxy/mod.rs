@@ -85,7 +85,8 @@ fn planet_look(
     let mut pois: Vec<PoiKind> = Vec::new();
     for e in effects.iter().filter(|e| e.kind == EffectKind::Poi) {
         let k = poi_kind(&e.name);
-        if !pois.contains(&k) {
+        // A homeworld is named on its planet's card, not drawn over the planet.
+        if k != PoiKind::Homeworld && !pois.contains(&k) {
             pois.push(k);
         }
     }
