@@ -115,21 +115,8 @@ pub fn PastCampaignsModule() -> impl IntoView {
     });
     let has_data = Memo::new(move |_| q.episodes.with(Option::is_some));
     let waiting = Memo::new(move |_| q.raw.loading.get() && !has_data.get());
-    let right = move || {
-        let p = past.get();
-        (!p.is_empty()).then(|| {
-            let won = campaign_record(&p).won;
-            view! {
-                <span class="num">
-                    <span style="color: var(--good);">{format!("{won} won")}</span>
-                    " · "
-                    <span style="color: var(--bad);">{format!("{} failed", p.len() - won)}</span>
-                </span>
-            }
-        })
-    };
     view! {
-        <Panel title="Past campaigns" icon=icons::ARCHIVE right=view! { {right} }.into_any()>
+        <div class="pc-module">
             {move || {
                 if waiting.get() {
                     return view! { <Loading what="the campaign archive" rows=3 /> }.into_any();
@@ -229,7 +216,7 @@ pub fn PastCampaignsModule() -> impl IntoView {
                 }
                 .into_any()
             }}
-        </Panel>
+        </div>
         <OrderArchive />
     }
 }

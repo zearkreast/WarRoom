@@ -176,9 +176,38 @@ mod browser {
         static SYNC: RefCell<Option<Sync<Browser>>> = const { RefCell::new(None) };
     }
 
+    /// A launch from an app shortcut names its page in the address (`?view=map`). The name comes out of the
+    /// address again, so a later reload resumes where the user was rather than at the shortcut's page.
+    fn take_view_from_address() {
+        let w = js::window();
+        let Ok(search) = w.location().search() else { return };
+        let mut view = None;
+        let rest: Vec<&str> = search
+            .trim_start_matches('?')
+            .split('&')
+            .filter(|kv| !kv.is_empty())
+            .filter(|kv| match kv.strip_prefix("view=") {
+                Some(name) => {
+                    view = serde_json::from_value::<View>(Value::String(name.to_lowercase())).ok();
+                    false
+                }
+                None => true,
+            })
+            .collect();
+        let Some(v) = view else { return };
+        ui().set_view(v);
+        let path = w.location().pathname().unwrap_or_default();
+        let hash = w.location().hash().unwrap_or_default();
+        let url = if rest.is_empty() { format!("{path}{hash}") } else { format!("{path}?{}{hash}", rest.join("&")) };
+        if let Ok(h) = w.history() {
+            let _ = h.replace_state_with_url(&JsValue::NULL, "", Some(&url));
+        }
+    }
+
     /// Puts back the place a reload left, before the first render so the default screen never shows,
     /// then follows every change of place.
     pub fn start() {
+        take_view_from_address();
         let (sync, resume) = Sync::new(Browser, place_now());
         if let Some(p) = resume {
             set_place(p);

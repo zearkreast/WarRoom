@@ -1,0 +1,21 @@
+{
+  "name": "WarCommand Tracker",
+  "short_name": "WarCommand",
+  "description": "A fan-made companion for the Helldivers 2 Galactic War: the fronts, the Major Order, the galaxy map and Strohmann News.",
+  "start_url": "../",
+  "scope": "../",
+  "display": "standalone",
+  "background_color": "#070706",
+  "theme_color": "#0b0b0a",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Galaxy map", "url": "../?view=map" },
+    { "name": "Active planets", "url": "../?view=campaigns" },
+    { "name": "High Command", "url": "../?view=overview" },
+    { "name": "Strohmann News", "url": "../?view=news" }
+  ]
+}
