@@ -256,6 +256,12 @@ async fn changes_before(before_id: i64, limit: usize) -> Result<Vec<ChangeRecord
     Ok(rows.into_iter().filter_map(to_change).collect())
 }
 
+/// Every change of hands the store holds, oldest first.
+pub async fn all_changes() -> Result<Vec<ChangeRecord>, String> {
+    let rows: Vec<ChangeRow> = typed(select_all("owner_changes", "select=*", None).await)?;
+    Ok(rows.into_iter().filter_map(to_change).collect())
+}
+
 const KEEP: usize = 100;
 
 /// Puts `fresh` ahead of `held`, keeping as many as were held (at least KEEP); returns whether any fell off the end.

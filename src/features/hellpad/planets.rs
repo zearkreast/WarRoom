@@ -2,6 +2,7 @@
 
 use crate::api::fronts::{major_order_planets, station_planets};
 use crate::api::queries::queries;
+use crate::features::hellpad::control_history::ControlHistory;
 use crate::features::planet::tint::planet_tint;
 use crate::js::num;
 use crate::state::{OptionsAnchor, settings, ui};
@@ -273,6 +274,7 @@ fn GalacticControl(#[prop(into)] planets: Signal<Arc<Vec<Planet>>>, on_filter: C
                         <p class="gc-hint">"Hover or tap the ring to map a faction's planets; pick a faction to filter the list."</p>
                     </div>
                 </div>
+                <ControlHistory />
             </Show>
             {move || {
                 if !open.get() {
