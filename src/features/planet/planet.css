@@ -626,6 +626,11 @@
     color: var(--text-dim);
     line-height: 1.5;
   }
+  .pd-env-row .pd-env-unofficial {
+    margin-top: var(--s-1);
+    font-size: var(--fs-micro);
+    color: var(--label);
+  }
   .pd-env-row.threat b,
   .pd-env-row .hl:not(.hl-planet) {
     color: var(--k, var(--text-hi));

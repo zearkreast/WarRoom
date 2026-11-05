@@ -1244,6 +1244,11 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  .hc-unofficial {
+    margin: var(--s-1) var(--s-5) 0;
+    font-size: var(--fs-micro);
+    color: var(--label);
+  }
   .hc-progress {
     display: flex;
     flex-direction: column;

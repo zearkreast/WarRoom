@@ -20,6 +20,7 @@ use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, fmt_pct, fmt_time_left, to_fixed};
 use warroom_core::galaxy::{Anomaly, Landmark, anomaly_of, landmark};
 use warroom_core::news_feed::plain_text;
+use warroom_core::planets::split_unofficial;
 use warroom_core::progress::{liberation_percent, tracked_percent};
 
 #[derive(Clone)]
@@ -188,7 +189,7 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
         effects.with(|e| e.iter().filter(|e| e.kind == EffectKind::Arsenal).cloned().collect::<Vec<_>>())
     });
     let siege = use_circumvallation(p);
-    let desc = Memo::new(move |_| p.with(|p| p.biome.description.clone()));
+    let desc = Memo::new(move |_| p.with(|p| split_unofficial(&p.biome.description)));
     let pct = Signal::derive(move || if enemy.get().is_some() { p.with(tracked_percent) } else { 100.0 });
     let regen = Memo::new(move |_| p.with(|p| regen_pct_per_hour(p.regen_per_second, p.max_health)));
     let defended = Memo::new(move |_| p.with(|p| p.event.is_some()));
@@ -205,8 +206,15 @@ fn planet_summary(p: Signal<Planet>, active: Signal<bool>, effects: Signal<Vec<P
         {move || {
             let list = rows.get();
             if list.is_empty() {
-                let d = desc.get();
-                (!d.is_empty()).then(|| view! { <p class="hc-desc">{d}</p> }).into_any()
+                let (d, unofficial) = desc.get();
+                (!d.is_empty())
+                    .then(|| {
+                        view! {
+                            <p class="hc-desc">{d}</p>
+                            {unofficial.then(|| view! { <p class="hc-unofficial">"Unofficial description"</p> })}
+                        }
+                    })
+                    .into_any()
             } else {
                 let enemy = enemy.get();
                 let ruined = anomaly.get() == Some(Anomaly::Scorched) || p.with(|p| landmark(p.index).is_some());
