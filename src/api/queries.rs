@@ -12,7 +12,7 @@ use std::sync::{Arc, OnceLock};
 use warroom_core::api::{Assignment, Campaign, Dispatch, Planet, War, from_value};
 use warroom_core::effects::{GLOOM_IDS, PlanetEffect, TCS_ID, homeworld_poi, planet_effects};
 use warroom_core::galaxy::{PolarSectors, SectorPlanet, build_polar_sectors, landmark, landmark_planet};
-use warroom_core::planets::{fix_static, is_off_map};
+use warroom_core::planets::{fix_statics, is_off_map};
 use warroom_core::snapshot::{
     CampaignLive, EffectsLive, EpisodeLive, OrderSample, PlanetLive, PlanetStatic, SnapshotKind, StationLive, to_planet,
 };
@@ -271,7 +271,7 @@ fn apply(rows: Vec<SnapshotRow>) {
             SnapshotKind::Planets => put(s.planets_live, r.data),
             SnapshotKind::PlanetsStatic => match from_value::<Vec<PlanetStatic>>(r.data) {
                 Ok(list) => {
-                    let fixed: Vec<PlanetStatic> = list.into_iter().map(fix_static).collect();
+                    let fixed = fix_statics(list);
                     if s.planets_static.with_untracked(|old| old.as_deref() != Some(&fixed)) {
                         s.planets_static.set(Some(Arc::new(fixed)));
                     }

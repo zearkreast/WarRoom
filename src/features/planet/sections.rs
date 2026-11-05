@@ -33,6 +33,7 @@ use warroom_core::effects::EffectKind;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, fmt_time_left, js_round, js_sum, to_fixed};
 use warroom_core::galaxy::{Anomaly, Landmark, anomaly_of};
+use warroom_core::planets::split_unofficial;
 use warroom_core::progress::{liberation_divers_short, projected_at, tracked_percent};
 use warroom_core::time::parse_ms;
 use warroom_core::war_history::{HistoryInput, LogEntry, build_war_history, defense_events, fmt_long_duration};
@@ -1072,7 +1073,14 @@ fn effect_icon(kind: EffectKind) -> IconLike {
 }
 
 fn env_row(icon: AnyView, name: String, text: String, tone: Option<String>) -> AnyView {
-    let text = (!text.is_empty()).then(|| view! { <p>{text}</p> }.into_any());
+    let (text, unofficial) = split_unofficial(&text);
+    let text = (!text.is_empty()).then(|| {
+        view! {
+            <p>{text}</p>
+            {unofficial.then(|| view! { <p class="pd-env-unofficial">"Unofficial description"</p> })}
+        }
+        .into_any()
+    });
     env_row_timed(icon, None, name, text, tone, None, "")
 }
 

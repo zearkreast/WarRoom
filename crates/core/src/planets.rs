@@ -1,8 +1,11 @@
-//! Corrections and lookups for the API's planet list: moved planets, placeholders, removed worlds.
+//! Corrections and lookups for the API's planet list: moved planets, placeholders, removed worlds,
+//! unofficial text.
 
 use crate::api::{Named, Planet, Position};
 use crate::snapshot::PlanetStatic;
+use regex_lite::Regex;
 use std::collections::HashMap;
+use std::sync::LazyLock;
 
 /// Where the game has moved things the API still files under the old planet id. Meridia was dragged
 /// into the Celeste sector. On 12 Aug 2026 Sangis and Alderidge Cove traded names, places, biomes and
@@ -30,6 +33,39 @@ pub fn fix_static(mut p: PlanetStatic) -> PlanetStatic {
         _ => {}
     }
     p
+}
+
+/// [`fix_static`] over the whole list. A biome it rewrites takes its text from the API wherever a planet has
+/// that biome, so the API's current wording wins over the copy above.
+pub fn fix_statics(list: Vec<PlanetStatic>) -> Vec<PlanetStatic> {
+    let texts: HashMap<String, String> = list
+        .iter()
+        .filter(|p| !p.biome.description.is_empty())
+        .map(|p| (p.biome.name.clone(), p.biome.description.clone()))
+        .collect();
+    list.into_iter()
+        .map(|p| {
+            let api_biome = p.biome.clone();
+            let mut p = fix_static(p);
+            if p.biome != api_biome
+                && let Some(text) = texts.get(&p.biome.name)
+            {
+                p.biome.description = text.clone();
+            }
+            p
+        })
+        .collect()
+}
+
+static UNOFFICIAL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)\s*[(\[]\s*unofficial\s*[)\]]").unwrap());
+
+/// Planet-list text without its "(UNOFFICIAL)" mark, and whether it had one.
+pub fn split_unofficial(text: &str) -> (String, bool) {
+    if UNOFFICIAL.is_match(text) {
+        (UNOFFICIAL.replace_all(text, "").trim().to_string(), true)
+    } else {
+        (text.to_string(), false)
+    }
 }
 
 /// Planet indices are not array positions (the list has gaps), so look them up by index.
