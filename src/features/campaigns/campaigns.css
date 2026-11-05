@@ -17,6 +17,7 @@
     --frame: var(--line-strong);
     display: block;
     width: 100%;
+    min-width: 0;
     padding: 2px;
     border: 0;
     text-align: left;
@@ -116,6 +117,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .cc-name.is-long {
+    font-stretch: 62%;
+    font-size: 1.5rem;
   }
   .cc-sector {
     margin-top: var(--s-2);
@@ -613,6 +618,19 @@
     .mo-strip .mo-ends {
       white-space: nowrap;
     }
+    .mo-strip > .panel-head {
+      flex-wrap: wrap;
+      row-gap: 0;
+      padding-block: var(--s-3);
+    }
+    /* The words would push the countdown past the frame. */
+    .mo-strip .mo-ends-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
     .ms-rows {
       grid-template-columns: 1fr auto;
     }
@@ -630,6 +648,9 @@
     .cc-name,
     .cc-pct b {
       font-size: 1.5rem;
+    }
+    .cc-name.is-long {
+      font-size: 1.3rem;
     }
   }
 }

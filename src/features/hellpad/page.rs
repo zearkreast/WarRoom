@@ -19,6 +19,7 @@ use leptos::prelude::*;
 use warroom_core::data::manuals::MANUALS;
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_int, js_round};
+use warroom_core::galaxy::LANDMARKS;
 use warroom_core::gww_nav::GwwPage;
 use warroom_core::planet_index::control_shares;
 use warroom_core::snapshot::EpisodeStatus;
@@ -30,22 +31,106 @@ struct ModuleInfo {
     title: &'static str,
     path: &'static str,
     color: &'static str,
+    icon: IconLike,
+    blurb: &'static str,
 }
 
 fn module_info(m: HellpadModule) -> ModuleInfo {
     match m {
-        HellpadModule::Planets => ModuleInfo { title: "Planets", path: "hp://planets", color: "var(--f-humans)" },
-        HellpadModule::Stations => {
-            ModuleInfo { title: "Space stations", path: "hp://stations", color: "var(--impact)" }
-        }
-        HellpadModule::Gww => ModuleInfo { title: "G.W.W.", path: "hp://gww", color: "var(--cta)" },
-        HellpadModule::PastCampaigns => {
-            ModuleInfo { title: "Past campaigns", path: "hp://archive", color: "var(--warn)" }
-        }
-        HellpadModule::Stratagems => {
-            ModuleInfo { title: "Stratagem collection", path: "hp://stratagems", color: "var(--p-offensive)" }
-        }
+        HellpadModule::Planets => ModuleInfo {
+            title: "Planets",
+            path: "hp://planets",
+            color: "var(--f-humans)",
+            icon: IconLike::Lucide(icons::GLOBE_2),
+            blurb: "Every planet by sector, with search, filters and live fronts.",
+        },
+        HellpadModule::Stations => ModuleInfo {
+            title: "Space stations",
+            path: "hp://stations",
+            color: "var(--impact)",
+            icon: IconLike::Dss,
+            blurb: "Where the DSS is, its next FTL jump, its tactical actions and the Automaton station it destroyed.",
+        },
+        HellpadModule::Gww => ModuleInfo {
+            title: "G.W.W.",
+            path: "hp://gww",
+            color: "var(--cta)",
+            icon: IconLike::Lucide(icons::GLOBE),
+            blurb: "Galactic Wide Web: Super Earth's sites and ministries, training manuals tied to the live war, and the corporations.",
+        },
+        HellpadModule::PastCampaigns => ModuleInfo {
+            title: "Past campaigns",
+            path: "hp://campaigns",
+            color: "var(--warn)",
+            icon: IconLike::Lucide(icons::ARCHIVE),
+            blurb: "Every Galactic Campaign that has ended: its Major Orders, outcome and reward.",
+        },
+        HellpadModule::Stratagems => ModuleInfo {
+            title: "Stratagem collection",
+            path: "hp://stratagems",
+            color: "var(--p-offensive)",
+            icon: IconLike::Lucide(icons::ZAP),
+            blurb: "Every stratagem with its code, cooldown and where it is unlocked, and the drill to learn the codes.",
+        },
     }
+}
+
+/// What a module holds, in a few words: on its tile and in its header. None until its data has arrived.
+fn module_meta(m: HellpadModule) -> Signal<Option<String>> {
+    let q = queries();
+    match m {
+        // Counted as the index lists them, landmarks included.
+        HellpadModule::Planets => Signal::derive(move || {
+            q.fresh_planets.with(|p| p.as_ref().map(|p| format!("{} planets indexed", p.len() + LANDMARKS.len())))
+        }),
+        HellpadModule::Stations => Signal::derive(move || {
+            q.stations.with(|s| {
+                s.as_ref()
+                    .map(|s| if s.is_empty() { "No station in orbit".into() } else { format!("{} in orbit", s.len()) })
+            })
+        }),
+        HellpadModule::Gww => {
+            let read = Memo::new(move |_| {
+                settings().get(|s| MANUALS.iter().filter(|m| s.gww_read.iter().any(|x| x == m.id)).count())
+            });
+            Signal::derive(move || {
+                Some(match read.get() {
+                    0 => format!("{} training manuals", MANUALS.len()),
+                    n => format!("{n} of {} manuals read", MANUALS.len()),
+                })
+            })
+        }
+        HellpadModule::PastCampaigns => Signal::derive(move || {
+            q.episodes.with(|e| {
+                let n = e.as_ref()?.iter().filter(|e| e.status != EpisodeStatus::Active).count();
+                Some(if n == 1 { "1 campaign".into() } else { format!("{n} campaigns") })
+            })
+        }),
+        HellpadModule::Stratagems => Signal::stored(Some(format!("{} stratagems", STRATAGEMS.len()))),
+    }
+}
+
+/// Where an open module stands after its `hp://` address: a filter, a tab or a search, as `/tab` or `?q=…`.
+#[derive(Clone, Copy)]
+pub struct ModuleAt(RwSignal<String>);
+
+/// Keeps the open module's address in step with `at`.
+pub fn use_module_at(at: impl Fn() -> String + Send + Sync + 'static) {
+    let Some(ModuleAt(s)) = use_context::<ModuleAt>() else { return };
+    Effect::new(move |_| s.set(at()));
+    on_cleanup(move || {
+        let _ = s.try_set(String::new());
+    });
+}
+
+/// A module's address tail: an optional segment, then the search if there is one.
+pub fn address_tail(segment: Option<&str>, search: &str) -> String {
+    let q = search.split_whitespace().collect::<Vec<_>>().join("+").to_lowercase();
+    format!(
+        "{}{}",
+        segment.map(|s| format!("/{s}")).unwrap_or_default(),
+        if q.is_empty() { String::new() } else { format!("?q={q}") }
+    )
 }
 
 fn module_key(m: HellpadModule) -> &'static str {
@@ -149,14 +234,9 @@ fn StationReport() -> impl IntoView {
 }
 
 #[component]
-fn ModuleTile(
-    id: HellpadModule,
-    icon: IconLike,
-    #[prop(into)] text: String,
-    #[prop(into)] meta: Signal<String>,
-    #[prop(optional)] children: Option<Children>,
-) -> impl IntoView {
+fn ModuleTile(id: HellpadModule, #[prop(optional)] children: Option<Children>) -> impl IntoView {
     let m = module_info(id);
+    let meta = module_meta(id);
     view! {
         <button
             class="hp-mod"
@@ -170,14 +250,14 @@ fn ModuleTile(
                 ui().open_module(Some(id))
             }
         >
-            <span class="hp-mod-icon">{icon_view(icon, 26.0, 1.5, None)}</span>
+            <span class="hp-mod-icon">{icon_view(m.icon, 26.0, 1.5, None)}</span>
             <span class="hp-mod-body">
                 <span class="hp-mod-path num">{m.path}</span>
                 <b class="hp-mod-title">{m.title}</b>
-                <span class="hp-mod-text">{text}</span>
+                <span class="hp-mod-text">{m.blurb}</span>
                 {children.map(|c| c())}
                 <span class="hp-mod-go caps">
-                    {move || format!("{} ", meta.get())}
+                    {move || format!("{} ", meta.get().unwrap_or_else(|| "Open".into()))}
                     <Icon icon=icons::CHEVRON_RIGHT size=14.0 />
                 </span>
             </span>
@@ -185,27 +265,30 @@ fn ModuleTile(
     }
 }
 
+/// A module the Hellpad doesn't have yet, with what it waits on.
 #[component]
-fn LockedTile(icon: IconData, title: &'static str, path: &'static str, text: &'static str) -> impl IntoView {
+fn PlannedTile(
+    icon: IconData,
+    title: &'static str,
+    path: &'static str,
+    text: &'static str,
+    #[prop(default = "Planned")] status: &'static str,
+) -> impl IntoView {
     view! {
-        <div class="hp-mod locked">
+        <div class="hp-mod planned">
             <span class="hp-mod-icon">
-                <Icon icon=icon size=26.0 stroke_width=1.5 />
+                <Icon icon=icon size=20.0 stroke_width=1.5 />
             </span>
             <span class="hp-mod-body">
-                <span class="hp-mod-path num">{format!("hp://{path}")}</span>
-                <b class="hp-mod-title">{title}</b>
-                <span class="hp-mod-text">{text}</span>
-                <span class="hp-mod-go caps">
-                    <Icon icon=icons::LOCK size=12.0 />
-                    " Module building"
-                    <span class="hp-segs" aria-hidden="true">
-                        <i class="on"></i>
-                        <i class="on"></i>
-                        <i></i>
-                        <i></i>
+                <span class="hp-mod-path num">
+                    {format!("hp://{path}")}
+                    <span class="hp-mod-status caps">
+                        <Icon icon=icons::LOCK size=12.0 />
+                        {format!(" {status}")}
                     </span>
                 </span>
+                <b class="hp-mod-title">{title}</b>
+                <span class="hp-mod-text">{text}</span>
             </span>
         </div>
     }
@@ -216,14 +299,7 @@ fn PlanetsTile() -> impl IntoView {
     let q = queries();
     let shares = Memo::new(move |_| q.fresh_planets.with(|p| p.as_ref().map(|p| control_shares(p))));
     view! {
-        <ModuleTile
-            id=HellpadModule::Planets
-            icon=icons::GLOBE_2.into()
-            text="Every planet by sector, with search, filters and live fronts."
-            meta=Signal::derive(move || {
-                q.fresh_planets.with(|p| p.as_ref().map_or("Open index".to_string(), |p| format!("{} planets indexed", p.len())))
-            })
-        >
+        <ModuleTile id=HellpadModule::Planets>
             {move || {
                 shares.get().map(|shares| {
                     let label = format!(
@@ -260,18 +336,12 @@ fn PlanetsTile() -> impl IntoView {
 #[component]
 fn StationsTile() -> impl IntoView {
     let q = queries();
-    let count = Memo::new(move |_| q.stations.with(|s| s.as_ref().map_or(0, |s| s.len())));
     let place = Memo::new(move |_| {
         let index = q.stations.with(|s| s.as_ref()?.first().map(|s| s.planet_index))?;
         q.fresh_planets.with(|p| p.as_ref()?.iter().find(|p| p.index == index).map(|p| p.name.clone()))
     });
     view! {
-        <ModuleTile
-            id=HellpadModule::Stations
-            icon=IconLike::Dss
-            text="Where the DSS is, its next FTL jump, its tactical actions and the Automaton station it destroyed."
-            meta=Signal::derive(move || if count.get() > 0 { format!("{} in orbit", count.get()) } else { "Open".into() })
-        >
+        <ModuleTile id=HellpadModule::Stations>
             {move || place.get().map(|w| view! {
                 <span class="hp-mod-live caps">
                     <LiveDot />
@@ -285,16 +355,8 @@ fn StationsTile() -> impl IntoView {
 #[component]
 fn GwwTile() -> impl IntoView {
     let read = Memo::new(move |_| settings().get(|s| s.gww_read.clone()));
-    let done = Memo::new(move |_| read.with(|r| MANUALS.iter().filter(|m| r.iter().any(|x| x == m.id)).count()));
     view! {
-        <ModuleTile
-            id=HellpadModule::Gww
-            icon=icons::GLOBE.into()
-            text="Galactic Wide Web: Super Earth's sites and ministries, training manuals tied to the live war, and the corporations."
-            meta=Signal::derive(move || {
-                if done.get() > 0 { format!("{} of {} manuals read", done.get(), MANUALS.len()) } else { "Open".into() }
-            })
-        >
+        <ModuleTile id=HellpadModule::Gww>
             <span class="hp-course" aria-hidden="true">
                 {MANUALS
                     .iter()
@@ -321,14 +383,7 @@ fn PastTile() -> impl IntoView {
         })
     });
     view! {
-        <ModuleTile
-            id=HellpadModule::PastCampaigns
-            icon=icons::ARCHIVE.into()
-            text="Every Galactic Campaign that has ended: its Major Orders, outcome and reward."
-            meta=Signal::derive(move || {
-                ended.with(|e| e.as_ref().filter(|e| !e.is_empty()).map_or("Open".to_string(), |e| format!("{} campaigns", e.len())))
-            })
-        >
+        <ModuleTile id=HellpadModule::PastCampaigns>
             {move || last.get().map(|l| {
                 let won = l.status == EpisodeStatus::Won;
                 view! {
@@ -349,12 +404,7 @@ fn StratagemsTile() -> impl IntoView {
         PERMITS.map(|p| format!("{} {}", p.label(), STRATAGEMS.iter().filter(|s| s.permit() == p).count())).join(", ")
     );
     view! {
-        <ModuleTile
-            id=HellpadModule::Stratagems
-            icon=icons::ZAP.into()
-            text="Every stratagem with its code, cooldown and where it is unlocked, and the drill to learn the codes."
-            meta=Signal::stored(format!("{} stratagems", STRATAGEMS.len()))
-        >
+        <ModuleTile id=HellpadModule::Stratagems>
             <span class="hp-control">
                 <span class="hp-control-bar" role="img" aria-label=label>
                     {PERMITS
@@ -370,7 +420,12 @@ fn StratagemsTile() -> impl IntoView {
 }
 
 #[component]
-fn Group(title: &'static str, count: usize, children: Children) -> impl IntoView {
+fn Group(
+    title: &'static str,
+    count: usize,
+    #[prop(default = "hp-grid")] class: &'static str,
+    children: Children,
+) -> impl IntoView {
     view! {
         <section class="hp-group">
             <h2 class="hp-group-title caps">
@@ -378,7 +433,7 @@ fn Group(title: &'static str, count: usize, children: Children) -> impl IntoView
                 " "
                 <span class="num">{count}</span>
             </h2>
-            <div class="hp-grid">{children()}</div>
+            <div class=class>{children()}</div>
         </section>
     }
 }
@@ -396,50 +451,66 @@ fn Hub() -> impl IntoView {
                 <PastTile />
                 <StratagemsTile />
             </Group>
-            <Group title="In development" count=5>
-                <LockedTile
+            <Group title="Planned" count=5 class="hp-grid planned">
+                <PlannedTile
                     icon=icons::SKULL
                     title="Enemy encyclopedia"
                     path="enemies"
                     text="Every enemy by faction: its armour, weak spots and what brings it down."
                 />
-                <LockedTile
+                <PlannedTile
                     icon=icons::CROSSHAIR
                     title="Weaponry"
                     path="weapons"
                     text="Primaries, secondaries, throwables and support weapons, with their stats."
                 />
-                <LockedTile
+                <PlannedTile
                     icon=icons::LIBRARY
                     title="Ship library"
                     path="library"
-                    text="For the Super Destroyer library Arrowhead has promised, once it is in the game."
+                    text="The Super Destroyer's library, once the game opens it."
+                    status="Awaits the game"
                 />
-                <LockedTile icon=icons::ROCKET title="Warbonds" path="warbonds" text="Warbond pages, items and medal costs." />
-                <LockedTile icon=icons::GIFT title="Boosters" path="boosters" text="Booster effects and where to find them." />
+                <PlannedTile icon=icons::ROCKET title="Warbonds" path="warbonds" text="Warbond pages, items and medal costs." />
+                <PlannedTile icon=icons::GIFT title="Boosters" path="boosters" text="Booster effects and where to find them." />
             </Group>
         </div>
     }
 }
 
-/// The strip over an open module: back to the hub, and where the module sits.
+/// The head of an open module: the way back to the hub and its address, then what the module is.
 #[component]
-fn ModuleBar(module: HellpadModule) -> impl IntoView {
+fn ModuleHead(module: HellpadModule) -> impl IntoView {
     let m = module_info(module);
+    let meta = module_meta(module);
+    let at = use_context::<ModuleAt>();
     view! {
-        <nav class="hp-bar" aria-label="Breadcrumb" style=format!("--mod: {};", m.color)>
-            <button class="hp-bar-back" aria-label="Back to the Hellpad" title="Hellpad" on:click=move |_| ui().open_module(None)>
-                <Icon icon=icons::ARROW_LEFT size=16.0 />
-            </button>
-            <span class="hp-bar-path caps">
-                <button class="link" on:click=move |_| ui().open_module(None)>
-                    "Hellpad"
+        <header class="hp-head" style=format!("--mod: {};", m.color)>
+            <nav class="hp-bar" aria-label="Breadcrumb">
+                <button class="hp-bar-back" aria-label="Back to the Hellpad" title="Hellpad" on:click=move |_| ui().open_module(None)>
+                    <Icon icon=icons::ARROW_LEFT size=16.0 />
                 </button>
-                <Icon icon=icons::CHEVRON_RIGHT size=14.0 />
-                <span aria-current="page">{m.title}</span>
-            </span>
-            <span class="hp-bar-addr num" aria-hidden="true">{m.path}</span>
-        </nav>
+                <span class="hp-bar-path caps">
+                    <button class="link" on:click=move |_| ui().open_module(None)>
+                        "Hellpad"
+                    </button>
+                    <Icon icon=icons::CHEVRON_RIGHT size=14.0 />
+                    <span aria-current="page">{m.title}</span>
+                </span>
+                <span class="hp-bar-addr num" aria-hidden="true">
+                    {m.path}
+                    <span class="hp-bar-at">{move || at.map(|a| a.0.get()).unwrap_or_default()}</span>
+                </span>
+            </nav>
+            <div class="hp-head-main">
+                <span class="hp-head-icon" aria-hidden="true">{icon_view(m.icon, 28.0, 1.5, None)}</span>
+                <div class="hp-head-text">
+                    <h1 class="hp-head-title">{m.title}</h1>
+                    <p class="hp-head-blurb">{m.blurb}</p>
+                </div>
+                <span class="hp-head-meta caps num">{move || meta.get().unwrap_or_default()}</span>
+            </div>
+        </header>
     }
 }
 
@@ -447,6 +518,7 @@ fn ModuleBar(module: HellpadModule) -> impl IntoView {
 pub fn HellpadPage() -> impl IntoView {
     let module = ui().module;
     let root = NodeRef::<html::Div>::new();
+    provide_context(ModuleAt(RwSignal::new(String::new())));
     // Into a module, focus its strip's Back; out of one, the tile it was opened from.
     Effect::new(move |was: Option<Option<HellpadModule>>| {
         let now = module.get();
@@ -473,16 +545,21 @@ pub fn HellpadPage() -> impl IntoView {
     view! {
         <div class="page scroll starfield">
             <div class="page-inner" node_ref=root>
-                {move || {
-                    module.get().map(|m| view! { <ModuleBar module=m /> })
-                }}
                 {move || match module.get() {
                     None => view! { <Hub /> }.into_any(),
-                    Some(HellpadModule::Planets) => view! { <PlanetsModule /> }.into_any(),
-                    Some(HellpadModule::Stations) => view! { <StationsModule /> }.into_any(),
-                    Some(HellpadModule::Gww) => view! { <GwwModule /> }.into_any(),
-                    Some(HellpadModule::PastCampaigns) => view! { <PastCampaignsModule /> }.into_any(),
-                    Some(HellpadModule::Stratagems) => view! { <StratagemsModule /> }.into_any(),
+                    Some(m) => view! {
+                        <ModuleHead module=m />
+                        <div class="hp-module">
+                            {match m {
+                                HellpadModule::Planets => view! { <PlanetsModule /> }.into_any(),
+                                HellpadModule::Stations => view! { <StationsModule /> }.into_any(),
+                                HellpadModule::Gww => view! { <GwwModule /> }.into_any(),
+                                HellpadModule::PastCampaigns => view! { <PastCampaignsModule /> }.into_any(),
+                                HellpadModule::Stratagems => view! { <StratagemsModule /> }.into_any(),
+                            }}
+                        </div>
+                    }
+                    .into_any(),
                 }}
             </div>
         </div>

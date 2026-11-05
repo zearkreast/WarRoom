@@ -109,16 +109,17 @@ pub fn NewsPage() -> impl IntoView {
             found.set(Vec::new());
             return;
         }
+        // The page may have closed by the time these awaits return, so everything after them is a try_.
         spawn_local(async move {
             // Waits for typing to pause before asking the archive.
             js::sleep(400.0).await;
-            if searches.get_value() != run {
+            if searches.try_get_value() != Some(run) {
                 return;
             }
             if let Ok(Some(list)) = search_dispatches(&words, 100).await
-                && searches.get_value() == run
+                && searches.try_get_value() == Some(run)
             {
-                found.set(list);
+                found.try_set(list);
             }
         });
     });
@@ -131,14 +132,16 @@ pub fn NewsPage() -> impl IntoView {
         spawn_local(async move {
             match older_dispatches(oldest, ARCHIVE_PAGE).await {
                 Ok(Some(list)) => {
-                    more_archived.set(list.len() == ARCHIVE_PAGE);
-                    archive.update(|a| a.extend(list));
-                    shown.update(|n| *n += PAGE);
+                    more_archived.try_set(list.len() == ARCHIVE_PAGE);
+                    archive.try_update(|a| a.extend(list));
+                    shown.try_update(|n| *n += PAGE);
                 }
-                Ok(None) => more_archived.set(false),
+                Ok(None) => {
+                    more_archived.try_set(false);
+                }
                 Err(_) => {}
             }
-            reading.set(false);
+            reading.try_set(false);
         });
     };
     let kinds = Memo::new(move |_| {

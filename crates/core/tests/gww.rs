@@ -6,7 +6,9 @@ use warroom_core::data::manuals::{CHAPTERS, MANUALS, TIPS};
 use warroom_core::data::sites::{ADS, CITIZENS, COMPANIES, GOV, HOLIDAYS, HOLIDAYS_SITE, MINISTRIES};
 use warroom_core::data::stations::{PAST_STATIONS, STAR_OF_PEACE};
 use warroom_core::data::{AdBy, Section};
-use warroom_core::gww_nav::{addresses, app_page_title, course_next, page_of, suggested_addresses, target_at};
+use warroom_core::gww_nav::{
+    addresses, app_page_title, course_next, normalize, page_of, suggested_addresses, target_at,
+};
 use warroom_core::gww_text::{Segment, links_in, next_yearly, parse_rich, plain_text};
 
 fn all_sections() -> Vec<&'static Section> {
@@ -243,4 +245,29 @@ fn reads_on_through_the_course_skipping_what_is_read() {
     assert_eq!(course_next(ids[0], &all), Some(ids[1]));
     assert_eq!(course_next(last, &all), None);
     assert_eq!(course_next("nowhere", &[]), None);
+}
+
+#[test]
+fn an_old_address_opens_the_page_where_it_lives_now() {
+    assert_eq!(normalize("gov/directory/"), "se://gww/super-earth");
+    assert_eq!(target_at("se://gov/directory").as_deref(), Some("dir:gov"));
+    assert_eq!(target_at("se://corp").as_deref(), Some("dir:corps"));
+}
+
+#[test]
+fn every_address_sits_where_its_owner_does() {
+    let misplaced: Vec<(String, String)> = addresses()
+        .into_iter()
+        .filter(|(a, t)| {
+            let rest = a.strip_prefix("se://").unwrap_or_default();
+            match t.split(':').next().unwrap_or_default() {
+                "ministry" | "holiday" => !rest.starts_with("gov/"),
+                "manual" => !rest.starts_with("hc/manuals/"),
+                "dir" => !(rest == "hc/manuals" || rest.starts_with("gww/")),
+                "company" => rest.contains('/') || !rest.contains('.'),
+                _ => false,
+            }
+        })
+        .collect();
+    assert!(misplaced.is_empty(), "{misplaced:?}");
 }

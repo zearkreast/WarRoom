@@ -151,7 +151,13 @@ fn OrderStrip(id: i64) -> impl IntoView {
             class=Signal::derive(move || format!("mo-strip {}", if open.get() { "" } else { "folded" }))
             title=""
             title_extra=toggle.into_any()
-            right=view! { <span class="mo-ends">"Ends in " <b><Countdown to=expires /></b></span> }.into_any()
+            right=view! {
+                <span class="mo-ends">
+                    <span class="mo-ends-label">"Ends in "</span>
+                    <b><Countdown to=expires /></b>
+                </span>
+            }
+                .into_any()
         >
             <Show when=move || open.get()>
                 <ul class="ms-rows">

@@ -1336,6 +1336,8 @@
       width: auto;
       max-height: 56%;
       z-index: 5;
+      /* Solid: the map's buttons sit right under the sheet and read through glass. */
+      background: var(--surface-1);
     }
     .map-settings {
       right: calc(var(--s-3) + 64px);
