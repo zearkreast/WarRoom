@@ -48,7 +48,10 @@ const SITES: [(&str, &str); 6] = [
     ("news", NEWS_ADDRESS),
 ];
 const DIR_ADDRESSES: [(&str, &str); 3] =
-    [("manuals", "se://hc/manuals"), ("gov", "se://gov/directory"), ("corps", "se://corp")];
+    [("manuals", "se://hc/manuals"), ("gov", "se://gww/super-earth"), ("corps", "se://gww/corporations")];
+/// Addresses pages used to have, and where they live now, so an address typed from memory still opens.
+const MOVED: [(&str, &str); 2] =
+    [("se://gov/directory", "se://gww/super-earth"), ("se://corp", "se://gww/corporations")];
 
 /// Directory ids and their titles.
 pub const DIRS: [(&str, &str); 3] =
@@ -118,11 +121,12 @@ pub fn suggested_addresses() -> Vec<String> {
     addresses().into_iter().filter(|(_, t)| !is_gov_subpage(t)).map(|(a, _)| a).collect()
 }
 
-/// Typed addresses may skip the scheme or end in a slash.
+/// Typed addresses may skip the scheme or end in a slash; a page's old address gives its current one.
 pub fn normalize(typed: &str) -> String {
     let a = typed.trim().to_lowercase();
     let a = a.trim_end_matches('/');
-    if a.starts_with("se://") { a.to_string() } else { format!("se://{}", a.trim_start_matches('/')) }
+    let a = if a.starts_with("se://") { a.to_string() } else { format!("se://{}", a.trim_start_matches('/')) };
+    lookup(&MOVED, &a).map_or(a, str::to_string)
 }
 
 /// The link target a typed address opens, if any site answers at it.

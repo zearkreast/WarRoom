@@ -2,6 +2,7 @@
 
 use crate::api::fronts::{major_order_planets, station_planets};
 use crate::api::queries::queries;
+use crate::features::hellpad::page::{address_tail, use_module_at};
 use crate::features::planet::tint::planet_tint;
 use crate::js::num;
 use crate::state::{OptionsAnchor, settings, ui};
@@ -421,18 +422,21 @@ pub fn PlanetsModule() -> impl IntoView {
             </button>
         }
     };
+    use_module_at(move || {
+        let segment = match filter.get() {
+            PlanetFilter::All => None,
+            PlanetFilter::Active => Some("fronts".to_string()),
+            PlanetFilter::Pinned => Some("watchlist".to_string()),
+            PlanetFilter::Owner(f) => Some(faction_label(Some(f)).to_lowercase().replace(' ', "-")),
+        };
+        address_tail(segment.as_deref(), &query.get())
+    });
     let ready = Memo::new(move |_| q.fresh_planets.with(Option::is_some));
     let empty = Memo::new(move |_| groups.with(Vec::is_empty));
 
     view! {
         <Show when=move || ready.get() fallback=|| view! { <Loading what="the star chart" rows=4 /> }>
             <div class="pi">
-                <div class="page-head">
-                    <h1 class="page-title">
-                        "Planets "
-                        <span class="pi-count num">{move || listed.with(|p| p.len())}</span>
-                    </h1>
-                </div>
                 <GalacticControl
                     planets=planets
                     on_filter=Callback::new(move |f: Faction| {

@@ -1,6 +1,7 @@
 //! The stratagem collection: every stratagem by permit and type, with its code, timings and unlock.
 
 use crate::features::hellpad::gww::drill::open_drill;
+use crate::features::hellpad::page::{address_tail, use_module_at};
 use crate::features::map::stratagem_art::{code_view, icon_of, permit_color};
 use crate::state::settings;
 use crate::ui::icons::{self, Icon};
@@ -148,6 +149,10 @@ fn DrillBanner() -> impl IntoView {
 pub fn StratagemsModule() -> impl IntoView {
     let query = RwSignal::new(String::new());
     let permit = RwSignal::new(None::<Permit>);
+    use_module_at(move || {
+        let segment = permit.get().map(|p| p.label().to_lowercase());
+        address_tail(segment.as_deref(), &query.get())
+    });
     let q = Memo::new(move |_| query.with(|s| s.trim().to_lowercase()));
     let shown = Memo::new(move |_| {
         let p = permit.get();
@@ -189,12 +194,6 @@ pub fn StratagemsModule() -> impl IntoView {
     };
     view! {
         <div class="sg">
-            <div class="page-head">
-                <h1 class="page-title">
-                    "Stratagems "
-                    <span class="pi-count num">{STRATAGEMS.len()}</span>
-                </h1>
-            </div>
             <DrillBanner />
             <div class="pi-controls">
                 <label class="pi-search">

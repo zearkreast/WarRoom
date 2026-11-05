@@ -6,6 +6,7 @@ pub mod jumps;
 use crate::api::fronts::planet_rate;
 use crate::api::queries::queries;
 use crate::api::stations::{ACTION_DAYS, JUMP_LIMIT, use_action_changes, use_station_jumps};
+use crate::features::hellpad::page::{address_tail, use_module_at};
 use crate::features::map::pawn_art::{DssState, action_icon, dss_state};
 use crate::features::planet::detail::PlanetSphere;
 use crate::js::{self, fmt_date_time};
@@ -216,21 +217,27 @@ fn action_bar(pct: f64, mode: &'static str, label: String) -> impl IntoView {
     }
 }
 
-fn action_record_line(record: Option<ActionRecord>, now: f64) -> Option<AnyView> {
-    let r = record?;
-    let text = match (r.last_active, r.times) {
-        (Some(at), n) => format!(
-            "Last active {} ago · {}× in {} days",
-            fmt_long_duration((now - at) / 1000.0),
-            n,
-            js::num(ACTION_DAYS)
+fn action_record_line(record: Option<(ActionRecord, f64)>, active: bool, now: f64) -> Option<AnyView> {
+    let (r, since) = record?;
+    let young = now - since < ACTION_DAYS * 86_400_000.0;
+    let ago = |at: f64| fmt_long_duration((now - at) / 1000.0);
+    let text = match r.last_active {
+        Some(at) => format!(
+            "{} {} ago · {}× in {}",
+            if active { "Went active" } else { "Last active" },
+            ago(at),
+            r.times,
+            if young { ago(since) } else { format!("{} days", js::num(ACTION_DAYS)) }
         ),
-        (None, _) => format!("Not active in the last {} days", js::num(ACTION_DAYS)),
+        // In effect since before the log began; the card already says so.
+        None if active => return None,
+        None if young => format!("Not active since the log began {} ago", ago(since)),
+        None => format!("Not active in the last {} days", js::num(ACTION_DAYS)),
     };
     Some(view! { <p class="st-record caps num">{text}</p> }.into_any())
 }
 
-fn action_card(a: &TacticalAction, now: f64, record: Option<ActionRecord>) -> AnyView {
+fn action_card(a: &TacticalAction, now: f64, record: Option<(ActionRecord, f64)>) -> AnyView {
     let cost = a.costs.first();
     let active = is_active(a, now);
     let cooling = is_cooling(a, now);
@@ -279,7 +286,7 @@ fn action_card(a: &TacticalAction, now: f64, record: Option<ActionRecord>) -> An
             <p class="st-strategic">{highlighted(&a.strategic_description)}</p>
             <p class="st-desc">{a.description.clone()}</p>
             {progress}
-            {action_record_line(record, now)}
+            {action_record_line(record, active, now)}
         </article>
     }
     .into_any()
@@ -469,7 +476,10 @@ fn StationPanel(station: Memo<Option<StationLive>>) -> impl IntoView {
                         {s.tactical_actions
                             .iter()
                             .map(|a| {
-                                let record = log.with(|l| l.as_ref().and_then(|l| l.as_ref()).map(|l| action_record(l, a.id32)));
+                                let record = log.with(|l| {
+                                    let l = l.as_ref()?.as_ref()?;
+                                    Some((action_record(&l.changes, a.id32), l.since?))
+                                });
                                 action_card(a, now_v, record)
                             })
                             .collect_view()}
@@ -578,6 +588,12 @@ pub fn StationsModule() -> impl IntoView {
     let current = Memo::new(move |_| {
         let c = chosen.get();
         options.with(|o| o.iter().find(|x| Some(&x.0) == c.as_ref()).or(o.first()).map(|x| x.0.clone()))
+    });
+    use_module_at(move || {
+        let id = current.get();
+        let short = options
+            .with(|o| o.iter().find(|x| Some(&x.0) == id.as_ref()).map(|x| x.1.to_lowercase().replace(' ', "-")));
+        address_tail(short.as_deref(), "")
     });
     let waiting = Memo::new(move |_| q.raw.loading.get() && q.stations.with(Option::is_none));
     view! {

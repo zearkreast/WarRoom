@@ -359,10 +359,11 @@ pub fn FrontLineSection(
         }
         let planet = index.get_untracked();
         spawn_local(async move {
+            // The planet may have closed while this was out.
             if let Ok(list) = crate::api::history::planet_history(planet, h).await
-                && hours.get_untracked() == h
+                && hours.try_get_untracked() == Some(h)
             {
-                long.set(Some((h, list.map(Arc::new))));
+                long.try_set(Some((h, list.map(Arc::new))));
             }
         });
     });

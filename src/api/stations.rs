@@ -76,9 +76,20 @@ struct ActionRow {
 /// How far back a station's action log is read.
 pub const ACTION_DAYS: f64 = 30.0;
 
-/// A station's tactical action changes over the last 30 days, oldest first. None while the `station_actions`
-/// table doesn't exist yet.
-pub fn use_action_changes(station: impl Fn() -> i64 + 'static) -> Query<Option<Arc<Vec<ActionChange>>>> {
+/// A station's tactical action changes over the last 30 days, oldest first, and when its log began.
+pub struct ActionLog {
+    pub changes: Vec<ActionChange>,
+    /// The station's first logged change ever, epoch ms; None while nothing is logged.
+    pub since: Option<f64>,
+}
+
+#[derive(Deserialize)]
+struct AtRow {
+    at: String,
+}
+
+/// A station's action log. None while the `station_actions` table doesn't exist yet.
+pub fn use_action_changes(station: impl Fn() -> i64 + 'static) -> Query<Option<Arc<ActionLog>>> {
     let last = queries().last_update;
     use_query(
         move || {
@@ -103,11 +114,20 @@ pub fn use_action_changes(station: impl Fn() -> i64 + 'static) -> Query<Option<A
             };
             let rows: Vec<ActionRow> =
                 warroom_core::api::from_value(serde_json::Value::Array(rows)).map_err(|e| e.to_string())?;
-            Ok(Some(Arc::new(
-                rows.into_iter()
+            // The window can't tell a young log from a quiet month, so the first row ever is read too.
+            let first =
+                source::select("station_actions", &format!("select=at&station=eq.{station}&order=at.asc&limit=1"))
+                    .await
+                    .map_err(|e| e.message)?;
+            let first: Vec<AtRow> =
+                warroom_core::api::from_value(serde_json::Value::Array(first)).map_err(|e| e.to_string())?;
+            Ok(Some(Arc::new(ActionLog {
+                changes: rows
+                    .into_iter()
                     .map(|r| ActionChange { action: r.action, at: parse_ms(&r.at), status: r.status })
                     .collect(),
-            )))
+                since: first.first().map(|r| parse_ms(&r.at)),
+            })))
         },
     )
 }
