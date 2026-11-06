@@ -1,6 +1,7 @@
 //! The Major Order archive the collector keeps: every order seen, and its progress at each poll.
 
 use crate::api::source;
+use crate::js;
 use serde::Deserialize;
 use warroom_core::api::{Assignment, AssignmentTask};
 use warroom_core::snapshot::OrderSample;
@@ -51,8 +52,25 @@ async fn read_all<T: serde::de::DeserializeOwned>(table: &str, query: &str) -> R
     }
 }
 
-/// Every order on record, latest deadline first.
+/// How long a read of the order archive is reused; the collector adds to it once a minute at most.
+const ARCHIVE_KEEP_MS: f64 = 5.0 * 60_000.0;
+
+thread_local! {
+    static ARCHIVE: std::cell::RefCell<Option<(f64, Option<Vec<ArchivedOrder>>)>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Every order on record, latest deadline first; a read from the last few minutes is reused.
 pub async fn archived_orders() -> Result<Option<Vec<ArchivedOrder>>, String> {
+    let now = js::now();
+    if let Some((_, list)) = ARCHIVE.with_borrow(|a| a.clone()).filter(|(at, _)| now - at < ARCHIVE_KEEP_MS) {
+        return Ok(list);
+    }
+    let list = read_archive().await?;
+    ARCHIVE.set(Some((now, list.clone())));
+    Ok(list)
+}
+
+async fn read_archive() -> Result<Option<Vec<ArchivedOrder>>, String> {
     let rows: Option<Vec<OrderRow>> = read_all("orders", "select=*&order=expires.desc").await?;
     Ok(rows.map(|rows| {
         rows.into_iter()
@@ -72,9 +90,18 @@ pub async fn archived_orders() -> Result<Option<Vec<ArchivedOrder>>, String> {
     }))
 }
 
-/// Whether the store has the order archive yet.
+thread_local! {
+    static READY: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Whether the store has the order archive yet; once it has, it isn't asked again.
 pub async fn archive_ready() -> bool {
-    !matches!(source::select("orders", "select=id&limit=1").await, Err(e) if e.status == 404)
+    if READY.get() {
+        return true;
+    }
+    let ready = !matches!(source::select("orders", "select=id&limit=1").await, Err(e) if e.status == 404);
+    READY.set(ready);
+    ready
 }
 
 /// One order's progress readings, oldest first.

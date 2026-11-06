@@ -1,31 +1,34 @@
 //! The last day of fighting on a planet or across the galaxy, beside the game's all-time totals.
 
+use crate::api::cache::use_query;
 use crate::api::combat::combat_readings;
 use crate::js;
 use crate::ui::emblems::FactionEmblem;
 use leptos::prelude::*;
-use leptos::task::spawn_local;
 use warroom_core::api::Faction;
 use warroom_core::factions::faction_color;
-use warroom_core::fighting::{CombatTrend, last_day};
+use warroom_core::fighting::last_day;
 use warroom_core::format::{fmt_compact, fmt_int, fmt_pct};
 
 /// Re-read every half hour; the collector keeps a reading an hour.
 const REFRESH_MS: f64 = 30.0 * 60_000.0;
+const HOUR_MS: f64 = 3_600_000.0;
 
 #[component]
 pub fn CombatTrendLine(#[prop(into)] planet: Signal<i64>) -> impl IntoView {
-    let trend = RwSignal::new(None::<Option<CombatTrend>>);
     let tick = js::use_now(REFRESH_MS);
-    Effect::new(move |_| {
-        let now = tick.get();
-        let planet = planet.get();
-        spawn_local(async move {
-            if let Ok(Some(list)) = combat_readings(planet, now - 26.0 * 3_600_000.0).await {
-                trend.set(Some(last_day(&list)));
-            }
-        });
-    });
+    // Keyed by the half hour, so opening the page again reuses the last reading.
+    let readings = use_query(
+        move || Some(format!("combat:{}:{}", planet.get(), (tick.get() / REFRESH_MS).floor())),
+        REFRESH_MS,
+        |key: String| async move {
+            let mut parts = key.split(':').skip(1);
+            let planet: i64 = parts.next().and_then(|p| p.parse().ok()).unwrap_or(0);
+            let slot: f64 = parts.next().and_then(|p| p.parse().ok()).unwrap_or(0.0);
+            combat_readings(planet, slot * REFRESH_MS - 26.0 * HOUR_MS).await.map(|r| r.map(|l| last_day(&l)))
+        },
+    );
+    let trend = Signal::derive(move || readings.data.get().flatten());
     move || {
         let t = trend.get()?;
         Some(match t {

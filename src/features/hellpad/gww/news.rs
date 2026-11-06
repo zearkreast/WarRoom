@@ -1,9 +1,10 @@
 //! Strohmann News on the G.W.W.: the dispatches and Galactic Campaign stories laid out as a news site.
 
 use crate::api::queries::queries;
-use crate::features::galactic_campaigns::CampaignArt;
+use crate::features::galactic_campaigns::{CampaignArt, campaign_art};
 use crate::features::hellpad::gww::blocks::{HeadingRef, banner, crumb, related};
 use crate::features::hellpad::gww::nav::{logo_url, use_gww_nav};
+use crate::features::hellpad::gww::pictures::logo_plate;
 use crate::features::map::pawn_art::{hologram_in, pawn_href};
 use crate::features::map::stratagem_art::icon_of;
 use crate::features::news::card::{MarkupText, kind_label};
@@ -164,11 +165,10 @@ fn enemy_of(i: &NewsItem) -> Option<Faction> {
 fn picture(i: &NewsItem, planets: &HashMap<String, Planet>, class: &'static str) -> AnyView {
     let enemy = enemy_of(i);
     let tone = enemy.map_or("#f074d8", |f| faction_color(Some(f)));
-    let campaign = match &i.body {
-        NewsBody::Thread(t) => t.campaign.picture,
+    let art = match &i.body {
+        NewsBody::Thread(t) => Some(view! { <CampaignArt names=campaign_art(&t.campaign) class="sn-art" /> }),
         NewsBody::Dispatch(_) => None,
     };
-    let art = campaign.map(|id| view! { <CampaignArt id=id class="sn-art" /> });
     let stratagem = stratagem_of(i);
     if let Some(p) = pictured(i, planets) {
         let land = planet_tint(p, &[]).art.unwrap_or_default();
@@ -308,7 +308,7 @@ pub fn news_page(heading: HeadingRef) -> AnyView {
     view! {
         <article class="gww-page sn" style="--site: #f074d8;">
             {banner(
-                logo_url("strohmann-news").map(|u| view! { <img src=u alt="" /> }.into_any()),
+                logo_url("strohmann-news").map(logo_plate),
                 vec![crumb("Corporations", Some("dir:corps")), crumb("Strohmann Media", Some("company:strohmann-media"))],
                 NEWS_TITLE.into(),
                 company.and_then(|c| c.slogan).map(|s| s.into_any()),

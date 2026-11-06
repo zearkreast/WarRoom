@@ -122,7 +122,9 @@ fn TopBar() -> impl IntoView {
                     }
                 }}
             </div>
-            <NewsTicker />
+            <Show when=move || settings().get(|s| s.show_ticker) fallback=|| view! { <span class="ticker-off"></span> }>
+                <NewsTicker />
+            </Show>
             <div class="strip-clock num" title="Super Earth Standard Time (UTC)">
                 <span class="caps">"SEST"</span>
                 {move || format!(" {} ", sest_clock(f.now.get()))}

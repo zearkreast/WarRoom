@@ -9,6 +9,7 @@ use warroom_core::data::manuals::MANUALS;
 use warroom_core::data::sites::{ADS, CITIZENS, COMPANIES, GOV, MINISTRIES};
 use warroom_core::data::{Ad, AdBy, AdShape, Company, Manual};
 use warroom_core::gww_nav::title_of;
+use wasm_bindgen::JsCast;
 
 /// Drawn icons for manuals the game has no picture for.
 fn manual_icon_of(id: &str) -> IconLike {
@@ -63,9 +64,31 @@ pub fn manual_icon(m: &Manual, size: f64) -> AnyView {
     .into_any()
 }
 
+/// How much a logo's height gives way to its width, so square and wide logos carry about the same weight: a
+/// wide one lower and longer rather than as tall and much bigger.
+const LOGO_EVEN: f64 = 0.3;
+
+/// Sizes a logo by its shape once it has loaded; see `LOGO_EVEN`.
+fn size_logo(e: web_sys::Event) {
+    let Some(img) = e.target().and_then(|t| t.dyn_into::<web_sys::HtmlImageElement>().ok()) else { return };
+    let (w, h) = (f64::from(img.natural_width()), f64::from(img.natural_height()));
+    if w > 0.0 && h > 0.0 {
+        let _ = web_sys::HtmlElement::style(&img).set_property("--k", &js::num((w / h).powf(-LOGO_EVEN)));
+    }
+}
+
+/// A logo over a soft, darkened copy of itself that fills its box.
+pub fn logo_plate(src: String) -> AnyView {
+    view! {
+        <span class="logo-ambient" style=format!("--logo: url(\"{src}\");") aria-hidden="true"></span>
+        <img class="gww-logo" src=src alt="" on:load=size_logo />
+    }
+    .into_any()
+}
+
 pub fn company_mark(c: &Company) -> AnyView {
     match c.logo.and_then(logo_url) {
-        Some(u) => view! { <img class="gww-logo" src=u alt="" /> }.into_any(),
+        Some(u) => logo_plate(u),
         None => view! { <span class="gww-wordmark caps" aria-hidden="true">{c.name}</span> }.into_any(),
     }
 }

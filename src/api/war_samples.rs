@@ -35,6 +35,22 @@ fn rows<T: serde::de::DeserializeOwned>(
     }
 }
 
+thread_local! {
+    /// The last window read and where it began, so the next one asks only for what came in since.
+    static WINDOW: std::cell::RefCell<(f64, Arc<Vec<WarSample>>)> = std::cell::RefCell::new((f64::INFINITY, Arc::new(Vec::new())));
+}
+
+fn war_sample(r: WarSampleRow) -> WarSample {
+    WarSample {
+        at: parse_ms(&r.at),
+        impact: r.impact,
+        players: r.players,
+        terminids: r.terminids,
+        automatons: r.automatons,
+        illuminate: r.illuminate,
+    }
+}
+
 /// The last 24 hours of galaxy-wide samples, ending at the newest data rather than the clock.
 /// Empty while the `war_samples` table doesn't exist yet (older backends).
 pub fn use_war_samples() -> Query<Arc<Vec<WarSample>>> {
@@ -44,21 +60,23 @@ pub fn use_war_samples() -> Query<Arc<Vec<WarSample>>> {
         POLL_MS,
         |key: String| async move {
             let end: f64 = key.rsplit(':').next().and_then(|s| s.parse().ok()).unwrap_or(0.0);
-            let since = encode(&iso_string(end - DAY_MS));
-            let list: Vec<WarSampleRow> =
-                rows(source::select("war_samples", &format!("select=*&at=gte.{since}&order=at.asc&limit=2000")).await)?;
-            Ok(Arc::new(
-                list.into_iter()
-                    .map(|r| WarSample {
-                        at: parse_ms(&r.at),
-                        impact: r.impact,
-                        players: r.players,
-                        terminids: r.terminids,
-                        automatons: r.automatons,
-                        illuminate: r.illuminate,
-                    })
-                    .collect(),
-            ))
+            let start = end - DAY_MS;
+            let (from, held) = WINDOW.with_borrow(|(f, l)| (*f, Arc::clone(l)));
+            // Samples are never rewritten inside the day, so a window that began no later only needs its new end.
+            let newest = held.last().map(|s| s.at).filter(|_| from <= start);
+            let since = encode(&iso_string(newest.unwrap_or(start)));
+            let op = if newest.is_some() { "gt" } else { "gte" };
+            let fresh: Vec<WarSampleRow> = rows(
+                source::select("war_samples", &format!("select=*&at={op}.{since}&order=at.asc&limit=2000")).await,
+            )?;
+            let fresh = fresh.into_iter().map(war_sample);
+            let list: Vec<WarSample> = match newest {
+                Some(_) => held.iter().copied().filter(|s| s.at >= start).chain(fresh).collect(),
+                None => fresh.collect(),
+            };
+            let list = Arc::new(list);
+            WINDOW.set((start, Arc::clone(&list)));
+            Ok(list)
         },
     )
 }

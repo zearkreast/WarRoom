@@ -8,7 +8,7 @@ use crate::features::overview::page::OverviewPage;
 use crate::features::settings::page::SettingsPage;
 use crate::js;
 use crate::layout::shell::Shell;
-use crate::state::{View, ui};
+use crate::state::{View, settings, ui};
 use leptos::prelude::*;
 use std::time::Duration;
 
@@ -42,10 +42,25 @@ fn mark_arrivals(view: Memo<View>) {
     });
 }
 
+/// Settings › Motion: the document carries the choice, for the stylesheet and `prefers_reduced_motion()`.
+fn mark_motion() {
+    Effect::new(move |_| {
+        let calm = settings().get(|s| s.reduce_motion);
+        if let Some(root) = js::document().document_element() {
+            let _ = if calm {
+                root.class_list().add_1("reduce-motion")
+            } else {
+                root.class_list().remove_1("reduce-motion")
+            };
+        }
+    });
+}
+
 #[component]
 pub fn App() -> impl IntoView {
     // A memo, so setting the same view again (opening a Hellpad module) doesn't remount the page.
     let view = Memo::new(move |_| ui().view.get());
+    mark_motion();
     mark_arrivals(view);
     view! {
         <Shell>

@@ -8,6 +8,17 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.7.3",
+        date: "2026-11-06",
+        items: &[
+            "Settings: choose the start page, hide the hint boxes, hide the news ticker and reduce motion; space station alerts join the notifications.",
+            "G.W.W. logos sit evenly whatever their shape, each on a soft glow of its own colours.",
+            "Campaign pictures for campaigns the game no longer lists, such as Census Thunder, and for ones it renumbers.",
+            "Major Orders on record lists the orders running now too.",
+            "Lighter on data: the galaxy's 24-hour samples download only what's new, and fighting counters and the order archive are reused between pages.",
+        ],
+    },
+    ChangelogEntry {
         version: "0.7.2",
         date: "2026-11-06",
         items: &[

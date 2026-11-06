@@ -349,6 +349,53 @@
   .gww-site.corp:hover .gww-logo {
     transform: scale(1.06);
   }
+  /* A logo stands on a blurred, darkened copy of itself; --k (set from its shape) evens out square and wide ones. */
+  .gww-corp-logo,
+  .gww-banner-icon:has(> .logo-ambient) {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    container-type: size;
+    --logo-h: 66cqh;
+  }
+  .gww-banner-icon:has(> .logo-ambient) {
+    width: 176px;
+    height: 96px;
+    --logo-h: 70cqh;
+    filter: none;
+    border: 1px solid color-mix(in srgb, var(--site) var(--edge), transparent);
+  }
+  /* Blown up well past the box and blurred hard, the copy reads as the logo's colours, not its shapes. */
+  .logo-ambient {
+    position: absolute;
+    z-index: -1;
+    inset: -60%;
+    background: var(--logo) center / 140% 140% no-repeat;
+    filter: blur(36px) saturate(1.4) brightness(0.5);
+  }
+  .gww-corp-logo::after,
+  .gww-banner-icon:has(> .logo-ambient)::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at center, transparent 25%, rgba(0, 0, 0, 0.5)),
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px);
+    pointer-events: none;
+  }
+  .gww-corp-logo > .gww-logo,
+  .gww-banner-icon > .gww-logo {
+    width: auto;
+    height: calc(var(--logo-h) * var(--k, 1));
+    max-width: 84cqw;
+    max-height: 84cqh;
+    object-fit: contain;
+    /* A logo on its own rectangle melts into the ground at its edge. */
+    mask:
+      linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent) intersect,
+      linear-gradient(180deg, transparent, #000 6%, #000 94%, transparent);
+  }
   .gww-site.corp .gww-site-body {
     padding: var(--s-4) var(--s-5) var(--s-5);
   }
