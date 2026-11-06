@@ -1,6 +1,6 @@
 use crate::api::orders::{ArchivedOrder, archived_orders};
 use crate::api::queries::queries;
-use crate::features::galactic_campaigns::{CampaignBody, CampaignHead, outcome};
+use crate::features::galactic_campaigns::{CampaignArt, CampaignBody, CampaignHead, outcome};
 use crate::js::{self, fmt_date, num};
 use crate::ui::emblems::FactionEmblem;
 use crate::ui::icons::{self, Icon};
@@ -188,6 +188,7 @@ pub fn PastCampaignsModule() -> impl IntoView {
                                                     <span class="pc-mark" aria-hidden="true">
                                                         <FactionEmblem faction=e.faction.as_str() size=132.0 />
                                                     </span>
+                                                    {e.picture.map(|id| view! { <CampaignArt id=id class="pc-art" /> })}
                                                     <CampaignHead e=e.clone() />
                                                     <span class="pc-meta caps num">
                                                         <span class="pc-orders">

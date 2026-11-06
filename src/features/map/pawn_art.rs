@@ -59,6 +59,18 @@ static UNITS: LazyLock<Vec<(Regex, &'static str)>> = LazyLock::new(|| {
     .collect()
 });
 
+/// The hologram of the first sub-faction a text names, then the DSS's.
+pub fn hologram_in(text: &str) -> Option<&'static str> {
+    UNITS
+        .iter()
+        .filter_map(|(re, k)| re.find(text).map(|m| (m.start(), *k)))
+        .min_by_key(|(at, _)| *at)
+        .map(|(_, k)| k)
+        .or_else(|| DSS_NAME.is_match(text).then_some("dss_default"))
+}
+
+static DSS_NAME: LazyLock<Regex> = LazyLock::new(|| re(r"\bDSS\b|democracy space station"));
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Art {
     pub key: String,

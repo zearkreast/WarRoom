@@ -3,6 +3,46 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.7.2] - 2026-11-06
+
+Everything since v0.7.1.
+
+### Upgrading
+
+- On a database of your own, apply `supabase/migrations/0013_campaign_art.sql`, which adds the public
+  `campaign-art` storage bucket, and redeploy the collector (`git pull && docker compose up -d --build`) so the
+  campaign archive keeps the game's picture ids. The game's API names each picture only by id, so the pictures
+  are uploaded to the bucket by hand as `<id>.webp`; until a picture is there, its place stays as before.
+
+### Galactic Campaigns
+
+- The running campaign on High Command opens with its picture, and each of its Major Orders shows its own when
+  unfolded.
+- In Hellpad › Past campaigns, each campaign's picture fades in across its row, and each Major Order's shows when it
+  is unfolded. The Major Order boxes elsewhere stay as they were.
+
+### Strohmann News
+
+- A campaign story carries the campaign's picture.
+- A story pictures the first planet it names, also when one highlight names several ("hold FRONTERIA, CRIMSICA and
+  …") or the headline names it without a highlight, stamped with the stratagem it brings.
+- A story without a planet shows the stratagem it is about, the hologram of the sub-faction or the DSS it names, or
+  its enemy's emblem.
+
+- Strategic Opportunities, Imperatives and Directives read as orders: "New Strategic Directive" is an order,
+  "Strategic Opportunity Seized" or "Imperative Achieved" a victory, "Lost" a defeat. Order dispatches are labelled
+  Order instead of Major order, as the campaigns now hold the Major Orders.
+
+### Fixed
+
+- The Major Orders desk of the G.W.W.'s Strohmann News was empty. Since every Major Order runs inside a Galactic
+  Campaign, its dispatches sit on the campaign's story; the desk now holds the campaigns and High Command's other
+  orders.
+- The Front lines desk took only dispatches whose headline said victory or defeat, which the game's front news
+  rarely does ("HEETH LOST", "MINOR TERMINID OUTBREAK"). It now holds every dispatch that names a planet and isn't
+  about an order, so it no longer repeats the Major Orders desk.
+- On phones, the pictures of Strohmann News briefs stretched to the height of their text.
+
 ## [0.7.1] - 2026-11-06
 
 Everything since v0.7.0.

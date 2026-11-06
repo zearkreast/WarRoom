@@ -31,9 +31,12 @@ impl DispatchKind {
 
 static RULES: LazyLock<Vec<(Regex, DispatchKind)>> = LazyLock::new(|| {
     [
-        (r"major order (won|complete)|victory|liberated|success", DispatchKind::Victory),
-        (r"major order (failed|lost)|defeat|has fallen|failed", DispatchKind::Defeat),
-        (r"major order|new orders?|high command", DispatchKind::Order),
+        (
+            r"major order (won|complete)|victory|liberated|success|strategic \w+ (seized|achieved)",
+            DispatchKind::Victory,
+        ),
+        (r"major order (failed|lost)|defeat|has fallen|failed|strategic \w+ lost", DispatchKind::Defeat),
+        (r"major order|new orders?|high command|strategic (opportunity|imperative|directive)", DispatchKind::Order),
         (r"alert|attack|invasion|warning|emergency", DispatchKind::Alert),
         (r"advisory|notice|update|briefing", DispatchKind::Advisory),
     ]
@@ -46,6 +49,15 @@ static RULES: LazyLock<Vec<(Regex, DispatchKind)>> = LazyLock::new(|| {
 pub fn dispatch_kind(message: &str) -> DispatchKind {
     let title = dispatch_title(message);
     RULES.iter().find(|(re, _)| re.is_match(&title)).map_or(DispatchKind::News, |(_, k)| *k)
+}
+
+/// High Command's orders besides the campaigns' Major Orders: Strategic Opportunities, Imperatives and Directives.
+static ORDER: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)major order|new orders?|strategic (opportunity|imperative|directive)").unwrap());
+
+/// Whether a dispatch is about an order, whatever its outcome.
+pub fn is_order_dispatch(message: &str) -> bool {
+    ORDER.is_match(&dispatch_title(message))
 }
 
 /// The dispatch body's spans without the leading headline, so cards don't repeat the title.

@@ -8,6 +8,16 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.7.2",
+        date: "2026-11-06",
+        items: &[
+            "Galactic Campaigns show the game's pictures: the running campaign on High Command, and every campaign and Major Order in Past campaigns.",
+            "Strohmann News on the G.W.W. pictures more stories: campaigns with their own picture, every planet a story names, and the stratagem, hologram or enemy it is about.",
+            "Fixed: the G.W.W. Strohmann News's Major Orders and Front lines desks were nearly empty. Major Orders now holds the campaigns and the Strategic Opportunities, Imperatives and Directives; Front lines, every other dispatch about a planet.",
+            "Fixed: on phones, the pictures of Strohmann News briefs stretched to the height of their text.",
+        ],
+    },
+    ChangelogEntry {
         version: "0.7.1",
         date: "2026-11-06",
         items: &[

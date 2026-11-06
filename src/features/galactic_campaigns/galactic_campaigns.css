@@ -103,6 +103,26 @@
     color: var(--text-hi);
   }
 
+  .cmp-cover,
+  .cmp-mo-art {
+    display: block;
+    width: 100%;
+    aspect-ratio: 750 / 345;
+    object-fit: cover;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    opacity: 0;
+    transition: opacity var(--t-value) var(--ease);
+  }
+  .cmp-cover {
+    max-height: 240px;
+  }
+  .cmp-mo-art {
+    max-height: 200px;
+  }
+  .cmp-art.loaded {
+    opacity: 1;
+  }
   .cmp-orders {
     list-style: none;
     margin: 0;
@@ -402,7 +422,7 @@
   .pc[open] > summary {
     border-bottom: 1px solid var(--line);
   }
-  .pc > summary > :not(.pc-mark, .pc-chevron) {
+  .pc > summary > :not(.pc-mark, .pc-art, .pc-chevron) {
     grid-column: 1;
   }
   /* The enemy's emblem, large and faint behind the title row. */
@@ -425,6 +445,32 @@
   }
   .pc.lost .pc-mark {
     filter: grayscale(0.7);
+  }
+  /* The campaign's picture fades in from the right of its row, over the emblem. */
+  .pc-art {
+    position: absolute;
+    z-index: -1;
+    inset: 0 0 0 auto;
+    width: min(52%, 420px);
+    height: 100%;
+    object-fit: cover;
+    mask: linear-gradient(90deg, transparent, #000 70%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--t-value) var(--ease);
+  }
+  .pc-art.loaded {
+    opacity: 0.4;
+  }
+  .pc > summary:hover .pc-art.loaded,
+  .pc[open] .pc-art.loaded {
+    opacity: 0.5;
+  }
+  .pc.lost .pc-art {
+    filter: grayscale(0.7);
+  }
+  .pc > summary:has(.pc-art.loaded) .pc-mark {
+    opacity: 0;
   }
   .pc-chevron {
     grid-column: 2;

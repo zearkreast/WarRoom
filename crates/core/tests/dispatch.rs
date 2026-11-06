@@ -1,7 +1,9 @@
 mod common;
 use common::*;
 use warroom_core::api::Dispatch;
-use warroom_core::dispatch::{DispatchKind, dispatch_body, dispatch_kind, latest_dispatches, recent_dispatches};
+use warroom_core::dispatch::{
+    DispatchKind, dispatch_body, dispatch_kind, is_order_dispatch, latest_dispatches, recent_dispatches,
+};
 use warroom_core::time::iso_string;
 
 #[test]
@@ -19,6 +21,11 @@ fn categorises_dispatches_by_headline() {
     assert_eq!(dispatch_kind("<i=3>STRATEGIC ALERT</i>\nBots on Y."), DispatchKind::Alert);
     assert_eq!(dispatch_kind("<i=3>CONTROL CENTER ADVISORY</i>\nNote."), DispatchKind::Advisory);
     assert_eq!(dispatch_kind("Something happened."), DispatchKind::News);
+    assert_eq!(dispatch_kind("<i=3>NEW STRATEGIC DIRECTIVE</i>\nHold X."), DispatchKind::Order);
+    assert_eq!(dispatch_kind("<i=3>STRATEGIC OPPORTUNITY SEIZED</i>\nWell done."), DispatchKind::Victory);
+    assert_eq!(dispatch_kind("<i=3>STRATEGIC IMPERATIVE ACHIEVED</i>\nWell done."), DispatchKind::Victory);
+    assert_eq!(dispatch_kind("<i=3>STRATEGIC OPPORTUNITY LOST</i>\nPity."), DispatchKind::Defeat);
+    assert_eq!(dispatch_kind("<i=3>STRATEGIC UPDATE</i>\nNote."), DispatchKind::Advisory);
 }
 
 #[test]
@@ -40,4 +47,13 @@ fn lists_the_newest_few_whatever_their_age_or_the_last_72_hours() {
     let ids = |count| latest_dispatches(&list, count, now).iter().map(|x| x.id).collect::<Vec<_>>();
     assert_eq!(ids("3"), [4, 3, 2]);
     assert_eq!(ids("72h"), [4]);
+}
+
+#[test]
+fn an_order_dispatch_is_one_about_an_order_whatever_its_outcome() {
+    assert!(is_order_dispatch("<i=3>MAJOR ORDER WON</i>\nWell done."));
+    assert!(is_order_dispatch("<i=3>STRATEGIC IMPERATIVE FAILED</i>\nPity."));
+    assert!(is_order_dispatch("<i=3>NEW STRATEGIC OPPORTUNITY</i>\nGo."));
+    assert!(!is_order_dispatch("<i=3>STRATEGIC ALERT</i>\nBots on Y."));
+    assert!(!is_order_dispatch("<i=3>MINOR TERMINID OUTBREAK</i>\nBugs."));
 }

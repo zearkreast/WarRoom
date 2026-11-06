@@ -1,6 +1,7 @@
 //! The Galactic Campaign panel: the running campaign's Major Orders, reward and tally, or the last one's outcome.
 
 use crate::api::queries::queries;
+use crate::config::SUPABASE_URL;
 use crate::features::news::card::MarkupText;
 use crate::js::fmt_date;
 use crate::ui::emblems::FactionEmblem;
@@ -10,6 +11,31 @@ use leptos::prelude::*;
 use warroom_core::data::campaign_reward;
 use warroom_core::factions::faction_color;
 use warroom_core::snapshot::{EpisodeLive, EpisodeStatus, campaign_tally};
+
+/// Where the project keeps a picture the game names only by id.
+pub fn campaign_art_url(id: i64) -> String {
+    format!("{}/storage/v1/object/public/campaign-art/{id}.webp", SUPABASE_URL.trim_end_matches('/'))
+}
+
+/// A campaign's or Major Order's picture; it leaves the page when storage has none.
+#[component]
+pub fn CampaignArt(id: i64, class: &'static str) -> impl IntoView {
+    let missing = RwSignal::new(false);
+    let loaded = RwSignal::new(false);
+    view! {
+        <Show when=move || !missing.get()>
+            <img
+                class=move || format!("cmp-art {class} {}", if loaded.get() { "loaded" } else { "" })
+                src=campaign_art_url(id)
+                alt=""
+                loading="lazy"
+                decoding="async"
+                on:load=move |_| loaded.set(true)
+                on:error=move |_| missing.set(true)
+            />
+        </Show>
+    }
+}
 
 pub fn outcome(s: EpisodeStatus) -> (&'static str, &'static str) {
     match s {
@@ -68,13 +94,19 @@ pub fn CampaignHead(e: EpisodeLive) -> impl IntoView {
 
 /// Description, reward, tally and each Major Order with its briefing, as the game's Control Center lists them.
 #[component]
-pub fn CampaignBody(e: EpisodeLive) -> impl IntoView {
+pub fn CampaignBody(
+    e: EpisodeLive,
+    /// Opens with the campaign's picture; Past campaigns shows it on the folded row instead.
+    #[prop(optional)]
+    cover: bool,
+) -> impl IntoView {
     let tally = campaign_tally(&e);
     let reward = e.reward.and_then(campaign_reward);
     let to_come = if e.status == EpisodeStatus::Active { CAMPAIGN_ORDERS.saturating_sub(e.phases.len()) } else { 0 };
     let n = e.phases.len();
     view! {
         <div class="cmp-body">
+            {e.picture.filter(|_| cover).map(|id| view! { <CampaignArt id=id class="cmp-cover" /> })}
             {(!e.description.is_empty()).then(|| view! { <p class="cmp-desc">{e.description.clone()}</p> })}
             <div class=format!("cmp-reward {}", status_class(e.status))>
                 <span class="cmp-label caps">"Campaign reward"</span>
@@ -105,6 +137,7 @@ pub fn CampaignBody(e: EpisodeLive) -> impl IntoView {
                                     {p.medals.map(|m| view! { <span class="cmp-medals caps num">{format!("{} medals", crate::js::num(m))}</span> })}
                                     <OutcomeChip status=p.status />
                                 </summary>
+                                {p.picture.filter(|id| Some(*id) != e.picture).map(|id| view! { <CampaignArt id=id class="cmp-mo-art" /> })}
                                 {p.issued.map(|t| view! { <span class="cmp-issued caps num">{format!("Issued {}", fmt_date(t))}</span> })}
                                 {(!p.briefing.is_empty()).then(|| view! { <MarkupText message=p.briefing.clone() class="cmp-text" whole=true /> })}
                                 {(!p.outro.is_empty()).then(|| view! { <MarkupText message=p.outro.clone() class="cmp-text cmp-outro" whole=true /> })}
@@ -154,7 +187,7 @@ pub fn CampaignPanel() -> impl IntoView {
                     Some(e) => view! {
                         <div class="cmp">
                             <CampaignHead e=e.clone() />
-                            <CampaignBody e=e />
+                            <CampaignBody e=e cover=true />
                         </div>
                     }
                     .into_any(),

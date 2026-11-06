@@ -27,7 +27,9 @@ collector (VDS) ──► api.helldivers2.dev                 the only API calle
   ownership change, galaxy-wide war samples, each day's busiest and quietest moment, Helldivers on planets
   and in cities outside the fronts, the space stations' FTL jumps and tactical actions, every Major Order with
   its progress, hourly combat figures and every dispatch. Shared by all users. Apply the migrations in order,
-  from `0001`.
+  from `0001`. The `campaign-art` storage bucket holds the pictures of Galactic Campaigns and their Major
+  Orders as `<game image id>.webp`: the game's API names each picture only by id, so they are uploaded by
+  hand, and the app shows those it finds.
 
 ## Repository map
 

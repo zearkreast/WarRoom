@@ -9,7 +9,7 @@ use warroom_core::format::{js_trim, parse_markup};
 
 pub fn kind_label(k: DispatchKind) -> &'static str {
     match k {
-        DispatchKind::Order => "Major order",
+        DispatchKind::Order => "Order",
         DispatchKind::Victory => "Victory",
         DispatchKind::Defeat => "Defeat",
         DispatchKind::Alert => "Alert",
