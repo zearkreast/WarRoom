@@ -22,7 +22,7 @@ use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, to_fixed};
 use warroom_core::most_needed::NeedReason;
 
-/// Past this many letters a name is drawn condensed so it fits beside the percentage.
+/// Past this many letters a name is drawn condensed, and shrinks with its length to fit beside the percentage.
 const LONG_NAME: usize = 13;
 
 /// What a card shows that rarely changes; the card is rebuilt only when it does.
@@ -366,6 +366,7 @@ pub fn CampaignCard(
         let kind = l.kind.as_str();
         let index = l.index;
         let aria = format!("{}, {kind} against {}. Open options", l.name, faction_label(Some(l.enemy)));
+        let letters = l.name.chars().count();
         Some(view! {
             <article class="cc" style=l.style.clone()>
                 <button
@@ -396,7 +397,11 @@ pub fn CampaignCard(
                         <header class="cc-head">
                             <FactionEmblem faction=l.enemy.as_str() size=28.0 />
                             <div class="cc-title">
-                                <h3 class={if l.name.chars().count() > LONG_NAME { "cc-name is-long" } else { "cc-name" }} title=l.name.clone()>
+                                <h3
+                                    class={if letters > LONG_NAME { "cc-name is-long" } else { "cc-name" }}
+                                    style=format!("--letters: {letters}")
+                                    title=l.name.clone()
+                                >
                                     {l.name.clone()}
                                 </h3>
                                 <div class="cc-sector caps">

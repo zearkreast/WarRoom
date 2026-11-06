@@ -8,6 +8,19 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.7.1",
+        date: "2026-11-06",
+        items: &[
+            "Hellpad: every module opens under one head, its address follows what you're looking at, and unbuilt modules are marked Planned.",
+            "A start-up screen while the app loads, and the web app installs with its own icon and shortcuts.",
+            "Pages and modules rise in as they open; reduced motion turns it off.",
+            "Unofficial planet descriptions show without their mark, with a quiet note under them.",
+            "Fixed: two crashes, after leaving Strohmann News mid-search and after closing a planet while its front line loaded.",
+            "Fixed: folding the Strategic Threat folded the Major Order with it; each order now folds on its own.",
+            "Fixed: long planet names, the Major Order strip on phones, and space stations' action record over a young log.",
+        ],
+    },
+    ChangelogEntry {
         version: "0.7.0",
         date: "2026-11-04",
         items: &[

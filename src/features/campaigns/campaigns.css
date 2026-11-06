@@ -109,6 +109,7 @@
   .cc-title {
     min-width: 0;
     flex: 1;
+    container-type: inline-size;
   }
   .cc-name {
     font-size: 1.75rem;
@@ -118,9 +119,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* A condensed capital is at most half an em wide, so the size fits --letters of them across the title. */
   .cc-name.is-long {
     font-stretch: 62%;
-    font-size: 1.5rem;
+    font-size: min(1.5rem, 100cqi / (var(--letters) * 0.5));
   }
   .cc-sector {
     margin-top: var(--s-2);
@@ -650,7 +652,7 @@
       font-size: 1.5rem;
     }
     .cc-name.is-long {
-      font-size: 1.3rem;
+      font-size: min(1.3rem, 100cqi / (var(--letters) * 0.5));
     }
   }
 }

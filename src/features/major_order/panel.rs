@@ -196,12 +196,12 @@ pub fn OrderCard(
     id: i64,
     #[prop(into)] name: Signal<Option<String>>,
     #[prop(optional)] compact: bool,
-    /// The overview's card folds to its header; the fold is remembered.
+    /// The overview's card folds to its header; the fold is remembered per order.
     #[prop(optional)]
     foldable: bool,
 ) -> impl IntoView {
     let st = crate::state::settings();
-    let open = Memo::new(move |_| !foldable || st.get(|s| s.overview_mo_open));
+    let open = Memo::new(move |_| !foldable || st.get(|s| !s.overview_mo_folded.contains(&id)));
     let s = order_state(id);
     let chart = RwSignal::new(false);
     let archive = RwSignal::new(false);
@@ -217,7 +217,7 @@ pub fn OrderCard(
             <button
                 class="mo-toggle"
                 aria-expanded=move || open.get().to_string()
-                on:click=move |_| st.set(|s| s.overview_mo_open = !open.get_untracked())
+                on:click=move |_| st.flip_overview_fold(id)
             >
                 <Icon icon=icons::CHEVRON_RIGHT size=14.0 class="mo-chevron" />
                 {title}
