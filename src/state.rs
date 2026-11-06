@@ -328,10 +328,10 @@ pub struct SettingsData {
     pub front_sort: FrontSort,
     /// Whether the Galactic control ring is unfolded on the planet index.
     pub planets_control_open: bool,
-    /// Whether the Major Order strip on Active planets is unfolded.
-    pub mo_strip_open: bool,
-    /// Whether the Major Order on the High Command overview is unfolded.
-    pub overview_mo_open: bool,
+    /// Orders unfolded in the strip on Active planets, by id; the strip starts folded.
+    pub mo_strip_unfolded: Vec<i64>,
+    /// Orders folded on the High Command overview, by id; the overview starts unfolded.
+    pub overview_mo_folded: Vec<i64>,
     /// Whether the Theater of War disc turns by itself.
     pub tw_spin: bool,
     pub map_dispatches: MapDispatches,
@@ -376,8 +376,8 @@ impl Default for SettingsData {
             show_inactive: false,
             front_sort: FrontSort::Priority,
             planets_control_open: true,
-            mo_strip_open: false,
-            overview_mo_open: true,
+            mo_strip_unfolded: Vec::new(),
+            overview_mo_folded: Vec::new(),
             tw_spin: !js::prefers_reduced_motion(),
             map_dispatches: MapDispatches::Five,
             close_to_tray: true,
@@ -426,6 +426,23 @@ fn save(data: &SettingsData) {
     js::local_set(STORAGE_KEY, &stored.to_string());
 }
 
+/// Orders end, so only the latest few are kept.
+const ORDER_FOLDS_KEPT: usize = 16;
+
+fn flip_order(list: &mut Vec<i64>, order: i64) {
+    match list.iter().position(|o| *o == order) {
+        Some(i) => {
+            list.remove(i);
+        }
+        None => {
+            list.push(order);
+            if list.len() > ORDER_FOLDS_KEPT {
+                list.remove(0);
+            }
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct Settings {
     pub data: RwSignal<SettingsData>,
@@ -458,6 +475,16 @@ impl Settings {
             }
             None => d.pinned.push(planet),
         });
+    }
+
+    /// Folds or unfolds one order in the Active planets strip.
+    pub fn flip_strip_fold(&self, order: i64) {
+        self.change(|d| flip_order(&mut d.mo_strip_unfolded, order));
+    }
+
+    /// Folds or unfolds one order on the High Command overview.
+    pub fn flip_overview_fold(&self, order: i64) {
+        self.change(|d| flip_order(&mut d.overview_mo_folded, order));
     }
 
     pub fn clear_pins(&self) {

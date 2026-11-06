@@ -109,7 +109,7 @@ fn TargetItem(s: OrderState, i: usize) -> impl IntoView {
 #[component]
 fn OrderStrip(id: i64) -> impl IntoView {
     let s = order_state(id);
-    let open = Memo::new(move |_| settings().get(|s| s.mo_strip_open));
+    let open = Memo::new(move |_| settings().get(|s| s.mo_strip_unfolded.contains(&id)));
     // Planet objectives first, then counts, each keeping the order's own order.
     let rows = Memo::new(move |_| {
         s.tasks.with(|t| {
@@ -129,7 +129,7 @@ fn OrderStrip(id: i64) -> impl IntoView {
         <button
             class="ms-toggle"
             aria-expanded=move || open.get().to_string()
-            on:click=move |_| settings().set(|s| s.mo_strip_open = !s.mo_strip_open)
+            on:click=move |_| settings().flip_strip_fold(id)
         >
             <Icon icon=icons::CHEVRON_RIGHT size=14.0 class="ms-chevron" />
             {title}
@@ -171,7 +171,7 @@ fn OrderStrip(id: i64) -> impl IntoView {
 }
 
 /// The Major Order answered in one glance: the deadline, and whether each objective makes it at the current pace.
-/// Folded by default down to its header; the choice is remembered.
+/// Each order starts folded down to its header; the choice is remembered per order.
 #[component]
 pub fn MoStrip() -> impl IntoView {
     let q = queries();

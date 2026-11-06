@@ -3,6 +3,53 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.7.1] - 2026-11-06
+
+Everything since v0.7.0.
+
+### Upgrading
+
+- No new migrations, and the collector is unchanged, so it needs no redeploy.
+
+### Hellpad
+
+- Every module opens under one head: back, the module's address, its icon and title, what it is and what it holds.
+- The address follows the module's state, such as `hp://planets/automatons?q=creek`, `hp://stations/css` or
+  `hp://stratagems/supply`. Past campaigns is `hp://campaigns`.
+- Modules not built yet are smaller tiles marked Planned, and the Ship library's reads Awaits the game, in place of a
+  progress bar showing progress that isn't there.
+- G.W.W.: the Super Earth and corporation directories move to `se://gww/super-earth` and `se://gww/corporations`.
+  The old addresses still open them.
+
+### Look and start-up
+
+- Pages and Hellpad modules rise in, top down, as they open; what a search, sort or refresh redraws later just
+  appears. Reduced motion turns it off.
+- A start-up screen shows while the app downloads.
+- The web app has a manifest with icons and shortcuts to the Galaxy map, Active planets, High Command and Strohmann News, so
+  it installs as an app, plus an icon for iOS home screens and a favicon in the current palette.
+- The header ticker fades out at its edges, and on phones rows that scroll sideways fade at the edge with more to
+  show.
+
+### Planets
+
+- A planet description the planet list marks unofficial shows without the mark, with a small "Unofficial
+  description" note under it, on the map's card and panel and in the planet page's Operational parameters.
+- The corrected biomes of Sangis and Alderidge Cove take the current text for that biome where a planet has it.
+
+### Fixed
+
+- Leaving Strohmann News moments after typing a search, or closing a planet while its 7 or 30 day front line loaded,
+  stopped the app.
+- Folding one order, such as the Strategic Threat, folded the Major Order with it, on Active planets and on High
+  Command. Each order now folds on its own and is remembered by itself; folds kept from earlier versions start over.
+- A long planet name widened its campaign card past the page. Names over 13 letters are now drawn condensed, and the
+  longest shrink until they fit the card.
+- Phones: the Major Order strip's countdown ran past its frame, and the map's buttons showed through the planet
+  sheet above them.
+- Space stations: the tactical action record said "Not active in the last 30 days" over a log only hours old; it now
+  says when the log began.
+
 ## [0.7.0] - 2026-11-04
 
 Everything since v0.6.3.
