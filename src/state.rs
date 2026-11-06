@@ -334,6 +334,14 @@ pub struct SettingsData {
     pub overview_mo_folded: Vec<i64>,
     /// Whether the Theater of War disc turns by itself.
     pub tw_spin: bool,
+    /// The page the app opens on.
+    pub start_view: View,
+    /// Whether screens show their one-time hint boxes.
+    pub show_hints: bool,
+    /// Whether the status strip scrolls the last day's war news.
+    pub show_ticker: bool,
+    /// Calms the app's motion as the system's reduced-motion setting does, whatever the system says.
+    pub reduce_motion: bool,
     pub map_dispatches: MapDispatches,
     /// Desktop: closing the window hides it to the tray, so alerts keep coming.
     pub close_to_tray: bool,
@@ -379,6 +387,10 @@ impl Default for SettingsData {
             mo_strip_unfolded: Vec::new(),
             overview_mo_folded: Vec::new(),
             tw_spin: !js::prefers_reduced_motion(),
+            start_view: View::Campaigns,
+            show_hints: true,
+            show_ticker: true,
+            reduce_motion: false,
             map_dispatches: MapDispatches::Five,
             close_to_tray: true,
             station_alerts: true,
@@ -582,8 +594,9 @@ static STORES: OnceLock<Stores> = OnceLock::new();
 
 /// Creates the app-wide stores; called once, before anything renders, so no component owns them.
 pub fn init() {
+    let settings = Settings { data: RwSignal::new(load()) };
     let ui = Ui {
-        view: RwSignal::new(View::Campaigns),
+        view: RwSignal::new(settings.untracked(|s| s.start_view)),
         module: RwSignal::new(None),
         selected_planet: RwSignal::new(None),
         focus_seq: RwSignal::new(0),
@@ -595,7 +608,6 @@ pub fn init() {
         dialog: RwSignal::new(None),
         gww: RwSignal::new(vec![GwwPage::Home]),
     };
-    let settings = Settings { data: RwSignal::new(load()) };
     let _ = STORES.set(Stores { ui, settings });
 }
 

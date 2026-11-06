@@ -3,6 +3,49 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.7.3] - 2026-11-06
+
+Everything since v0.7.2.
+
+### Upgrading
+
+- No new migrations, and the collector is unchanged. A campaign picture can now also be kept in the
+  `campaign-art` bucket under the campaign's own id: `campaign-<campaign id>.webp` for the campaign and
+  `campaign-<campaign id>-<n>.webp` for its n-th Major Order. The app tries the game's picture id first, then
+  these, so campaigns the game no longer lists, or whose picture it renumbers, still show one.
+
+### Settings
+
+- Start page: the page the app opens on. Reloading keeps the page you were on.
+- Hints: hides the boxes that explain a screen the first time it opens.
+- News ticker: hides the war news scrolling along the top strip.
+- Reduce motion: stills the app's animations, as the system's reduced-motion setting does, whatever the system
+  says.
+- Space station actions joins the other alerts under Notifications.
+
+### G.W.W.
+
+- Corporation logos are sized by their shape, so square and wide logos carry about the same weight, and each
+  stands on a soft, darkened glow of its own colours, in the directory's tiles and in the site banners.
+
+### Galactic Campaigns
+
+- Census Thunder, which the game no longer lists, shows its pictures, and so does a campaign whose picture the
+  game renumbers, as it did Serene Guardian's.
+- Hellpad › Past campaigns › Major Orders on record lists the orders running now, marked In progress, above the
+  ones that have ended.
+
+### Data
+
+- The galaxy's last 24 hours of samples download in full once, then only the new ones each minute, instead of
+  the whole day every minute.
+- The last day of fighting is reused between pages for half an hour, and the order archive for five minutes.
+- The check for the order archive is made once it exists, not by every Major Order card.
+
+### Fixed
+
+- An unfolded Major Order's picture ran a few pixels past its box.
+
 ## [0.7.2] - 2026-11-06
 
 Everything since v0.7.1.
@@ -28,7 +71,6 @@ Everything since v0.7.1.
   …") or the headline names it without a highlight, stamped with the stratagem it brings.
 - A story without a planet shows the stratagem it is about, the hologram of the sub-faction or the DSS it names, or
   its enemy's emblem.
-
 - Strategic Opportunities, Imperatives and Directives read as orders: "New Strategic Directive" is an order,
   "Strategic Opportunity Seized" or "Imperative Achieved" a victory, "Lost" a defeat. Order dispatches are labelled
   Order instead of Major order, as the campaigns now hold the Major Orders.

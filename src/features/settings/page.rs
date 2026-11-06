@@ -7,7 +7,7 @@ use crate::features::map::options::{
     beacon_options, dispatch_options, overlay_options, planet_options, quality_options,
 };
 use crate::js::{self, num};
-use crate::state::{AlertSettings, Popups, settings};
+use crate::state::{AlertSettings, Popups, View, settings};
 use crate::tauri;
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Panel, Stepper, Switch};
@@ -204,6 +204,44 @@ pub fn SettingsPage() -> impl IntoView {
             <div class="page-inner settings-page">
                 <h1 class="page-title">"Settings"</h1>
                 <Panel title="Interface" icon=icons::SETTINGS>
+                    <Row title="Start page" text="The page the app opens on. Reloading keeps the page you were on.">
+                        <Stepper
+                            label="Start page"
+                            options=vec![
+                                (View::Campaigns, "Active planets"),
+                                (View::Map, "Galaxy map"),
+                                (View::Overview, "High Command"),
+                                (View::Hellpad, "Hellpad"),
+                                (View::News, "Strohmann News"),
+                            ]
+                            value=Signal::derive(move || s.get(|s| s.start_view))
+                            on_change=move |v| s.set(|s| s.start_view = v)
+                        />
+                    </Row>
+                    <Row title="Hints" text="The boxes that explain a screen the first time it opens. Reset hints below brings back the ones dismissed.">
+                        <OnOff
+                            label="Hints"
+                            value=Signal::derive(move || s.get(|s| s.show_hints))
+                            on_change=move |v| s.set(|s| s.show_hints = v)
+                        />
+                    </Row>
+                    <Row title="News ticker" text="The last day's war news scrolling along the top strip.">
+                        <OnOff
+                            label="News ticker"
+                            value=Signal::derive(move || s.get(|s| s.show_ticker))
+                            on_change=move |v| s.set(|s| s.show_ticker = v)
+                        />
+                    </Row>
+                    <Row
+                        title="Reduce motion"
+                        text="Stills the app's animations, the map's pulsing markers and the scrolling ticker, as the system's reduced-motion setting does. On whenever the system's is."
+                    >
+                        <OnOff
+                            label="Reduce motion"
+                            value=Signal::derive(move || s.get(|s| s.reduce_motion))
+                            on_change=move |v| s.set(|s| s.reduce_motion = v)
+                        />
+                    </Row>
                     <Row
                         title="Stalled planets"
                         text=format!(
@@ -314,6 +352,16 @@ pub fn SettingsPage() -> impl IntoView {
                             }
                         })
                         .collect_view()}
+                    <Row
+                        title="Space station actions"
+                        text="When a Democracy Space Station's tactical action is charged or goes active."
+                    >
+                        <OnOff
+                            label="Space station actions"
+                            value=Signal::derive(move || s.get(|s| s.station_alerts))
+                            on_change=move |v| s.set(|s| s.station_alerts = v)
+                        />
+                    </Row>
                     {tauri::has_tray().then(|| view! {
                         <Row
                             title="Keep running in the tray"

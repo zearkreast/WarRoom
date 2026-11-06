@@ -120,6 +120,10 @@
   .cmp-mo-art {
     max-height: 200px;
   }
+  /* The order's text has side margins inside its box; the picture keeps to them. */
+  .cmp-orders details > .cmp-mo-art {
+    width: calc(100% - 2 * var(--s-4));
+  }
   .cmp-art.loaded {
     opacity: 1;
   }
@@ -343,6 +347,9 @@
   }
   .oa-result.lost {
     color: var(--bad);
+  }
+  .oa-result.running {
+    color: var(--info);
   }
   .oa-brief {
     margin: 0;

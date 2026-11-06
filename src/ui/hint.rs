@@ -2,11 +2,12 @@ use crate::state::settings;
 use crate::ui::icons::{self, Icon};
 use leptos::prelude::*;
 
-/// One-time hint for a screen; dismissed hints stay hidden (Settings › Reset unread shows them again).
+/// One-time hint for a screen; dismissed hints stay hidden (Settings › Reset unread shows them again), and
+/// Settings › Hints hides them all.
 #[component]
 pub fn Hint(#[prop(into)] id: String, children: ChildrenFn) -> impl IntoView {
     let key = id.clone();
-    let seen = Memo::new(move |_| settings().get(|s| s.hints_seen.contains(&key)));
+    let seen = Memo::new(move |_| settings().get(|s| !s.show_hints || s.hints_seen.contains(&key)));
     move || {
         let id = id.clone();
         (!seen.get()).then(|| {

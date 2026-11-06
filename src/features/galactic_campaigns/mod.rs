@@ -12,26 +12,41 @@ use warroom_core::data::campaign_reward;
 use warroom_core::factions::faction_color;
 use warroom_core::snapshot::{EpisodeLive, EpisodeStatus, campaign_tally};
 
-/// Where the project keeps a picture the game names only by id.
-pub fn campaign_art_url(id: i64) -> String {
-    format!("{}/storage/v1/object/public/campaign-art/{id}.webp", SUPABASE_URL.trim_end_matches('/'))
+/// Where the project keeps a picture, by the file's name without `.webp`.
+pub fn campaign_art_url(name: &str) -> String {
+    format!("{}/storage/v1/object/public/campaign-art/{name}.webp", SUPABASE_URL.trim_end_matches('/'))
 }
 
-/// A campaign's or Major Order's picture; it leaves the page when storage has none.
+/// The names a campaign's picture may be kept under: the game's id for it, then the campaign's own, for
+/// campaigns the game no longer lists or whose picture it has renumbered.
+pub fn campaign_art(e: &EpisodeLive) -> Vec<String> {
+    e.picture.map(|p| p.to_string()).into_iter().chain([format!("campaign-{}", e.id)]).collect()
+}
+
+/// The names the `n`-th Major Order's picture of a campaign may be kept under, counting from 1.
+pub fn order_art(e: &EpisodeLive, n: usize) -> Vec<String> {
+    let p = e.phases.get(n - 1).and_then(|p| p.picture);
+    p.map(|p| p.to_string()).into_iter().chain([format!("campaign-{}-{n}", e.id)]).collect()
+}
+
+/// A campaign's or Major Order's picture, tried under each of `names` in turn; it leaves the page when
+/// storage has none of them.
 #[component]
-pub fn CampaignArt(id: i64, class: &'static str) -> impl IntoView {
-    let missing = RwSignal::new(false);
+pub fn CampaignArt(names: Vec<String>, class: &'static str) -> impl IntoView {
+    let names = StoredValue::new(names);
+    let at = RwSignal::new(0usize);
     let loaded = RwSignal::new(false);
+    let src = move || names.with_value(|n| n.get(at.get()).map(|n| campaign_art_url(n)));
     view! {
-        <Show when=move || !missing.get()>
+        <Show when=move || src().is_some()>
             <img
                 class=move || format!("cmp-art {class} {}", if loaded.get() { "loaded" } else { "" })
-                src=campaign_art_url(id)
+                src=src
                 alt=""
                 loading="lazy"
                 decoding="async"
                 on:load=move |_| loaded.set(true)
-                on:error=move |_| missing.set(true)
+                on:error=move |_| at.update(|i| *i += 1)
             />
         </Show>
     }
@@ -106,7 +121,7 @@ pub fn CampaignBody(
     let n = e.phases.len();
     view! {
         <div class="cmp-body">
-            {e.picture.filter(|_| cover).map(|id| view! { <CampaignArt id=id class="cmp-cover" /> })}
+            {cover.then(|| view! { <CampaignArt names=campaign_art(&e) class="cmp-cover" /> })}
             {(!e.description.is_empty()).then(|| view! { <p class="cmp-desc">{e.description.clone()}</p> })}
             <div class=format!("cmp-reward {}", status_class(e.status))>
                 <span class="cmp-label caps">"Campaign reward"</span>
@@ -137,7 +152,7 @@ pub fn CampaignBody(
                                     {p.medals.map(|m| view! { <span class="cmp-medals caps num">{format!("{} medals", crate::js::num(m))}</span> })}
                                     <OutcomeChip status=p.status />
                                 </summary>
-                                {p.picture.filter(|id| Some(*id) != e.picture).map(|id| view! { <CampaignArt id=id class="cmp-mo-art" /> })}
+                                {(p.picture.is_none() || p.picture != e.picture).then(|| view! { <CampaignArt names=order_art(&e, i + 1) class="cmp-mo-art" /> })}
                                 {p.issued.map(|t| view! { <span class="cmp-issued caps num">{format!("Issued {}", fmt_date(t))}</span> })}
                                 {(!p.briefing.is_empty()).then(|| view! { <MarkupText message=p.briefing.clone() class="cmp-text" whole=true /> })}
                                 {(!p.outro.is_empty()).then(|| view! { <MarkupText message=p.outro.clone() class="cmp-text cmp-outro" whole=true /> })}

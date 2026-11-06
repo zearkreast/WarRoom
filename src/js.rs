@@ -146,8 +146,10 @@ pub fn user_agent() -> String {
     window().navigator().user_agent().unwrap_or_default()
 }
 
+/// The system's reduced-motion setting, or the app's own (Settings › Motion).
 pub fn prefers_reduced_motion() -> bool {
-    window().match_media("(prefers-reduced-motion: reduce)").ok().flatten().is_some_and(|l| l.matches())
+    document().document_element().is_some_and(|r| r.class_list().contains("reduce-motion"))
+        || window().match_media("(prefers-reduced-motion: reduce)").ok().flatten().is_some_and(|l| l.matches())
 }
 
 pub fn copy_text(text: &str) {
