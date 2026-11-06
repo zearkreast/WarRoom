@@ -568,8 +568,8 @@ fn raw_episodes() -> Value {
             "rewards": [{ "mixId": 7, "amount": 1 }],
         },
         {
-            "id32": 2, "title": "NOW", "description": "d", "race": 1, "status": 0, "startWarTime": 9_000,
-            "phases": [{ "introTitle": "B", "introMessage": "brief", "status": 0, "rewards": [{ "mixId": 897894480, "amount": 40 }] }],
+            "id32": 2, "title": "NOW", "description": "d", "race": 1, "status": 0, "startWarTime": 9_000, "bannerImageId32": 55,
+            "phases": [{ "introTitle": "B", "introMessage": "brief", "status": 0, "introMediaId32": 66, "rewards": [{ "mixId": 897894480, "amount": 40 }] }],
             "rewards": [],
         },
     ])
@@ -625,6 +625,13 @@ fn maps_the_live_apis_campaigns_won_by_majority_lost_by_majority() {
     }
     assert_eq!(list.iter().find(|e| e.title == "BLAZING ELECTORATE").unwrap().status, EpisodeStatus::Lost);
     assert!(list.iter().all(|e| e.reward.is_some()));
+}
+
+#[test]
+fn keeps_the_game_picture_ids_of_campaigns_and_orders_that_have_them() {
+    let list = to_episodes(&from_str::<Vec<_>>(&raw_episodes().to_string()).unwrap(), 10_000.0, 50_000_000.0);
+    assert_eq!((list[0].picture, list[0].phases[0].picture), (None, None));
+    assert_eq!((list[1].picture, list[1].phases[0].picture), (Some(55), Some(66)));
 }
 
 #[test]

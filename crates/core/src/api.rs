@@ -297,6 +297,8 @@ pub struct MixReward {
 pub struct EpisodePhaseRaw {
     pub intro_title: String,
     pub intro_message: String,
+    /// The game's id for the order's picture; 0 when it has none.
+    pub intro_media_id32: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub outro_message: Option<String>,
     pub status: i64,
@@ -316,6 +318,8 @@ pub struct EpisodeRaw {
     pub start_war_time: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub end_war_time: Option<f64>,
+    /// The game's id for the campaign's picture; 0 when it has none.
+    pub banner_image_id32: i64,
     pub phases: Vec<EpisodePhaseRaw>,
     pub rewards: Vec<MixReward>,
 }

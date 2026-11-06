@@ -409,6 +409,8 @@ pub struct EpisodePhase {
     /// When the order was issued, epoch ms. The game doesn't publish it: the first order starts with its
     /// campaign, later ones are stamped by the collector when they appear, and older ones stay None.
     pub issued: Option<f64>,
+    /// The game's id for the order's picture. The game shares pictures between orders and campaigns.
+    pub picture: Option<i64>,
 }
 
 /// The order's own name; None while the game still titles a freshly issued order just "MAJOR ORDER".
@@ -431,6 +433,8 @@ pub struct EpisodeLive {
     pub end: Option<f64>,
     /// Item id of the campaign reward, if one is offered.
     pub reward: Option<i64>,
+    /// The game's id for the campaign's picture.
+    pub picture: Option<i64>,
     pub phases: Vec<EpisodePhase>,
 }
 
@@ -460,6 +464,7 @@ pub fn to_episodes(list: &[EpisodeRaw], war_time: f64, fetched_at: f64) -> Vec<E
                 start,
                 end: e.end_war_time.filter(|t| *t != 0.0 && !t.is_nan()).map(at),
                 reward: e.rewards.first().map(|r| r.mix_id),
+                picture: (e.banner_image_id32 != 0).then_some(e.banner_image_id32),
                 phases: e
                     .phases
                     .iter()
@@ -471,6 +476,7 @@ pub fn to_episodes(list: &[EpisodeRaw], war_time: f64, fetched_at: f64) -> Vec<E
                         status: episode_status(p.status),
                         medals: p.rewards.iter().find(|r| r.mix_id == MEDALS_MIX_ID).map(|r| r.amount),
                         issued: (i == 0).then_some(start),
+                        picture: (p.intro_media_id32 != 0).then_some(p.intro_media_id32),
                     })
                     .collect(),
             }

@@ -1,8 +1,11 @@
 //! Strohmann News on the G.W.W.: the dispatches and Galactic Campaign stories laid out as a news site.
 
 use crate::api::queries::queries;
+use crate::features::galactic_campaigns::CampaignArt;
 use crate::features::hellpad::gww::blocks::{HeadingRef, banner, crumb, related};
 use crate::features::hellpad::gww::nav::{logo_url, use_gww_nav};
+use crate::features::map::pawn_art::{hologram_in, pawn_href};
+use crate::features::map::stratagem_art::icon_of;
 use crate::features::news::card::{MarkupText, kind_label};
 use crate::features::news::feed::{entry_body, entry_label};
 use crate::features::news::items::{NewsBody, NewsItem, NewsKind, news_items};
@@ -16,7 +19,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use warroom_core::api::{Faction, Planet};
 use warroom_core::data::sites::COMPANIES;
-use warroom_core::dispatch::DispatchKind;
+use warroom_core::data::stratagems::STRATAGEMS;
+use warroom_core::dispatch::{DispatchKind, is_order_dispatch};
 use warroom_core::factions::faction_color;
 use warroom_core::format::{dispatch_title, fmt_ago, js_trim, parse_markup, sest_date};
 use warroom_core::gww_nav::NEWS_TITLE;
@@ -42,11 +46,20 @@ const DESKS: [(Desk, &str); 5] = [
 ];
 
 impl Desk {
-    fn admits(self, k: NewsKind) -> bool {
+    fn admits(self, i: &NewsItem, planets: &HashMap<String, Planet>) -> bool {
+        let k = i.kind;
         match self {
             Desk::All => true,
-            Desk::Orders => k == NewsKind::Dispatch(DispatchKind::Order),
-            Desk::Front => matches!(k, NewsKind::Dispatch(DispatchKind::Victory | DispatchKind::Defeat)),
+            // Every Major Order runs inside a Galactic Campaign, its dispatches on the campaign's thread.
+            Desk::Orders => match &i.body {
+                NewsBody::Dispatch(d) => is_order_dispatch(&d.message),
+                NewsBody::Thread(_) => true,
+            },
+            // The game words front news every way ("HEETH LOST", "MINOR TERMINID OUTBREAK"); what they share is a planet.
+            Desk::Front => match &i.body {
+                NewsBody::Dispatch(d) => !is_order_dispatch(&d.message) && pictured(i, planets).is_some(),
+                NewsBody::Thread(_) => false,
+            },
             Desk::Alerts => matches!(k, NewsKind::Dispatch(DispatchKind::Alert | DispatchKind::Advisory)),
             Desk::Campaigns => k == NewsKind::Campaign,
         }
@@ -96,9 +109,39 @@ fn named(i: &NewsItem) -> Vec<String> {
         .collect()
 }
 
-/// The first planet a story names, for its picture.
+/// Where `name` stands in `text` as whole words.
+fn word_at(text: &str, name: &str) -> Option<usize> {
+    let edge = |c: Option<char>| c.is_none_or(|c| !c.is_alphanumeric());
+    text.match_indices(name)
+        .find(|(at, _)| edge(text[..*at].chars().next_back()) && edge(text[at + name.len()..].chars().next()))
+        .map(|(at, _)| at)
+}
+
+/// The first planet a story names, for its picture: in its highlights, which may name several ("FRONTERIA,
+/// CRIMSICA and…"), then in its headline, which the game doesn't always highlight.
 fn pictured<'a>(i: &NewsItem, planets: &'a HashMap<String, Planet>) -> Option<&'a Planet> {
-    named(i).iter().find_map(|n| planets.get(n))
+    let first_in = |text: &str| {
+        planets
+            .iter()
+            .filter_map(|(key, p)| word_at(text, key).map(|at| (at, std::cmp::Reverse(key.len()), p)))
+            .min_by_key(|(at, len, _)| (*at, *len))
+            .map(|(_, _, p)| p)
+    };
+    named(i).iter().find_map(|n| first_in(n)).or_else(|| first_in(&headline(i).to_uppercase()))
+}
+
+/// The icon of the stratagem a story is about, the longest name it holds winning ("Orbital Laser" over "Laser").
+/// Only a story that says "Stratagem" counts, so "reinforce" in passing isn't the Reinforce stratagem.
+fn stratagem_of(i: &NewsItem) -> Option<String> {
+    let text = i.text.to_uppercase();
+    if !text.contains("STRATAGEM") {
+        return None;
+    }
+    STRATAGEMS
+        .iter()
+        .filter(|s| word_at(&text, &s.short_name().to_uppercase()).is_some())
+        .max_by_key(|s| s.short_name().len())
+        .and_then(icon_of)
 }
 
 /// The enemy a story is about: its campaign's, or the first one its text names.
@@ -116,30 +159,42 @@ fn enemy_of(i: &NewsItem) -> Option<Faction> {
         .map(|(_, f)| f)
 }
 
+/// A story's picture: its campaign's own, else the planet it names with the stratagem it brings, else the
+/// stratagem, hologram or enemy it is about.
 fn picture(i: &NewsItem, planets: &HashMap<String, Planet>, class: &'static str) -> AnyView {
     let enemy = enemy_of(i);
     let tone = enemy.map_or("#f074d8", |f| faction_color(Some(f)));
-    match pictured(i, planets) {
-        Some(p) => {
-            let art = planet_tint(p, &[]).art.unwrap_or_default();
-            let owner = faction_color(Some(p.current_owner));
-            view! {
-                <figure class=format!("sn-pic {class}") style=format!("--art: {art}; --k: {owner};")>
-                    <figcaption class="caps">{p.name.clone()}</figcaption>
-                </figure>
-            }
-            .into_any()
-        }
-        None => view! {
-            <figure class=format!("sn-pic plain {class}") style=format!("--k: {tone};") aria-hidden="true">
-                {match enemy {
-                    Some(f) => view! { <FactionEmblem faction=f.as_str() size=96.0 color=tone.to_string() /> }.into_any(),
-                    None => logo_url("strohmann-news").map(|u| view! { <img src=u alt="" /> }).into_any(),
-                }}
+    let campaign = match &i.body {
+        NewsBody::Thread(t) => t.campaign.picture,
+        NewsBody::Dispatch(_) => None,
+    };
+    let art = campaign.map(|id| view! { <CampaignArt id=id class="sn-art" /> });
+    let stratagem = stratagem_of(i);
+    if let Some(p) = pictured(i, planets) {
+        let land = planet_tint(p, &[]).art.unwrap_or_default();
+        let owner = faction_color(Some(p.current_owner));
+        return view! {
+            <figure class=format!("sn-pic {class}") style=format!("--art: {land}; --k: {owner};")>
+                {art}
+                {stratagem.map(|u| view! { <img class="sn-badge" src=u alt="" /> })}
+                <figcaption class="caps">{p.name.clone()}</figcaption>
             </figure>
         }
-        .into_any(),
+        .into_any();
     }
+    let hologram = hologram_in(&i.text).and_then(pawn_href);
+    view! {
+        <figure class=format!("sn-pic plain {class}") style=format!("--k: {tone};") aria-hidden="true">
+            {match (stratagem, hologram, enemy) {
+                (Some(u), _, _) => view! { <img class="sn-glyph" src=u alt="" /> }.into_any(),
+                (None, Some(u), _) => view! { <img class="sn-holo" src=u alt="" /> }.into_any(),
+                (None, None, Some(f)) => view! { <FactionEmblem faction=f.as_str() size=96.0 color=tone.to_string() /> }.into_any(),
+                (None, None, None) => logo_url("strohmann-news").map(|u| view! { <img src=u alt="" /> }).into_any(),
+            }}
+            {art}
+        </figure>
+    }
+    .into_any()
 }
 
 fn story_body(i: &NewsItem) -> AnyView {
@@ -181,7 +236,8 @@ pub fn news_page(heading: HeadingRef) -> AnyView {
     });
     let shown = Memo::new(move |_| {
         let d = desk.get();
-        items.with(|l| l.iter().filter(|i| d.admits(i.kind)).take(SHOWN).cloned().collect::<Vec<_>>())
+        let planets = planets.get();
+        items.with(|l| l.iter().filter(|i| d.admits(i, &planets)).take(SHOWN).cloned().collect::<Vec<_>>())
     });
     let company = COMPANIES.iter().find(|c| c.id == "strohmann-media");
     let paper = move || {
