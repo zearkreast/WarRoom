@@ -26,35 +26,79 @@ Supabase; the app reads from Supabase and never calls the API itself.
 `planet_effects` includes arsenal augmentations, the stratagems High Command grants on a planet for a while,
 with when each ends.
 
-## Setup on a VDS (Docker)
+## Setup with Docker
+
+The collector is published as a ready-built image, `ghcr.io/zearkreast/warroom-collector`, for amd64 and arm64
+(a Raspberry Pi or an Arm server runs it too). A server needs only Docker: no clone of the repo and no Rust
+build. The image holds no keys; they stay in a `.env` file beside it.
+
+1. Make a folder for it and fetch the config template:
+
+   ```bash
+   mkdir warroom-collector && cd warroom-collector
+   curl -fsSL https://raw.githubusercontent.com/zearkreast/WarRoom/main/collector/.env.example -o .env
+   nano .env
+   ```
+
+   Fill in `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (Supabase → Project Settings → API Keys → Secret keys) and
+   `SUPER_CONTACT` (an email or link the Helldivers API maintainers can reach you at).
+
+2. Save this as `compose.yml` in the same folder:
+
+   ```yaml
+   services:
+     collector:
+       image: ghcr.io/zearkreast/warroom-collector:${COLLECTOR_TAG:-latest}
+       env_file: .env
+       restart: unless-stopped
+       mem_limit: 128m
+       logging:
+         driver: json-file
+         options:
+           max-size: "1m"
+           max-file: "3"
+   ```
+
+3. Apply the database schema (see [Supabase](#supabase)), then start it:
+
+   ```bash
+   docker compose up -d
+   docker compose logs -f collector
+   ```
+
+   It logs `started (… planets known, pushes off)`, then a line of job results each minute; `FAIL` marks a job
+   that didn't succeed.
+
+The container is capped at 128 MB and its logs at 3 MB.
+
+### Updating
+
+`latest` is the newest release. Each release also has its own tag, such as `0.7.4`, and `0.7` follows the
+newest of that line.
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+Read the release's notes first: when it adds a migration, apply it in Supabase before updating.
+
+- Run a given release, for instance to go back one: `COLLECTOR_TAG=0.7.3 docker compose up -d`. It stays on
+  that release until started again without `COLLECTOR_TAG`.
+- Stop: `docker compose down`
+
+### Building it yourself
+
+For a change of your own or a branch, compile the image from a clone. The repo's `docker-compose.yml` is the
+file above with a `build:` section, reading `collector/.env`:
 
 ```bash
 git clone https://github.com/zearkreast/WarRoom.git && cd WarRoom
 cp collector/.env.example collector/.env && nano collector/.env
-docker compose pull && docker compose up -d
+docker compose up -d --build
 ```
 
-Fill in `SUPABASE_SECRET_KEY` (Supabase → Project Settings → API Keys → Secret keys) and `SUPER_CONTACT`
-(an email or link the Helldivers API maintainers can reach you at).
-
-Each release publishes a ready-built image to `ghcr.io/zearkreast/warroom-collector`, for amd64 and arm64
-(a Raspberry Pi or an Arm server runs it too). `latest` is the newest release; each release also has its own
-tag, such as `0.7.4`, and `0.7` follows the newest of that line. Nothing is compiled on the server, and the
-image holds no keys: they stay in `collector/.env`.
-
-- Logs: `docker compose logs -f collector`
-- Update: `git pull && docker compose pull && docker compose up -d`
-- Stop: `docker compose down`
-- Run a given release, for instance to go back one: `COLLECTOR_TAG=0.7.3 docker compose up -d`. It stays on
-  that release until started again without `COLLECTOR_TAG`.
-- Build this checkout yourself instead, for a change of your own or a branch: `docker compose up -d --build`.
-  The first build compiles the collector inside Docker and takes a few minutes. A later `docker compose pull`
-  replaces it with the published image again.
-
-Read a release's notes before updating: when it adds a migration, apply it in Supabase first (see
-[Supabase](#supabase)). `git pull` is still needed for the compose file and the migrations.
-
-The container is capped at 128 MB and its logs at 3 MB.
+The first build compiles the collector inside Docker and takes a few minutes. Update with
+`git pull && docker compose up -d --build`; a `docker compose pull` there swaps back to the published image.
 
 ## Pushed news (optional)
 
@@ -63,7 +107,7 @@ Cloud Messaging: each new Major Order, the newest three new dispatches, and camp
 up the Firebase project first (see "Pushed news on Android" in [docs/DEVELOPMENT.md](../docs/DEVELOPMENT.md)), then:
 
 1. Firebase console → Project settings → Service accounts → Generate new private key.
-2. `base64 -w0 key.json` and put the output in `collector/.env` as `FCM_SERVICE_ACCOUNT=…`, then restart the
+2. `base64 -w0 key.json` and put the output in the `.env` file as `FCM_SERVICE_ACCOUNT=…`, then restart the
    collector. Its start-up line says `pushes on`.
 
 What is already stored counts as announced, so a restart, or turning pushes on, sends nothing old. A push that
@@ -93,8 +137,8 @@ journalctl -u warroom-collector -f
 
 ## Supabase
 
-The schema is in `supabase/migrations/`, applied in order. The secret key bypasses row-level security, so it
-only ever lives in `collector/.env` on the server. The app uses the publishable key, which can only read.
+The schema is in [`supabase/migrations/`](../supabase/migrations), applied in order in the Supabase SQL Editor. The secret key bypasses row-level security, so it
+only ever lives in the collector's `.env` file on the server. The app uses the publishable key, which can only read.
 
 Region rates are measured from readings kept in memory, so after a restart they read as measuring for about
 10 minutes. Major Order readings live in the `order_samples` snapshot and carry over a restart.
