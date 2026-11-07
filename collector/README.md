@@ -31,18 +31,28 @@ with when each ends.
 ```bash
 git clone https://github.com/zearkreast/WarRoom.git && cd WarRoom
 cp collector/.env.example collector/.env && nano collector/.env
-docker compose up -d --build
+docker compose pull && docker compose up -d
 ```
-
-The first build compiles the collector inside Docker and takes a few minutes; later updates reuse the
-compiled dependencies.
 
 Fill in `SUPABASE_SECRET_KEY` (Supabase → Project Settings → API Keys → Secret keys) and `SUPER_CONTACT`
 (an email or link the Helldivers API maintainers can reach you at).
 
+Each release publishes a ready-built image to `ghcr.io/zearkreast/warroom-collector`, for amd64 and arm64
+(a Raspberry Pi or an Arm server runs it too). `latest` is the newest release; each release also has its own
+tag, such as `0.7.4`, and `0.7` follows the newest of that line. Nothing is compiled on the server, and the
+image holds no keys: they stay in `collector/.env`.
+
 - Logs: `docker compose logs -f collector`
-- Update: `git pull && docker compose up -d --build`
+- Update: `git pull && docker compose pull && docker compose up -d`
 - Stop: `docker compose down`
+- Run a given release, for instance to go back one: `COLLECTOR_TAG=0.7.3 docker compose up -d`. It stays on
+  that release until started again without `COLLECTOR_TAG`.
+- Build this checkout yourself instead, for a change of your own or a branch: `docker compose up -d --build`.
+  The first build compiles the collector inside Docker and takes a few minutes. A later `docker compose pull`
+  replaces it with the published image again.
+
+Read a release's notes before updating: when it adds a migration, apply it in Supabase first (see
+[Supabase](#supabase)). `git pull` is still needed for the compose file and the migrations.
 
 The container is capped at 128 MB and its logs at 3 MB.
 
