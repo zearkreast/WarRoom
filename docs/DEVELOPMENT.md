@@ -61,7 +61,8 @@ vendor/tachys/           Leptos's renderer with a fix for static SVG; drop it on
 index.html               Trunk's entry: the app, every stylesheet, and the assets
 build.rs                 lists src/assets, so the app knows which pictures exist
 .github/workflows/       release.yml (installers, APK, update manifest), android.yml (the APK),
-                         pages.yml (tests, then the web version on GitHub Pages)
+                         pages.yml (tests, then the web version on GitHub Pages),
+                         collector-image.yml (the collector's Docker image)
 ```
 
 Where to start reading: `src/main.rs`, then `src/app.rs`, then `src/api/queries.rs` (polling and the data
@@ -188,3 +189,9 @@ not a GitHub pre-release: installed apps only look at the latest full release. I
 
 Without the Android secrets each APK is signed with a throwaway key, and a newer APK won't install over an older
 one. Losing either signing key means installed apps can no longer take updates from new releases.
+
+The tag also starts Collector image (`collector-image.yml`), which publishes the collector to
+`ghcr.io/zearkreast/warroom-collector` as that version and as `latest`. A tag the Release workflow creates
+itself, when run from the Actions tab, doesn't start other workflows: then run Collector image from the Actions
+tab with that tag as `ref`. The first time an image is published, check under the repository's Packages that
+`warroom-collector` is public, or servers can't pull it without logging in.

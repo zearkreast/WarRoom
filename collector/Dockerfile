@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
-# WarRoom collector. Build from the repo root:  docker compose up -d --build
+# WarRoom collector, published as ghcr.io/zearkreast/warroom-collector. To build it yourself, from the repo root:
+#   docker compose up -d --build
 FROM rust:1-slim-bookworm AS build
 WORKDIR /src
 COPY Cargo.toml Cargo.lock ./

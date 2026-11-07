@@ -1,5 +1,7 @@
 services:
   collector:
+    # `docker compose pull` fetches the published image; `--build` compiles this checkout instead, under the same name.
+    image: ghcr.io/zearkreast/warroom-collector:${COLLECTOR_TAG:-latest}
     build:
       context: .
       dockerfile: collector/Dockerfile

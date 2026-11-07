@@ -1,0 +1,167 @@
+# Builds the collector's Docker image for amd64 and arm64 and publishes it to
+# ghcr.io/zearkreast/warroom-collector.
+#
+# A tag like v0.7.4 publishes 0.7.4, 0.7 and latest, so latest is always the newest release.
+# From the Actions tab (Collector image -> Run workflow) it builds the branch it runs from, published under
+# the branch's name, or a release tag given in "ref", published as that release (latest moves to it).
+# A pull request touching the collector only builds it, without publishing.
+name: Collector image
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Release tag to build, such as v0.7.3 (empty: the branch run from)"
+        required: false
+        default: ""
+  push:
+    tags:
+      - "v*"
+  pull_request:
+    paths:
+      - "collector/**"
+      - "crates/core/**"
+      - "vendor/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".dockerignore"
+      - ".github/workflows/collector-image.yml"
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/zearkreast/warroom-collector
+  REF: ${{ inputs.ref || github.ref_name }}
+  PUBLISH: ${{ github.event_name != 'pull_request' }}
+
+concurrency:
+  group: collector-image-${{ inputs.ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          # Built on an Arm runner: under emulation the Rust build takes most of an hour.
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Platform name
+        run: echo "PAIR=${PLATFORM//\//-}" >> "$GITHUB_ENV"
+        env:
+          PLATFORM: ${{ matrix.platform }}
+
+      - name: Image labels
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+
+      - name: Log in to GitHub Container Registry
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Pushed by digest only; the publish job joins both platforms under the tags.
+      - name: Build
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: collector/Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=${{ env.PUBLISH }}
+          cache-from: type=gha,scope=collector-${{ env.PAIR }}
+          cache-to: type=gha,scope=collector-${{ env.PAIR }},mode=max
+
+      - name: Keep the digest
+        if: env.PUBLISH == 'true'
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+
+      - name: Upload the digest
+        if: env.PUBLISH == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: digests-${{ env.PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Download the digests
+        uses: actions/download-artifact@v8
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # A branch has no version, so the semver tags skip it and it is published under its own name.
+      - name: Tags
+        id: meta
+        uses: docker/metadata-action@v6
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: latest=false
+          tags: |
+            type=semver,pattern={{version}},value=${{ env.REF }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.REF }}
+            type=raw,value=latest,enable=${{ startsWith(env.REF, 'v') }}
+            type=raw,value=${{ env.REF }},enable=${{ !startsWith(env.REF, 'v') }}
+          annotations: |
+            org.opencontainers.image.title=WarRoom collector
+            org.opencontainers.image.description=Polls the Helldivers 2 API into the Supabase database the WarCommand Tracker app reads.
+
+      - name: Publish
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          args=()
+          while IFS= read -r tag; do args+=(-t "$tag"); done < <(jq -r '.tags[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          while IFS= read -r note; do args+=(--annotation "$note"); done < <(jq -r '.annotations[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          docker buildx imagetools create "${args[@]}" $(printf "$IMAGE@sha256:%s " *)
+
+      - name: Inspect
+        run: docker buildx imagetools inspect "$IMAGE:$VERSION"
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
