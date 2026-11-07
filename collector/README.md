@@ -86,6 +86,20 @@ Read the release's notes first: when it adds a migration, apply it in Supabase b
   that release until started again without `COLLECTOR_TAG`.
 - Stop: `docker compose down`
 
+### Moving from a clone
+
+A collector set up from a clone before the image existed moves over without losing anything: it reloads its
+state from Supabase at start. Run only one at a time, so stop the old one first.
+
+```bash
+cd WarRoom && docker compose down                  # the old one, in the clone
+mkdir ../warroom-collector && cp collector/.env ../warroom-collector/.env
+cd ../warroom-collector                            # save compose.yml here, as in step 2
+docker compose up -d
+```
+
+Then the clone, the old image (`docker image ls`) and its build cache (`docker builder prune`) can go.
+
 ### Building it yourself
 
 For a change of your own or a branch, compile the image from a clone. The repo's `docker-compose.yml` is the
