@@ -8,6 +8,16 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.7.4",
+        date: "2026-11-09",
+        items: &[
+            "Phones: bigger map controls and tap targets, planet figures that fit, one-row news filters, and faster Planets and Stratagems.",
+            "Wide screens: pages, Settings and the planet page use the width, with clearer keyboard focus.",
+            "Strohmann News on the G.W.W.: a campaign's lead story shows its picture in full.",
+            "With the news ticker off, the clock stays on the right.",
+        ],
+    },
+    ChangelogEntry {
         version: "0.7.3",
         date: "2026-11-06",
         items: &[
