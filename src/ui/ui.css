@@ -682,6 +682,16 @@
       padding: var(--s-7) var(--s-6) var(--s-8);
     }
   }
+  @media (min-width: 1800px) {
+    .page-inner {
+      max-width: 1600px;
+    }
+  }
+  @media (min-width: 2200px) {
+    .page-inner {
+      max-width: 1920px;
+    }
+  }
   /* From-only keyframes with a backwards fill leave no transform once done; a lasting one would trap fixed
      and sticky children. Keep in sync with ARRIVAL_MS in app.rs: the longest delay plus duration must fit. */
   @media (prefers-reduced-motion: no-preference) {
@@ -970,7 +980,8 @@
     }
     /* Only scrolls on phones; elsewhere it wraps, and a mask would cut the chips' focus rings. */
     @media (max-width: 640px) {
-      .cc-tools .filter-row {
+      .cc-tools .filter-row,
+      .news-tools .filter-row {
         mask: linear-gradient(90deg, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
         animation: edge-fade linear both;
         animation-timeline: scroll(self inline);

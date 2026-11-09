@@ -143,6 +143,25 @@ pub fn NewsTicker() -> impl IntoView {
             }
         })
     };
+    // A keyboard stop can sit outside the strip's window, so the held strip is wound on to show it.
+    let reveal = move |e: web_sys::FocusEvent| {
+        let Some(item) = e.target().and_then(|t| t.dyn_into::<web_sys::Element>().ok()) else { return };
+        let Some(strip) = e.current_target().and_then(|t| t.dyn_into::<web_sys::Element>().ok()) else { return };
+        let Some(el) = track.get_untracked() else { return };
+        let half = el.scroll_width() as f64 / 2.0;
+        let (r, s) = (item.get_bounding_client_rect(), strip.get_bounding_client_rect());
+        // Keep in sync with --ticker-fade in shell.css.
+        let fade = 48.0;
+        if half <= 0.0 || (r.left() >= s.left() + fade && r.right() <= s.right() - fade) {
+            return;
+        }
+        let shift = (r.left() - el.get_bounding_client_rect().left() - fade).clamp(0.0, half);
+        anim.with_value(|a| {
+            if let Some(a) = a {
+                let _ = js_sys::Reflect::set(a, &"currentTime".into(), &(shift / PX_PER_S * 1000.0).into());
+            }
+        });
+    };
     // Measured a frame after the strip redraws, once its new width is laid out.
     Effect::new(move |_| {
         items.track();
@@ -170,7 +189,10 @@ pub fn NewsTicker() -> impl IntoView {
             aria-label=move || (!items.with(Vec::is_empty)).then_some("Latest war news")
             on:pointerenter=move |_| hold(true)
             on:pointerleave=move |_| hold(false)
-            on:focusin=move |_| hold(true)
+            on:focusin=move |e| {
+                hold(true);
+                reveal(e);
+            }
             on:focusout=move |_| hold(false)
         >
             <div node_ref=track class="ticker-track caps">

@@ -250,7 +250,20 @@
       animation: none;
     }
   }
+  /* A larger hit area than the box: a 44px box would cover the card's title. */
+  @media (pointer: coarse) {
+    .sg-pick::after {
+      content: "";
+      position: absolute;
+      inset: -6px;
+    }
+  }
   @media (max-width: 759px) {
+    /* A phone shows only a few cards at once; the rest skip layout and paint until they near the screen. */
+    .sg-card {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 180px;
+    }
     .sg-group-rule {
       display: none;
     }

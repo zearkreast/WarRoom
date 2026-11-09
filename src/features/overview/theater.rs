@@ -79,7 +79,13 @@ pub fn TheaterOfWar() -> impl IntoView {
         angle.set_value(a);
         if let Some(d) = disc.get_untracked() {
             let _ = d.set_attribute("transform", &format!("rotate({})", to_fixed(a, 2)));
-            let _ = d.style().set_property("--unrot", &format!("{}deg", to_fixed(-a, 2)));
+            // Per emblem, not on the disc: inherited from there, it restyles the whole disc each frame.
+            let unrot = format!("{}deg", to_fixed(-a, 2));
+            if let Ok(marks) = d.query_selector_all(".tw-mark") {
+                for m in (0..marks.length()).filter_map(|i| marks.item(i)?.dyn_into::<web_sys::SvgElement>().ok()) {
+                    let _ = m.style().set_property("--unrot", &unrot);
+                }
+            }
         }
     };
 
@@ -241,7 +247,14 @@ pub fn TheaterOfWar() -> impl IntoView {
                                     .into_iter()
                                     .map(|m| view! {
                                         <g transform=format!("translate({},{})", to_fixed(m.x, 1), to_fixed(m.y, 1))>
-                                            <g class="tw-mark" style=format!("--unsquash: {};", num(1.0 / (56.0f64).to_radians().cos()))>
+                                            <g
+                                                class="tw-mark"
+                                                style=format!(
+                                                    "--unsquash: {}; --unrot: {}deg;",
+                                                    num(1.0 / (56.0f64).to_radians().cos()),
+                                                    to_fixed(-angle.get_value(), 2),
+                                                )
+                                            >
                                                 <EmblemArt art=m.faction.as_str() size=84.0 />
                                             </g>
                                         </g>

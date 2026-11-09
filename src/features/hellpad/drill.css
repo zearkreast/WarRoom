@@ -806,6 +806,12 @@
       animation-duration: 1ms;
     }
   }
+  @media (pointer: coarse) {
+    .dr-icon-btn {
+      width: 44px;
+      height: 44px;
+    }
+  }
   @media (max-width: 759px) {
     .dr-modes {
       grid-template-columns: 1fr;

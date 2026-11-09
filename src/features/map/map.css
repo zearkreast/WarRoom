@@ -846,6 +846,9 @@
   }
   /* A blur over a map that repaints every frame is costly on phones; a denser fill looks the same. */
   @media (pointer: coarse) {
+    .map-overlays button {
+      height: 44px;
+    }
     .rail-btn {
       background: color-mix(in srgb, var(--surface-1) 94%, transparent);
       backdrop-filter: none;
@@ -1326,7 +1329,7 @@
       right: auto;
     }
     .map-touch-hint {
-      top: 132px;
+      top: 140px;
     }
     .planet-panel {
       left: var(--s-3);
@@ -1340,7 +1343,7 @@
       background: var(--surface-1);
     }
     .map-settings {
-      right: calc(var(--s-3) + 64px);
+      right: calc(var(--s-3) + 52px);
       top: auto;
       bottom: 120px;
       transform: none;
@@ -1352,7 +1355,17 @@
     .map-rail {
       top: auto;
       bottom: 120px;
+      right: var(--s-3);
       transform: none;
+      gap: var(--s-2);
+    }
+    /* Icon-only on phones: the labels would be under 11px, and the full column covers a fifth of the map. */
+    .rail-btn {
+      width: 44px;
+      height: 44px;
+    }
+    .rail-btn span {
+      display: none;
     }
     .map-toggles {
       left: var(--s-3);

@@ -35,7 +35,12 @@
   }
   .cc-card:focus-visible {
     outline: none;
-    --frame: var(--text-hi);
+    --frame: var(--cta);
+  }
+  /* Thickens the frame, so a focused Major Order card, already framed in yellow, still stands out. */
+  .cc-card:focus-visible .cc-in {
+    outline: 2px solid var(--cta);
+    outline-offset: -2px;
   }
   .cc-card:active .cc-in {
     background: var(--surface-2);
@@ -231,6 +236,9 @@
   .cc-order:focus-within,
   .cc-order:hover {
     border-color: var(--text-dim);
+  }
+  .cc-order:has(:focus-visible) {
+    border-color: var(--cta);
   }
   .cc-order select {
     height: 100%;
