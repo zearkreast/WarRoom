@@ -325,6 +325,13 @@
   .ni-thread li details[open] {
     padding-bottom: var(--s-4);
   }
+  @media (pointer: coarse) {
+    .ni-thread > summary,
+    .ni-thread li summary {
+      min-height: 44px;
+      align-items: center;
+    }
+  }
 
   /* ---------- Game markup inside any dispatch text ---------- */
   .hl {
@@ -343,6 +350,18 @@
     font-weight: 700;
   }
 
+  @media (max-width: 640px) {
+    .news-tools .filter-row {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-inline: calc(var(--s-6) * -1);
+      padding-inline: var(--s-6);
+    }
+    .news-tools .filter-chip {
+      flex: none;
+    }
+  }
   @media (max-width: 560px) {
     .news-last {
       flex-wrap: wrap;

@@ -195,6 +195,11 @@
     color: var(--text-dim);
   }
 
+  @media (pointer: coarse) {
+    .cmp-orders summary {
+      min-height: 44px;
+    }
+  }
   @media (max-width: 760px) {
     .cmp-orders summary {
       grid-template-columns: auto minmax(0, 1fr) auto;
@@ -205,6 +210,10 @@
   }
 
   @media (max-width: 480px) {
+    .cmp-mo {
+      flex: none;
+      white-space: nowrap;
+    }
     /* The outcome chip drops under the dates so long names keep whole words. */
     .cmp-head {
       grid-template-columns: auto minmax(0, 1fr);

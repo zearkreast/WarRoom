@@ -94,6 +94,9 @@
     .gww-url input {
       font-size: 16px;
     }
+    .gww-group-all {
+      min-height: 44px;
+    }
   }
   .gww-brand-tag {
     padding: 0 var(--s-3);
@@ -1794,7 +1797,16 @@
     .gww-banner {
       flex-direction: column;
       align-items: flex-start;
+      gap: var(--s-4);
       padding: var(--s-5);
+    }
+    .gww-banner-icon {
+      min-width: 48px;
+      min-height: 48px;
+    }
+    .gww-banner-icon > img:not(.gww-logo) {
+      width: 56px;
+      height: 56px;
     }
     .gww-brand-tag {
       display: none;
@@ -2369,7 +2381,7 @@
     place-items: center;
     background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--k) 20%, var(--surface-2)), var(--surface-1) 75%);
   }
-  .sn-pic.plain img {
+  .sn-pic.plain img:where(:not(.sn-art)) {
     width: 34%;
     max-width: 150px;
     opacity: 0.5;
@@ -2430,7 +2442,7 @@
   .sn-pic.thumb figcaption {
     display: none;
   }
-  .sn-pic.thumb.plain img {
+  .sn-pic.thumb.plain img:where(:not(.sn-art)) {
     width: 56%;
   }
   .sn-byline {

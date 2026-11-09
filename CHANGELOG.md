@@ -3,6 +3,49 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.7.4] - 2026-11-09
+
+Everything since v0.7.3.
+
+### Upgrading
+
+- No new migrations, and the collector's code is unchanged.
+- The collector is now published as a ready-built Docker image, `ghcr.io/zearkreast/warroom-collector`, for
+  amd64 and arm64, tagged with each release (`0.7.4`), its minor line (`0.7`) and `latest`. A server needs only
+  Docker and a `.env`: no clone and no Rust build. Update with `docker compose pull && docker compose up -d`;
+  `COLLECTOR_TAG=0.7.3` runs a given release. A collector set up from a clone moves over without losing
+  anything; [collector/README.md](collector/README.md) has the steps. `--build` in a clone still compiles it.
+
+### Phones
+
+- Galaxy map: the camera controls are 44 px icons instead of a labelled column covering a fifth of the map, and
+  the Regions, Sectors and Galaxy tabs are 44 px tall.
+- Planet page: figures such as Planet HP and Helldivers KIA no longer break across lines on narrow screens; the
+  section tabs, supply lines and the war log toggle are bigger to tap, and the sticky section bar drops its blur.
+- Hellpad modules no longer repeat the hub tile's description, and G.W.W. pages start higher up.
+- Strohmann News filters scroll in one row instead of wrapping into three.
+- The planet index wraps a long status rather than cutting off its percentage, and High Command's MO labels stay
+  on one line.
+- Bigger tap targets for the stratagem crosshair, the drill's sound buttons, View all, earlier news entries and
+  Major Order rows.
+- Planets and Stratagems lay out only what is near the screen, cutting the style and layout work of opening them
+  to about a quarter.
+
+### Wide screens
+
+- Pages widen to 1600 px from 1800 px and 1920 px from 2200 px, so Active planets shows four or five cards a row.
+- The Hellpad hub groups its modules three and two, Settings runs in two columns, and the planet page widens to
+  1440 px.
+- Keyboard focus shows on the news ticker, which winds on to the focused item, on the sort menu and on campaign
+  cards.
+- High Command's turning Theater of War does about half the style work each frame.
+
+### Fixed
+
+- A Strohmann News lead story without a planet, such as Serene Guardian's on the G.W.W., squeezed its campaign
+  picture into a faded strip on the left with the stratagem icon over it.
+- With the news ticker off, the clock and date slid left beside the status line.
+
 ## [0.7.3] - 2026-11-06
 
 Everything since v0.7.2.

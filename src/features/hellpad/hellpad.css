@@ -358,6 +358,15 @@
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
     gap: var(--s-4);
   }
+  /* Five modules in each group: three and two, or one row, rather than a row of four and a stray. */
+  @media (min-width: 1800px) {
+    .hp-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .hp-grid.planned {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
   .hp-mod.planned {
     --mod: var(--label);
     align-items: center;
@@ -542,6 +551,10 @@
     .hp-head-icon {
       width: 44px;
       height: 44px;
+    }
+    /* The hub's tile already says it; on a phone it pushes the module itself below the fold. */
+    .hp-head-blurb {
+      display: none;
     }
     .hp-head-meta {
       grid-column: 1 / -1;
@@ -1999,6 +2012,18 @@
   @media (max-width: 480px) {
     .gc-legend {
       grid-template-columns: 1fr;
+    }
+    /* A flex line can't ellipsize its text, so a long status would lose its percentage at the edge. */
+    .pi-row-status {
+      white-space: normal;
+      letter-spacing: 0.1em;
+    }
+  }
+  /* Sectors stack in one column on a phone, so most planets sit far below the screen. */
+  @media (max-width: 759px) {
+    .pi-sector {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 360px;
     }
   }
 }

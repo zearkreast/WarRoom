@@ -53,6 +53,18 @@
     color: var(--label);
   }
 
+  @media (min-width: 1800px) {
+    .settings-page {
+      max-width: 1600px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
+    .settings-page > :not(.panel) {
+      grid-column: 1 / -1;
+    }
+  }
+
   @media (max-width: 640px) {
     .set-row {
       flex-direction: column;
