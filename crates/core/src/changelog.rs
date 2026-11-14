@@ -9,7 +9,7 @@ pub struct ChangelogEntry {
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
         version: "0.7.5",
-        date: "2026-11-14",
+        date: "2026-11-15",
         items: &["Security update for the desktop app: Tokio 1.54.1, which fixes a race in its interval timers."],
     },
     ChangelogEntry {

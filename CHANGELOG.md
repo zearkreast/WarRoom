@@ -3,7 +3,7 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
-## [0.7.5] - 2026-11-14
+## [0.7.5] - 2026-11-15
 
 Everything since v0.7.4.
 
