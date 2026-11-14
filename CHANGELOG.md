@@ -3,6 +3,21 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.7.5] - 2026-11-14
+
+Everything since v0.7.4.
+
+### Upgrading
+
+- No new migrations, and the collector's code is unchanged.
+
+### Security
+
+- The desktop app moves to Tokio 1.54.1, which fixes a race condition in `tokio::time::Interval`
+  (GHSA-5wjr-9356-4wc8).
+- Still open: `glib` 0.18.5 (GHSA-wrw7-89jp-8q8g), used only by the Linux build's GTK 3 stack. The fix is in
+  `glib` 0.20, the GTK 4 line, which no Tauri 2 release uses yet.
+
 ## [0.7.4] - 2026-11-09
 
 Everything since v0.7.3.
