@@ -7,6 +7,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, OnceLock};
 use warroom_core::api::{Campaign, Faction, Planet};
 use warroom_core::campaign_filter::is_rare_campaign;
+use warroom_core::cities::{CityPush, cities_of, city_push};
 use warroom_core::defense::{GambitOutlook, gambit, gambits_from};
 use warroom_core::progress::{defense_percent, liberation_percent, projected_at, projected_completion, projected_loss};
 use warroom_core::sieges::{besieged, circumvallation, neighbours};
@@ -70,6 +71,8 @@ pub struct Front {
     pub siege: Option<Tactic>,
     /// It is surrounded itself: the SEAF has it under siege.
     pub besieged: bool,
+    /// A city about to fall that outweighs the ground the front is losing meanwhile.
+    pub city_push: Option<CityPush>,
 }
 
 pub fn build_front(
@@ -101,6 +104,7 @@ pub fn build_front(
             gambit: None,
             siege: None,
             besieged: false,
+            city_push: city_push(&cities_of(p), def, rate),
         };
     }
     let lib = liberation_percent(p.health, p.max_health);
@@ -121,6 +125,7 @@ pub fn build_front(
         gambit: None,
         siege: None,
         besieged: false,
+        city_push: city_push(&cities_of(p), lib, rate),
     }
 }
 

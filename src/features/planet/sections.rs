@@ -66,17 +66,23 @@ pub fn LiberationSection(#[prop(into)] p: Signal<Planet>, front: Memo<Option<Fro
         let victory =
             f.victory_at.filter(|v| *v != 0.0 && !v.is_nan()).filter(|v| !defense || f.fail_at.is_none_or(|d| *v < d));
         let fail = f.fail_at.filter(|v| *v != 0.0 && !v.is_nan());
-        let prediction = match (victory, fail) {
-            (Some(v), _) => view! { <Countdown to=v /> }.into_any(),
-            (None, Some(d)) => view! { <Countdown to=d /> }.into_any(),
+        // Slipping while a city about to fall takes the Helldivers: the city's fall is the next thing to happen.
+        let push = f.city_push.clone().filter(|_| victory.is_none());
+        let prediction = match (victory, &push, fail) {
+            (Some(v), _, _) => view! { <Countdown to=v /> }.into_any(),
+            (None, Some(c), _) => view! { <Countdown to=js::now() + c.hours_left * 3_600_000.0 /> }.into_any(),
+            (None, None, Some(d)) => view! { <Countdown to=d /> }.into_any(),
             _ => "Stalled".into_any(),
         };
-        let sub = match (victory, fail) {
-            (Some(_), _) => "until victory",
-            (None, Some(_)) if defense => "until it falls",
-            (None, Some(_)) => "until withdrawal",
-            _ => "no progress",
+        let sub = match (victory, &push, fail) {
+            (Some(_), _, _) => "until victory".to_string(),
+            (None, Some(c), _) => format!("until {} falls · +{}", c.city, fmt_pct(c.boost, 1)),
+            (None, None, Some(_)) if defense => "until it falls".to_string(),
+            (None, None, Some(_)) => "until withdrawal".to_string(),
+            _ => "no progress".to_string(),
         };
+        let pushing = push.is_some();
+        let push_note = push.map(|c| view! { <p class="pd-note pd-city-push">{c.summary()}</p> });
         let enemy = faction_color(Some(f.enemy));
         Some(view! {
             <div class="pd-tiles four">
@@ -86,20 +92,26 @@ pub fn LiberationSection(#[prop(into)] p: Signal<Planet>, front: Memo<Option<Fro
                     icon=icons::TRENDING_UP
                     label=format!("{} rate", if defense { "Defense" } else { "Liberation" })
                     value=f.rate.map_or("Measuring…".to_string(), per_hour).into_any()
-                    color=f.rate.map(|r| if r > 0.0 { "var(--good)".to_string() } else { "var(--bad)".to_string() })
+                    color=f.rate.map(|r| match r {
+                        r if r > 0.0 => "var(--good)".to_string(),
+                        _ if pushing => "var(--info)".to_string(),
+                        _ => "var(--bad)".to_string(),
+                    })
                 />
                 <Tile
-                    icon=icons::TIMER
+                    icon=if pushing { icons::BUILDING_2 } else { icons::TIMER }
                     label="Prediction"
                     value=prediction
                     sub=sub.into_any()
-                    color=match (victory, fail) {
-                        (Some(_), _) => Some("var(--good)".to_string()),
-                        (None, Some(_)) => Some("var(--bad)".to_string()),
+                    color=match (victory, pushing, fail) {
+                        (Some(_), _, _) => Some("var(--good)".to_string()),
+                        (None, true, _) => Some("var(--info)".to_string()),
+                        (None, false, Some(_)) => Some("var(--bad)".to_string()),
                         _ => None,
                     }
                 />
             </div>
+            {push_note}
             {(!defense).then(|| view! {
                 <div class="pd-tiles three">
                     <div class="pd-pill" style=format!("color: {enemy};")>

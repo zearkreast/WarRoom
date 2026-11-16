@@ -255,6 +255,51 @@ fn Found(p: Signal<Planet>, c: Signal<City>, readings: ReadSignal<Readings>) -> 
             </Panel>
         })
     };
+    let city_rate = Signal::derive(move || c.with(|c| c.rate.filter(|_| c.state == CityState::Liberating)));
+    let fought_here = Memo::new(move |_| c.with(|c| fought(c, enemy.get())));
+    let liberation_chart = move || {
+        fought_here.get().then(|| {
+            view! {
+                <Panel title="City liberation · last 24 h" icon=icons::FLAG tone="var(--f-humans)".to_string()>
+                    <div class="pd-stack">
+                        <Show
+                            when=move || has_progress.get()
+                            fallback=move || {
+                                view! {
+                                    <Empty>
+                                        {move || {
+                                            if readings.with(|r| r.loading) {
+                                                "Loading telemetry…".to_string()
+                                            } else {
+                                                format!(
+                                                    "No liberation readings of {} in the last 24 hours yet. One is kept every few minutes while it's being liberated.",
+                                                    c.with(|c| c.name.clone()),
+                                                )
+                                            }
+                                        }}
+                                    </Empty>
+                                }
+                            }
+                        >
+                            <ProgressChart points=progress rate=city_rate height=180.0 />
+                            <p class="muted">
+                                {move || {
+                                    c.with(|c| match city_hours_left(c.percent, c.rate) {
+                                        Some(h) => format!(
+                                            "Dashed: today's pace, liberated in about {}{}.",
+                                            fmt_duration(h * 3_600_000.0),
+                                            c.boost.map(|b| format!(", when it adds +{} to {}", fmt_pct(b, 1), p.with(|p| p.name.clone()))).unwrap_or_default(),
+                                        ),
+                                        None => "No projection while it isn't gaining ground.".to_string(),
+                                    })
+                                }}
+                            </p>
+                        </Show>
+                    </div>
+                </Panel>
+            }
+        })
+    };
     view! {
         <div class="pd">
             <section class="pd-hero brackets" style=move || p.with(|p| hero_style(p, enemy.get()))>
@@ -297,6 +342,7 @@ fn Found(p: Signal<Planet>, c: Signal<City>, readings: ReadSignal<Readings>) -> 
                 </div>
             </section>
             <CityStatus p=p c=c enemy=enemy />
+            {liberation_chart}
             {liberation}
             <ActivitySection
                 title="City activity · last 24 h".to_string()
@@ -315,12 +361,7 @@ fn Found(p: Signal<Planet>, c: Signal<City>, readings: ReadSignal<Readings>) -> 
                         c.with(|c| c.name.clone())
                     )
                 })
-            >
-                <Show when=move || has_progress.get()>
-                    <div class="pd-chart-label caps">"Liberation"</div>
-                    <ProgressChart points=progress />
-                </Show>
-            </ActivitySection>
+            />
         </div>
     }
 }

@@ -13,6 +13,9 @@ fn a_front_alerts_once_as_victory_nears_and_when_it_starts_losing() {
     assert_eq!(front_alerts(&far, &losing), [FrontAlert::LosingGround(-0.2)]);
     assert!(front_alerts(&losing, &losing).is_empty());
     assert!(front_alerts(&FrontLook::default(), &losing).is_empty());
+    // Slipping while a city about to fall takes the Helldivers isn't losing ground.
+    let pushing = FrontLook { city_push: true, ..losing };
+    assert!(front_alerts(&far, &pushing).is_empty());
 }
 
 #[test]

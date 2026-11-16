@@ -1029,6 +1029,15 @@
     letter-spacing: 0.12em;
     color: var(--label);
   }
+  .pd-note.pd-city-push {
+    padding: var(--s-3) var(--s-4);
+    border-left: 3px solid var(--info);
+    background: color-mix(in srgb, var(--info) 8%, transparent);
+    font-size: var(--fs-body-s);
+    letter-spacing: normal;
+    line-height: 1.45;
+    color: var(--text);
+  }
 
   .pd-charts {
     display: flex;
