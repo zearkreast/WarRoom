@@ -30,7 +30,7 @@ use warroom_core::data::manuals::{CHAPTERS, MANUALS, TIPS};
 use warroom_core::data::sites::{ADS, COMPANIES, GOV, HOLIDAYS, MINISTRIES};
 use warroom_core::data::{Ad, AdShape};
 use warroom_core::gww_nav::{
-    DRILL_ADDRESS, DRILL_TITLE, GwwPage, LOG_ADDRESS, LOG_TITLE, address_of, normalize, suggested_addresses, target_at,
+    DRILL_ADDRESS, DRILL_TITLE, GwwPage, LOG_ADDRESS, LOG_TITLE, address_of, normalize, suggestions_for, target_at,
 };
 use warroom_core::gww_text::{next_yearly, plain_text};
 use wasm_bindgen::JsCast;
@@ -48,56 +48,132 @@ fn key_of(p: &GwwPage) -> String {
     }
 }
 
-/// The address bar: shows where the reader is, and takes any address typed into it.
+/// The address bar: shows where the reader is, and takes any address typed into it. Its suggestions are the
+/// app's own short list rather than a native datalist, which on Android spreads over the page and the keyboard.
+/// While the reader types, the field is left to them: writing its value then would restart the phone
+/// keyboard's composition mid-word.
 #[component]
 fn AddressBar(page: Memo<GwwPage>) -> impl IntoView {
+    const SHOWN: usize = 5;
     let nav = use_gww_nav();
     let draft = RwSignal::new(None::<String>);
+    let picked = RwSignal::new(None::<usize>);
     let input = NodeRef::<html::Input>::new();
     let list_id = js::unique_id("gww-addresses-");
-    let open = move |e: web_sys::SubmitEvent| {
-        e.prevent_default();
-        let typed = draft.get_untracked().unwrap_or_default();
+    let suggestions =
+        Memo::new(move |_| draft.with(|d| d.as_deref().map(|d| suggestions_for(d, SHOWN)).unwrap_or_default()));
+    let open_list = move || !suggestions.with(Vec::is_empty);
+    Effect::new(move |_| {
+        let address = address_of(&page.get());
+        if draft.with_untracked(Option::is_none)
+            && let Some(i) = input.get_untracked()
+        {
+            i.set_value(&address);
+        }
+    });
+    Effect::new(move |_| {
+        suggestions.track();
+        picked.set(None);
+    });
+    let leave = move || {
+        draft.set(None);
+        if let Some(i) = input.get_untracked() {
+            i.set_value(&address_of(&page.get_untracked()));
+            let _ = i.blur();
+        }
+    };
+    let go = move |typed: String| {
+        leave();
         match target_at(&typed) {
             Some(target) => nav.follow(&target, None),
             None => nav.go.run(GwwPage::Missing { address: normalize(&typed) }),
         }
-        if let Some(i) = input.get_untracked() {
-            let _ = i.blur();
-        }
+    };
+    let open = move |e: web_sys::SubmitEvent| {
+        e.prevent_default();
+        let chosen = picked.get_untracked().and_then(|n| suggestions.with_untracked(|s| s.get(n).cloned()));
+        let typed = input.get_untracked().map(|i| i.value()).unwrap_or_default();
+        go(chosen.unwrap_or(typed));
     };
     let input_of = |e: &web_sys::Event| e.current_target().and_then(|t| t.dyn_into::<web_sys::HtmlInputElement>().ok());
+    let option_id = {
+        let list_id = list_id.clone();
+        move |n: usize| format!("{list_id}-{n}")
+    };
+    let active = {
+        let option_id = option_id.clone();
+        move || picked.get().filter(|_| open_list()).map(&option_id)
+    };
     view! {
         <form class="gww-url num" on:submit=open>
             <Icon icon=icons::LOCK size=12.0 />
             <input
                 node_ref=input
+                value=address_of(&page.get_untracked())
                 aria-label="Address"
-                prop:value=move || draft.get().unwrap_or_else(|| address_of(&page.get()))
-                list=list_id.clone()
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls=list_id.clone()
+                aria-expanded=move || open_list().to_string()
+                aria-activedescendant=active
                 spellcheck="false"
                 autocomplete="off"
                 autocapitalize="off"
                 enterkeyhint="go"
                 on:focus=move |e| {
-                    draft.set(Some(address_of(&page.get_untracked())));
                     if let Some(i) = input_of(&e) {
+                        draft.set(Some(i.value()));
                         i.select();
                     }
                 }
                 on:input=move |e| draft.set(Some(event_target_value(&e)))
-                on:blur=move |_| draft.set(None)
-                on:keydown=move |e: web_sys::KeyboardEvent| {
-                    if e.key() != "Escape" {
-                        return;
+                on:blur=move |_| {
+                    draft.set(None);
+                    if let Some(i) = input.get_untracked() {
+                        i.set_value(&address_of(&page.get_untracked()));
                     }
-                    e.stop_propagation();
-                    if let Some(i) = input_of(&e) {
-                        let _ = i.blur();
+                }
+                on:keydown=move |e: web_sys::KeyboardEvent| {
+                    let count = suggestions.with_untracked(Vec::len);
+                    match e.key().as_str() {
+                        "Escape" => {
+                            e.stop_propagation();
+                            leave();
+                        }
+                        "ArrowDown" if count > 0 => {
+                            e.prevent_default();
+                            picked.update(|p| *p = Some(p.map_or(0, |n| (n + 1) % count)));
+                        }
+                        "ArrowUp" if count > 0 => {
+                            e.prevent_default();
+                            picked.update(|p| *p = Some(p.map_or(count - 1, |n| (n + count - 1) % count)));
+                        }
+                        _ => {}
                     }
                 }
             />
-            <datalist id=list_id>{suggested_addresses().into_iter().map(|a| view! { <option value=a></option> }).collect_view()}</datalist>
+            <ul class="gww-suggest" id=list_id role="listbox" aria-label="Suggested addresses" hidden=move || !open_list()>
+                <For
+                    each=move || suggestions.get().into_iter().enumerate()
+                    key=|(n, a)| (*n, a.clone())
+                    children=move |(n, address)| {
+                        let shown = address.clone();
+                        view! {
+                            <li
+                                id=option_id(n)
+                                role="option"
+                                class="gww-suggest-item"
+                                class:active=move || picked.get() == Some(n)
+                                aria-selected=move || (picked.get() == Some(n)).to_string()
+                                on:pointerdown=|e: web_sys::PointerEvent| e.prevent_default()
+                                on:click=move |_| go(address.clone())
+                            >
+                                {shown}
+                            </li>
+                        }
+                    }
+                />
+            </ul>
         </form>
     }
 }

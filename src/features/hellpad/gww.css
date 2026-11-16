@@ -53,6 +53,7 @@
     cursor: default;
   }
   .gww-url {
+    position: relative;
     flex: 1;
     min-width: 0;
     display: flex;
@@ -89,10 +90,52 @@
   .gww-url input:focus {
     color: var(--text-hi);
   }
+  /* A few matches under the bar, kept short so the field and the keyboard stay clear. */
+  .gww-suggest {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: -1px;
+    right: -1px;
+    z-index: var(--z-menu);
+    max-height: min(5 * 40px, 32dvh);
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    list-style: none;
+    background: var(--surface-1);
+    border: 1px solid var(--cta);
+    box-shadow: var(--shadow-2);
+  }
+  .gww-suggest[hidden] {
+    display: none;
+  }
+  .gww-suggest-item {
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 var(--s-4);
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  .gww-suggest-item + .gww-suggest-item {
+    border-top: 1px solid var(--line);
+  }
+  .gww-suggest-item:hover,
+  .gww-suggest-item.active {
+    background: var(--surface-2);
+    color: var(--cta);
+  }
   /* Below 16px, phones zoom the page in on focus. */
   @media (pointer: coarse) {
     .gww-url input {
       font-size: 16px;
+    }
+    .gww-suggest-item {
+      min-height: 40px;
     }
     .gww-group-all {
       min-height: 44px;

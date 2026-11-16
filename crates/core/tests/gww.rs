@@ -7,7 +7,7 @@ use warroom_core::data::sites::{ADS, CITIZENS, COMPANIES, GOV, HOLIDAYS, HOLIDAY
 use warroom_core::data::stations::{PAST_STATIONS, STAR_OF_PEACE};
 use warroom_core::data::{AdBy, Section};
 use warroom_core::gww_nav::{
-    addresses, app_page_title, course_next, normalize, page_of, suggested_addresses, target_at,
+    addresses, app_page_title, course_next, normalize, page_of, suggested_addresses, suggestions_for, target_at,
 };
 use warroom_core::gww_text::{Segment, links_in, next_yearly, parse_rich, plain_text};
 
@@ -270,4 +270,20 @@ fn every_address_sits_where_its_owner_does() {
         })
         .collect();
     assert!(misplaced.is_empty(), "{misplaced:?}");
+}
+
+#[test]
+fn suggests_only_addresses_matching_what_is_typed_and_few_of_them() {
+    assert!(suggestions_for("", 6).is_empty());
+    assert!(suggestions_for("se://", 6).is_empty());
+    assert!(suggestions_for("  ", 6).is_empty());
+    let manuals = suggestions_for("hc/man", 4);
+    assert_eq!(manuals.len(), 4);
+    assert!(manuals.iter().all(|a| a.contains("hc/man")));
+    let strohmann = suggestions_for("stroh", 6);
+    assert_eq!(strohmann.first().map(String::as_str), Some("se://strohmann.news"));
+    let liberation = suggestions_for("liber", 6);
+    assert!(liberation.iter().any(|a| a == "se://hc/manuals/liberation"));
+    assert!(suggestions_for("zzzz-nowhere", 6).is_empty());
+    assert!(!suggestions_for("gov", 50).iter().any(|a| a.starts_with("se://gov/holidays")));
 }
