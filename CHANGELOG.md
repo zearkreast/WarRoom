@@ -9,7 +9,9 @@ Everything since v0.7.5.
 
 ### Upgrading
 
-- No new migrations, and the collector's code is unchanged.
+- Apply `supabase/migrations/0014_compact_activity_window.sql`. The collector's hourly thinning of planet and
+  city activity readings had been timing out, so readings older than 48 hours went unthinned; the first run
+  after the migration clears that backlog. The collector's code is unchanged and needs no redeploy.
 
 ### Galaxy map
 
