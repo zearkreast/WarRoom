@@ -175,31 +175,34 @@ fn contested_hatches() -> impl IntoView {
         .collect_view()
 }
 
-/// A hatched patch inside a region: clear round its planet, so its mark and words sit on calm ground, and fading
-/// towards the cell's edge into the plain territory around it.
+/// A hatched patch inside a region: clear round each of its planets, so their marks and words sit on calm ground.
+/// Neighbouring planets share one patch, so the hatch runs unbroken between them.
 fn hatch_patch(id: String, p: &Patch, hatch: Faction, clip: String) -> impl IntoView + use<> {
-    let fade = format!("{id}-fade");
     let mask = format!("{id}-mask");
+    let clearings = p
+        .spots
+        .iter()
+        .map(|s| {
+            let fade = format!("{id}-{}-clear", s.planet);
+            view! {
+                <radialGradient id=fade.clone() gradientUnits="userSpaceOnUse" cx=num(s.center[0]) cy=num(s.center[1]) r=num(s.reach)>
+                    <stop offset="0.2" stop-color="#000" stop-opacity="1"></stop>
+                    <stop offset="0.45" stop-color="#000" stop-opacity="0"></stop>
+                </radialGradient>
+                <circle cx=num(s.center[0]) cy=num(s.center[1]) r=num(s.reach * 0.45) fill=format!("url(#{fade})")></circle>
+            }
+        })
+        .collect_view();
     view! {
-        <radialGradient
-            id=fade.clone()
-            gradientUnits="userSpaceOnUse"
-            cx=num(p.center[0])
-            cy=num(p.center[1])
-            r=num(p.reach)
-        >
-            <stop offset="0.2" stop-color="#fff" stop-opacity="0"></stop>
-            <stop offset="0.45" stop-color="#fff" stop-opacity="0.85"></stop>
-            <stop offset="0.7" stop-color="#fff" stop-opacity="0.85"></stop>
-            <stop offset="1" stop-color="#fff" stop-opacity="0.3"></stop>
-        </radialGradient>
         <mask id=mask.clone()>
-            <path d=p.path.clone() fill=format!("url(#{fade})")></path>
+            <path d=p.path.clone() fill="#fff" fill-opacity="0.85" fill-rule="evenodd"></path>
+            {clearings}
         </mask>
         <path
             d=p.path.clone()
             class="region-contested"
             fill=format!("url(#region-hatch-{})", hatch.as_str())
+            fill-rule="evenodd"
             clip-path=format!("url(#{clip})")
             mask=format!("url(#{mask})")
         ></path>
@@ -705,9 +708,8 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                                                             .iter()
                                                             .map(|p| (p, r.owner))
                                                             .chain(r.besieged.iter().map(|p| (p, Faction::Humans)))
-                                                            .map(|(p, hatch)| {
-                                                                hatch_patch(format!("region-{i}-{}", p.planet), p, hatch, clip.clone())
-                                                            })
+                                                            .enumerate()
+                                                            .map(|(k, (p, hatch))| hatch_patch(format!("region-{i}-{k}"), p, hatch, clip.clone()))
                                                             .collect();
                                                         view! {
                                                             <clipPath id=clip.clone()>
