@@ -13,12 +13,16 @@ pub struct FrontNeed {
     pub in_major_order: bool,
     /// A defense's own deadline, or the Major Order's for a liberation target.
     pub deadline: Option<f64>,
+    /// Its stalled progress waits on a city about to fall, whose boost outweighs the ground lost meanwhile.
+    pub city_push: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NeedReason {
     MajorOrder,
     LosingGround,
+    /// Losing ground only until a city falls: see [`crate::cities::city_push`].
+    CityPush,
     MissesDeadline,
     EachDiverCounts,
 }
@@ -28,6 +32,7 @@ impl NeedReason {
         match self {
             NeedReason::MajorOrder => "MO target",
             NeedReason::LosingGround => "Losing ground",
+            NeedReason::CityPush => "City push",
             NeedReason::MissesDeadline => "Misses its deadline",
             NeedReason::EachDiverCounts => "Each Helldiver counts",
         }
@@ -68,8 +73,12 @@ pub fn front_need(f: &FrontNeed, now: f64, typical: Option<f64>) -> Need {
         score += 3.0;
     }
     if f.rate.is_some_and(|r| r <= 0.0) && f.percent > 0.0 {
-        reasons.push(NeedReason::LosingGround);
-        score += 2.0;
+        if f.city_push {
+            reasons.push(NeedReason::CityPush);
+        } else {
+            reasons.push(NeedReason::LosingGround);
+            score += 2.0;
+        }
     }
     let short = f.deadline.filter(|d| *d > now).and_then(|d| projected_at(f.percent, f.rate, now, d));
     if short.is_some_and(|end| end < 100.0) {

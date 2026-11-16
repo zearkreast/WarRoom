@@ -961,11 +961,14 @@
   }
 
   /* ---------- Legend ---------- */
+  /* The list scrolls inside the panel, not the panel itself: a glass panel's frame and cut corners are drawn on
+     its own box, and would scroll away with the content. */
   .map-legend {
     width: 320px;
     max-height: min(70dvh, 560px);
-    overflow-y: auto;
-    scrollbar-width: thin;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
   }
   .ml-close {
     margin-left: auto;
@@ -982,11 +985,19 @@
     color: var(--text-hi);
   }
   .ml-list {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: var(--s-4);
     margin: 0;
-    padding: var(--s-4) var(--s-5) 0;
+    padding: var(--s-4) var(--s-5) calc(var(--cut) + var(--s-2));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .ml-list div {
+    flex: none;
   }
   .ml-list div {
     display: flex;
@@ -1032,14 +1043,26 @@
   .map-drawer {
     width: min(360px, calc(100vw - 24px));
     max-height: min(60dvh, 520px);
-    overflow-y: auto;
-    scrollbar-width: thin;
     animation: toast-in var(--t-reveal) var(--ease);
+  }
+  /* As the legend: the dispatches scroll under a fixed head, inside the frame. */
+  .map-drawer.panel {
+    display: flex;
+    flex-direction: column;
+  }
+  .md-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
   }
   .map-drawer.orders {
     display: flex;
     flex-direction: column;
     gap: var(--s-4);
+    overflow-y: auto;
+    scrollbar-width: thin;
   }
   .md-head {
     display: flex;
@@ -1099,8 +1122,7 @@
     color: var(--label);
   }
   .md-more {
-    position: sticky;
-    bottom: 0;
+    flex: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1350,7 +1372,11 @@
       width: min(300px, calc(100vw - 96px));
     }
     .map-legend {
-      max-height: 60dvh;
+      max-height: min(60dvh, calc(100dvh - 300px));
+    }
+    /* Solid on phones, like the planet sheet: the map's labels read through glass and muddle the text. */
+    .map-settings {
+      background: var(--surface-1);
     }
     .map-rail {
       top: auto;

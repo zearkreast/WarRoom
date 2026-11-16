@@ -48,6 +48,8 @@ use wasm_bindgen::prelude::*;
 
 /// Hatch spacing in screen pixels; the pattern is counter-scaled on zoom to keep it.
 const HATCH: f64 = 7.0;
+/// Line spacing of the hatch on contested ground: wider than the sectors', as one patch can cover a whole front.
+const CONTESTED_HATCH: f64 = HATCH * 1.5;
 
 thread_local! {
     /// The last `focus_seq` handled, so a remounted map doesn't replay it.
@@ -153,17 +155,17 @@ fn contested_hatches() -> impl IntoView {
                 <pattern
                     id=format!("region-hatch-{}", f.as_str())
                     class="hatch"
-                    width=num(HATCH)
-                    height=num(HATCH)
+                    width=num(CONTESTED_HATCH)
+                    height=num(CONTESTED_HATCH)
                     patternUnits="userSpaceOnUse"
                     patternTransform="rotate(45)"
                 >
-                    <rect width=num(HATCH) height=num(HATCH) fill=c fill-opacity="0.1"></rect>
+                    <rect width=num(CONTESTED_HATCH) height=num(CONTESTED_HATCH) fill=c fill-opacity="0.08"></rect>
                     <line
                         x1=num(HATCH * 0.15)
                         y1="0"
                         x2=num(HATCH * 0.15)
-                        y2=num(HATCH)
+                        y2=num(CONTESTED_HATCH)
                         stroke=c
                         stroke-opacity="0.6"
                         stroke-width=num(HATCH * 0.26)
@@ -175,31 +177,52 @@ fn contested_hatches() -> impl IntoView {
         .collect_view()
 }
 
-/// A hatched patch inside a region: clear round its planet, so its mark and words sit on calm ground, and fading
-/// towards the cell's edge into the plain territory around it.
+/// A hatched patch inside a region: clear round each of its planets, so their marks and words sit on calm ground,
+/// strongest in a ring round each and fading towards the plain territory beyond. Neighbouring planets share one
+/// patch, so the hatch runs unbroken between them.
 fn hatch_patch(id: String, p: &Patch, hatch: Faction, clip: String) -> impl IntoView + use<> {
-    let fade = format!("{id}-fade");
     let mask = format!("{id}-mask");
+    let rings = p
+        .spots
+        .iter()
+        .map(|s| {
+            let fade = format!("{id}-{}-fade", s.planet);
+            view! {
+                <radialGradient id=fade.clone() gradientUnits="userSpaceOnUse" cx=num(s.center[0]) cy=num(s.center[1]) r=num(s.reach)>
+                    <stop offset="0.2" stop-color="#fff" stop-opacity="0"></stop>
+                    <stop offset="0.45" stop-color="#fff" stop-opacity="0.75"></stop>
+                    <stop offset="0.7" stop-color="#fff" stop-opacity="0.6"></stop>
+                    <stop offset="1" stop-color="#fff" stop-opacity="0.25"></stop>
+                </radialGradient>
+                <path d=p.path.clone() fill=format!("url(#{fade})") fill-rule="evenodd"></path>
+            }
+        })
+        .collect_view();
+    // A ring's clear middle paints nothing over a neighbour's ring, so each planet is cleared again on top.
+    let clearings = p
+        .spots
+        .iter()
+        .map(|s| {
+            let fade = format!("{id}-{}-clear", s.planet);
+            view! {
+                <radialGradient id=fade.clone() gradientUnits="userSpaceOnUse" cx=num(s.center[0]) cy=num(s.center[1]) r=num(s.reach)>
+                    <stop offset="0.2" stop-color="#000" stop-opacity="1"></stop>
+                    <stop offset="0.45" stop-color="#000" stop-opacity="0"></stop>
+                </radialGradient>
+                <circle cx=num(s.center[0]) cy=num(s.center[1]) r=num(s.reach * 0.45) fill=format!("url(#{fade})")></circle>
+            }
+        })
+        .collect_view();
     view! {
-        <radialGradient
-            id=fade.clone()
-            gradientUnits="userSpaceOnUse"
-            cx=num(p.center[0])
-            cy=num(p.center[1])
-            r=num(p.reach)
-        >
-            <stop offset="0.2" stop-color="#fff" stop-opacity="0"></stop>
-            <stop offset="0.45" stop-color="#fff" stop-opacity="0.85"></stop>
-            <stop offset="0.7" stop-color="#fff" stop-opacity="0.85"></stop>
-            <stop offset="1" stop-color="#fff" stop-opacity="0.3"></stop>
-        </radialGradient>
         <mask id=mask.clone()>
-            <path d=p.path.clone() fill=format!("url(#{fade})")></path>
+            {rings}
+            {clearings}
         </mask>
         <path
             d=p.path.clone()
             class="region-contested"
             fill=format!("url(#region-hatch-{})", hatch.as_str())
+            fill-rule="evenodd"
             clip-path=format!("url(#{clip})")
             mask=format!("url(#{mask})")
         ></path>
@@ -705,9 +728,8 @@ fn MapView(on_hover_sector: Callback<Option<String>>) -> impl IntoView {
                                                             .iter()
                                                             .map(|p| (p, r.owner))
                                                             .chain(r.besieged.iter().map(|p| (p, Faction::Humans)))
-                                                            .map(|(p, hatch)| {
-                                                                hatch_patch(format!("region-{i}-{}", p.planet), p, hatch, clip.clone())
-                                                            })
+                                                            .enumerate()
+                                                            .map(|(k, (p, hatch))| hatch_patch(format!("region-{i}-{k}"), p, hatch, clip.clone()))
                                                             .collect();
                                                         view! {
                                                             <clipPath id=clip.clone()>

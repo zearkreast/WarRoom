@@ -204,6 +204,23 @@ mod browser {
         }
     }
 
+    /// Some WebViews fire popstate inside `history.back()`, while the step that called it still holds `SYNC`;
+    /// such a pop waits for the step to finish instead of borrowing it twice.
+    fn handle_pop(state: Value) {
+        let place = SYNC.with(|s| match s.try_borrow_mut() {
+            Ok(mut s) => Ok(s.as_mut().and_then(|s| s.on_pop(&state, place_now))),
+            Err(_) => Err(state),
+        });
+        match place {
+            Ok(Some(p)) => set_place(p),
+            Ok(None) => {}
+            Err(state) => {
+                let retry = Closure::once_into_js(move || handle_pop(state));
+                let _ = js::window().set_timeout_with_callback(retry.unchecked_ref());
+            }
+        }
+    }
+
     /// Puts back the place a reload left, before the first render so the default screen never shows,
     /// then follows every change of place.
     pub fn start() {
@@ -227,11 +244,7 @@ mod browser {
             SYNC.with_borrow_mut(|s| s.as_mut().map(|s| s.on_change(now)));
         });
         let on_pop = Closure::<dyn Fn(web_sys::PopStateEvent)>::new(|e: web_sys::PopStateEvent| {
-            let state = from_js(&e.state());
-            let place = SYNC.with_borrow_mut(|s| s.as_mut().and_then(|s| s.on_pop(&state, place_now)));
-            if let Some(p) = place {
-                set_place(p);
-            }
+            handle_pop(from_js(&e.state()));
         });
         let _ = js::window().add_event_listener_with_callback("popstate", on_pop.as_ref().unchecked_ref());
         on_pop.forget();

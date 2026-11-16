@@ -2,7 +2,9 @@ mod common;
 
 use common::*;
 use warroom_core::api::{Faction, Planet, PlanetEvent, Region};
-use warroom_core::cities::{CityProgress, CityState, bar_marks, cities_of, city_liberations, city_stars, size_label};
+use warroom_core::cities::{
+    City, CityProgress, CityState, bar_marks, cities_of, city_liberations, city_push, city_stars, size_label,
+};
 use warroom_core::progress::Sample;
 
 const MINUTE: f64 = 60_000.0;
@@ -265,4 +267,41 @@ fn bar_marks_keep_their_threshold_and_stack_when_close() {
     let got: Vec<(i64, i64, usize)> =
         bar_marks(&p, 8.0).into_iter().map(|m| (m.city.id, (m.at * 10.0).round() as i64, m.row)).collect();
     assert_eq!(got, [(1, 0, 0), (2, 380, 0), (0, 400, 1), (3, 700, 0)]);
+}
+
+fn fought_city(name: &str, percent: f64, rate: f64, boost: f64) -> City {
+    City {
+        name: name.into(),
+        state: CityState::Liberating,
+        percent: Some(percent),
+        rate: Some(rate),
+        boost: Some(boost),
+        players: 8_000.0,
+        ..Default::default()
+    }
+}
+
+#[test]
+fn a_city_about_to_fall_explains_a_front_losing_ground() {
+    // 80% liberated at 5%/h: 4 hours left. The planet slips 0.5%/h meanwhile, 2 points, against a 9-point boost.
+    let push = city_push(&[fought_city("SEQUIM", 80.0, 5.0, 9.0)], 30.0, Some(-0.5)).unwrap();
+    assert_eq!(push.city, "SEQUIM");
+    assert!((push.hours_left - 4.0).abs() < 1e-9);
+    assert!((push.after - 37.0).abs() < 1e-9);
+    // The first to fall is the one named.
+    let two = [fought_city("FAR", 10.0, 2.0, 20.0), fought_city("NEAR", 90.0, 5.0, 4.0)];
+    assert_eq!(city_push(&two, 30.0, Some(-0.2)).unwrap().city, "NEAR");
+}
+
+#[test]
+fn no_city_push_when_the_front_gains_or_the_city_cannot_pay_back() {
+    let city = fought_city("SEQUIM", 80.0, 5.0, 9.0);
+    assert!(city_push(std::slice::from_ref(&city), 30.0, Some(0.3)).is_none());
+    assert!(city_push(std::slice::from_ref(&city), 30.0, None).is_none());
+    // 4 hours at -3%/h loses 12 points, more than the 9 it gives.
+    assert!(city_push(std::slice::from_ref(&city), 30.0, Some(-3.0)).is_none());
+    // A city losing ground, or one nobody fights in, explains nothing.
+    assert!(city_push(&[fought_city("SEQUIM", 80.0, -1.0, 9.0)], 30.0, Some(-0.5)).is_none());
+    assert!(city_push(&[City { players: 0.0, ..city.clone() }], 30.0, Some(-0.5)).is_none());
+    assert!(city_push(&[City { state: CityState::Locked, ..city }], 30.0, Some(-0.5)).is_none());
 }

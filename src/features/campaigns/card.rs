@@ -17,6 +17,7 @@ use leptos::prelude::*;
 use warroom_core::api::{Faction, Named, Planet};
 use warroom_core::biomes::regen_pct_per_hour;
 use warroom_core::campaign_filter::is_rare_campaign;
+use warroom_core::cities::CityPush;
 use warroom_core::defense::{GambitOutlook, divers_short, event_span, needed_rate};
 use warroom_core::factions::{faction_color, faction_label};
 use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, to_fixed};
@@ -63,6 +64,9 @@ fn eta(f: &Front, deadline: Option<f64>, now: f64) -> Option<EtaView> {
             to: to.unwrap_or(0.0),
             late: false,
         });
+    }
+    if let Some(c) = &f.city_push {
+        return Some(EtaView { good: true, label: "City falls in", to: now + c.hours_left * 3_600_000.0, late: false });
     }
     if let Some(v) = f.victory_at.filter(|v| *v != 0.0 && !v.is_nan() && *v - now <= ETA_HORIZON_MS) {
         return Some(EtaView { good: true, label: "Victory in", to: v, late: deadline.is_some_and(|d| v > d) });
@@ -123,12 +127,22 @@ fn need_view((need, short): (f64, Option<f64>), rate: Option<f64>) -> impl IntoV
     }
 }
 
-fn outlook_view(o: OutlookView) -> AnyView {
+fn city_push_view(c: &CityPush) -> impl IntoView {
+    view! {
+        <span class="cc-advance cc-city" title=c.summary()>
+            <span class="caps">{format!("{} falls in", c.city)}</span>
+            <b class="num">{format!("{} · +{}", fmt_duration(c.hours_left * 3_600_000.0), fmt_pct(c.boost, 1))}</b>
+        </span>
+    }
+}
+
+fn outlook_view(o: OutlookView, push: Option<CityPush>) -> AnyView {
     if o.holding {
         return view! {
             <div class="cc-outlook holding caps">
                 <Icon icon=icons::USERS size=16.0 />
                 " Holding for reinforcement"
+                {push.as_ref().map(city_push_view)}
                 {o.need.map(|n| need_view(n, o.rate))}
             </div>
         }
@@ -141,6 +155,8 @@ fn outlook_view(o: OutlookView) -> AnyView {
                 Some(r) => {
                     let (tone, icon) = match r {
                         r if r >= 0.005 => ("up", icons::TRENDING_UP),
+                        // Slipping only while a city about to fall takes the Helldivers.
+                        _ if push.is_some() => ("push", icons::BUILDING_2),
                         r if r <= -0.005 => ("down", icons::TRENDING_DOWN),
                         _ => ("flat", icons::ARROW_RIGHT),
                     };
@@ -155,6 +171,7 @@ fn outlook_view(o: OutlookView) -> AnyView {
                 }
             }}
             {o.advance.map(advance_view)}
+            {push.as_ref().map(city_push_view)}
             {o.need.map(|n| need_view(n, o.rate))}
         </div>
     }
@@ -251,6 +268,7 @@ pub fn CampaignCard(
     let flag = move |pick: fn(&Front) -> bool| Memo::new(move |_| front.with(|f| f.as_ref().is_some_and(pick)));
     let (in_mo, pinned, station) = (flag(|f| f.in_major_order), flag(|f| f.pinned), flag(|f| f.station));
     let besieged = flag(|f| f.besieged);
+    let city_push = Memo::new(move |_| front.with(|f| f.as_ref().and_then(|f| f.city_push.clone())));
     let eta = Memo::new(move |_| front.with(|f| f.as_ref().and_then(|f| eta(f, deadline.get(), js::now()))));
     let planet = Memo::new(move |_| front.with(|f| f.as_ref().map(|f| f.planet.clone()).unwrap_or_default()));
     let advance = use_enemy_advance(planet.into());
@@ -491,9 +509,13 @@ pub fn CampaignCard(
                                             let tone = match r {
                                                 NeedReason::EachDiverCounts => "is-counts",
                                                 NeedReason::MissesDeadline => "is-late",
+                                                NeedReason::CityPush => "is-city",
                                                 _ => "is-losing",
                                             };
-                                            view! { <span class=format!("cc-badge {tone}")>{r.label()}</span> }
+                                            let title = (r == NeedReason::CityPush)
+                                                .then(|| city_push.with(|c| c.as_ref().map(CityPush::summary)))
+                                                .flatten();
+                                            view! { <span class=format!("cc-badge {tone}") title=title>{r.label()}</span> }
                                         })
                                         .collect_view()
                                 }}
@@ -535,7 +557,7 @@ pub fn CampaignCard(
                                 </div>
                             </Show>
                         </div>
-                        {move || outlook.get().map(outlook_view)}
+                        {move || outlook.get().map(|o| outlook_view(o, city_push.get()))}
                         <footer class="cc-foot">
                             <span title="Share of all Helldivers online">
                                 <span class="cc-foot-label caps">"Share"</span>

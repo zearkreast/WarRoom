@@ -148,6 +148,7 @@ fn DispatchDrawer(now: ReadSignal<f64>) -> impl IntoView {
                     }}
                 </span>
             </div>
+            <div class="md-scroll">
             {move || {
                 let list = recent.get();
                 if list.is_empty() {
@@ -173,6 +174,7 @@ fn DispatchDrawer(now: ReadSignal<f64>) -> impl IntoView {
                     .into_any()
                 }
             }}
+            </div>
             <button class="md-more caps" on:click=move |_| ui().set_view(View::News)>
                 "See all dispatches "
                 <Icon icon=icons::ARROW_UP_RIGHT size=14.0 />

@@ -8,6 +8,15 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.7.6",
+        date: "2026-11-16",
+        items: &[
+            "Galaxy map: neighbouring planets under the same attack are hatched as one patch, and the legend scrolls inside its frame.",
+            "G.W.W.: the address bar suggests matching addresses in the app's own list, and clearing it no longer crashes the screen.",
+            "City pushes: a front waiting on a city about to fall shows when it falls instead of \"Losing ground\", and sends no losing alert.",
+        ],
+    },
+    ChangelogEntry {
         version: "0.7.5",
         date: "2026-11-15",
         items: &["Security update for the desktop app: Tokio 1.54.1, which fixes a race in its interval timers."],
