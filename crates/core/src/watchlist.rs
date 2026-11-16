@@ -13,6 +13,8 @@ pub struct FrontLook {
     pub waiting: Vec<i64>,
     /// Cities open to Helldivers and not yet freed.
     pub open: Vec<(i64, String)>,
+    /// Its progress slips only while a city about to fall takes the Helldivers.
+    pub city_push: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -31,6 +33,7 @@ pub fn front_alerts(prev: &FrontLook, next: &FrontLook) -> Vec<FrontAlert> {
     if let (Some(was), Some(is)) = (prev.rate, next.rate)
         && was > 0.0
         && is <= 0.0
+        && !next.city_push
     {
         out.push(FrontAlert::LosingGround(is));
     }

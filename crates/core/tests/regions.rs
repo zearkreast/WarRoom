@@ -35,7 +35,7 @@ fn a_planet_under_attack_joins_its_attackers_territory_hatched() {
     let regions = build_attack_regions(&planets);
     let bots: Vec<_> = regions.iter().filter(|r| r.owner == Faction::Automaton).collect();
     assert!(bots.iter().any(|r| r.planets.contains(&index)));
-    assert!(bots.iter().any(|r| r.contested.iter().any(|c| c.planet == index && c.path.starts_with('M'))));
+    assert!(bots.iter().any(|r| r.contested.iter().any(|c| c.holds(index) && c.path.starts_with('M'))));
     assert!(regions.iter().filter(|r| r.owner != Faction::Automaton).all(|r| r.contested.is_empty()));
 }
 
@@ -73,7 +73,66 @@ fn draws_a_planet_under_siege_as_ground_of_its_own_hatched_in_super_earth_blue()
     assert_eq!(home.planets, [target]);
     assert_eq!(home.owner, planets.iter().find(|p| p.index == target).unwrap().current_owner);
     let [patch] = home.besieged.as_slice() else { panic!("{:?}", home.besieged) };
-    assert_eq!(patch.planet, target);
-    assert!(patch.reach > 0.0);
-    assert!(regions.iter().flat_map(|r| &r.besieged).all(|b| b.planet == target));
+    let [spot] = patch.spots.as_slice() else { panic!("{:?}", patch.spots) };
+    assert_eq!(spot.planet, target);
+    assert!(spot.reach > 0.0);
+    assert!(regions.iter().flat_map(|r| &r.besieged).all(|b| b.spots.iter().all(|s| s.planet == target)));
+}
+
+#[test]
+fn neighbouring_planets_under_the_same_attack_share_one_hatched_patch() {
+    let mut planets = planets();
+    // Three Super Earth worlds next to each other, each a neighbour of the next.
+    let lanes = warroom_core::sieges::neighbours(&planets);
+    let human = |i: i64| planets.iter().any(|p| p.index == i && p.current_owner == Faction::Humans && p.index != 0);
+    let chain = planets
+        .iter()
+        .filter(|p| human(p.index))
+        .find_map(|a| {
+            let b = lanes[&a.index].iter().copied().find(|&b| human(b))?;
+            let c = lanes[&b].iter().copied().find(|&c| c != a.index && human(c))?;
+            Some([a.index, b, c])
+        })
+        .unwrap();
+    for p in &mut planets {
+        if chain.contains(&p.index) {
+            p.event = Some(PlanetEvent { faction: Faction::Terminids, ..Default::default() });
+        }
+    }
+    let regions = build_attack_regions(&planets);
+    let patches: Vec<_> = regions
+        .iter()
+        .filter(|r| r.owner == Faction::Terminids)
+        .flat_map(|r| &r.contested)
+        .filter(|c| chain.iter().any(|&i| c.holds(i)))
+        .collect();
+    assert_eq!(patches.len(), 1, "{patches:?}");
+    assert_eq!(patches[0].spots.len(), 3);
+    assert!(patches[0].path.starts_with('M'));
+}
+
+#[test]
+fn far_apart_planets_under_attack_keep_patches_of_their_own() {
+    let mut planets = planets();
+    let lanes = warroom_core::sieges::neighbours(&planets);
+    let human: Vec<i64> =
+        planets.iter().filter(|p| p.current_owner == Faction::Humans && p.index != 0).map(|p| p.index).collect();
+    let a = human[0];
+    let pos = |i: i64| planets.iter().find(|p| p.index == i).unwrap().position;
+    let b = *human
+        .iter()
+        .filter(|&&b| b != a && !lanes[&a].contains(&b))
+        .max_by(|&&x, &&y| {
+            let d = |i: i64| (pos(i).x - pos(a).x).hypot(pos(i).y - pos(a).y);
+            d(x).total_cmp(&d(y))
+        })
+        .unwrap();
+    for p in &mut planets {
+        if p.index == a || p.index == b {
+            p.event = Some(PlanetEvent { faction: Faction::Illuminate, ..Default::default() });
+        }
+    }
+    let patches: Vec<_> = build_attack_regions(&planets).into_iter().flat_map(|r| r.contested).collect();
+    assert_eq!(patches.len(), 2, "{patches:?}");
+    assert!(patches.iter().all(|p| p.spots.len() == 1));
 }

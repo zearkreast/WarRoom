@@ -75,17 +75,58 @@ pub fn ActivityChart(
     }
 }
 
-/// Liberation over time, 0 to 100%.
+/// Hours ahead the dashed projection reaches at most.
+const PROJECTION_HOURS: f64 = 24.0;
+
+/// Where liberation goes from the last reading at `rate` %/h: points every hour or so until it reaches 100% or the
+/// horizon, the last one exactly where it gets there.
+fn projection(last: (f64, f64), rate: f64) -> Vec<(f64, f64)> {
+    if rate <= 0.0 || last.1 >= 100.0 {
+        return Vec::new();
+    }
+    let hours = ((100.0 - last.1) / rate).min(PROJECTION_HOURS);
+    let steps = (hours.ceil() as usize).clamp(1, 24);
+    (1..=steps)
+        .map(|k| {
+            let h = hours * k as f64 / steps as f64;
+            (last.0 + h * 3_600_000.0, (last.1 + rate * h).min(100.0))
+        })
+        .collect()
+}
+
+/// Liberation over time, 0 to 100%, with a dashed projection at `rate` %/h when it is gaining.
 #[component]
 pub fn ProgressChart(
     /// (at, percent)
     #[prop(into)]
     points: Signal<Arc<Vec<(f64, f64)>>>,
+    #[prop(optional, into)] rate: Signal<Option<f64>>,
     #[prop(default = 140.0)] height: f64,
 ) -> impl IntoView {
     let plot = Signal::derive(move || {
         let points = points.get();
-        let xs: Vec<f64> = points.iter().map(|p| p.0).collect();
+        let ahead = points.last().zip(rate.get()).map(|(l, r)| projection(*l, r)).unwrap_or_default();
+        let mut xs: Vec<f64> = points.iter().map(|p| p.0).collect();
+        let now = xs.last().copied();
+        xs.extend(ahead.iter().map(|p| p.0));
+        let past: Vec<Option<f64>> = points.iter().map(|p| Some(p.1)).chain(ahead.iter().map(|_| None)).collect();
+        let mut series = vec![Series {
+            dots: dots(&xs[..points.len()], "var(--c-humans)"),
+            ..Series::line("percent", past, "var(--c-humans)", 2.0)
+        }];
+        if !ahead.is_empty() {
+            let projected: Vec<Option<f64>> = points
+                .iter()
+                .enumerate()
+                .map(|(i, p)| (i + 1 == points.len()).then_some(p.1))
+                .chain(ahead.iter().map(|p| Some(p.1)))
+                .collect();
+            series.push(Series {
+                dash: Some("4 4".into()),
+                active_dot: false,
+                ..Series::line("projection", projected, "var(--c-humans)", 1.5)
+            });
+        }
         Arc::new(Plot {
             x: time_axis(&xs),
             y: vec![YAxis::new(
@@ -94,16 +135,23 @@ pub fn ProgressChart(
                 Arc::new(|v| format!("{}%", js::num(v))),
             )],
             grid: Some(Grid { stroke: GRID.into(), opacity: None, edges_only: false }),
-            series: vec![Series {
-                dots: dots(&xs, "var(--c-humans)"),
-                ..Series::line("percent", points.iter().map(|p| Some(p.1)).collect(), "var(--c-humans)", 2.0)
-            }],
-            ref_lines: Vec::new(),
+            series,
+            ref_lines: now
+                .filter(|_| !ahead.is_empty())
+                .map(|x| RefLine { x, stroke: "var(--text-dim)".into(), label: Some("Now".into()) })
+                .into_iter()
+                .collect(),
             xs,
         })
     });
     let tip: Tooltip = Arc::new(|plot, i| {
-        let rows = series_rows(plot, i, |_, v| (fmt_pct(v, 2), "Liberated".into()));
+        let mut rows = series_rows(plot, i, |s, v| {
+            (fmt_pct(v, 2), if s.name == "projection" { "Projected".into() } else { "Liberated".into() })
+        });
+        // The last reading also starts the projection: list it once.
+        if rows.len() > 1 {
+            rows.truncate(1);
+        }
         Some(default_tooltip(fmt_date_time(*plot.xs.get(i)?), rows))
     });
     view! { <Chart plot=plot height=height margin=(8.0, 8.0, 0.0, 0.0) tooltip=tip /> }

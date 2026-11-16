@@ -270,6 +270,10 @@
     color: var(--bad);
     border-color: color-mix(in srgb, var(--bad) var(--strong), transparent);
   }
+  .cc-badge.is-city {
+    color: var(--info);
+    border-color: color-mix(in srgb, var(--info) var(--strong), transparent);
+  }
   .cc-badge.is-counts {
     color: var(--good);
     border-color: color-mix(in srgb, var(--good) var(--strong), transparent);
@@ -341,6 +345,9 @@
     font-weight: 700;
     color: var(--text-hi);
   }
+  .cc-advance.cc-city {
+    color: var(--info);
+  }
   .cc-need b {
     color: var(--k);
     text-transform: none;
@@ -392,6 +399,9 @@
   }
   .cc-rate.flat {
     color: var(--text-dim);
+  }
+  .cc-rate.push {
+    color: var(--info);
   }
   .cc-rate.measuring {
     color: var(--text-dim);

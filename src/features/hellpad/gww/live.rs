@@ -240,7 +240,7 @@ fn LiveResistance() -> impl IntoView {
     let all = fronts();
     move || {
         let liberations: Vec<Front> = all.get().iter().filter(|f| f.kind == FrontKind::Liberation).cloned().collect();
-        let losing = liberations.iter().filter(|f| f.rate.is_some_and(|r| r < 0.0)).count();
+        let losing = liberations.iter().filter(|f| f.rate.is_some_and(|r| r < 0.0) && f.city_push.is_none()).count();
         let mut stiffest = liberations.clone();
         stiffest.sort_by(|a, b| regen(&b.planet).total_cmp(&regen(&a.planet)));
         stiffest.truncate(4);

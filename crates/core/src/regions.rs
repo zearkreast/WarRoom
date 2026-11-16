@@ -38,15 +38,30 @@ const FIELD_STEP: f64 = 3.0;
 /// slivers narrower than about 15 map units, a third of the usual distance between planets.
 const FIELD_BLUR: usize = 3;
 
-/// One planet's cell inside a region, smoothed, for a hatch that fades out from the planet.
+/// Hatched ground inside a region: the cells of neighbouring planets in the same state, merged into one smooth
+/// shape so a front under attack reads as one stretch of contested ground rather than a blob per planet.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Patch {
-    pub planet: i64,
+    /// Closed, smoothed SVG path data (may contain several loops; fill even-odd).
     pub path: String,
+    /// Its planets, each with the clear ground round it.
+    pub spots: Vec<Spot>,
+}
+
+/// A planet in a patch.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Spot {
+    pub planet: i64,
     /// The planet's position.
     pub center: Pt,
-    /// Map units from the planet to the cell's farthest point.
+    /// Map units from the planet to its cell's farthest point.
     pub reach: f64,
+}
+
+impl Patch {
+    pub fn holds(&self, planet: i64) -> bool {
+        self.spots.iter().any(|s| s.planet == planet)
+    }
 }
 
 /// Enemy territory outlines: same-owner cells merged into smooth fronts.
@@ -142,10 +157,17 @@ fn build_outlines(planets: &[Planet], owner_of: impl Fn(&Planet) -> Option<Facti
         let painted: Vec<&[Pt]> = painted.iter().map(Vec::as_slice).collect();
         let path = trace(&painted).iter().map(|l| to_path(&chaikin(l, 1))).collect::<Vec<_>>().join(" ");
         let patches = |pick: &dyn Fn(&Planet) -> bool| {
-            members
+            let picked: Vec<usize> = members
                 .iter()
-                .filter(|&&i| pick(&planets[i]) && sector_sites.contains(&planet_site[i]))
-                .filter_map(|&i| patch(planets[i].index, sites[planet_site[i]], &cells[planet_site[i]]))
+                .copied()
+                .filter(|&i| pick(&planets[i]) && sector_sites.contains(&planet_site[i]))
+                .collect();
+            neighbour_groups(&picked, |i| planet_site[i], &delaunay)
+                .into_iter()
+                .filter_map(|group| {
+                    let spots: Vec<(i64, usize)> = group.iter().map(|&i| (planets[i].index, planet_site[i])).collect();
+                    patch(&spots, &sites, &cells)
+                })
                 .collect::<Vec<_>>()
         };
         let contested = patches(&|p| p.event.is_some());
@@ -198,13 +220,62 @@ fn clip_to_rim(cell: Vec<Pt>) -> Vec<Pt> {
     ring
 }
 
-fn patch(planet: i64, center: Pt, cell: &[Pt]) -> Option<Patch> {
-    if cell.len() < 4 {
-        return None;
+/// Splits `picked` (planets by array position) into groups whose cells touch, through Delaunay neighbours, in
+/// the order their first planet was picked.
+fn neighbour_groups(picked: &[usize], site_of: impl Fn(usize) -> usize, delaunay: &Delaunay) -> Vec<Vec<usize>> {
+    let mut groups: Vec<Vec<usize>> = Vec::new();
+    let mut placed = vec![false; picked.len()];
+    for start in 0..picked.len() {
+        if placed[start] {
+            continue;
+        }
+        placed[start] = true;
+        let mut group = vec![picked[start]];
+        let mut at = 0;
+        while at < group.len() {
+            let touching = delaunay.neighbors(site_of(group[at]));
+            for (k, &i) in picked.iter().enumerate() {
+                if !placed[k] && (touching.contains(&site_of(i)) || site_of(i) == site_of(group[at])) {
+                    placed[k] = true;
+                    group.push(i);
+                }
+            }
+            at += 1;
+        }
+        groups.push(group);
     }
-    let ring = chaikin(&cell[..cell.len() - 1], PATCH_SMOOTHING);
-    let reach = ring.iter().map(|p| (p[0] - center[0]).hypot(p[1] - center[1])).fold(0.0, f64::max);
-    Some(Patch { planet, path: to_path(&ring), center, reach })
+    groups
+}
+
+/// The hatched ground of planets (index, site) whose cells touch. One cell is smoothed as it is; several are
+/// traced together like a region's outline, so they come out as one shape.
+fn patch(planets: &[(i64, usize)], sites: &[Pt], cells: &[Vec<Pt>]) -> Option<Patch> {
+    let reach_of = |site: usize, ring: &[Pt]| {
+        let c = sites[site];
+        ring.iter().map(|p| (p[0] - c[0]).hypot(p[1] - c[1])).fold(0.0, f64::max)
+    };
+    let mut spots = Vec::new();
+    let mut seen: Vec<usize> = Vec::new();
+    for &(planet, site) in planets {
+        let cell = &cells[site];
+        if cell.len() < 4 {
+            continue;
+        }
+        let ring = chaikin(&cell[..cell.len() - 1], PATCH_SMOOTHING);
+        spots.push(Spot { planet, center: sites[site], reach: reach_of(site, &ring) });
+        if !seen.contains(&site) {
+            seen.push(site);
+        }
+    }
+    let path = match seen.as_slice() {
+        [] => return None,
+        [one] => to_path(&chaikin(&cells[*one][..cells[*one].len() - 1], PATCH_SMOOTHING)),
+        many => {
+            let painted: Vec<&[Pt]> = many.iter().map(|&s| cells[s].as_slice()).collect();
+            trace(&painted).iter().map(|l| to_path(&chaikin(l, 1))).collect::<Vec<_>>().join(" ")
+        }
+    };
+    Some(Patch { path, spots })
 }
 
 /// A cell drawn in towards `towards` by `k` (1 leaves it as it is).

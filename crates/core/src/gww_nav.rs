@@ -121,6 +121,31 @@ pub fn suggested_addresses() -> Vec<String> {
     addresses().into_iter().filter(|(_, t)| !is_gov_subpage(t)).map(|(a, _)| a).collect()
 }
 
+/// The suggested addresses that match what is typed, best first: those whose path starts with it, then those
+/// holding it anywhere. Nothing typed (or only the scheme) suggests nothing, so the list never covers the page
+/// before the reader has asked for anything.
+pub fn suggestions_for(typed: &str, limit: usize) -> Vec<String> {
+    let q = typed.trim().to_lowercase();
+    let q = q.strip_prefix("se://").unwrap_or(&q).trim_matches('/');
+    if q.is_empty() {
+        return Vec::new();
+    }
+    let all = suggested_addresses();
+    let path = |a: &str| a.strip_prefix("se://").unwrap_or(a).to_string();
+    let starts = all.iter().filter(|a| path(a).starts_with(q) || path(a).split('/').any(|part| part.starts_with(q)));
+    let holds = all.iter().filter(|a| path(a).contains(q));
+    let mut out: Vec<String> = Vec::new();
+    for a in starts.chain(holds) {
+        if out.len() == limit {
+            break;
+        }
+        if !out.contains(a) && path(a) != q {
+            out.push(a.clone());
+        }
+    }
+    out
+}
+
 /// Typed addresses may skip the scheme or end in a slash; a page's old address gives its current one.
 pub fn normalize(typed: &str) -> String {
     let a = typed.trim().to_lowercase();

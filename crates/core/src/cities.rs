@@ -101,6 +101,61 @@ pub fn city_hours_left(percent: Option<f64>, rate: Option<f64>) -> Option<f64> {
     (r > 0.0).then(|| (100.0 - p) / r)
 }
 
+/// A city about to fall on a front that looks to be losing ground. While Helldivers fight in a city their
+/// progress counts towards it, not the planet, so the planet's own bar stalls or slips; once the city falls its
+/// boost lands at once and they go back to the planet. When that boost outweighs what the planet loses until then,
+/// the front isn't really losing: it is waiting on the city.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CityPush {
+    pub city: String,
+    pub percent: f64,
+    pub hours_left: f64,
+    /// Points the front gains when the city falls.
+    pub boost: f64,
+    /// The front's progress once the city falls, from today's pace and the boost, capped at 100.
+    pub after: f64,
+}
+
+impl CityPush {
+    /// What it means, in words.
+    pub fn summary(&self) -> String {
+        format!(
+            "{} is {} liberated and falls in about {}. Its +{} boost then outweighs the ground lost meanwhile, taking the planet to about {}: the front is waiting on the city, not losing.",
+            self.city,
+            crate::format::fmt_pct(self.percent, 0),
+            crate::format::fmt_duration(self.hours_left * 3_600_000.0),
+            crate::format::fmt_pct(self.boost, 1),
+            crate::format::fmt_pct(self.after, 1),
+        )
+    }
+}
+
+/// The city push behind a front's stalled or slipping progress, if any: of the cities being liberated and gaining,
+/// the one that falls first and pays back more than the front loses meanwhile.
+pub fn city_push(cities: &[City], front_percent: f64, front_rate: Option<f64>) -> Option<CityPush> {
+    let rate = front_rate?;
+    if rate > 0.0 {
+        return None;
+    }
+    cities
+        .iter()
+        .filter(|c| c.state == CityState::Liberating && c.players > 0.0)
+        .filter_map(|c| {
+            let hours = city_hours_left(c.percent, c.rate)?;
+            let boost = c.boost?;
+            let lost = -rate * hours;
+            let at_fall = (front_percent - lost).max(0.0);
+            (boost > lost).then(|| CityPush {
+                city: c.name.clone(),
+                percent: c.percent.unwrap_or(0.0),
+                hours_left: hours,
+                boost,
+                after: (at_fall + boost).min(100.0),
+            })
+        })
+        .min_by(|a, b| a.hours_left.total_cmp(&b.hours_left))
+}
+
 /// The game marks a region's size class with one to four stars over its icon.
 pub fn city_stars(size: &str) -> usize {
     match size {

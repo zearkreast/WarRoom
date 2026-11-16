@@ -49,3 +49,11 @@ fn a_defense_that_falls_outranks_a_liberation_losing_ground() {
     let losing = front(Some(-0.5), 2000.0);
     assert!(front_need(&falls, 0.0, Some(1.0)).score > front_need(&losing, 0.0, Some(1.0)).score);
 }
+
+#[test]
+fn a_city_push_is_not_counted_as_losing_ground() {
+    let losing = front_need(&front(Some(-0.3), 2000.0), 0.0, None);
+    let pushing = front_need(&FrontNeed { city_push: true, ..front(Some(-0.3), 2000.0) }, 0.0, None);
+    assert_eq!(pushing.reasons, [NeedReason::CityPush]);
+    assert!(pushing.score < losing.score);
+}

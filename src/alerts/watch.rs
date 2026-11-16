@@ -51,6 +51,7 @@ fn front_look(f: &Front, at: f64) -> FrontLook {
         victory_at: f.victory_at.filter(|v| v.is_finite()),
         waiting: cities.iter().filter(|c| c.waiting).map(|c| c.id).collect(),
         open: cities.iter().filter(|c| c.state == CityState::Liberating).map(|c| (c.id, c.name.clone())).collect(),
+        city_push: f.city_push.is_some(),
     }
 }
 

@@ -64,6 +64,7 @@ fn need_input(f: &Front, mo_deadline: Option<f64>) -> FrontNeed {
         players: f.players,
         in_major_order: f.in_major_order,
         deadline: if defense { f.fail_at } else { mo_deadline },
+        city_push: f.city_push.is_some(),
     }
 }
 
