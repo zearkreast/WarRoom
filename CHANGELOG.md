@@ -3,6 +3,35 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.7.6] - 2026-11-16
+
+Everything since v0.7.5.
+
+### Upgrading
+
+- No new migrations, and the collector's code is unchanged.
+
+### Galaxy map
+
+- Regions: neighbouring planets under the same attack are hatched as one patch instead of an island each, and
+  the hatch lines on contested ground sit further apart.
+- The legend and the dispatches drawer scroll inside their frame under a fixed head, so the frame and its cut
+  corner stay put. On phones both panels are solid, so the map's labels no longer show through the text.
+
+### G.W.W.
+
+- The address bar suggests up to five matching addresses in the app's own list, once something is typed, with
+  arrow keys and Enter, instead of the phone's own list covering the page and the keyboard.
+- Clearing the address with the keyboard's swipe-delete no longer crashes the screen.
+
+### City pushes
+
+- A front whose Helldivers are in a city that falls before the front loses more than the city gives back is a
+  city push, not "Losing ground": its card shows a City push badge with when the city falls and what it adds,
+  the planet page counts down to the city falling, and no "losing ground" alert is sent.
+- The city page shows its liberation chart in a panel of its own, with a dashed projection to 100% at today's
+  pace.
+
 ## [0.7.5] - 2026-11-15
 
 Everything since v0.7.4.
