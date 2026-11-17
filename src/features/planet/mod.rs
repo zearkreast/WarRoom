@@ -8,6 +8,7 @@ pub mod city_detail;
 pub mod defense;
 pub mod detail;
 pub mod fighting;
+pub mod front_chart;
 pub mod globe;
 pub mod options;
 pub mod record;
