@@ -63,6 +63,7 @@ fn main() {
     // Before the first render, so a reload never flashes the default screen.
     nav_history::start();
     api::queries::start_polling();
+    api::rewards::start();
     alerts::stations::start();
     alerts::watch::start();
     state::track_visits();

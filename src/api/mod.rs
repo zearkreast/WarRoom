@@ -6,6 +6,7 @@ pub mod fronts;
 pub mod history;
 pub mod orders;
 pub mod queries;
+pub mod rewards;
 pub mod source;
 pub mod stations;
 pub mod strohmann;

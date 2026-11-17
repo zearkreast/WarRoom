@@ -1,6 +1,7 @@
 //! The Galactic Campaign panel: the running campaign's Major Orders, reward and tally, or the last one's outcome.
 
 use crate::api::queries::queries;
+use crate::api::rewards::listed_rewards;
 use crate::config::SUPABASE_URL;
 use crate::features::news::card::MarkupText;
 use crate::js::fmt_date;
@@ -8,7 +9,7 @@ use crate::ui::emblems::FactionEmblem;
 use crate::ui::icons;
 use crate::ui::primitives::{Empty, Panel, StatusChip};
 use leptos::prelude::*;
-use warroom_core::data::campaign_reward;
+use warroom_core::data::find_reward;
 use warroom_core::factions::faction_color;
 use warroom_core::snapshot::{EpisodeLive, EpisodeStatus, campaign_tally};
 
@@ -116,7 +117,8 @@ pub fn CampaignBody(
     cover: bool,
 ) -> impl IntoView {
     let tally = campaign_tally(&e);
-    let reward = e.reward.and_then(campaign_reward);
+    let mix = e.reward;
+    let reward = Memo::new(move |_| mix.and_then(|m| listed_rewards().with(|l| find_reward(m, l))));
     let to_come = if e.status == EpisodeStatus::Active { CAMPAIGN_ORDERS.saturating_sub(e.phases.len()) } else { 0 };
     let n = e.phases.len();
     view! {
@@ -125,8 +127,15 @@ pub fn CampaignBody(
             {(!e.description.is_empty()).then(|| view! { <p class="cmp-desc">{e.description.clone()}</p> })}
             <div class=format!("cmp-reward {}", status_class(e.status))>
                 <span class="cmp-label caps">"Campaign reward"</span>
-                <b class="cmp-reward-name">{reward.as_ref().map_or("Not announced", |r| r.name.unwrap_or(r.kind))}</b>
-                {reward.filter(|r| r.name.is_some()).map(|r| view! { <span class="cmp-reward-kind caps">{r.kind}</span> })}
+                <b class="cmp-reward-name">
+                    {move || reward.get().map_or("Not announced".to_string(), |(kind, name)| name.unwrap_or(kind))}
+                </b>
+                {move || {
+                    reward
+                        .get()
+                        .filter(|(_, name)| name.is_some())
+                        .map(|(kind, _)| view! { <span class="cmp-reward-kind caps">{kind}</span> })
+                }}
                 <span class="cmp-rule">{reward_rule(e.status)}</span>
             </div>
             <div class="cmp-tally caps num">
