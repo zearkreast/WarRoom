@@ -3,6 +3,34 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.7.8] - 2026-11-18
+
+Everything since v0.7.7.
+
+### Upgrading
+
+- Migration `0015_campaign_rewards.sql` is already applied to live.
+- Redeploy the collector (`docker compose pull && docker compose up -d`). To have it fill in missing campaign and
+  Major Order pictures, set `CAMPAIGN_ART_SOURCE` in its `.env`; without it the new job stays off.
+
+### Cities
+
+- A city being fought over gets the same "Front line activity" panel as its planet: liberation change, peak
+  Helldivers, enemy impact and the 24-hour projection with "Liberated in", over a progress chart with a dashed
+  projection and Helldivers deployed on the same time axis. Cities that aren't being fought keep the activity
+  panel.
+
+### Galactic Campaigns
+
+- Campaign rewards are read from a `campaign_rewards` table before the built-in list, so a new reward, or a fix
+  to a wrong one, no longer needs a release. Serene Guardian's reward shows instead of "Not announced"; the
+  campaign panel, Past campaigns and Strohmann News all pick it up.
+
+### Collector
+
+- A new `art` job (every 30 minutes, only with `CAMPAIGN_ART_SOURCE` set) finds campaign covers and Major Order
+  pictures the app has none of, and uploads them as WebP. It never replaces a stored picture.
+
 ## [0.7.7] - 2026-11-17
 
 Everything since v0.7.6.

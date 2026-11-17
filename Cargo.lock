@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "android-project"
-version = "0.7.7"
+version = "0.7.8"
 dependencies = [
  "serde_json",
 ]
@@ -2139,7 +2139,7 @@ dependencies = [
 
 [[package]]
 name = "warroom"
-version = "0.7.7"
+version = "0.7.8"
 dependencies = [
  "any_spawner",
  "console_error_panic_hook",
@@ -2158,7 +2158,7 @@ dependencies = [
 
 [[package]]
 name = "warroom-collector"
-version = "0.7.7"
+version = "0.7.8"
 dependencies = [
  "base64 0.22.1",
  "image",
@@ -2174,7 +2174,7 @@ dependencies = [
 
 [[package]]
 name = "warroom-core"
-version = "0.7.7"
+version = "0.7.8"
 dependencies = [
  "regex-lite",
  "robust",
