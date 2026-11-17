@@ -1,10 +1,11 @@
 //! Strohmann News items: dispatches and Galactic Campaign threads.
 
+use crate::api::rewards::listed_rewards;
 use crate::features::news::card::{MarkupText, kind_label};
 use leptos::prelude::*;
 use warroom_core::api::Dispatch;
 use warroom_core::campaign_news::{CampaignThread, EventType, ThreadEntry};
-use warroom_core::data::reward_label;
+use warroom_core::data::reward_text;
 use warroom_core::dispatch::dispatch_kind;
 use warroom_core::factions::faction_color;
 use warroom_core::format::{dispatch_title, fmt_ago, sest_clock, sest_date};
@@ -122,13 +123,16 @@ pub(crate) fn entry_body(x: &ThreadEntry) -> AnyView {
             let outro = e.phases.last().map(|p| p.outro.clone()).filter(|o| !o.is_empty());
             view! {
                 <p class="ni-body">
-                    {format!(
-                        "{} of {} Major Orders won. Campaign reward, {}: {}.",
-                        tally.won,
-                        e.phases.len(),
-                        reward_label(e.reward),
-                        if e.status == EpisodeStatus::Won { "earned" } else { "lost" }
-                    )}
+                    {
+                        let (won, orders, mix) = (tally.won, e.phases.len(), e.reward);
+                        let fate = if e.status == EpisodeStatus::Won { "earned" } else { "lost" };
+                        move || {
+                            format!(
+                                "{won} of {orders} Major Orders won. Campaign reward, {}: {fate}.",
+                                listed_rewards().with(|l| reward_text(mix, l)),
+                            )
+                        }
+                    }
                 </p>
                 {outro.map(|o| view! { <MarkupText message=o class="ni-body" whole=true /> })}
             }
