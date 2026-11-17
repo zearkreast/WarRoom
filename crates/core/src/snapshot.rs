@@ -438,6 +438,18 @@ pub struct EpisodeLive {
     pub phases: Vec<EpisodePhase>,
 }
 
+/// The names a campaign's picture may be kept under in storage, without `.webp`: the game's id for it, then
+/// the campaign's own, for campaigns the game no longer lists or whose picture it has renumbered.
+pub fn campaign_art_names(e: &EpisodeLive) -> Vec<String> {
+    e.picture.map(|p| p.to_string()).into_iter().chain([format!("campaign-{}", e.id)]).collect()
+}
+
+/// The names the `n`-th Major Order's picture of a campaign may be kept under, counting from 1.
+pub fn order_art_names(e: &EpisodeLive, n: usize) -> Vec<String> {
+    let p = e.phases.get(n - 1).and_then(|p| p.picture);
+    p.map(|p| p.to_string()).into_iter().chain([format!("campaign-{}-{n}", e.id)]).collect()
+}
+
 // The game's episode and phase status codes: 2 won, 3 failed; anything else is still running.
 fn episode_status(code: i64) -> EpisodeStatus {
     match code {

@@ -12,16 +12,17 @@ Supabase; the app reads from Supabase and never calls the API itself.
   whole queue for its Retry-After; timeouts and server errors pause it for 30 s, doubling up to 5 min.
 - If no job has succeeded for 10 minutes it exits, and Docker or systemd starts it again clean.
 
-| Job         | Every  | Writes                                                                                   |
-| ----------- | ------ | ---------------------------------------------------------------------------------------- |
-| planets     | 5 min  | `planets` + `planets_static` snapshots, samples, ownership changes                       |
-| campaigns   | 1 min  | `campaigns` snapshot (with planet and region progress rates), samples, ownership changes |
-| war         | 2 min  | `war` snapshot, a `war_samples` row                                                      |
-| assignments | 5 min  | `assignments` and `order_samples` (the last day of Major Order progress) snapshots       |
-| dispatches  | 5 min  | `dispatches` snapshot (newest 50), only when there's a new one                           |
-| stations    | 5 min  | `space_stations` snapshot, a `station_jumps` row when a station has moved                |
-| episodes    | 15 min | `episodes` (Galactic Campaigns) and `planet_effects` snapshots, from the game's own API  |
-| compact     | 1 hour | thins samples and war samples older than 48 h to one per 15 min                          |
+| Job         | Every  | Writes                                                                                         |
+| ----------- | ------ | ---------------------------------------------------------------------------------------------- |
+| planets     | 5 min  | `planets` + `planets_static` snapshots, samples, ownership changes                             |
+| campaigns   | 1 min  | `campaigns` snapshot (with planet and region progress rates), samples, ownership changes       |
+| war         | 2 min  | `war` snapshot, a `war_samples` row                                                            |
+| assignments | 5 min  | `assignments` and `order_samples` (the last day of Major Order progress) snapshots             |
+| dispatches  | 5 min  | `dispatches` snapshot (newest 50), only when there's a new one                                 |
+| stations    | 5 min  | `space_stations` snapshot, a `station_jumps` row when a station has moved                      |
+| episodes    | 15 min | `episodes` (Galactic Campaigns) and `planet_effects` snapshots, from the game's own API        |
+| compact     | 1 hour | thins samples and war samples older than 48 h to one per 15 min                                |
+| art         | 30 min | Galactic Campaign pictures missing from the `campaign-art` bucket (with `CAMPAIGN_ART_SOURCE`) |
 
 `planet_effects` includes arsenal augmentations, the stratagems High Command grants on a planet for a while,
 with when each ends.

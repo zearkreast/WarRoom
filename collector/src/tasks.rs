@@ -1,5 +1,6 @@
 //! Polling jobs: each fetches from the API, writes to Supabase, and returns a short status for the log.
 
+use crate::art::{self, Wiki};
 use crate::hd2::{Api, ApiError};
 use crate::push::{Push, Topic};
 use crate::recorder::Recorder;
@@ -28,6 +29,7 @@ pub enum Job {
     Stations,
     Compact,
     Episodes,
+    Art,
 }
 
 impl Job {
@@ -41,6 +43,7 @@ impl Job {
             Job::Stations => "stations",
             Job::Compact => "compact",
             Job::Episodes => "episodes",
+            Job::Art => "art",
         }
     }
 
@@ -50,6 +53,7 @@ impl Job {
             Job::War => 120_000.0,
             Job::Compact => 3_600_000.0,
             Job::Episodes => 900_000.0,
+            Job::Art => 1_800_000.0,
             _ => 300_000.0,
         }
     }
@@ -113,6 +117,8 @@ pub struct Collector {
     pub recorder: Recorder,
     pub push: Option<Box<dyn Push>>,
     pub now: Box<dyn Fn() -> f64>,
+    /// Where missing campaign pictures are fetched from; without it they are uploaded by hand.
+    pub art: Option<Wiki>,
     last_static: String,
     last_dispatches: String,
     /// Major Orders and the newest dispatch already announced, or found stored after a restart. With nothing
@@ -135,7 +141,13 @@ pub struct Collector {
     /// When the planets' and the galaxy's mission and kill counters were last kept.
     planet_stats_at: Option<f64>,
     galaxy_stats_at: Option<f64>,
+    /// Pictures the source didn't have, by storage name, and when to look again.
+    art_waiting: HashMap<String, f64>,
 }
+
+/// Pictures uploaded per run at most, and how long to wait before looking again for one the source lacked.
+const ART_UPLOADS: usize = 6;
+const ART_WAIT_MS: f64 = 6.0 * 3_600_000.0;
 
 /// How often the mission and kill counters are kept.
 const STATS_EVERY_MS: f64 = 3_600_000.0;
@@ -177,6 +189,7 @@ impl Collector {
             recorder,
             push,
             now,
+            art: None,
             last_static: String::new(),
             last_dispatches: String::new(),
             announced_orders: None,
@@ -190,6 +203,7 @@ impl Collector {
             last_effects: String::new(),
             planet_stats_at: None,
             galaxy_stats_at: None,
+            art_waiting: HashMap::new(),
         }
     }
 
@@ -207,6 +221,9 @@ impl Collector {
         if self.game.is_some() {
             jobs.push(Job::Episodes);
         }
+        if self.art.is_some() {
+            jobs.push(Job::Art);
+        }
         jobs
     }
 
@@ -220,6 +237,7 @@ impl Collector {
             Job::Stations => self.stations(),
             Job::Compact => self.compact(),
             Job::Episodes => self.episodes(),
+            Job::Art => self.art(),
         };
         match result {
             Ok(message) => RunResult { name: job.name(), ok: true, message, retry_at: None },
@@ -582,6 +600,63 @@ impl Collector {
             String::new()
         };
         Ok(format!("{total} campaigns, {active} active{pushed}"))
+    }
+    fn art(&mut self) -> Result<String, JobError> {
+        let Some(wiki) = self.art.as_ref() else { return Ok("off".into()) };
+        let episodes: Vec<EpisodeLive> = match &self.episodes {
+            Some(list) => list.clone(),
+            None => self.stored(SnapshotKind::Episodes)?.map(typed).transpose()?.unwrap_or_default(),
+        };
+        let slots = art::slots(&episodes);
+        let stored: HashSet<String> = self
+            .db
+            .storage_list(art::BUCKET)?
+            .into_iter()
+            .filter_map(|n| n.strip_suffix(".webp").map(String::from))
+            .collect();
+        let now = (self.now)();
+        let missing = art::missing(&slots, &stored);
+        let due: Vec<_> = missing
+            .iter()
+            .filter(|s| self.art_waiting.get(&s.names[0]).is_none_or(|t| now >= *t))
+            .take(ART_UPLOADS)
+            .collect();
+        if due.is_empty() {
+            return Ok(match missing.len() {
+                0 => format!("{} pictures in place", slots.len()),
+                n => format!("{n} pictures missing, none found yet"),
+            });
+        }
+        let page = wiki.campaigns()?;
+        let files: Vec<(&art::Slot, Option<&str>)> =
+            due.iter().map(|s| (*s, art::find(&page, &s.campaign).and_then(|c| c.file(s.order)))).collect();
+        let wanted: Vec<&str> = files.iter().filter_map(|(_, f)| *f).collect();
+        let urls = wiki.file_urls(&wanted)?;
+        let (mut uploaded, mut errors) = (0, Vec::new());
+        for (slot, file) in files {
+            let name = &slot.names[0];
+            let Some(url) = file.and_then(|f| urls.get(f)) else {
+                self.art_waiting.insert(name.clone(), now + ART_WAIT_MS);
+                continue;
+            };
+            let stored = wiki
+                .download(url)
+                .and_then(|b| art::encode(&b))
+                .and_then(|webp| self.db.storage_upload(art::BUCKET, &format!("{name}.webp"), webp, "image/webp"));
+            match stored {
+                Ok(()) => uploaded += 1,
+                Err(e) => {
+                    self.art_waiting.insert(name.clone(), now + ART_WAIT_MS);
+                    errors.push(format!("{name}: {e}"));
+                }
+            }
+        }
+        let left = missing.len() - uploaded;
+        let mut msg = format!("{uploaded} pictures added, {left} missing");
+        if !errors.is_empty() {
+            msg += &format!(" ({})", errors.join("; "));
+        }
+        Ok(msg)
     }
 }
 

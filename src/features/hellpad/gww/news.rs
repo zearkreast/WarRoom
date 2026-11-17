@@ -1,7 +1,7 @@
 //! Strohmann News on the G.W.W.: the dispatches and Galactic Campaign stories laid out as a news site.
 
 use crate::api::queries::queries;
-use crate::features::galactic_campaigns::{CampaignArt, campaign_art};
+use crate::features::galactic_campaigns::CampaignArt;
 use crate::features::hellpad::gww::blocks::{HeadingRef, banner, crumb, related};
 use crate::features::hellpad::gww::nav::{logo_url, use_gww_nav};
 use crate::features::hellpad::gww::pictures::logo_plate;
@@ -25,6 +25,7 @@ use warroom_core::dispatch::{DispatchKind, is_order_dispatch};
 use warroom_core::factions::faction_color;
 use warroom_core::format::{dispatch_title, fmt_ago, js_trim, parse_markup, sest_date};
 use warroom_core::gww_nav::NEWS_TITLE;
+use warroom_core::snapshot::campaign_art_names;
 
 /// Stories on the page; the full archive is the app's Strohmann News.
 const SHOWN: usize = 30;
@@ -166,7 +167,7 @@ fn picture(i: &NewsItem, planets: &HashMap<String, Planet>, class: &'static str)
     let enemy = enemy_of(i);
     let tone = enemy.map_or("#f074d8", |f| faction_color(Some(f)));
     let art = match &i.body {
-        NewsBody::Thread(t) => Some(view! { <CampaignArt names=campaign_art(&t.campaign) class="sn-art" /> }),
+        NewsBody::Thread(t) => Some(view! { <CampaignArt names=campaign_art_names(&t.campaign) class="sn-art" /> }),
         NewsBody::Dispatch(_) => None,
     };
     let stratagem = stratagem_of(i);

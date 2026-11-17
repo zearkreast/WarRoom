@@ -11,23 +11,11 @@ use crate::ui::primitives::{Empty, Panel, StatusChip};
 use leptos::prelude::*;
 use warroom_core::data::find_reward;
 use warroom_core::factions::faction_color;
-use warroom_core::snapshot::{EpisodeLive, EpisodeStatus, campaign_tally};
+use warroom_core::snapshot::{EpisodeLive, EpisodeStatus, campaign_art_names, campaign_tally, order_art_names};
 
 /// Where the project keeps a picture, by the file's name without `.webp`.
 pub fn campaign_art_url(name: &str) -> String {
     format!("{}/storage/v1/object/public/campaign-art/{name}.webp", SUPABASE_URL.trim_end_matches('/'))
-}
-
-/// The names a campaign's picture may be kept under: the game's id for it, then the campaign's own, for
-/// campaigns the game no longer lists or whose picture it has renumbered.
-pub fn campaign_art(e: &EpisodeLive) -> Vec<String> {
-    e.picture.map(|p| p.to_string()).into_iter().chain([format!("campaign-{}", e.id)]).collect()
-}
-
-/// The names the `n`-th Major Order's picture of a campaign may be kept under, counting from 1.
-pub fn order_art(e: &EpisodeLive, n: usize) -> Vec<String> {
-    let p = e.phases.get(n - 1).and_then(|p| p.picture);
-    p.map(|p| p.to_string()).into_iter().chain([format!("campaign-{}-{n}", e.id)]).collect()
 }
 
 /// A campaign's or Major Order's picture, tried under each of `names` in turn; it leaves the page when
@@ -123,7 +111,7 @@ pub fn CampaignBody(
     let n = e.phases.len();
     view! {
         <div class="cmp-body">
-            {cover.then(|| view! { <CampaignArt names=campaign_art(&e) class="cmp-cover" /> })}
+            {cover.then(|| view! { <CampaignArt names=campaign_art_names(&e) class="cmp-cover" /> })}
             {(!e.description.is_empty()).then(|| view! { <p class="cmp-desc">{e.description.clone()}</p> })}
             <div class=format!("cmp-reward {}", status_class(e.status))>
                 <span class="cmp-label caps">"Campaign reward"</span>
@@ -161,7 +149,7 @@ pub fn CampaignBody(
                                     {p.medals.map(|m| view! { <span class="cmp-medals caps num">{format!("{} medals", crate::js::num(m))}</span> })}
                                     <OutcomeChip status=p.status />
                                 </summary>
-                                {(p.picture.is_none() || p.picture != e.picture).then(|| view! { <CampaignArt names=order_art(&e, i + 1) class="cmp-mo-art" /> })}
+                                {(p.picture.is_none() || p.picture != e.picture).then(|| view! { <CampaignArt names=order_art_names(&e, i + 1) class="cmp-mo-art" /> })}
                                 {p.issued.map(|t| view! { <span class="cmp-issued caps num">{format!("Issued {}", fmt_date(t))}</span> })}
                                 {(!p.briefing.is_empty()).then(|| view! { <MarkupText message=p.briefing.clone() class="cmp-text" whole=true /> })}
                                 {(!p.outro.is_empty()).then(|| view! { <MarkupText message=p.outro.clone() class="cmp-text cmp-outro" whole=true /> })}

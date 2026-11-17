@@ -13,6 +13,8 @@ ureq = "3"
 ring = "0.17"
 base64 = "0.22"
 signal-hook = "0.3"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+webp = { version = "0.3", default-features = false }
 
 [dev-dependencies]
 rsa = "0.9"
