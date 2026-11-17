@@ -8,6 +8,13 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.7.7",
+        date: "2026-11-17",
+        items: &[
+            "Cities: planets with cities get a Cities option that lists every city with its progress and time left, and opens each city's page.",
+        ],
+    },
+    ChangelogEntry {
         version: "0.7.6",
         date: "2026-11-16",
         items: &[

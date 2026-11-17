@@ -3,6 +3,23 @@
 What changed in each release of WarCommand Tracker. Tracker Dispatch in the app shows a shorter version of
 each entry, from `crates/core/src/changelog.rs`.
 
+## [0.7.7] - 2026-11-17
+
+Everything since v0.7.6.
+
+### Upgrading
+
+- No new migrations, and the collector's code is unchanged.
+
+### Cities
+
+- A planet with cities gets a Cities item in its options ring, laid out as an even pentagon with the other four.
+  It opens a panel over the planet's page listing every city with its liberation, resistance, progress, time
+  left and payoff; each city opens its own page.
+- The panel is a step in Back's history, survives a reload and can be linked with `?cities=<planet index>`.
+- The planet page's header shows an "N cities" chip that opens the panel, and the city page's Cities breadcrumb
+  leads back to it.
+
 ## [0.7.6] - 2026-11-16
 
 Everything since v0.7.5.
