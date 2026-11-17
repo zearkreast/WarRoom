@@ -294,7 +294,8 @@ pub struct CampaignReward {
 }
 
 /// Galactic Campaign rewards by the item id the game sends with each campaign. The game API doesn't
-/// name these items, so they are listed here by hand; add new campaigns' rewards as they are announced.
+/// name these items, so they are listed here by hand. A new campaign's reward can go in the database's
+/// `campaign_rewards` table instead, which needs no release (see `find_reward`).
 pub fn campaign_reward(mix_id: i64) -> Option<CampaignReward> {
     let (kind, name) = match mix_id {
         2768520552 => ("Stratagem", Some("M-103 Supply FRV")), // Census Thunder
@@ -317,6 +318,32 @@ pub fn reward_label(mix_id: Option<i64>) -> &'static str {
     match mix_id.and_then(campaign_reward) {
         Some(r) => r.name.unwrap_or(r.kind),
         None => "Campaign reward",
+    }
+}
+
+/// A row of the database's `campaign_rewards` table, where rewards the list above lacks are added without a
+/// release.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize)]
+pub struct ListedReward {
+    pub mix_id: i64,
+    pub kind: String,
+    pub name: Option<String>,
+}
+
+/// The reward's type and item. A database row wins over the built-in list, so a wrong entry there can be
+/// corrected without a release too.
+pub fn find_reward(mix_id: i64, listed: &[ListedReward]) -> Option<(String, Option<String>)> {
+    if let Some(r) = listed.iter().find(|r| r.mix_id == mix_id) {
+        return Some((r.kind.clone(), r.name.clone()));
+    }
+    campaign_reward(mix_id).map(|r| (r.kind.to_string(), r.name.map(str::to_string)))
+}
+
+/// Like `reward_label`, with the database's rows.
+pub fn reward_text(mix_id: Option<i64>, listed: &[ListedReward]) -> String {
+    match mix_id.and_then(|m| find_reward(m, listed)) {
+        Some((kind, name)) => name.unwrap_or(kind),
+        None => "Campaign reward".to_string(),
     }
 }
 

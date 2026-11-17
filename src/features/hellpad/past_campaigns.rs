@@ -1,5 +1,6 @@
 use crate::api::orders::{ArchivedOrder, archived_orders};
 use crate::api::queries::queries;
+use crate::api::rewards::listed_rewards;
 use crate::features::galactic_campaigns::{CampaignArt, CampaignBody, CampaignHead, outcome};
 use crate::js::{self, fmt_date, num};
 use crate::ui::emblems::FactionEmblem;
@@ -7,7 +8,7 @@ use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Empty, Loading, Panel, Tile};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use warroom_core::data::reward_label;
+use warroom_core::data::reward_text;
 use warroom_core::factions::faction_color;
 use warroom_core::format::{fmt_compact, fmt_pct, js_round};
 use warroom_core::major_order::{TaskView, describe_assignment, task_name, task_percent};
@@ -200,7 +201,7 @@ pub fn PastCampaignsModule() -> impl IntoView {
                                                         {d.map(|d| view! { <span>{if d == 1.0 { "1 day".to_string() } else { format!("{} days", num(d)) }}</span> })}
                                                         <span class="pc-reward">
                                                             <Icon icon=icons::GIFT size=12.0 />
-                                                            <span class="pc-reward-name">{reward_label(e.reward)}</span>
+                                                            <span class="pc-reward-name">{let mix = e.reward; move || listed_rewards().with(|l| reward_text(mix, l))}</span>
                                                             {(e.status == EpisodeStatus::Lost).then(|| view! { <span class="sr-only">" (not earned)"</span> })}
                                                         </span>
                                                     </span>
