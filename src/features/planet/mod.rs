@@ -3,6 +3,7 @@
 pub mod activity;
 pub mod circumvallation;
 pub mod cities;
+pub mod cities_panel;
 pub mod city_detail;
 pub mod defense;
 pub mod detail;

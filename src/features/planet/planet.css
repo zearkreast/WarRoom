@@ -63,6 +63,27 @@
     left: 2px;
     top: calc(50% - 26px);
   }
+  /* Five items stand on a pentagon, Watch at the top. */
+  .po-5a {
+    top: 10px;
+    left: calc(50% - 39px);
+  }
+  .po-5b {
+    right: 2px;
+    top: calc(50% - 56px);
+  }
+  .po-5c {
+    left: calc(50% + 6px);
+    top: calc(50% + 26px);
+  }
+  .po-5d {
+    right: calc(50% + 6px);
+    top: calc(50% + 26px);
+  }
+  .po-5e {
+    left: 2px;
+    top: calc(50% - 56px);
+  }
   .po-center {
     position: absolute;
     inset: 31%;

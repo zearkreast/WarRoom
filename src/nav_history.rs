@@ -15,6 +15,8 @@ pub struct Place {
     pub gww: Vec<GwwPage>,
     pub detail: Option<i64>,
     #[serde(default)]
+    pub cities: Option<i64>,
+    #[serde(default)]
     pub city: Option<CityRef>,
     pub dialog: Option<InfoDialog>,
     pub dispatch_open: bool,
@@ -109,6 +111,7 @@ pub fn place_now() -> Place {
         module: u.module.get_untracked(),
         gww: u.gww.get_untracked(),
         detail: u.detail.get_untracked(),
+        cities: u.cities.get_untracked(),
         city: u.city.get_untracked(),
         dialog: u.dialog.get_untracked(),
         dispatch_open: u.dispatch_open.get_untracked(),
@@ -124,6 +127,7 @@ fn set_place(p: Place) {
         u.gww.set(p.gww);
     }
     u.detail.set(p.detail);
+    u.cities.set(p.cities);
     u.city.set(p.city);
     u.dialog.set(p.dialog);
     u.dispatch_open.set(p.dispatch_open);
@@ -176,26 +180,39 @@ mod browser {
         static SYNC: RefCell<Option<Sync<Browser>>> = const { RefCell::new(None) };
     }
 
-    /// A launch from an app shortcut names its page in the address (`?view=map`). The name comes out of the
-    /// address again, so a later reload resumes where the user was rather than at the shortcut's page.
+    /// A launch from an app shortcut names its page in the address (`?view=map`), and a link to a planet's
+    /// cities names the planet (`?cities=63`). The name comes out of the address again, so a later reload
+    /// resumes where the user was rather than at the linked page.
     fn take_view_from_address() {
         let w = js::window();
         let Ok(search) = w.location().search() else { return };
         let mut view = None;
+        let mut cities = None;
         let rest: Vec<&str> = search
             .trim_start_matches('?')
             .split('&')
             .filter(|kv| !kv.is_empty())
-            .filter(|kv| match kv.strip_prefix("view=") {
-                Some(name) => {
+            .filter(|kv| {
+                if let Some(name) = kv.strip_prefix("view=") {
                     view = serde_json::from_value::<View>(Value::String(name.to_lowercase())).ok();
                     false
+                } else if let Some(planet) = kv.strip_prefix("cities=") {
+                    cities = planet.parse::<i64>().ok();
+                    false
+                } else {
+                    true
                 }
-                None => true,
             })
             .collect();
-        let Some(v) = view else { return };
-        ui().set_view(v);
+        if view.is_none() && cities.is_none() {
+            return;
+        }
+        if let Some(v) = view {
+            ui().set_view(v);
+        }
+        if cities.is_some() {
+            ui().open_cities(cities);
+        }
         let path = w.location().pathname().unwrap_or_default();
         let hash = w.location().hash().unwrap_or_default();
         let url = if rest.is_empty() { format!("{path}{hash}") } else { format!("{path}?{}{hash}", rest.join("&")) };
@@ -237,6 +254,7 @@ mod browser {
                 module: u.module.get(),
                 gww: u.gww.get(),
                 detail: u.detail.get(),
+                cities: u.cities.get(),
                 city: u.city.get(),
                 dialog: u.dialog.get(),
                 dispatch_open: u.dispatch_open.get(),
@@ -265,6 +283,7 @@ mod tests {
             module: None,
             gww: vec![GwwPage::Home],
             detail: None,
+            cities: None,
             city: None,
             dialog: None,
             dispatch_open: false,
@@ -392,6 +411,28 @@ mod tests {
         assert_eq!(a.index(), 1);
         assert_eq!(h.0.borrow().entries.len(), 3);
         assert_eq!(a.place, gww());
+    }
+
+    #[test]
+    fn steps_back_from_a_planets_cities_to_its_page() {
+        let h = Fake::default();
+        let mut a = App::new(&h, home());
+        let planet = || at(|p| p.detail = Some(63));
+        let cities = || {
+            at(|p| {
+                p.detail = Some(63);
+                p.cities = Some(63);
+            })
+        };
+        a.go(planet());
+        a.go(cities());
+        assert_eq!(a.index(), 2);
+        a.browser_back();
+        assert_eq!(a.place, planet());
+        let mut again = App::new(&h, home());
+        assert_eq!(again.place, planet());
+        again.go(cities());
+        assert_eq!(again.index(), 2);
     }
 
     #[test]

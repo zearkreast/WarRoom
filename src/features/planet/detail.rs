@@ -247,6 +247,15 @@ fn Hero(p: Signal<Planet>, front: Memo<Option<Front>>) -> impl IntoView {
                             " Democracy Space Station"
                         </button>
                     </Show>
+                    {move || {
+                        let n = p.with(|p| p.regions.len());
+                        (n > 0).then(|| view! {
+                            <button class="chip" on:click=move |_| ui().open_cities(Some(index()))>
+                                <Icon icon=icons::BUILDING_2 size=13.0 />
+                                {if n == 1 { " 1 city".to_string() } else { format!(" {n} cities") }}
+                            </button>
+                        })
+                    }}
                     <Show when=move || mo.with(|m| m.contains(&index()))>
                         <span class="chip chip-mo">
                             <Icon icon=icons::TARGET size=13.0 />
