@@ -13,7 +13,7 @@ use wasm_bindgen::JsCast;
 
 const SIZE: f64 = 236.0;
 
-/// Radial options for a planet: watch, show on map, station, details.
+/// Radial options for a planet: watch, show on map, station, details, and its cities where it has any.
 #[component]
 pub fn PlanetOptions() -> impl IntoView {
     let u = ui();
@@ -68,11 +68,12 @@ pub fn PlanetOptions() -> impl IntoView {
         let x = anchor.x.max(SIZE / 2.0 + 8.0).min(vw - SIZE / 2.0 - 8.0);
         let y = anchor.y.max(SIZE / 2.0 + 8.0).min(vh - SIZE / 2.0 - 8.0);
         let has_station = stations.with(|s| s.contains(&index));
+        let has_cities = !planet.regions.is_empty();
         // Untracked: any settings write would rebuild the menu and send focus back to its first item.
         let pinned = settings().untracked(|s| s.pinned.contains(&index));
         let on_map = ui().view.get() == View::Map;
         type Run = Box<dyn Fn() + Send + Sync>;
-        let items: Vec<(&str, String, IconLike, Run, bool)> = vec![
+        let mut items: Vec<(&str, String, IconLike, Run, bool)> = vec![
             (
                 "n",
                 if pinned { "Unwatch" } else { "Watch" }.into(),
@@ -104,6 +105,19 @@ pub fn PlanetOptions() -> impl IntoView {
                 !has_station,
             ),
         ];
+        // A fifth item turns the cross into a pentagon, so the ring stays evenly spaced.
+        if has_cities {
+            items.push((
+                "w",
+                "Cities".into(),
+                icons::BUILDING_2.into(),
+                Box::new(move || ui().open_cities(Some(index))),
+                false,
+            ));
+            for (item, pos) in items.iter_mut().zip(["5a", "5b", "5c", "5d", "5e"]) {
+                item.0 = pos;
+            }
+        }
         Some(view! {
             <div class="po-scrim" on:click=move |_| close()>
                 <div

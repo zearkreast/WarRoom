@@ -313,7 +313,9 @@ fn Found(p: Signal<Planet>, c: Signal<City>, readings: ReadSignal<Readings>) -> 
                             {move || p.with(|p| p.name.clone())}
                         </button>
                         <span>"/"</span>
-                        <span>"Cities"</span>
+                        <button class="link" on:click=move |_| ui().open_cities(Some(index()))>
+                            "Cities"
+                        </button>
                     </nav>
                     <div class="pd-name-row">
                         {mark}

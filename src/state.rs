@@ -78,6 +78,8 @@ pub struct Ui {
     pub focus_seq: RwSignal<u64>,
     /// Planet whose detail overlay is open.
     pub detail: RwSignal<Option<i64>>,
+    /// Planet whose cities panel is open, over its detail overlay.
+    pub cities: RwSignal<Option<i64>>,
     /// City whose overlay is open, over the planet's when both are.
     pub city: RwSignal<Option<CityRef>>,
     pub options: RwSignal<Option<OptionsAnchor>>,
@@ -102,6 +104,7 @@ impl Ui {
         self.module.set(module);
         self.options.set(None);
         self.detail.set(None);
+        self.cities.set(None);
         self.city.set(None);
     }
 
@@ -114,6 +117,7 @@ impl Ui {
         self.selected_planet.set(Some(planet));
         self.focus_seq.update(|n| *n += 1);
         self.detail.set(None);
+        self.cities.set(None);
         self.city.set(None);
         self.options.set(None);
     }
@@ -126,6 +130,17 @@ impl Ui {
 
     pub fn open_detail(&self, planet: Option<i64>) {
         self.detail.set(planet);
+        self.cities.set(None);
+        self.city.set(None);
+        self.options.set(None);
+    }
+
+    /// Opens a planet's cities panel over its detail page, so closing the panel lands on the planet.
+    pub fn open_cities(&self, planet: Option<i64>) {
+        if planet.is_some() {
+            self.detail.set(planet);
+        }
+        self.cities.set(planet);
         self.city.set(None);
         self.options.set(None);
     }
@@ -601,6 +616,7 @@ pub fn init() {
         selected_planet: RwSignal::new(None),
         focus_seq: RwSignal::new(0),
         detail: RwSignal::new(None),
+        cities: RwSignal::new(None),
         city: RwSignal::new(None),
         options: RwSignal::new(None),
         dispatch_open: RwSignal::new(false),
