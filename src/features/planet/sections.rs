@@ -10,13 +10,13 @@ use crate::features::planet::circumvallation::{circumvallation_note, use_circumv
 use crate::features::planet::cities::{CityBar, CityList, CityMark};
 use crate::features::planet::defense::{GambitNotes, advance_label, time_left, use_attackers, use_enemy_advance};
 use crate::features::planet::fighting::CombatTrendLine;
+use crate::features::planet::front_chart::{
+    FrontCharts, FrontRow, add_projection, advance_at, day_axis, players_plot, progress_plot, progress_rows,
+};
 use crate::features::planet::record::{PlanetRecord, UNREACHABLE};
 use crate::js::{self, fmt_date, fmt_date_time};
 use crate::state::ui;
-use crate::ui::chart::{
-    Chart, Frame, Grid, HOUR, Overlay, Plot, RefLine, Series, TipRow, Tooltip, XAxis, YAxis, default_tooltip,
-    hour_ticks, series_rows,
-};
+use crate::ui::chart::{Frame, Overlay, RefLine, Series, TipRow, Tooltip, XAxis, default_tooltip, hour_ticks};
 use crate::ui::emblems::{FactionEmblem, IconLike, SubfactionEmblem, icon_view};
 use crate::ui::hazard_icons::hazard_icon;
 use crate::ui::icons::{self, Icon};
@@ -31,7 +31,7 @@ use warroom_core::cities::{CityLiberation, CityState, city_liberations};
 use warroom_core::defense::{divers_short, event_span, needed_rate};
 use warroom_core::effects::EffectKind;
 use warroom_core::factions::{faction_color, faction_label};
-use warroom_core::format::{fmt_compact, fmt_int, fmt_pct, fmt_time_left, js_round, js_sum, to_fixed};
+use warroom_core::format::{fmt_int, fmt_pct, fmt_time_left, js_round, js_sum, to_fixed};
 use warroom_core::galaxy::{Anomaly, Landmark, anomaly_of};
 use warroom_core::planets::split_unofficial;
 use warroom_core::progress::{liberation_divers_short, projected_at, tracked_percent};
@@ -318,18 +318,6 @@ fn Holding(front: Memo<Option<Front>>) -> impl IntoView {
     }
 }
 
-/// One row of the front line charts: a past sample, the projection ahead, or the sample where they meet.
-#[derive(Clone, Copy, Default, PartialEq)]
-struct FrontRow {
-    at: f64,
-    players: Option<f64>,
-    percent: Option<f64>,
-    projection: Option<f64>,
-    /// A defense's enemy advance, up to the last sample and then ahead of it.
-    enemy: Option<f64>,
-    enemy_ahead: Option<f64>,
-}
-
 /// The Front line chart's ranges, in hours.
 const RANGES: [(u32, &str); 3] = [(24, "24 h"), (168, "7 days"), (720, "30 days")];
 
@@ -356,7 +344,6 @@ pub fn FrontLineSection(
     front: Memo<Option<Front>>,
     record: ReadSignal<PlanetRecord>,
 ) -> impl IntoView {
-    let hover = RwSignal::new(None::<usize>);
     let advance = use_enemy_advance(p);
     let span = Memo::new(move |_| p.with(|p| p.event.as_ref().and_then(event_span)));
     let freed = Memo::new(move |_| p.with(|p| record.with(|r| Arc::new(city_liberations(p, &r.samples, &r.fought)))));
@@ -390,7 +377,6 @@ pub fn FrontLineSection(
         let now = js::now();
         let (rate, percent) = front.with(|f| f.as_ref().map_or((None, 0.0), |f| (f.rate, f.percent)));
         let span = span.get();
-        let advance_at = move |t: f64| span.filter(|(s, e)| t >= *s && t <= *e).map(|(s, e)| (t - s) / (e - s) * 100.0);
         shown.with(|samples| {
             let mut rows: Vec<FrontRow> = samples
                 .iter()
@@ -398,34 +384,11 @@ pub fn FrontLineSection(
                     at: s.at,
                     players: Some(s.players),
                     percent: Some(s.percent),
-                    enemy: advance_at(s.at),
+                    enemy: advance_at(span, s.at),
                     ..Default::default()
                 })
                 .collect();
-            let last = rows.last().copied();
-            if let Some(l) = rows.last_mut() {
-                l.projection = l.percent;
-                l.enemy_ahead = l.enemy;
-            }
-            if rate.is_some() || span.is_some() {
-                let base = last.and_then(|l| l.percent).unwrap_or(percent);
-                let t0 = last.map_or(now, |l| l.at);
-                let mut ahead: Vec<f64> = (1..=24).map(|h| t0 + h as f64 * HOUR).collect();
-                // A row at the deadline, so the enemy's line ends on 100% there.
-                if let Some((_, end)) = span.filter(|(_, e)| *e > t0 && *e < t0 + 24.0 * HOUR) {
-                    ahead.push(end);
-                    ahead.sort_by(f64::total_cmp);
-                    ahead.dedup();
-                }
-                for at in ahead {
-                    rows.push(FrontRow {
-                        at,
-                        projection: rate.map(|r| (base + r * (at - t0) / HOUR).clamp(0.0, 100.0)),
-                        enemy_ahead: advance_at(at),
-                        ..Default::default()
-                    });
-                }
-            }
+            add_projection(&mut rows, percent, rate, span, now);
             let now_at = samples.last().map_or(now, |s| s.at);
             Arc::new((rows, now_at))
         })
@@ -436,7 +399,7 @@ pub fn FrontLineSection(
         let now = js::now();
         let domain = (rows.first().map_or(now, |r| r.at), rows.last().map_or(now, |r| r.at));
         match hours.get() {
-            24 => XAxis { hide, ..XAxis::time(domain, hour_ticks(domain.0, domain.1, 4.0)) },
+            24 => day_axis(rows, hide),
             h => XAxis {
                 hide,
                 fmt: Arc::new(fmt_date),
@@ -452,13 +415,7 @@ pub fn FrontLineSection(
     let progress = Signal::derive(move || {
         let data = rows.get();
         let (rows, now_at) = &*data;
-        let mut series = vec![
-            Series::line("percent", rows.iter().map(|r| r.percent).collect(), "var(--c-humans)", 2.0),
-            Series {
-                dash: Some("4 4".into()),
-                ..Series::line("projection", rows.iter().map(|r| r.projection).collect(), "var(--c-humans)", 2.0)
-            },
-        ];
+        let mut series = Vec::new();
         let mut lines = ref_lines(*now_at, Some("Now".into()));
         if let (Some(f), Some((_, end))) = (foe.get(), span.get()) {
             let color = chart_color(f);
@@ -472,32 +429,12 @@ pub fn FrontLineSection(
                 lines.push(RefLine { x: end, stroke: color.into(), label: Some("Deadline".into()) });
             }
         }
-        Arc::new(Plot {
-            xs: rows.iter().map(|r| r.at).collect(),
-            x: x_axis(true),
-            y: vec![YAxis::new(
-                (0.0, 100.0),
-                vec![0.0, 25.0, 50.0, 75.0, 100.0],
-                Arc::new(|v| format!("{}%", js::num(v))),
-            )],
-            grid: Some(Grid { stroke: crate::ui::chart::GRID.into(), opacity: None, edges_only: false }),
-            series,
-            ref_lines: lines,
-        })
+        Arc::new(progress_plot(rows, x_axis(true), series, lines))
     });
     let players = Signal::derive(move || {
         let data = rows.get();
         let (rows, now_at) = &*data;
-        let values: Vec<Option<f64>> = rows.iter().map(|r| r.players).collect();
-        let max = values.iter().flatten().copied().fold(0.0, f64::max);
-        Arc::new(Plot {
-            xs: rows.iter().map(|r| r.at).collect(),
-            x: x_axis(false),
-            y: vec![YAxis::auto(max, Arc::new(fmt_compact))],
-            grid: Some(Grid { stroke: crate::ui::chart::GRID.into(), opacity: None, edges_only: false }),
-            series: vec![Series::area("players", values, "var(--cta)", 2.0, "url(#pd-players)")],
-            ref_lines: ref_lines(*now_at, None),
-        })
+        Arc::new(players_plot(rows, x_axis(false), ref_lines(*now_at, None)))
     });
     let city_marks: Overlay = Arc::new(move |f: &Frame| {
         freed
@@ -523,18 +460,7 @@ pub fn FrontLineSection(
         if let Some(c) = freed.get().iter().find(|c| (c.at - at).abs() <= reach) {
             return Some(default_tooltip(fmt_date_time(c.at), freed_rows(c)));
         }
-        let mut rows = series_rows(plot, i, |s, v| match s.name.as_str() {
-            "percent" => (fmt_pct(v, 2), "Progress".into()),
-            "projection" => (fmt_pct(v, 2), "Projection".into()),
-            _ => (fmt_pct(v, 1), "Enemy advance".into()),
-        });
-        // Both enemy series hold the sample where the solid line turns dashed.
-        rows.dedup_by(|a, b| a.name == b.name);
-        Some(default_tooltip(fmt_date_time(at), rows))
-    });
-    let players_tip: Tooltip = Arc::new(|plot, i| {
-        let rows = series_rows(plot, i, |_, v| (fmt_int(v), "Helldivers".into()));
-        Some(default_tooltip(fmt_date_time(*plot.xs.get(i)?), rows))
+        Some(default_tooltip(fmt_date_time(at), progress_rows(plot, i)))
     });
     let heads = move || {
         let f = front.get()?;
@@ -646,31 +572,12 @@ pub fn FrontLineSection(
                         }
                     }
                 >
-                    <div class="pd-charts">
-                        <div class="pd-chart-label caps">"Progress"</div>
-                        <Chart
-                            plot=progress
-                            height=170.0
-                            margin=(8.0, 8.0, 0.0, 0.0)
-                            hover=hover
-                            tooltip=progress_tip.clone()
-                            overlay=city_marks.clone()
-                        />
-                        <div class="pd-chart-label caps">"Helldivers deployed"</div>
-                        <Chart
-                            plot=players
-                            height=120.0
-                            margin=(4.0, 8.0, 0.0, 0.0)
-                            hover=hover
-                            tooltip=players_tip.clone()
-                            defs=ViewFn::from(|| view! {
-                                <linearGradient id="pd-players" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stop-color="var(--cta)" stop-opacity="0.28" />
-                                    <stop offset="100%" stop-color="var(--cta)" stop-opacity="0.02" />
-                                </linearGradient>
-                            })
-                        />
-                    </div>
+                    <FrontCharts
+                        progress=progress
+                        players=players
+                        progress_tip=progress_tip.clone()
+                        overlay=city_marks.clone()
+                    />
                 </Show>
             </div>
         </Panel>

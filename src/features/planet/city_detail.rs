@@ -2,12 +2,16 @@
 
 use crate::api::history::{self, CityReading, PlayerReading};
 use crate::api::queries::{self, queries};
-use crate::features::planet::activity::{ActivitySection, ProgressChart};
+use crate::features::planet::activity::ActivitySection;
 use crate::features::planet::cities::{CityMark, enemy_of_cities, status_text};
 use crate::features::planet::defense::LiberationBar;
+use crate::features::planet::front_chart::{
+    FrontCharts, FrontRow, add_projection, day_axis, players_plot, progress_plot,
+};
 use crate::features::planet::tint::planet_tint;
-use crate::js;
+use crate::js::{self, fmt_time};
 use crate::state::{CityRef, HellpadModule, ui};
+use crate::ui::chart::RefLine;
 use crate::ui::icons::{self, Icon};
 use crate::ui::primitives::{Empty, Loading, Meter, MeterSize, Overlay, Panel, Tile};
 use leptos::prelude::*;
@@ -18,7 +22,7 @@ use warroom_core::api::{Faction, Planet};
 use warroom_core::biomes::resistance_level;
 use warroom_core::cities::{City, CityState, cities_of, city_hours_left, size_label};
 use warroom_core::factions::{faction_color, faction_label};
-use warroom_core::format::{fmt_duration, fmt_int, fmt_pct};
+use warroom_core::format::{fmt_duration, fmt_int, fmt_pct, to_fixed};
 use warroom_core::progress::tracked_percent;
 
 const DAY_MS: f64 = 86_400_000.0;
@@ -192,6 +196,140 @@ fn CityStatus(p: Signal<Planet>, c: Signal<City>, enemy: Signal<Option<Faction>>
     }
 }
 
+/// The city's last 24 hours and the next 24 at today's pace, laid out as the planet's front line panel.
+#[component]
+fn CityFrontLine(p: Signal<Planet>, c: Signal<City>, readings: ReadSignal<Readings>) -> impl IntoView {
+    let rows = Memo::new(move |_| {
+        let (percent, rate) =
+            c.with(|c| (c.percent.unwrap_or(0.0), c.rate.filter(|_| c.state == CityState::Liberating)));
+        readings.with(|r| {
+            let mut rows: Vec<FrontRow> = r
+                .rows
+                .iter()
+                .map(|r| FrontRow { at: r.at, players: Some(r.players), percent: r.percent, ..Default::default() })
+                .collect();
+            let now = js::now();
+            add_projection(&mut rows, percent, rate, None, now);
+            Arc::new((rows, r.rows.last().map_or(now, |r| r.at)))
+        })
+    });
+    let now_line =
+        |now_at: f64, label: Option<String>| vec![RefLine { x: now_at, stroke: "var(--text-dim)".into(), label }];
+    let progress = Signal::derive(move || {
+        let data = rows.get();
+        let (rows, now_at) = &*data;
+        Arc::new(progress_plot(rows, day_axis(rows, true), Vec::new(), now_line(*now_at, Some("Now".into()))))
+    });
+    let players = Signal::derive(move || {
+        let data = rows.get();
+        let (rows, now_at) = &*data;
+        Arc::new(players_plot(rows, day_axis(rows, false), now_line(*now_at, None)))
+    });
+    let heads = move || {
+        let c = c.get();
+        let (change, peak, low) = readings.with(|r| {
+            let first = r.rows.iter().find_map(|r| r.percent);
+            let peak = r.rows.iter().fold(None::<&CityReading>, |m, r| match m {
+                Some(m) if r.players <= m.players => Some(m),
+                _ => Some(r),
+            });
+            let low = r.rows.iter().fold(None::<&CityReading>, |m, r| match m {
+                Some(m) if r.players >= m.players => Some(m),
+                _ => Some(r),
+            });
+            (
+                first.zip(c.percent).map(|(f, now)| now - f),
+                peak.map(|r| (r.players, r.at)),
+                low.map(|r| (r.players, r.at)),
+            )
+        });
+        let rate = c.rate.filter(|_| c.state == CityState::Liberating);
+        let proj = c.percent.zip(rate).map(|(p, r)| (p + r * 24.0).clamp(0.0, 100.0));
+        let hours = city_hours_left(c.percent, c.rate);
+        view! {
+            <div class="pd-heads">
+                <div>
+                    <span class="pd-key" style="--k: var(--f-humans);">"Liberation change"</span>
+                    <b
+                        class="num"
+                        style=change.map(|c| format!("color: {};", if c >= 0.0 { "var(--good)" } else { "var(--bad)" }))
+                    >
+                        {change.map_or("—".to_string(), |c| format!("{}{}%", if c >= 0.0 { "+" } else { "" }, to_fixed(c, 2)))}
+                    </b>
+                </div>
+                <div>
+                    <span class="pd-key" style="--k: var(--cta);">"Peak Helldivers"</span>
+                    <b class="num">{peak.map_or("—".to_string(), |(n, _)| fmt_int(n))}</b>
+                    {peak.map(|(_, at)| view! {
+                        <span class="pd-sub caps num">
+                            {fmt_time(at)}
+                            {low.map(|(n, at)| format!(" · lowest {} at {}", fmt_int(n), fmt_time(at)))}
+                        </span>
+                    })}
+                </div>
+                <div>
+                    <span class="pd-key" style="--k: var(--bad);">"Enemy impact"</span>
+                    <b class="num" style="color: var(--bad);">
+                        {c.resistance.map_or("—".to_string(), |r| format!("-{}%/h", to_fixed(r, 2)))}
+                    </b>
+                </div>
+                <div>
+                    <span class="pd-key dashed" style="--k: var(--f-humans);">"24 h projection"</span>
+                    <b class="num">{proj.map_or("—".to_string(), |v| fmt_pct(v, 2))}</b>
+                    {hours.map(|h| view! {
+                        <span class="pd-sub good caps">"Liberated in " {fmt_duration(h * 3_600_000.0)}</span>
+                    })}
+                </div>
+            </div>
+        }
+    };
+    let note = move || {
+        let (boost, defense, name) = c.with(|c| (c.boost, c.defense, c.name.clone()));
+        let planet = p.with(|p| p.name.clone());
+        boost.map(|b| {
+            view! {
+                <p class="pd-note caps">
+                    {format!(
+                        "Freeing {name} adds +{} to {planet}'s {}. Estimates at today's pace.",
+                        fmt_pct(b, 1),
+                        if defense { "defense" } else { "liberation" },
+                    )}
+                </p>
+            }
+        })
+    };
+    let enough = Memo::new(move |_| readings.with(|r| r.rows.len() >= 2));
+    view! {
+        <Panel title="Front line activity · last 24 h and next 24 h" icon=icons::LINE_CHART>
+            <div class="pd-stack">
+                {heads}
+                <Show
+                    when=move || enough.get()
+                    fallback=move || {
+                        view! {
+                            <Empty>
+                                {move || {
+                                    if readings.with(|r| r.loading) {
+                                        "Loading telemetry…".to_string()
+                                    } else {
+                                        format!(
+                                            "Not enough readings of {} yet. One is kept every few minutes while it's being liberated.",
+                                            c.with(|c| c.name.clone()),
+                                        )
+                                    }
+                                }}
+                            </Empty>
+                        }
+                    }
+                >
+                    <FrontCharts progress=progress players=players />
+                </Show>
+                {note}
+            </div>
+        </Panel>
+    }
+}
+
 fn hero_style(p: &Planet, enemy: Option<Faction>) -> String {
     let t = planet_tint(p, &[]);
     format!(
@@ -222,10 +360,6 @@ fn Found(p: Signal<Planet>, c: Signal<City>, readings: ReadSignal<Readings>) -> 
         })
     };
     let planet_pct = Signal::derive(move || if enemy.get().is_some() { p.with(tracked_percent) } else { 100.0 });
-    let progress = Signal::derive(move || {
-        Arc::new(readings.with(|r| r.rows.iter().filter_map(|r| r.percent.map(|v| (r.at, v))).collect::<Vec<_>>()))
-    });
-    let has_progress = Memo::new(move |_| progress.with(|p| !p.is_empty()));
     let look = Memo::new(move |_| c.with(|c| (c.stars, c.state, c.holder)));
     let mark = move || {
         let (stars, state, holder) = look.get();
@@ -255,51 +389,7 @@ fn Found(p: Signal<Planet>, c: Signal<City>, readings: ReadSignal<Readings>) -> 
             </Panel>
         })
     };
-    let city_rate = Signal::derive(move || c.with(|c| c.rate.filter(|_| c.state == CityState::Liberating)));
     let fought_here = Memo::new(move |_| c.with(|c| fought(c, enemy.get())));
-    let liberation_chart = move || {
-        fought_here.get().then(|| {
-            view! {
-                <Panel title="City liberation · last 24 h" icon=icons::FLAG tone="var(--f-humans)".to_string()>
-                    <div class="pd-stack">
-                        <Show
-                            when=move || has_progress.get()
-                            fallback=move || {
-                                view! {
-                                    <Empty>
-                                        {move || {
-                                            if readings.with(|r| r.loading) {
-                                                "Loading telemetry…".to_string()
-                                            } else {
-                                                format!(
-                                                    "No liberation readings of {} in the last 24 hours yet. One is kept every few minutes while it's being liberated.",
-                                                    c.with(|c| c.name.clone()),
-                                                )
-                                            }
-                                        }}
-                                    </Empty>
-                                }
-                            }
-                        >
-                            <ProgressChart points=progress rate=city_rate height=180.0 />
-                            <p class="muted">
-                                {move || {
-                                    c.with(|c| match city_hours_left(c.percent, c.rate) {
-                                        Some(h) => format!(
-                                            "Dashed: today's pace, liberated in about {}{}.",
-                                            fmt_duration(h * 3_600_000.0),
-                                            c.boost.map(|b| format!(", when it adds +{} to {}", fmt_pct(b, 1), p.with(|p| p.name.clone()))).unwrap_or_default(),
-                                        ),
-                                        None => "No projection while it isn't gaining ground.".to_string(),
-                                    })
-                                }}
-                            </p>
-                        </Show>
-                    </div>
-                </Panel>
-            }
-        })
-    };
     view! {
         <div class="pd">
             <section class="pd-hero brackets" style=move || p.with(|p| hero_style(p, enemy.get()))>
@@ -344,26 +434,30 @@ fn Found(p: Signal<Planet>, c: Signal<City>, readings: ReadSignal<Readings>) -> 
                 </div>
             </section>
             <CityStatus p=p c=c enemy=enemy />
-            {liberation_chart}
+            <Show when=move || fought_here.get()>
+                <CityFrontLine p=p c=c readings=readings />
+            </Show>
             {liberation}
-            <ActivitySection
-                title="City activity · last 24 h".to_string()
-                now=Signal::derive(move || c.with(|c| c.players))
-                points=Signal::derive(move || {
-                    Arc::new(
-                        readings.with(|r| {
-                            r.rows.iter().map(|r| PlayerReading { at: r.at, players: r.players }).collect::<Vec<_>>()
-                        }),
-                    )
-                })
-                loading=Signal::derive(move || readings.with(|r| r.loading))
-                empty=Signal::derive(move || {
-                    format!(
-                        "No readings of {} in the last 24 hours. One is kept every few minutes while Helldivers are there or it's being liberated.",
-                        c.with(|c| c.name.clone())
-                    )
-                })
-            />
+            <Show when=move || !fought_here.get()>
+                <ActivitySection
+                    title="City activity · last 24 h".to_string()
+                    now=Signal::derive(move || c.with(|c| c.players))
+                    points=Signal::derive(move || {
+                        Arc::new(
+                            readings.with(|r| {
+                                r.rows.iter().map(|r| PlayerReading { at: r.at, players: r.players }).collect::<Vec<_>>()
+                            }),
+                        )
+                    })
+                    loading=Signal::derive(move || readings.with(|r| r.loading))
+                    empty=Signal::derive(move || {
+                        format!(
+                            "No readings of {} in the last 24 hours. One is kept every few minutes while Helldivers are there or it's being liberated.",
+                            c.with(|c| c.name.clone())
+                        )
+                    })
+                />
+            </Show>
         </div>
     }
 }
