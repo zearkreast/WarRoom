@@ -8,6 +8,14 @@ pub struct ChangelogEntry {
 
 pub const CHANGELOG: &[ChangelogEntry] = &[
     ChangelogEntry {
+        version: "0.7.8",
+        date: "2026-11-18",
+        items: &[
+            "Cities: a city being fought over shows the same front line panel as its planet, with the 24-hour projection and Helldivers on one time axis.",
+            "Galactic Campaigns: rewards the app didn't know yet, such as Serene Guardian's, now show instead of \"Not announced\".",
+        ],
+    },
+    ChangelogEntry {
         version: "0.7.7",
         date: "2026-11-17",
         items: &[
