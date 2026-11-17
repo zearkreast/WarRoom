@@ -1,12 +1,13 @@
 //! Minimal Supabase REST (PostgREST) client: just the calls the collector makes.
 
 use crate::http::{Request, Transport};
-use serde_json::Value;
+use serde_json::{Value, json};
 
 const TIMEOUT_MS: u64 = 30_000;
 
 pub struct Supabase {
     base: String,
+    storage: String,
     /// The project's secret key (sb_secret_…). It bypasses RLS, so it stays on the server.
     key: String,
     transport: Box<dyn Transport>,
@@ -14,7 +15,8 @@ pub struct Supabase {
 
 impl Supabase {
     pub fn new(url: &str, key: &str, transport: Box<dyn Transport>) -> Supabase {
-        Supabase { base: format!("{}/rest/v1", url.trim_end_matches('/')), key: key.into(), transport }
+        let url = url.trim_end_matches('/');
+        Supabase { base: format!("{url}/rest/v1"), storage: format!("{url}/storage/v1"), key: key.into(), transport }
     }
 
     fn call(
@@ -34,7 +36,7 @@ impl Supabase {
                 method,
                 url: format!("{}/{path}", self.base),
                 headers,
-                body: body.map(|b| warroom_core::api::js_value(b.clone()).to_string()),
+                body: body.map(|b| warroom_core::api::js_value(b.clone()).to_string().into_bytes()),
                 timeout_ms: TIMEOUT_MS,
             })
             .map_err(|e| format!("Supabase {method} {} → {e}", path.split('?').next().unwrap_or("")))?;
@@ -43,13 +45,13 @@ impl Supabase {
                 "Supabase {method} {} → {}: {}",
                 path.split('?').next().unwrap_or(""),
                 res.status,
-                res.body
+                res.text()
             ));
         }
         if res.body.is_empty() {
             return Ok(Value::Null);
         }
-        serde_json::from_str(&res.body).map_err(|e| format!("Supabase {method} {path}: {e}"))
+        serde_json::from_slice(&res.body).map_err(|e| format!("Supabase {method} {path}: {e}"))
     }
 
     pub fn select(&self, table: &str, query: &str) -> Result<Vec<Value>, String> {
@@ -85,6 +87,53 @@ impl Supabase {
 
     pub fn rpc(&self, function: &str, args: Value) -> Result<Value, String> {
         self.call("POST", &format!("rpc/{function}"), Some(&args), None)
+    }
+
+    fn storage_call(&self, path: &str, content_type: &str, body: Vec<u8>, upsert: bool) -> Result<Vec<u8>, String> {
+        let mut headers = vec![("apikey", self.key.clone()), ("Content-Type", content_type.to_string())];
+        if !upsert {
+            headers.push(("x-upsert", "false".into()));
+        }
+        let res = self
+            .transport
+            .send(Request {
+                method: "POST",
+                url: format!("{}/{path}", self.storage),
+                headers,
+                body: Some(body),
+                timeout_ms: TIMEOUT_MS,
+            })
+            .map_err(|e| format!("Storage {path} → {e}"))?;
+        if !res.ok() {
+            return Err(format!("Storage {path} → {}: {}", res.status, res.text()));
+        }
+        Ok(res.body)
+    }
+
+    /// Every file name in a bucket's root.
+    pub fn storage_list(&self, bucket: &str) -> Result<Vec<String>, String> {
+        const PAGE: usize = 1000;
+        let mut names = Vec::new();
+        loop {
+            let query = json!({ "prefix": "", "limit": PAGE, "offset": names.len() });
+            let body = self.storage_call(
+                &format!("object/list/{bucket}"),
+                "application/json",
+                query.to_string().into_bytes(),
+                true,
+            )?;
+            let page: Vec<Value> = serde_json::from_slice(&body).map_err(|e| format!("Storage list {bucket}: {e}"))?;
+            let n = page.len();
+            names.extend(page.iter().filter_map(|o| o.get("name")?.as_str().map(String::from)));
+            if n < PAGE {
+                return Ok(names);
+            }
+        }
+    }
+
+    /// Uploads a file; one already stored under `name` is kept and the upload fails.
+    pub fn storage_upload(&self, bucket: &str, name: &str, bytes: Vec<u8>, content_type: &str) -> Result<(), String> {
+        self.storage_call(&format!("object/{bucket}/{name}"), content_type, bytes, false).map(|_| ())
     }
 }
 

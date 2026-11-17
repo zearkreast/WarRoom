@@ -1,6 +1,6 @@
 use crate::api::orders::{ArchivedOrder, archived_orders};
 use crate::api::queries::queries;
-use crate::features::galactic_campaigns::{CampaignArt, CampaignBody, CampaignHead, campaign_art, outcome};
+use crate::features::galactic_campaigns::{CampaignArt, CampaignBody, CampaignHead, outcome};
 use crate::js::{self, fmt_date, num};
 use crate::ui::emblems::FactionEmblem;
 use crate::ui::icons::{self, Icon};
@@ -11,7 +11,7 @@ use warroom_core::data::reward_label;
 use warroom_core::factions::faction_color;
 use warroom_core::format::{fmt_compact, fmt_pct, js_round};
 use warroom_core::major_order::{TaskView, describe_assignment, task_name, task_percent};
-use warroom_core::snapshot::{EpisodeLive, EpisodeStatus, campaign_record, campaign_tally};
+use warroom_core::snapshot::{EpisodeLive, EpisodeStatus, campaign_art_names, campaign_record, campaign_tally};
 use warroom_core::time::parse_ms;
 use wasm_bindgen::JsCast;
 
@@ -188,7 +188,7 @@ pub fn PastCampaignsModule() -> impl IntoView {
                                                     <span class="pc-mark" aria-hidden="true">
                                                         <FactionEmblem faction=e.faction.as_str() size=132.0 />
                                                     </span>
-                                                    <CampaignArt names=campaign_art(e) class="pc-art" />
+                                                    <CampaignArt names=campaign_art_names(e) class="pc-art" />
                                                     <CampaignHead e=e.clone() />
                                                     <span class="pc-meta caps num">
                                                         <span class="pc-orders">

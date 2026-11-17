@@ -5,6 +5,7 @@
 //!
 //! Config comes from the environment, or from collector/.env when present.
 
+mod art;
 mod hd2;
 mod http;
 mod language;
@@ -101,6 +102,9 @@ fn run() -> Result<u8, String> {
     ));
     let mut collector =
         Collector::new(Box::new(hd2), db(), recorder, Box::new(|| SystemClock.now()), Some(Box::new(game)), push);
+    if !env("CAMPAIGN_ART_SOURCE").is_empty() {
+        collector.art = Some(art::Wiki::new(&env("CAMPAIGN_ART_SOURCE"), Box::new(http::Http)));
+    }
     let jobs = collector.jobs();
 
     if once {

@@ -6,19 +6,23 @@ pub struct Request {
     pub method: &'static str,
     pub url: String,
     pub headers: Vec<(&'static str, String)>,
-    pub body: Option<String>,
+    pub body: Option<Vec<u8>>,
     pub timeout_ms: u64,
 }
 
 pub struct Response {
     pub status: u16,
     pub headers: Vec<(String, String)>,
-    pub body: String,
+    pub body: Vec<u8>,
 }
 
 impl Response {
     pub fn header(&self, name: &str) -> Option<&str> {
         self.headers.iter().find(|(k, _)| k.eq_ignore_ascii_case(name)).map(|(_, v)| v.as_str())
+    }
+
+    pub fn text(&self) -> std::borrow::Cow<'_, str> {
+        String::from_utf8_lossy(&self.body)
     }
 
     pub fn ok(&self) -> bool {
@@ -83,7 +87,7 @@ impl Transport for Http {
             .iter()
             .filter_map(|(k, v)| Some((k.as_str().to_string(), v.to_str().ok()?.to_string())))
             .collect();
-        let body = res.body_mut().read_to_string().map_err(|e| match e {
+        let body = res.body_mut().read_to_vec().map_err(|e| match e {
             ureq::Error::Timeout(_) => TransportError::Timeout,
             other => TransportError::Failed(other.to_string()),
         })?;

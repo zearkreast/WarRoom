@@ -135,21 +135,22 @@ impl Fcm {
                 url: TOKEN_URL.into(),
                 headers: vec![("Content-Type", "application/x-www-form-urlencoded".into())],
                 // The assertion is base64url and dots, which need no escaping in a form body.
-                body: Some(format!(
-                    "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion={assertion}"
-                )),
+                body: Some(
+                    format!("grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion={assertion}")
+                        .into_bytes(),
+                ),
                 timeout_ms: TIMEOUT_MS,
             })
             .map_err(|e| format!("FCM token: {e}"))?;
         if !res.ok() {
-            return Err(format!("FCM token {}: {}", res.status, res.body));
+            return Err(format!("FCM token {}: {}", res.status, res.text()));
         }
         #[derive(Deserialize)]
         struct Token {
             access_token: String,
             expires_in: f64,
         }
-        let got: Token = serde_json::from_str(&res.body).map_err(|e| format!("FCM token: {e}"))?;
+        let got: Token = serde_json::from_slice(&res.body).map_err(|e| format!("FCM token: {e}"))?;
         self.token = got.access_token;
         self.expires = self.clock.now() + got.expires_in * 1000.0;
         Ok(self.token.clone())
@@ -178,12 +179,12 @@ impl Push for Fcm {
                     ("Authorization", format!("Bearer {token}")),
                     ("Content-Type", "application/json".into()),
                 ],
-                body: Some(message.to_string()),
+                body: Some(message.to_string().into_bytes()),
                 timeout_ms: TIMEOUT_MS,
             })
             .map_err(|e| format!("FCM send: {e}"))?;
         if !res.ok() {
-            return Err(format!("FCM send {}: {}", res.status, res.body));
+            return Err(format!("FCM send {}: {}", res.status, res.text()));
         }
         Ok(())
     }
@@ -238,7 +239,11 @@ mod tests {
     impl Transport for Google {
         fn send(&self, req: Request) -> Result<Response, TransportError> {
             let auth = req.headers.iter().find(|(k, _)| *k == "Authorization").map(|(_, v)| v.clone());
-            self.calls.borrow_mut().push(Call { url: req.url.clone(), body: req.body.unwrap_or_default(), auth });
+            self.calls.borrow_mut().push(Call {
+                url: req.url.clone(),
+                body: String::from_utf8(req.body.unwrap_or_default()).unwrap(),
+                auth,
+            });
             let n = self.calls.borrow().len();
             let (status, body) = if req.url.contains("oauth2") {
                 (200, format!(r#"{{"access_token":"token{n}","expires_in":3600}}"#))
@@ -247,7 +252,7 @@ mod tests {
             } else {
                 (self.send_status, "denied".into())
             };
-            Ok(Response { status, headers: Vec::new(), body })
+            Ok(Response { status, headers: Vec::new(), body: body.into_bytes() })
         }
     }
 

@@ -52,14 +52,22 @@ struct FakeDb {
 
 impl Transport for FakeDb {
     fn send(&self, req: Request) -> Result<Response, TransportError> {
-        let path = req.url.replace("https://x.supabase.co/rest/v1/", "");
+        let path = req
+            .url
+            .replace("https://x.supabase.co/rest/v1/", "")
+            .replace("https://x.supabase.co/storage/v1/", "storage/");
         assert!(req.headers.contains(&("apikey", "sb_secret_test".into())));
         let prefer = req.headers.iter().find(|(k, _)| *k == "Prefer").map(|(_, v)| v.clone());
-        let body = req.body.as_deref().map_or(Value::Null, raw);
+        let json = req.headers.contains(&("Content-Type", "application/json".into()));
+        let body = match req.body.as_deref() {
+            None => Value::Null,
+            Some(b) if json => serde_json::from_slice(b).unwrap(),
+            Some(b) => json!({ "bytes": b.len(), "webp": b.len() > 12 && &b[..4] == b"RIFF" && &b[8..12] == b"WEBP" }),
+        };
         self.calls.borrow_mut().push(Call { method: req.method, path: path.clone(), prefer, body });
         let table = path.split('?').next().unwrap().to_string();
         let kind = path.split("kind=eq.").nth(1).map(|k| k.split('&').next().unwrap().to_string());
-        let reply = |status, body: String| Ok(Response { status, headers: Vec::new(), body });
+        let reply = |status, body: String| Ok(Response { status, headers: Vec::new(), body: body.into_bytes() });
         if self.missing.iter().any(|m| table == *m) {
             return reply(404, "{}".into());
         }
@@ -70,6 +78,9 @@ impl Transport for FakeDb {
         }
         if table.starts_with("rpc/") {
             return reply(200, "3".into());
+        }
+        if table.starts_with("storage/object/list/") {
+            return reply(200, self.rows.get(&table).cloned().unwrap_or(json!([])).to_string());
         }
         reply(201, String::new())
     }
@@ -849,4 +860,75 @@ fn keeps_each_campaign_planets_counters_and_carries_on_without_the_table() {
     c.run(Job::Campaigns);
     assert!(c.run(Job::Planets).ok);
     assert!(c.run(Job::War).ok);
+}
+
+/// The picture source: its Campaigns page, where its files are, and the files.
+struct FakeWiki {
+    urls: Rc<RefCell<Vec<String>>>,
+}
+
+impl Transport for FakeWiki {
+    fn send(&self, req: Request) -> Result<Response, TransportError> {
+        self.urls.borrow_mut().push(req.url.clone());
+        let body = if req.url.contains("action=parse") {
+            json!({ "parse": { "wikitext": crate::art::tests::PAGE } }).to_string().into_bytes()
+        } else if req.url.contains("action=query") {
+            json!({ "query": {
+                "normalized": [{ "from": "File:Header SG.png", "to": "File:Header SG.png" }],
+                "pages": [
+                    { "title": "File:Header SG.png", "imageinfo": [{ "url": "https://img/sg.png" }] },
+                    { "title": "File:Header PE B.png", "missing": true },
+                ],
+            } })
+            .to_string()
+            .into_bytes()
+        } else {
+            assert_eq!(req.url, "https://img/sg.png");
+            crate::art::tests::png()
+        };
+        Ok(Response { status: 200, headers: Vec::new(), body })
+    }
+}
+
+fn art_collector(stored: &[&str]) -> (Collector, Calls, Rc<RefCell<Vec<String>>>) {
+    let episodes = [crate::art::tests::episode(7, "SERENE GUARDIAN", Some(10), &[Some(20)])];
+    let names: Vec<Value> = stored.iter().map(|n| json!({ "name": n })).collect();
+    let (db, calls) = fake_db(&[
+        ("snapshots:episodes", json!([{ "data": serde_json::to_value(episodes).unwrap() }])),
+        ("storage/object/list/campaign-art", Value::Array(names)),
+    ]);
+    let urls = Rc::new(RefCell::new(Vec::new()));
+    let mut c = collector(db, 5_000.0);
+    c.art = Some(crate::art::Wiki::new("https://wiki/api.php", Box::new(FakeWiki { urls: urls.clone() })));
+    (c, calls, urls)
+}
+
+#[test]
+fn uploads_the_missing_pictures_the_source_has_and_waits_on_the_rest() {
+    let (mut c, calls, urls) = art_collector(&["campaign-9.webp"]);
+    assert!(c.jobs().contains(&Job::Art));
+    let r = c.run(Job::Art);
+    assert!(r.ok, "{}", r.message);
+    assert_eq!(r.message, "1 pictures added, 1 missing");
+    assert_eq!(urls.borrow().len(), 3);
+    assert!(urls.borrow()[1].contains("titles=File%3AHeader%20SG.png%7CFile%3AHeader%20PE%20B.png"));
+    let uploads: Vec<_> =
+        calls.borrow().iter().filter(|c| c.path.starts_with("storage/object/campaign-art/")).cloned().collect();
+    assert_eq!(uploads.len(), 1);
+    assert_eq!(uploads[0].path, "storage/object/campaign-art/10.webp");
+    assert_eq!(uploads[0].body["webp"], true);
+    // The one the source lacked isn't looked for again for a while.
+    urls.borrow_mut().clear();
+    assert_eq!(c.run(Job::Art).message, "1 pictures added, 1 missing");
+    assert!(!urls.borrow().iter().any(|u| u.contains("Header%20PE")));
+}
+
+#[test]
+fn asks_the_source_nothing_while_every_picture_is_stored() {
+    let (mut c, calls, urls) = art_collector(&["10.webp", "campaign-7-1.webp"]);
+    assert_eq!(c.run(Job::Art).message, "2 pictures in place");
+    assert!(urls.borrow().is_empty());
+    assert!(!calls.borrow().iter().any(|c| c.path.starts_with("storage/object/campaign-art/")));
+    let (db, _) = fake_db(&[]);
+    assert!(!collector(db, 0.0).jobs().contains(&Job::Art));
 }

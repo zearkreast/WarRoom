@@ -185,7 +185,7 @@ impl Api for Hd2Client {
         if res.header("X-RateLimit-Remaining") == Some("0") {
             self.pause(WINDOW_MS);
         }
-        let body: Value = serde_json::from_str(&res.body)
+        let body: Value = serde_json::from_slice(&res.body)
             .map_err(|e| ApiError::Invalid { path: path.into(), reason: e.to_string() })?;
         if not_english(&body) {
             return Err(ApiError::NotEnglish { path: path.into() });
